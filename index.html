@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>BEJU Creative — We don't edit. We convert.</title>
 <meta name="description" content="Short-form video editing for personal brands, coaches, course creators, and DTC brands. Reels, TikToks, YouTube Shorts that convert.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,7 +14,7 @@
    RESET & BASE
 ============================================================ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; overflow-x: hidden; }
+html { scroll-behavior: smooth; overflow-x: hidden; overscroll-behavior-x: none; }
 body {
   font-family: 'Inter', system-ui, sans-serif;
   background: linear-gradient(180deg, #0c0c0c 0%, #0a0a0a 50%, #0b0b0b 100%) fixed;
@@ -702,7 +702,7 @@ nav.scrolled {
   padding: 0;
   user-select: none;
 }
-.work-track { position: relative; height: 660px; display: flex; align-items: center; justify-content: center; perspective: 1400px; }
+.work-track { position: relative; height: 660px; display: flex; align-items: center; justify-content: center; perspective: 1400px; touch-action: pan-y; }
 
 .reel-wrap { position: absolute; width: 300px; display: flex; flex-direction: column; gap: 12px; cursor: pointer; transition: transform .55s cubic-bezier(.22,1,.36,1), filter .55s cubic-bezier(.22,1,.36,1), opacity .55s cubic-bezier(.22,1,.36,1); will-change: transform, filter, opacity; }
 .reel-card {
@@ -1372,7 +1372,7 @@ footer {
   <a href="#services" onclick="closeMob()">Services</a>
   <a href="#process"  onclick="closeMob()">Process</a>
   <a href="#contact"  onclick="closeMob()">Contact</a>
-  <a href="mailto:contact@bejucreative.com" onclick="closeMob()" class="mob-sub">Contact Us →</a>
+  <a href="mailto:bejusipe@gmail.com?subject=Portfolio%20Inquiry" onclick="closeMob()" class="mob-sub">Contact Us →</a>
 </div>
 
 <!-- ============================================================
@@ -1388,7 +1388,7 @@ footer {
     <li><a href="#process">Process</a></li>
     <li><a href="#contact">Contact</a></li>
   </ul>
-  <a href="mailto:contact@bejucreative.com" class="nav-cta">Contact Us</a>
+  <a href="mailto:bejusipe@gmail.com?subject=Portfolio%20Inquiry" class="nav-cta">Contact Us</a>
   <button class="hamburger" id="hamburger" aria-label="Open menu">
     <span></span><span></span><span></span>
   </button>
@@ -1409,7 +1409,7 @@ footer {
   </p>
 
   <div class="hero-cta-row">
-    <a href="mailto:contact@bejucreative.com" class="btn-primary lg">Get In Touch →</a>
+    <a href="mailto:bejusipe@gmail.com?subject=Portfolio%20Inquiry" class="btn-primary lg">Get In Touch →</a>
     <a href="#work" class="btn-ghost">See Our Work ↓</a>
   </div>
 
@@ -1781,7 +1781,7 @@ footer {
       </div>
     </div>
 
-    <a href="mailto:contact@bejucreative.com" class="btn-primary lg">Send An Inquiry →</a>
+    <a href="mailto:bejusipe@gmail.com?subject=Portfolio%20Inquiry" class="btn-primary lg">Send An Inquiry →</a>
     <div style="text-align:center">
       <span class="reply-note"><span class="reply-dot"></span>Replies within 24 hours</span>
     </div>
@@ -2021,19 +2021,19 @@ footer {
     <div class="eyebrow center">Get Started</div>
     <h2 class="fcta-h2">Got footage that deserves an <em>audience?</em></h2>
     <p class="fcta-sub">We're selective about who we work with. If you're serious about growth, let's talk.</p>
-    <a href="mailto:contact@bejucreative.com" class="btn-primary lg">Contact Us Now →</a>
+    <a href="mailto:bejusipe@gmail.com?subject=Portfolio%20Inquiry" class="btn-primary lg">Contact Us Now →</a>
     <div style="text-align:center">
       <span class="reply-note"><span class="reply-dot"></span>Replies within 24 hours</span>
     </div>
     <br>
-    <a href="mailto:contact@bejucreative.com" class="fcta-email">contact@bejucreative.com →</a>
+    <a href="mailto:bejusipe@gmail.com?subject=Portfolio%20Inquiry" class="fcta-email">bejusipe@gmail.com →</a>
   </div>
   <div class="social-row reveal d2">
     <a href="#">Instagram</a>
     <span>·</span>
     <a href="#">TikTok</a>
     <span>·</span>
-    <a href="mailto:contact@bejucreative.com">Email</a>
+    <a href="mailto:bejusipe@gmail.com?subject=Portfolio%20Inquiry">Email</a>
   </div>
 </section>
 
@@ -2049,7 +2049,7 @@ footer {
     <div class="footer-links">
       <a href="#">Instagram</a>
       <a href="#">TikTok</a>
-      <a href="mailto:contact@bejucreative.com">Email</a>
+      <a href="mailto:bejusipe@gmail.com?subject=Portfolio%20Inquiry">Email</a>
     </div>
   </div>
 </footer>
@@ -2244,7 +2244,12 @@ function positionCards() {
     d.classList.toggle('active', i === carIdx));
 }
 
+let navLocked = false;
 function carNav(dir) {
+  if (navLocked) return;
+  navLocked = true;
+  setTimeout(() => { navLocked = false; }, 450);
+  workCards.forEach(w => { const v = w.querySelector('.reel-video'); if (v && !v.paused) v.pause(); });
   carIdx = (carIdx + dir + workCards.length) % workCards.length;
   positionCards();
 }
@@ -2326,6 +2331,20 @@ workCards.forEach((wrap, i) => {
 document.addEventListener('visibilitychange', () => {
   if (document.hidden)
     workCards.forEach(w => { const v = w.querySelector('.reel-video'); if (v) { v.pause(); v.currentTime = 0; } });
+});
+
+/* ── Fullscreen exit: pause all, re-play center card only ── */
+['fullscreenchange','webkitfullscreenchange','mozfullscreenchange'].forEach(evt => {
+  document.addEventListener(evt, () => {
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      workCards.forEach((w, i) => {
+        const v = w.querySelector('.reel-video');
+        if (!v) return;
+        if (i !== carIdx) { v.pause(); v.currentTime = 0; }
+        else v.play().catch(() => {});
+      });
+    }
+  });
 });
 
 /* ── Initial layout ── */
