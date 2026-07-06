@@ -22,6 +22,7 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  touch-action: manipulation;
 }
 
 /* ============================================================
@@ -704,7 +705,7 @@ nav.scrolled {
 }
 .work-track { position: relative; height: 660px; display: flex; align-items: center; justify-content: center; perspective: 1400px; touch-action: pan-y; }
 
-.reel-wrap { position: absolute; width: 300px; display: flex; flex-direction: column; gap: 12px; cursor: pointer; transition: transform .55s cubic-bezier(.22,1,.36,1), filter .55s cubic-bezier(.22,1,.36,1), opacity .55s cubic-bezier(.22,1,.36,1); will-change: transform, filter, opacity; }
+.reel-wrap { position: absolute; width: 300px; display: flex; flex-direction: column; gap: 12px; cursor: pointer; transition: transform .55s cubic-bezier(.22,1,.36,1), filter .44s cubic-bezier(.22,1,.36,1), opacity .44s cubic-bezier(.22,1,.36,1); will-change: transform, opacity; }
 .reel-card {
   width: 300px;
   height: 534px;
@@ -2027,8 +2028,6 @@ footer {
     </a>
     <p class="footer-copy">© 2026 — Built for growth.</p>
     <div class="footer-links">
-      <a href="#">Instagram</a>
-      <a href="#">TikTok</a>
       <a href="mailto:bejusipe@gmail.com?subject=Portfolio%20Inquiry">Email</a>
     </div>
   </div>
@@ -2187,35 +2186,35 @@ function positionCards() {
     const abs = Math.abs(off);
     const v   = wrap.querySelector('.reel-video');
     const mb  = wrap.querySelector('.reel-mute');
-    let tx, sc, bl, br, op, zi;
+    let tx, sc, br, op, zi;
 
     if (off === 0) {
-      [tx, sc, bl, br, op, zi] = [0, 1, 0, 1, 1, 10];
+      [tx, sc, br, op, zi] = [0, 1, 1, 1, 10];
       wrap.classList.add('reel--active');
       if (mb) mb.style.opacity = '1';
       if (v) v.play().catch(() => {});
     } else if (abs === 1) {
       tx = off > 0 ? o1 : -o1;
-      [sc, bl, br, op, zi] = [0.76, 3, 0.52, 1, 7];
+      [sc, br, op, zi] = [0.76, 0.52, 1, 7];
       wrap.classList.remove('reel--active');
       if (mb) mb.style.opacity = '0';
       if (v) { v.pause(); v.currentTime = 0; }
     } else if (abs === 2) {
       tx = off > 0 ? o2 : -o2;
-      [sc, bl, br, op, zi] = [0.6, 5, 0.28, 0.85, 4];
+      [sc, br, op, zi] = [0.6, 0.28, 0.85, 4];
       wrap.classList.remove('reel--active');
       if (mb) mb.style.opacity = '0';
       if (v) { v.pause(); v.currentTime = 0; }
     } else {
       tx = off > 0 ? o2 + 150 : -(o2 + 150);
-      [sc, bl, br, op, zi] = [0.5, 8, 0.1, 0, 1];
+      [sc, br, op, zi] = [0.5, 0.1, 0, 1];
       wrap.classList.remove('reel--active');
       if (mb) mb.style.opacity = '0';
       if (v) { v.pause(); v.currentTime = 0; }
     }
     const ry = off === 0 ? 0 : off > 0 ? -r1 : r1;
     wrap.style.transform     = `translateX(${tx}px) scale(${sc}) rotateY(${ry}deg)`;
-    wrap.style.filter        = `blur(${bl}px) brightness(${br})`;
+    wrap.style.filter        = `brightness(${br})`;
     wrap.style.opacity       = op;
     wrap.style.zIndex        = zi;
     wrap.style.pointerEvents = abs <= 2 ? 'auto' : 'none';
