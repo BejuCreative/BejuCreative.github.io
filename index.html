@@ -1156,6 +1156,48 @@ nav.scrolled {
 .trole { font-size: 12px; color: var(--text-dim); margin-top: 3px; }
 
 /* ============================================================
+   PRICING
+============================================================ */
+.pricing-section {
+  padding: 7rem 2.5rem;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  max-width: 1100px;
+  margin: 2.8rem auto 0;
+  text-align: left;
+}
+.price-card {
+  position: relative;
+  background: var(--card);
+  border-radius: 20px;
+  padding: 26px 24px;
+  border: 1px solid var(--border);
+  transition: background 0.3s var(--ease), border-color 0.3s var(--ease), transform 0.3s var(--ease);
+}
+.price-card:hover { background: var(--card-hover); border-color: var(--border-accent); transform: translateY(-4px) translateZ(0); }
+.price-card.featured { border-color: var(--accent-dim); background: linear-gradient(180deg, rgba(200,241,53,0.06), var(--card)); }
+.price-badge {
+  position: absolute; top: -11px; right: 20px;
+  background: var(--accent); color: #0a0a0a; font-family: 'Syne', sans-serif;
+  font-weight: 700; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 4px 12px; border-radius: 99px;
+}
+.price-qty { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; color: var(--text); }
+.price-amount { font-family: 'Syne', sans-serif; font-size: 34px; font-weight: 800; color: var(--accent); margin: 6px 0 2px; }
+.price-per { font-size: 12px; color: var(--text-dim); }
+.pricing-note {
+  max-width: 620px; margin: 2.2rem auto 0;
+  font-size: 13px; color: var(--text-dim); line-height: 1.6; font-style: italic;
+}
+@media (max-width: 860px) { .pricing-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .pricing-grid { grid-template-columns: 1fr; } .pricing-section { padding: 5rem 1.2rem; } }
+
+/* ============================================================
    RESULTS — real client proof carousel
 ============================================================ */
 .results-section {
@@ -1555,6 +1597,7 @@ footer {
 <div class="mobile-overlay" id="mobileOverlay">
   <a href="#work"     onclick="closeMob()">Work</a>
   <a href="#services" onclick="closeMob()">Services</a>
+  <a href="#pricing"  onclick="closeMob()">Pricing</a>
   <a href="#process"  onclick="closeMob()">Process</a>
   <a href="#contact"  onclick="closeMob()">Contact</a>
   <a href="https://instagram.com/bejucreative" target="_blank" rel="noopener" onclick="closeMob()" class="mob-sub">@bejucreative →</a>
@@ -1571,6 +1614,7 @@ footer {
   <ul class="nav-links">
     <li><a href="#work">Work</a></li>
     <li><a href="#services">Services</a></li>
+    <li><a href="#pricing">Pricing</a></li>
     <li><a href="#process">Process</a></li>
     <li><a href="#contact">Contact</a></li>
   </ul>
@@ -1951,6 +1995,50 @@ footer {
 
     </div>
   </div>
+</section>
+
+<!-- ============================================================
+     PRICING
+============================================================ -->
+<section class="pricing-section" id="pricing">
+  <div class="reveal">
+    <div class="eyebrow center">Pricing</div>
+    <h2 class="section-title center">Simple, volume-based <em>pricing.</em></h2>
+  </div>
+  <div class="pricing-grid">
+    <div class="price-card reveal d1">
+      <div class="price-qty">1 video</div>
+      <div class="price-amount">$18</div>
+      <div class="price-per">single edit</div>
+    </div>
+    <div class="price-card reveal d2">
+      <div class="price-qty">3 videos</div>
+      <div class="price-amount">$40</div>
+      <div class="price-per">$13.30 / edit</div>
+    </div>
+    <div class="price-card featured reveal d3">
+      <div class="price-badge">Most Popular</div>
+      <div class="price-qty">5 videos</div>
+      <div class="price-amount">$50</div>
+      <div class="price-per">$10 / edit</div>
+    </div>
+    <div class="price-card reveal d4">
+      <div class="price-qty">10 videos</div>
+      <div class="price-amount">$85</div>
+      <div class="price-per">$8.50 / edit</div>
+    </div>
+    <div class="price-card reveal d5">
+      <div class="price-qty">25 videos</div>
+      <div class="price-amount">$175</div>
+      <div class="price-per">$7 / edit</div>
+    </div>
+    <div class="price-card reveal d1">
+      <div class="price-qty">30+ videos</div>
+      <div class="price-amount">$6<span style="font-size:16px;color:var(--text-dim)">/edit</span></div>
+      <div class="price-per">ongoing / retainer</div>
+    </div>
+  </div>
+  <p class="pricing-note reveal d2">Prices aren't fixed — they can vary depending on the average length of the videos you want edited. These are average prices for 15–40 second reels.</p>
 </section>
 
 <!-- ============================================================
