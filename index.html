@@ -1170,6 +1170,7 @@ nav.scrolled {
 }
 .results-track {
   display: flex;
+  align-items: flex-start;
   gap: 20px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
@@ -2011,6 +2012,11 @@ footer {
       <div class="result-card reveal d3"><img class="result-media" src="results/testimonial-3.jpeg" alt="Client message about follower growth from reels" loading="lazy"></div>
       <div class="result-card reveal d4"><img class="result-media" src="results/testimonial-4.png" alt="Client message about views and sales from a clip" loading="lazy"></div>
       <div class="result-card reveal d5"><img class="result-media" src="results/testimonial-5.png" alt="Client message about follower growth overnight" loading="lazy"></div>
+      <div class="result-card reveal d1">
+        <video class="result-media" playsinline muted loop preload="metadata" poster="results/testimonial-6-poster.jpg" controls aria-label="Client video testimonial about a reel that hit">
+          <source src="results/testimonial-6.mp4" type="video/mp4">
+        </video>
+      </div>
     </div>
     <button class="carousel-arrow carousel-arrow-next" id="resNext" aria-label="Next result">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
