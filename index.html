@@ -139,6 +139,7 @@ em { font-style: italic; color: var(--accent); }
   flex-shrink: 0;
 }
 .eyebrow.center { justify-content: center; }
+.section-title.center { text-align: center; }
 
 .section-title {
   font-family: 'Syne', sans-serif;
@@ -348,6 +349,25 @@ nav.scrolled {
   white-space: nowrap;
 }
 .nav-cta:hover { background: var(--accent-hover); transform: translateY(-1px); }
+
+.nav-ig {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  border: 1px solid var(--accent-dim);
+  background: var(--accent-glow);
+  padding: 8px 16px 8px 12px;
+  border-radius: 99px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.3s var(--ease), border-color 0.3s var(--ease), transform 0.3s var(--ease);
+}
+.nav-ig svg { width: 16px; height: 16px; flex-shrink: 0; }
+.nav-ig:hover { background: var(--accent); color: #0a0a0a; border-color: var(--accent); transform: translateY(-1px); }
 
 /* Hamburger */
 .hamburger {
@@ -1136,6 +1156,49 @@ nav.scrolled {
 .trole { font-size: 12px; color: var(--text-dim); margin-top: 3px; }
 
 /* ============================================================
+   RESULTS — real client proof carousel
+============================================================ */
+.results-section {
+  padding: 7rem 2.5rem;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+.results-scroll {
+  position: relative;
+  max-width: 1200px;
+  margin: 3rem auto 0;
+}
+.results-track {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  padding: 0.5rem 3.5rem 1rem;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.results-track::-webkit-scrollbar { display: none; }
+.result-card {
+  flex: 0 0 auto;
+  width: 260px;
+  scroll-snap-align: center;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--card);
+  transition: border-color 0.3s var(--ease), transform 0.3s var(--ease);
+}
+.result-card:hover { border-color: var(--border-accent); transform: translateY(-4px) translateZ(0); }
+.result-media { display: block; width: 100%; }
+video.result-media { height: auto; aspect-ratio: 9/16; object-fit: cover; background: #050505; }
+img.result-media { height: auto; object-fit: contain; background: #050505; }
+@media (max-width: 640px) {
+  .result-card { width: 210px; }
+  .results-track { padding: 0.5rem 2.75rem 1rem; }
+}
+
+/* ============================================================
    ABOUT / TEAM (expanded)
 ============================================================ */
 .about-section {
@@ -1241,6 +1304,13 @@ nav.scrolled {
 .team-card.sm .t-name { font-size: 13px; }
 .t-role { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
 .team-card.sm .t-role { font-size: 11px; }
+.t-quote {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  margin-top: 12px;
+  font-style: italic;
+}
 
 /* ============================================================
    FINAL CTA
@@ -1438,7 +1508,7 @@ footer {
 }
 
 @media (max-width: 768px) {
-  .nav-links, .nav-cta { display: none; }
+  .nav-links, .nav-cta, .nav-ig { display: none; }
   .hamburger { display: flex; }
   .sticky-cta { display: flex; }
   .mobile-overlay { display: flex; }
@@ -1486,6 +1556,7 @@ footer {
   <a href="#services" onclick="closeMob()">Services</a>
   <a href="#process"  onclick="closeMob()">Process</a>
   <a href="#contact"  onclick="closeMob()">Contact</a>
+  <a href="https://instagram.com/bejucreative" target="_blank" rel="noopener" onclick="closeMob()" class="mob-sub">@bejucreative →</a>
   <a href="mailto:bejusipe@gmail.com?subject=Portfolio%20Inquiry" onclick="closeMob()" class="mob-sub">Contact Us →</a>
 </div>
 
@@ -1502,6 +1573,10 @@ footer {
     <li><a href="#process">Process</a></li>
     <li><a href="#contact">Contact</a></li>
   </ul>
+  <a href="https://instagram.com/bejucreative" target="_blank" rel="noopener" class="nav-ig" aria-label="BEJU Creative on Instagram">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5.5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.3" cy="6.7" r="1.15" fill="currentColor" stroke="none"/></svg>
+    <span>@bejucreative</span>
+  </a>
   <a href="mailto:bejusipe@gmail.com?subject=Portfolio%20Inquiry" class="nav-cta">Contact Us</a>
   <button class="hamburger" id="hamburger" aria-label="Open menu">
     <span></span><span></span><span></span>
@@ -1512,7 +1587,7 @@ footer {
      HERO
 ============================================================ -->
 <section class="hero" id="home">
-  <p class="hero-eyebrow">★ Trusted by 50+ Creators &amp; Brands</p>
+  <p class="hero-eyebrow">★ Short-form editing for podcasts &amp; founders</p>
 
   <h1 class="hero-h1">
     We turn creators<br>into <em>authorities.</em>
@@ -1534,8 +1609,8 @@ footer {
   <a href="#guarantee" class="hero-guarantee">Double your views, or you don't pay →</a>
 
   <div class="hero-pills">
-    <span class="pill"><span class="pill-star">✦</span> 2M+ Views Delivered</span>
-    <span class="pill"><span class="pill-star">✦</span> 48hr Turnaround</span>
+    <span class="pill"><span class="pill-star">✦</span> 10M+ Views Delivered</span>
+    <span class="pill"><span class="pill-star">✦</span> 24hr Turnaround</span>
     <span class="pill"><span class="pill-star">✦</span> 97% Client Retention</span>
   </div>
 
@@ -1761,15 +1836,15 @@ footer {
 <section class="stats-section" id="stats">
   <div class="stats-grid">
     <div class="stat-item reveal">
-      <span class="stat-num" data-target="120" data-suffix="+">0</span>
-      <span class="stat-lbl">Videos Delivered</span>
+      <span class="stat-num" data-target="35" data-suffix="+">0</span>
+      <span class="stat-lbl">Happy Clients</span>
     </div>
     <div class="stat-item reveal d1">
-      <span class="stat-num" data-target="2" data-suffix="M+">0</span>
+      <span class="stat-num" data-target="10" data-suffix="M+">0</span>
       <span class="stat-lbl">Views Generated</span>
     </div>
     <div class="stat-item reveal d2">
-      <span class="stat-num" data-target="48" data-suffix="hr">0</span>
+      <span class="stat-num" data-target="24" data-suffix="hr">0</span>
       <span class="stat-lbl">Avg. Turnaround</span>
     </div>
     <div class="stat-item reveal d3">
@@ -1870,7 +1945,7 @@ footer {
       <div class="svc-card reveal d3">
         <svg class="svc-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         <div class="svc-title">Rush Delivery</div>
-        <div class="svc-desc">48hr turnaround for fast-moving brands. Trend windows close fast — we make sure you don't miss them.</div>
+        <div class="svc-desc">24hr turnaround for fast-moving brands. Trend windows close fast — we make sure you don't miss them.</div>
       </div>
 
     </div>
@@ -1908,45 +1983,38 @@ footer {
       <div class="process-step reveal d4">
         <span class="p-num">04</span>
         <div class="p-title">Deliver</div>
-        <div class="p-desc">Ready to post in 48 hours — optimised, exported, and formatted for every platform.</div>
+        <div class="p-desc">Ready to post in 24 hours — optimised, exported, and formatted for every platform.</div>
       </div>
     </div>
   </div>
 </section>
 
 <!-- ============================================================
-     TESTIMONIALS
+     RESULTS — real client screenshots + a real video testimonial
 ============================================================ -->
-<section class="testimonials-section" id="results">
-  <div class="testimonials-inner">
-    <div class="reveal">
-      <div class="eyebrow">Results</div>
-      <h2 class="section-title">Clients who <em>scaled.</em></h2>
+<section class="results-section" id="results">
+  <div class="reveal">
+    <div class="eyebrow center">Results</div>
+    <h2 class="section-title center">Real growth. <em>Real people.</em></h2>
+  </div>
+  <div class="results-scroll">
+    <button class="carousel-arrow carousel-arrow-prev" id="resPrev" aria-label="Previous result">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </button>
+    <div class="results-track" id="resultsTrack">
+      <div class="result-card reveal d1">
+        <video class="result-media" playsinline muted loop preload="metadata" poster="results/testimonial-1-poster.jpg" controls aria-label="Client video testimonial">
+          <source src="results/testimonial-1.mp4" type="video/mp4">
+        </video>
+      </div>
+      <div class="result-card reveal d2"><img class="result-media" src="results/testimonial-2.jpeg" alt="Client message about reel package results" loading="lazy"></div>
+      <div class="result-card reveal d3"><img class="result-media" src="results/testimonial-3.jpeg" alt="Client message about follower growth from reels" loading="lazy"></div>
+      <div class="result-card reveal d4"><img class="result-media" src="results/testimonial-4.png" alt="Client message about views and sales from a clip" loading="lazy"></div>
+      <div class="result-card reveal d5"><img class="result-media" src="results/testimonial-5.png" alt="Client message about follower growth overnight" loading="lazy"></div>
     </div>
-    <div class="testimonials-grid">
-
-      <div class="tcard reveal d1">
-        <div class="tquote">"</div>
-        <p class="ttext">BEJU turned our raw clips into our best-performing content month after month. Reels went from 12K average to consistently hitting 200K+.</p>
-        <div class="tname">Alex M.</div>
-        <div class="trole">DTC Brand Founder</div>
-      </div>
-
-      <div class="tcard reveal d2">
-        <div class="tquote">"</div>
-        <p class="ttext">Fast, sharp, and they actually understand short-form. Game changer. I stopped stressing about posting and started focusing on creating.</p>
-        <div class="tname">Sara K.</div>
-        <div class="trole">TikTok Creator — 800K Followers</div>
-      </div>
-
-      <div class="tcard reveal d3">
-        <div class="tquote">"</div>
-        <p class="ttext">Our Reels retention jumped 3× within the first month. The hooks they write are genuinely better than anything our internal team produced.</p>
-        <div class="tname">Jordan T.</div>
-        <div class="trole">SaaS Marketing Lead</div>
-      </div>
-
-    </div>
+    <button class="carousel-arrow carousel-arrow-next" id="resNext" aria-label="Next result">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+    </button>
   </div>
 </section>
 
@@ -1959,92 +2027,42 @@ footer {
     <!-- Main section header -->
     <div class="reveal">
       <div class="eyebrow">The Team</div>
-      <h2 class="section-title">A full agency built<br>for your <em>growth.</em></h2>
+      <h2 class="section-title">The people behind<br>every <em>edit.</em></h2>
     </div>
     <p class="about-intro reveal d1">
-      BEJU Creative isn't just two editors — it's a full team built around your growth. From cut to client support, every member exists to make your content perform and your experience effortless.
+      Five people, each doing one thing well — from the first cut to the final check before anything ships to you.
     </p>
 
-    <!-- ── Sub-section A: Editors & Reviewers ── -->
-    <div class="team-sub-header reveal">
-      <div class="team-sub-eyebrow">Editors &amp; Reviewers</div>
-      <h3 class="team-sub-title">The team behind every <em>cut.</em></h3>
-    </div>
-
-    <div class="team-grid-8">
-      <div class="team-card reveal d1">
-        <div class="t-avatar">B</div>
-        <div class="t-name">Ben Marcinkus</div>
-        <div class="t-role">Co-Founder &amp; Lead Editor</div>
-      </div>
-      <div class="team-card reveal d2">
-        <div class="t-avatar">J</div>
-        <div class="t-name">Juc Pavlov</div>
-        <div class="t-role">Co-Founder &amp; Creative Director</div>
-      </div>
-      <div class="team-card reveal d3">
-        <div class="t-avatar">M</div>
-        <div class="t-name">Mason Cole</div>
-        <div class="t-role">Senior Video Editor</div>
-      </div>
-      <div class="team-card reveal d4">
-        <div class="t-avatar">L</div>
-        <div class="t-name">Lukas Berg</div>
-        <div class="t-role">Senior Video Editor</div>
-      </div>
+    <div class="team-grid-5" style="margin-top:2.5rem;">
       <div class="team-card reveal d1">
         <div class="t-avatar">E</div>
-        <div class="t-name">Ethan Hayes</div>
-        <div class="t-role">Short-Form Editor</div>
+        <div class="t-name">Elena Vasil</div>
+        <div class="t-role">Editor</div>
+        <div class="t-quote">"I love finding the moment in your footage that makes people stop scrolling. Send me your raw clips and let's see what story is already in there."</div>
       </div>
       <div class="team-card reveal d2">
-        <div class="t-avatar">N</div>
-        <div class="t-name">Noah Brennan</div>
-        <div class="t-role">Short-Form Editor</div>
+        <div class="t-avatar">M</div>
+        <div class="t-name">Marcus Ryen</div>
+        <div class="t-role">Editor</div>
+        <div class="t-quote">"There's something satisfying about turning a messy timeline into something that just flows. If you've got footage sitting around, I'd love to take a look."</div>
       </div>
       <div class="team-card reveal d3">
-        <div class="t-avatar">A</div>
-        <div class="t-name">Anna Lindqvist</div>
-        <div class="t-role">Quality Reviewer</div>
-      </div>
-      <div class="team-card reveal d4">
-        <div class="t-avatar">M</div>
-        <div class="t-name">Mia Kovač</div>
-        <div class="t-role">Quality Reviewer</div>
-      </div>
-    </div>
-
-    <!-- ── Sub-section B: Client Support ── -->
-    <div class="team-sub-header reveal" style="margin-top:3.5rem;">
-      <div class="team-sub-eyebrow">Client Support</div>
-      <h3 class="team-sub-title">Here when you <em>need us.</em></h3>
-    </div>
-
-    <div class="team-grid-5">
-      <div class="team-card sm reveal d1">
-        <div class="t-avatar">O</div>
-        <div class="t-name">Olivia Reyes</div>
-        <div class="t-role">Head of Client Success</div>
-      </div>
-      <div class="team-card sm reveal d2">
-        <div class="t-avatar">L</div>
-        <div class="t-name">Liam Walsh</div>
-        <div class="t-role">Account Manager</div>
-      </div>
-      <div class="team-card sm reveal d3">
         <div class="t-avatar">S</div>
-        <div class="t-name">Sofia Marek</div>
-        <div class="t-role">Client Coordinator</div>
+        <div class="t-name">Sofia Marn</div>
+        <div class="t-role">Client Support</div>
+        <div class="t-quote">"I like getting to know the people I work with, not just their projects. If you ever need anything or just want to talk through an idea, I'm here for it."</div>
       </div>
-      <div class="team-card sm reveal d4">
-        <div class="t-avatar">J</div>
-        <div class="t-name">Jack Thornton</div>
-        <div class="t-role">Onboarding Specialist</div>
+      <div class="team-card reveal d4">
+        <div class="t-avatar">D</div>
+        <div class="t-name">Daniel Kova</div>
+        <div class="t-role">Client Support</div>
+        <div class="t-quote">"First projects can feel a little uncertain, and I get that. I'm happy to walk you through everything so it feels easy from the start."</div>
       </div>
-      <div class="team-card sm reveal d5">
-        <div class="t-avatar">E</div>
-        <div class="t-name">Emma Visser</div>
-        <div class="t-role">Support Lead</div>
+      <div class="team-card reveal d5">
+        <div class="t-avatar">T</div>
+        <div class="t-name">Tomas Reig</div>
+        <div class="t-role">Video Finalizer &amp; Quality Auditor</div>
+        <div class="t-quote">"Before anything goes out, I like giving it one last, careful look — just to make sure it feels right. It's a small step that makes a real difference."</div>
       </div>
     </div>
 
@@ -2067,6 +2085,7 @@ footer {
     <a href="mailto:bejusipe@gmail.com?subject=Portfolio%20Inquiry" class="fcta-email">bejusipe@gmail.com →</a>
   </div>
   <div class="social-row reveal d2">
+    <a href="https://instagram.com/bejucreative" target="_blank" rel="noopener">Instagram DM</a>
     <a href="mailto:bejusipe@gmail.com?subject=Portfolio%20Inquiry">Email</a>
   </div>
 </section>
@@ -2081,7 +2100,9 @@ footer {
     </a>
     <p class="footer-copy">© 2026 — Built for growth.</p>
     <div class="footer-links">
+      <a href="https://instagram.com/bejucreative" target="_blank" rel="noopener">Instagram</a>
       <a href="mailto:bejusipe@gmail.com?subject=Portfolio%20Inquiry">Email</a>
+      <a href="terms.html">Terms of Service</a>
     </div>
   </div>
 </footer>
@@ -2429,6 +2450,16 @@ document.getElementById('viewPromptBtn').addEventListener('click', hidePrompt);
 
 /* ── Initial layout ── */
 positionCards();
+
+/* ── Results carousel — simple native scroll-snap, independent of the
+   work carousel above (that one's custom transform logic is video-only
+   with mute buttons; this one mixes video + images, so it stays simple) ── */
+const resultsTrack = document.getElementById('resultsTrack');
+if (resultsTrack) {
+  const cardW = () => resultsTrack.querySelector('.result-card').offsetWidth + 20;
+  document.getElementById('resPrev').addEventListener('click', () => resultsTrack.scrollBy({ left: -cardW(), behavior: 'smooth' }));
+  document.getElementById('resNext').addEventListener('click', () => resultsTrack.scrollBy({ left: cardW(), behavior: 'smooth' }));
+}
 </script>
 </body>
 </html>
