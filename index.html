@@ -99,26 +99,6 @@ body::after {
 nav, section, div.marquee-band, footer { position: relative; z-index: 1; }
 
 /* ============================================================
-   CUSTOM CURSOR
-============================================================ */
-.cursor {
-  position: fixed;
-  top: 0; left: 0;
-  width: 10px;
-  height: 10px;
-  background: var(--accent);
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 99999;
-  transform: translate3d(-50%, -50%, 0);
-  will-change: transform;
-  transition: width 0.25s var(--ease), height 0.25s var(--ease), opacity 0.25s var(--ease);
-  mix-blend-mode: difference;
-}
-.cursor.big { width: 32px; height: 32px; opacity: 0.5; }
-@media (hover: none) { .cursor { display: none; } }
-
-/* ============================================================
    UTILITY
 ============================================================ */
 em { font-style: italic; color: var(--accent); }
@@ -203,18 +183,6 @@ em { font-style: italic; color: var(--accent); }
   opacity: 1;
   transform: translateY(0) translateZ(0);
 }
-/* Blur-rise VFX only on hover-capable (desktop-class) devices that allow motion —
-   phones get the lighter transform/opacity version above */
-@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  .reveal {
-    filter: blur(9px);
-    transition:
-      opacity  0.9s var(--ease-reveal),
-      transform 0.9s var(--ease-reveal),
-      filter   0.9s var(--ease-reveal);
-  }
-  .reveal.in { filter: blur(0); }
-}
 .d1 { transition-delay: 0.1s; }
 .d2 { transition-delay: 0.2s; }
 .d3 { transition-delay: 0.3s; }
@@ -288,9 +256,9 @@ nav {
   align-items: center;
   justify-content: space-between;
   padding: 1.4rem 2.5rem;
-  background: rgba(10, 10, 10, 0.72);
-  backdrop-filter: blur(12px) saturate(160%);
-  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  background: rgba(10, 10, 10, 0.82);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   border-bottom: 1px solid var(--border);
   z-index: 1000;
   transition: padding 0.35s var(--ease), background 0.35s var(--ease);
@@ -1594,9 +1562,6 @@ footer {
 <div class="ambient-tl" aria-hidden="true"></div>
 <div class="ambient-br" aria-hidden="true"></div>
 
-<!-- Custom cursor (desktop only) -->
-<div class="cursor" id="cursor"></div>
-
 <!-- Mobile menu overlay -->
 <div class="mobile-overlay" id="mobileOverlay">
   <a href="#work"     onclick="closeMob()">Work</a>
@@ -2224,24 +2189,6 @@ footer {
      JAVASCRIPT
 ============================================================ -->
 <script>
-/* ── Custom cursor (transform + rAF — never touches layout) ── */
-const cur = document.getElementById('cursor');
-let curX = 0, curY = 0, curTicking = false;
-document.addEventListener('mousemove', e => {
-  curX = e.clientX; curY = e.clientY;
-  if (!curTicking) {
-    requestAnimationFrame(() => {
-      cur.style.transform = 'translate3d(' + curX + 'px,' + curY + 'px,0) translate(-50%,-50%)';
-      curTicking = false;
-    });
-    curTicking = true;
-  }
-}, { passive: true });
-document.querySelectorAll('a,button,.reel-card,.svc-card,.tcard,.team-card').forEach(el => {
-  el.addEventListener('mouseenter', () => cur.classList.add('big'));
-  el.addEventListener('mouseleave', () => cur.classList.remove('big'));
-});
-
 /* ── Nav shrink + sticky mobile CTA (one rAF-throttled scroll handler) ── */
 const navEl = document.getElementById('nav');
 const stickyCta = document.getElementById('stickyCta');
