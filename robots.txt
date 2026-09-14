@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# No crawl traps here — single-page site plus media folders.
+Disallow: /hero/README.txt
+Disallow: /work/README.txt
+
+Sitemap: https://bejucreative.digital/sitemap.xml
