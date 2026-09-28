@@ -155,362 +155,291 @@
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
 <style>
 /* ============================================================
-   BEJÚ CREATIVE
-   Palette sampled from the real brand mark (email-logo.png):
-   deep olive-green ground, gold for anything that must be read.
-   Sharp corners, zero shadows, huge uppercase display type.
+   BEJÚ CREATIVE — homepage layout. Glass & Gold system:
+   tokens and shared primitives live in /tokens.css (see DESIGN.md).
 ============================================================ */
-:root{
-  --ground:      #0C0F08;
-  --ground-2:    #0A0D06;
-  --surface:     #141A0C;
-  --surface-2:   #1E2409;
-  --border:      #253009;
-  --border-2:    #313B0F;
-  --gold:        #D4AF37;
-  --gold-dim:    #A8862B;
-  --gold-bright: #E8C55A;
-  --text:        #F2F2F2;
-  --muted:       #8A8F7E;
-  --dim:         #5C6152;
-  --ease:        cubic-bezier(.22,1,.36,1);
-  --pad:         clamp(1.25rem, 5vw, 7rem);
-}
-
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{background:var(--ground);-webkit-text-size-adjust:100%;scroll-behavior:smooth}
-body{
-  font-family:'Archivo',system-ui,sans-serif;
-  background:var(--ground);
-  color:var(--muted);
-  overflow-x:hidden;
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
-}
+/* No CSS smooth scrolling here: it fights ScrollTrigger (see the in-page link handler). */
+body{overflow-x:hidden}
 img,video{max-width:100%;display:block}
 a{color:inherit;text-decoration:none}
 ul{list-style:none}
-
-/* Smoke + grain — how their ground actually reads */
-body::before{
-  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
-  background:
-    radial-gradient(900px 700px at 12% -5%,  rgba(49,59,15,.55), transparent 62%),
-    radial-gradient(800px 620px at 88% 12%,  rgba(212,175,55,.055), transparent 60%),
-    radial-gradient(1000px 800px at 50% 105%,rgba(30,36,9,.6),    transparent 64%);
-}
-body::after{
-  content:'';position:fixed;inset:0;z-index:9000;pointer-events:none;opacity:.032;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size:170px 170px;
-}
 main,nav,footer{position:relative;z-index:1}
 
 /* ── TYPE ─────────────────────────────────────────────────── */
 .display{
-  font-family:'Archivo Black',Impact,sans-serif;
-  font-weight:400;text-transform:uppercase;
-  line-height:.9;letter-spacing:-.015em;color:var(--text);
-  text-wrap:balance; /* no single word stranded on the last line */
+  font-family:var(--font);font-weight:700;color:var(--ink);
+  line-height:1.04;letter-spacing:-.035em;text-wrap:balance;
 }
-/* Their tail is #424242 on a #121211 ground. Ours sits on #0C0F08, which is
-   darker — the same value reads as nearly invisible, so it is lifted just
-   enough to stay legible while keeping the same top-to-bottom fade. */
+/* brushed-silver sheen on headlines; stays >12:1 on the canvas */
 .grad{
-  background:linear-gradient(180deg,#EDEDED 0%,#8C8C86 62%,#5E5E58 100%);
-  -webkit-background-clip:text;background-clip:text;
-  -webkit-text-fill-color:transparent;
+  background:linear-gradient(180deg,#FFFFFF 0%,#EDEDEF 52%,#BDBEB8 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
 }
-h1.display{font-size:clamp(3.2rem,11vw,8.6rem)}
-h2.display{font-size:clamp(2.1rem,5.4vw,4.9rem)}
-/* The hero headline is an h2 so the real h1 can carry keywords for search.
-   Without this it inherits the section-heading scale and GET SEEN collapses
-   to roughly half size. */
-h2.display.hero-h2{font-size:clamp(3.2rem,11vw,8.6rem)}
-h3{font-family:'Archivo Black',sans-serif;font-weight:400}
+h2.display{font-size:var(--t-h2)}
+/* The hero headline is an h2 so the real h1 can carry keywords for search. */
+h2.display.hero-h2{font-size:var(--t-hero);line-height:.9;letter-spacing:-.045em}
+h3{font-family:var(--font);font-weight:600;letter-spacing:-.015em;color:var(--ink)}
 
 .kicker{
-  font-size:.72rem;font-weight:600;letter-spacing:.24em;text-transform:uppercase;
-  color:var(--gold);display:flex;align-items:center;gap:.75rem;margin-bottom:1.5rem;
+  font-size:var(--t-label);font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--gold-solid);display:flex;align-items:center;gap:.75rem;margin-bottom:1.25rem;
 }
-.kicker::before{content:'';width:2rem;height:1px;background:var(--gold);flex-shrink:0}
+.kicker::before{content:'';width:1.6rem;height:1px;background:linear-gradient(90deg,var(--gold-bronze),var(--gold-champagne));flex-shrink:0}
 .kicker.mid{justify-content:center}
+.lede{font-size:var(--t-lead);line-height:1.5;letter-spacing:-.01em;color:var(--body);max-width:34rem;text-wrap:pretty}
+.body{font-size:var(--t-body);line-height:1.65;color:var(--body);max-width:38rem}
+.body strong{color:var(--ink);font-weight:600}
 
-.lede{
-  font-size:.9rem;font-weight:500;line-height:1.85;letter-spacing:.13em;
-  text-transform:uppercase;color:var(--muted);max-width:34rem;text-wrap:pretty;
-}
-.body{font-size:1rem;line-height:1.85;color:var(--muted);max-width:38rem}
-.body strong{color:var(--text);font-weight:600}
+/* ── BUTTONS (materials in tokens.css; .btn is the GSAP magnetic hook) ── */
+.btn{will-change:transform}
 
-/* ── BUTTONS ──────────────────────────────────────────────── */
-.btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:.7rem;
-  font-size:.76rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
-  padding:1.15rem 2.4rem;border-radius:999px;cursor:pointer;
-  border:1px solid var(--gold);color:var(--gold);background:transparent;
-  transition:color .35s var(--ease),border-color .35s var(--ease);
-  position:relative;overflow:hidden;isolation:isolate;will-change:transform;
-}
-.btn::before{
-  content:'';position:absolute;inset:0;z-index:-1;background:var(--gold);
-  transform:translateY(101%);transition:transform .45s var(--ease);
-}
-.btn:hover{color:var(--ground)}
-.btn:hover::before{transform:translateY(0)}
-.btn.solid{background:var(--gold);color:var(--ground)}
-.btn.solid::before{background:var(--gold-bright)}
-.btn.ghost{border-color:var(--border-2);color:var(--text)}
-.btn.ghost::before{background:var(--text)}
-.btn.ghost:hover{color:var(--ground);border-color:var(--text)}
-
-/* ── NAV ──────────────────────────────────────────────────── */
+/* ── NAV — floating glass capsule ─────────────────────────── */
 nav{
-  position:fixed;top:0;left:0;right:0;z-index:1000;
-  display:flex;align-items:center;justify-content:space-between;
-  padding:1.5rem var(--pad);border-bottom:1px solid transparent;
-  transition:background .4s var(--ease),padding .4s var(--ease),border-color .4s var(--ease);
+  position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:1000;
+  width:min(76rem,calc(100% - 28px));height:64px;padding:0 10px 0 22px;border-radius:var(--r-xl);
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  background:var(--glass-fill-strong);
+  -webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
+  border:1px solid var(--hairline);box-shadow:var(--glass-highlight),var(--shadow-float);
+  transition:background var(--d-base) var(--ease),border-color var(--d-base) var(--ease);
 }
-nav.stuck{
-  background:rgba(12,15,8,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-  padding:1rem var(--pad);border-bottom-color:var(--border);
-}
-/* The real BC monogram, white on transparent. Height-locked so it stays
-   optically level with the nav links at every viewport. */
-.brand{display:flex;align-items:center;flex-shrink:0}
-.brand img{
-  height:2rem;width:auto;display:block;
-  transition:opacity .3s var(--ease);
-}
-.brand:hover img{opacity:.72}
-nav.stuck .brand img{height:1.75rem;transition:height .4s var(--ease),opacity .3s var(--ease)}
-footer .brand img{height:2.6rem}
-@media(max-width:900px){ .brand img{height:1.7rem} }
-.nav-links{display:flex;gap:2.6rem;align-items:center}
+nav.stuck{border-color:var(--hairline-strong)}
+@supports not ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){nav{background:var(--surface)}}
+.brand{display:flex;align-items:center;flex-shrink:0;min-height:44px;border-radius:var(--r-sm)}
+.brand img{height:1.75rem;width:auto;display:block;transition:opacity var(--d-base) var(--ease)}
+.brand:hover img{opacity:.75}
+footer .brand img{height:2.4rem}
+.nav-links{display:flex;gap:.25rem;align-items:center}
 .nav-links a{
-  font-size:.74rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
-  color:var(--muted);transition:color .3s var(--ease);position:relative;
+  display:block;padding:.6rem .9rem;border-radius:var(--r-pill);
+  font-size:.9rem;font-weight:500;letter-spacing:-.01em;color:var(--body);
+  transition:color var(--d-fast) var(--ease),background var(--d-fast) var(--ease);
 }
-.nav-links a::after{content:'';position:absolute;left:0;bottom:-6px;width:0;height:1px;background:var(--gold);transition:width .35s var(--ease)}
-.nav-links a:hover{color:var(--text)}
-.nav-links a:hover::after{width:100%}
-.nav-cta{font-size:.7rem;padding:.85rem 1.7rem}
-.burger{display:none;flex-direction:column;gap:5px;background:none;border:0;cursor:pointer;padding:4px;z-index:1001}
-.burger span{display:block;width:24px;height:2px;background:var(--text);transition:transform .35s var(--ease),opacity .25s}
-.burger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.nav-links a:hover{color:var(--ink);background:rgba(255,255,255,.06)}
+.nav-cta{min-height:44px;padding:.65rem 1.25rem;font-size:.88rem}
+.burger{display:none;flex-direction:column;justify-content:center;gap:5px;width:44px;height:44px;background:none;border:0;cursor:pointer;border-radius:var(--r-pill);align-items:center;z-index:1001}
+.burger span{display:block;width:20px;height:1.5px;background:var(--ink);border-radius:2px;transition:transform var(--d-base) var(--ease),opacity var(--d-fast)}
+.burger.open span:nth-child(1){transform:translateY(6.5px) rotate(45deg)}
 .burger.open span:nth-child(2){opacity:0}
-.burger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+.burger.open span:nth-child(3){transform:translateY(-6.5px) rotate(-45deg)}
 .mobnav{
-  position:fixed;inset:0;z-index:999;background:var(--ground);
-  display:none;flex-direction:column;align-items:center;justify-content:center;gap:1.4rem;
-  opacity:0;pointer-events:none;transition:opacity .4s var(--ease);
+  position:fixed;inset:0;z-index:999;display:none;flex-direction:column;align-items:center;justify-content:center;gap:.5rem;
+  background:rgba(9,11,7,.72);-webkit-backdrop-filter:saturate(160%) blur(30px);backdrop-filter:saturate(160%) blur(30px);
+  opacity:0;pointer-events:none;transition:opacity var(--d-base) var(--ease);
 }
+@supports not ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){.mobnav{background:var(--canvas)}}
 .mobnav.open{opacity:1;pointer-events:auto}
-.mobnav a{font-family:'Archivo Black',sans-serif;font-size:2rem;text-transform:uppercase;color:var(--text)}
-.mobnav a:hover{color:var(--gold)}
+.mobnav a{font-size:1.9rem;font-weight:700;letter-spacing:-.03em;color:var(--ink);padding:.5rem 1.2rem;border-radius:var(--r-md)}
+.mobnav a:hover{color:var(--gold-solid)}
 
 /* ── SHELL ────────────────────────────────────────────────── */
-section{padding:clamp(5rem,11vw,10rem) var(--pad);position:relative}
-.wrap{max-width:78rem;margin:0 auto;width:100%}
-.rule{border-top:1px solid var(--border)}
+section{padding:var(--section) var(--pad);position:relative}
+.wrap{max-width:74rem;margin:0 auto;width:100%}
+.rule{border-top:1px solid rgba(255,255,255,.05)}
 
 /* ── HERO ─────────────────────────────────────────────────── */
 .hero{
   min-height:100svh;display:grid;align-items:center;
   grid-template-columns:1.15fr .85fr;gap:clamp(2rem,5vw,5rem);
-  padding-top:clamp(7rem,14vh,11rem);padding-bottom:clamp(4rem,8vh,7rem);
+  padding-top:clamp(8rem,16vh,11rem);padding-bottom:clamp(4rem,8vh,7rem);
+  max-width:calc(74rem + 2 * var(--pad));margin:0 auto;
 }
-.hero h1{margin:.4rem 0 2rem}
-.hero .lede{margin-bottom:2.6rem}
-.hero-actions{display:flex;gap:1rem;flex-wrap:wrap;align-items:center}
-.hero-note{margin-top:1.4rem;font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);display:flex;align-items:center;gap:.6rem}
-.hero-note b{color:var(--gold);font-weight:700}
+.hero h2{margin:.2rem 0 1.8rem}
+.hero .lede{margin-bottom:2.4rem}
+.hero-actions{display:flex;gap:.75rem;flex-wrap:wrap;align-items:center}
+.hero-note{margin-top:1.4rem;font-size:var(--t-caption);color:var(--muted);display:flex;align-items:center;gap:.5rem}
+.hero-note b{color:var(--gold-solid);font-weight:600}
 
+/* titanium-framed phone */
 .phone{
-  position:relative;width:min(20rem,100%);margin-inline:auto;
-  border:1px solid var(--border-2);background:#000;padding:.55rem;border-radius:2.2rem;
+  position:relative;width:min(19.5rem,100%);margin-inline:auto;padding:.5rem;border-radius:3rem;
+  background:linear-gradient(145deg,#34362F 0%,#16170F 38%,#0B0C08 60%,#26271F 100%);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.14),inset 0 1px 0 rgba(255,255,255,.22),
+             0 40px 90px -30px rgba(0,0,0,.9),0 0 0 1px rgba(0,0,0,.6);
   will-change:transform;
 }
-.phone-screen{position:relative;overflow:hidden;border-radius:1.8rem;background:#000;aspect-ratio:9/16}
+.phone-screen{position:relative;overflow:hidden;border-radius:2.5rem;background:#000;aspect-ratio:9/16}
 .phone-screen video{width:100%;height:100%;object-fit:cover}
-.phone-scrim{position:absolute;inset:0;z-index:2;background:linear-gradient(180deg,rgba(0,0,0,.5) 0%,transparent 26%,transparent 56%,rgba(0,0,0,.88) 100%)}
-.phone-pill{position:absolute;top:.7rem;left:50%;transform:translateX(-50%);width:4.4rem;height:1.05rem;background:#000;border-radius:999px;z-index:3}
-.phone-stat{position:absolute;left:0;right:0;bottom:1.6rem;text-align:center;z-index:3}
-.phone-stat b{display:block;font-family:'Archivo Black',sans-serif;font-size:2.6rem;color:#fff;line-height:1;letter-spacing:-.02em}
-.phone-stat span{font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold)}
-.scrollcue{position:absolute;left:var(--pad);bottom:2.2rem;display:flex;align-items:center;gap:.7rem;font-size:.6rem;letter-spacing:.28em;text-transform:uppercase;color:var(--dim)}
-.scrollcue i{display:block;width:3rem;height:1px;background:var(--border-2);position:relative;overflow:hidden}
-.scrollcue i::after{content:'';position:absolute;inset:0;background:var(--gold);transform:translateX(-100%);animation:cue 2.2s var(--ease) infinite}
+.phone-scrim{position:absolute;inset:0;z-index:2;background:linear-gradient(180deg,rgba(0,0,0,.45) 0%,transparent 24%,transparent 58%,rgba(0,0,0,.86) 100%)}
+.phone-pill{position:absolute;top:.75rem;left:50%;transform:translateX(-50%);width:5rem;height:1.35rem;background:#000;border-radius:var(--r-pill);z-index:3}
+.phone-stat{position:absolute;left:0;right:0;bottom:1.5rem;text-align:center;z-index:3}
+.phone-stat b{display:block;font-size:2.7rem;font-weight:700;line-height:1;letter-spacing:-.04em;
+  background:var(--gold-text);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.phone-stat span{font-size:.7rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
+.scrollcue{position:absolute;left:var(--pad);bottom:2rem;display:flex;align-items:center;gap:.7rem;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.scrollcue i{display:block;width:2.6rem;height:1px;background:var(--hairline-strong);position:relative;overflow:hidden}
+.scrollcue i::after{content:'';position:absolute;inset:0;background:var(--gold);transform:translateX(-100%);animation:cue 2.4s var(--ease) infinite}
 @keyframes cue{0%{transform:translateX(-100%)}60%,100%{transform:translateX(100%)}}
 
 /* ── MARQUEE ──────────────────────────────────────────────── */
-.marquee{border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--ground-2);overflow:hidden;padding:1.5rem 0}
+.marquee{border-top:1px solid var(--hairline);border-bottom:1px solid var(--hairline);background:rgba(255,255,255,.015);overflow:hidden;padding:1.3rem 0}
 .marquee-row{display:flex;width:max-content;will-change:transform}
 .marquee-row span{
-  font-family:'Archivo Black',sans-serif;font-size:clamp(1.1rem,2vw,1.7rem);
-  text-transform:uppercase;color:transparent;padding:0 1.6rem;white-space:nowrap;
-  -webkit-text-stroke:1px var(--border-2);
+  font-size:clamp(1.1rem,2vw,1.6rem);font-weight:700;letter-spacing:-.02em;
+  color:transparent;padding:0 1.5rem;white-space:nowrap;-webkit-text-stroke:1px rgba(255,255,255,.2);
 }
-.marquee-row span.on{color:var(--gold);-webkit-text-stroke:0}
+.marquee-row span.on{-webkit-text-stroke:0;background:var(--gold-text);-webkit-background-clip:text;background-clip:text;color:var(--gold)}
 
 /* ── SPLIT ────────────────────────────────────────────────── */
 .split{display:grid;grid-template-columns:1fr 1fr;gap:clamp(2.5rem,6vw,6rem);align-items:center}
 .split.top{align-items:start}
+.eqbox{border-radius:var(--r-xl);padding:clamp(2.2rem,4vw,3.6rem);text-align:center}
+.eqbox b{display:block;font-size:clamp(2rem,4vw,3.1rem);font-weight:700;letter-spacing:-.04em;color:var(--ink);line-height:1}
+.eqbox i{display:block;font-style:normal;font-size:1.8rem;font-weight:600;margin:.8rem 0;
+  background:var(--gold-text);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.eqbox small{display:block;margin-top:1.1rem;font-size:var(--t-caption);color:var(--muted)}
 
-.eqbox{border:1px solid var(--border);background:var(--surface);padding:clamp(2rem,4vw,3.4rem);text-align:center}
-.eqbox b{display:block;font-family:'Archivo Black',sans-serif;font-size:clamp(1.9rem,4vw,3.1rem);color:var(--text);text-transform:uppercase;line-height:1}
-.eqbox i{display:block;font-style:normal;font-size:1.6rem;color:var(--gold);margin:.9rem 0;font-family:'Archivo Black',sans-serif}
-.eqbox small{display:block;margin-top:1.1rem;font-size:.62rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim)}
-
-/* ── PILLARS ──────────────────────────────────────────────── */
-.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);margin-top:3.5rem}
-.cell{background:var(--ground);padding:clamp(1.6rem,2.4vw,2.4rem);transition:background .4s var(--ease)}
-.cell:hover{background:var(--surface)}
-.cell .n{font-size:.62rem;letter-spacing:.22em;color:var(--gold);text-transform:uppercase;margin-bottom:1.4rem;display:block}
-.cell h3{font-size:1.15rem;text-transform:uppercase;color:var(--text);margin-bottom:.7rem;letter-spacing:-.01em}
-.cell p{font-size:.88rem;line-height:1.75;color:var(--muted)}
-.cell p a{display:inline-block;margin-top:.9rem;color:var(--gold);font-size:.7rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;text-decoration:none;transition:color .3s var(--ease)}
-.cell p a:hover{color:var(--gold-bright)}
-.platforms{display:flex;gap:1.4rem;flex-wrap:wrap;justify-content:center;margin-top:2.6rem;font-size:.64rem;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
-.platforms b{color:var(--muted);font-weight:600}
+/* ── CARDS ────────────────────────────────────────────────── */
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s-4);margin-top:3rem}
+.cell{border-radius:var(--r-lg);padding:clamp(1.5rem,2.2vw,2rem);transition:border-color var(--d-base) var(--ease),transform var(--d-base) var(--ease)}
+.cell:hover{border-color:var(--hairline-strong)}
+.cell .n{display:block;margin-bottom:1.2rem;font-size:var(--t-label);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-solid)}
+.cell h3{font-size:var(--t-h3);margin-bottom:.55rem}
+.cell p{font-size:.95rem;line-height:1.6;color:var(--body)}
+.cell p a{display:inline-flex;align-items:center;min-height:44px;margin-top:.4rem;color:var(--gold-solid);font-weight:600;font-size:.95rem;transition:color var(--d-fast) var(--ease)}
+.cell p a:hover{color:var(--gold-champagne)}
+.platforms{display:flex;gap:.5rem 1.2rem;flex-wrap:wrap;justify-content:center;margin-top:2.4rem;font-size:var(--t-caption);color:var(--muted)}
+.platforms b{color:var(--ink);font-weight:600}
 
 /* ── CHECKS ───────────────────────────────────────────────── */
-.checks{display:flex;flex-direction:column;gap:1.6rem}
-.check{display:flex;gap:1.1rem;align-items:flex-start}
-.check i{flex-shrink:0;width:1.5rem;height:1.5rem;border:1px solid var(--gold);color:var(--gold);display:flex;align-items:center;justify-content:center;font-style:normal;font-size:.7rem;margin-top:.2rem}
-.check p{font-size:.95rem;line-height:1.75;color:var(--muted)}
-.check p b{color:var(--text);font-weight:700}
+.checks{display:flex;flex-direction:column;gap:1.5rem}
+.check{display:flex;gap:1rem;align-items:flex-start}
+.check i{flex-shrink:0;width:1.6rem;height:1.6rem;border-radius:50%;margin-top:.15rem;
+  display:flex;align-items:center;justify-content:center;font-style:normal;font-size:.72rem;font-weight:700;
+  color:var(--on-gold);background:var(--gold-metal);box-shadow:var(--gold-edge)}
+.check p{font-size:var(--t-body);line-height:1.6;color:var(--body)}
+.check p b{color:var(--ink);font-weight:600}
 
 /* ── NUMBERS ──────────────────────────────────────────────── */
-.nums{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);margin-top:3.5rem}
-.num{background:var(--ground);padding:clamp(1.8rem,3vw,2.8rem)}
-.num b{display:block;font-family:'Archivo Black',sans-serif;font-size:clamp(2.4rem,4.6vw,3.8rem);color:var(--gold);line-height:1;letter-spacing:-.03em;margin-bottom:1rem}
-.num p{font-size:.82rem;line-height:1.7;color:var(--muted)}
+.nums{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s-4);margin-top:3rem}
+.num{border-radius:var(--r-lg);padding:clamp(1.7rem,2.6vw,2.4rem)}
+.num b{display:block;font-size:clamp(2.6rem,4.6vw,3.8rem);font-weight:700;line-height:1;letter-spacing:-.045em;margin-bottom:.9rem;
+  background:var(--gold-text);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:var(--gold)}
+.num p{font-size:.95rem;line-height:1.55;color:var(--body)}
 
 /* ── WORK RAIL ────────────────────────────────────────────── */
 /* Uniform card HEIGHT, width set by the footage's real aspect (--ar), so
    nothing is cropped and there are no bars. v/w are fallbacks for cards that
    don't set --ar. Letterboxed exports get their bars cut by
    scripts/optimize-video.sh before they reach the page. */
-.rail{display:flex;gap:1.25rem;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:1.5rem;scrollbar-width:none;--railH:clamp(19rem,32vw,27rem)}
+.rail{display:flex;gap:var(--s-4);overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:1.5rem;scrollbar-width:none;--railH:clamp(19rem,32vw,27rem)}
 .rail::-webkit-scrollbar{display:none}
 .clip{
   flex:0 0 auto;height:var(--railH);aspect-ratio:var(--ar);scroll-snap-align:start;position:relative;
-  border:1px solid var(--border);background:#000;overflow:hidden;
+  border-radius:var(--r-lg);background:#000;overflow:hidden;
+  box-shadow:inset 0 0 0 1px var(--hairline),var(--shadow-float);
 }
 .clip.v{--ar:9/16}
 .clip.w{--ar:16/9}
-.clip video{
-  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
-  transition:transform .7s var(--ease);
+.clip video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .7s var(--ease)}
+.clip:hover video{transform:scale(1.035)}
+/* label chip: real glass, it floats over moving video */
+.clip .tag{
+  position:absolute;top:12px;left:12px;z-index:2;padding:.4rem .7rem;border-radius:var(--r-pill);
+  font-size:.7rem;font-weight:600;letter-spacing:.02em;color:var(--ink);
+  background:rgba(12,14,10,.65);-webkit-backdrop-filter:saturate(160%) blur(14px);backdrop-filter:saturate(160%) blur(14px);
+  border:1px solid rgba(255,255,255,.14);
 }
-.clip:hover video{transform:scale(1.045)}
-.clip .tag{position:absolute;top:0;left:0;background:var(--gold);color:var(--ground);font-size:.58rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;padding:.45rem .8rem;z-index:2}
-.clip .cap{position:absolute;left:0;right:0;bottom:0;padding:1rem;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text);background:linear-gradient(0deg,rgba(0,0,0,.9),transparent);z-index:2}
-.railnav{display:flex;gap:.6rem;margin-top:1.5rem}
-.railnav button{width:2.9rem;height:2.9rem;border:1px solid var(--border-2);background:transparent;color:var(--muted);cursor:pointer;transition:border-color .3s var(--ease),color .3s var(--ease);display:flex;align-items:center;justify-content:center}
-.railnav button:hover{border-color:var(--gold);color:var(--gold)}
+@supports not ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){.clip .tag{background:rgba(12,14,10,.85)}}
+.clip .cap{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:2.2rem 1rem 1rem;font-size:.85rem;font-weight:600;color:var(--ink);background:linear-gradient(0deg,rgba(0,0,0,.85),transparent)}
+.railnav{display:flex;gap:.6rem;margin-top:1.25rem}
+.railnav button{
+  width:44px;height:44px;border-radius:50%;cursor:pointer;color:var(--ink);font-size:1rem;
+  display:flex;align-items:center;justify-content:center;
+  transition:border-color var(--d-fast) var(--ease),background var(--d-fast) var(--ease),scale var(--d-fast) var(--ease);
+}
+.railnav button:hover{border-color:rgba(255,255,255,.26);background:rgba(40,46,32,.7)}
+.railnav button:active{scale:.94}
 
 /* ── GUARANTEE ────────────────────────────────────────────── */
-.guarantee{border:1px solid var(--border-2);background:var(--surface);padding:clamp(2.5rem,6vw,5.5rem);text-align:center;position:relative}
-.guarantee::before,.guarantee::after{content:'';position:absolute;width:1.6rem;height:1.6rem;border:2px solid var(--gold)}
-.guarantee::before{top:-1px;left:-1px;border-right:0;border-bottom:0}
-.guarantee::after{bottom:-1px;right:-1px;border-left:0;border-top:0}
-.guarantee h2{margin:1.2rem 0 1.6rem}
+.guarantee{border-radius:var(--r-xl);padding:clamp(2.6rem,6vw,5rem);text-align:center}
+.guarantee h2{margin:.6rem 0 1.4rem;font-size:var(--t-h2)}
 .guarantee .body{margin:0 auto 2.6rem;text-align:center}
-.gtrio{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;margin-bottom:2.8rem;text-align:left}
-.gtrio div{border-left:1px solid var(--border-2);padding-left:1.2rem}
-.gtrio b{display:block;font-family:'Archivo Black',sans-serif;font-size:.95rem;text-transform:uppercase;color:var(--text);margin-bottom:.4rem}
-.gtrio p{font-size:.8rem;line-height:1.7;color:var(--muted)}
+.gtrio{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s-4);margin-bottom:2.6rem;text-align:left}
+.gtrio div{padding:1.1rem 1.2rem;border-radius:var(--r-md);background:rgba(255,255,255,.035);border:1px solid var(--hairline)}
+.gtrio b{display:block;font-size:1rem;font-weight:600;color:var(--ink);margin-bottom:.3rem;letter-spacing:-.01em}
+.gtrio p{font-size:.9rem;line-height:1.55;color:var(--body)}
 
 /* ── PRICING ──────────────────────────────────────────────── */
-.tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);margin-top:1.2rem}
-.tier{background:var(--ground);padding:clamp(1.7rem,2.6vw,2.4rem);position:relative;transition:background .4s var(--ease)}
-.tier:hover{background:var(--surface)}
-.tier.best{background:var(--surface)}
-.tier.best::before{content:'Best offer';position:absolute;top:0;right:0;background:var(--gold);color:var(--ground);font-size:.56rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;padding:.4rem .8rem}
-.tier .q{font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
-.tier .p{font-family:'Archivo Black',sans-serif;font-size:clamp(2rem,3.4vw,2.8rem);color:var(--gold);line-height:1;margin:.7rem 0 .3rem}
-.tier .u{font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
-.grouplbl{font-size:.66rem;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);margin-top:3rem}
-.pricenote{margin-top:2rem;font-size:.78rem;line-height:1.8;color:var(--dim);max-width:42rem}
-.pricecta{margin-top:2.2rem;display:flex;flex-wrap:wrap;gap:.8rem}
+.tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s-4);margin-top:1rem}
+.tier{border-radius:var(--r-lg);padding:clamp(1.6rem,2.4vw,2.1rem);transition:border-color var(--d-base) var(--ease)}
+.tier:hover{border-color:var(--hairline-strong)}
+.tier.best::after{
+  content:'Best offer';position:absolute;top:14px;right:14px;padding:.35rem .65rem;border-radius:var(--r-pill);
+  font-size:.7rem;font-weight:700;letter-spacing:.02em;color:var(--on-gold);background:var(--gold-metal);box-shadow:var(--gold-edge);
+}
+.tier .q{font-size:var(--t-caption);font-weight:600;color:var(--muted)}
+.tier .p{font-size:clamp(2.2rem,3.4vw,2.9rem);font-weight:700;letter-spacing:-.04em;line-height:1;margin:.6rem 0 .35rem;
+  background:var(--gold-text);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:var(--gold)}
+.tier .u{font-size:var(--t-caption);color:var(--muted)}
+.grouplbl{margin-top:3rem;font-size:var(--t-label);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-solid)}
+.pricenote{margin-top:1.8rem;font-size:var(--t-caption);line-height:1.6;color:var(--muted);max-width:42rem}
+.pricecta{margin-top:2rem;display:flex;flex-wrap:wrap;gap:.75rem}
 
 /* ── PROOF ────────────────────────────────────────────────── */
-.proof{display:flex;gap:1.25rem;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:1.5rem;scrollbar-width:none;margin-top:3rem}
+.proof{display:flex;gap:var(--s-4);overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:1.5rem;scrollbar-width:none;margin-top:3rem}
 .proof::-webkit-scrollbar{display:none}
 /* Same idea as the work rail: one height, width from each item's real shape
    (--ar), so screenshots are never cropped or padded with empty space. The
    declared aspect also reserves the space before images decode, so nothing
    below shifts and ScrollTrigger's measurements stay valid. */
-.proof>div{flex:0 0 auto;height:clamp(17rem,30vw,26rem);aspect-ratio:var(--ar,9/16);scroll-snap-align:start;border:1px solid var(--border);background:#000;overflow:hidden}
+.proof>div{flex:0 0 auto;height:clamp(17rem,30vw,26rem);aspect-ratio:var(--ar,9/16);scroll-snap-align:start;
+  border-radius:var(--r-lg);background:#000;overflow:hidden;box-shadow:inset 0 0 0 1px var(--hairline),var(--shadow-float)}
 .proof video,.proof img{display:block;width:100%;height:100%;object-fit:cover}
 
 /* ── MISSION ──────────────────────────────────────────────── */
-.mission{max-width:52rem;margin:0 auto}
-.mission h2{margin:1rem 0 2.4rem}
-.mission p{font-size:1.02rem;line-height:1.95;color:var(--muted);margin-bottom:1.6rem}
-.mission p strong{color:var(--text);font-weight:600}
+.mission{max-width:46rem;margin:0 auto}
+.mission h2{margin:.4rem 0 2.2rem}
+.mission p{font-size:1.125rem;line-height:1.75;color:var(--body);margin-bottom:1.4rem}
+.mission p strong{color:var(--ink);font-weight:600}
 
 /* ── APPLY ────────────────────────────────────────────────── */
 .apply{text-align:center}
-.apply h2{margin:1.2rem auto 1.6rem;max-width:18ch}
-.apply .lede{margin:0 auto 2.8rem}
-.applymail{display:inline-block;margin-top:2rem;font-size:.8rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);border-bottom:1px solid var(--border-2);padding-bottom:.3rem;transition:border-color .3s}
-.applymail:hover{border-color:var(--gold)}
+.apply h2{margin:.4rem auto 1.4rem;max-width:16ch}
+.apply .lede{margin:0 auto 2.4rem}
+.applymail{display:inline-flex;align-items:center;min-height:44px;margin-top:1.4rem;font-size:.95rem;font-weight:500;color:var(--gold-solid);border-bottom:1px solid rgba(216,184,101,.35);transition:border-color var(--d-fast),color var(--d-fast)}
+.applymail:hover{color:var(--gold-champagne);border-color:var(--gold-champagne)}
 
 /* ── FOOTER ───────────────────────────────────────────────── */
-footer{border-top:1px solid var(--border);padding:clamp(3rem,6vw,5rem) var(--pad) 2rem;background:var(--ground-2)}
-.fgrid{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:2.5rem;max-width:78rem;margin:0 auto 3rem;padding-bottom:3rem;border-bottom:1px solid var(--border)}
-.fgrid p{font-size:.8rem;line-height:1.8;color:var(--dim);max-width:20rem;margin-top:1rem}
-.fcol h4{font-size:.62rem;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);margin-bottom:1.2rem}
-.fcol li{margin-bottom:.7rem}
-.fcol a{font-size:.82rem;color:var(--dim);transition:color .3s}
-.fcol a:hover{color:var(--text)}
-.fbot{max-width:78rem;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
-.fbot a:hover{color:var(--gold)}
+footer{border-top:1px solid var(--hairline);padding:clamp(3rem,6vw,4.5rem) var(--pad) 2rem;background:var(--canvas-2)}
+.fgrid{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:2.5rem;max-width:74rem;margin:0 auto 2.5rem;padding-bottom:2.5rem;border-bottom:1px solid var(--hairline)}
+.fgrid p{font-size:var(--t-caption);line-height:1.6;color:var(--muted);max-width:20rem;margin-top:1rem}
+.fcol h4{font-size:var(--t-label);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-solid);margin-bottom:1rem}
+.fcol li{margin-bottom:0}
+.fcol a{display:inline-flex;align-items:center;min-height:44px;font-size:.92rem;color:var(--muted);transition:color var(--d-fast)}
+.fcol a:hover{color:var(--ink)}
+.fbot{max-width:74rem;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;font-size:.8rem;color:var(--dim)}
+.fbot a{display:inline-flex;align-items:center;min-height:44px;color:var(--muted)}
+.fbot a:hover{color:var(--gold-solid)}
 
-/* Visually hidden, but read by Google and screen readers. Standard
-   accessible practice — the text is genuine and describes the page.
-   Not display:none, which assistive tech and crawlers both discount. */
-.sr-only{
-  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
-  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
-}
+/* Visually hidden, but read by Google and screen readers. */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
 /* ── FAQ ──────────────────────────────────────────────────── */
-.faq{margin-top:2.5rem;border-top:1px solid var(--border)}
-.faq details{border-bottom:1px solid var(--border)}
+.faq{margin-top:2.4rem;border-radius:var(--r-lg);padding:.4rem clamp(1.2rem,2.5vw,2rem)}
+.faq details{border-bottom:1px solid var(--hairline)}
+.faq details:last-child{border-bottom:0}
 .faq summary{
-  list-style:none;cursor:pointer;padding:1.5rem 2.5rem 1.5rem 0;position:relative;
-  font-family:'Archivo',sans-serif;font-size:1.02rem;font-weight:600;color:var(--text);
-  transition:color .3s var(--ease);
+  list-style:none;cursor:pointer;padding:1.3rem 2.5rem 1.3rem 0;position:relative;border-radius:var(--r-sm);
+  font-size:1.05rem;font-weight:600;letter-spacing:-.01em;color:var(--ink);transition:color var(--d-fast) var(--ease);
 }
 .faq summary::-webkit-details-marker{display:none}
-.faq summary:hover{color:var(--gold)}
+.faq summary:hover{color:var(--gold-champagne)}
 /* plus/minus built from two rules so there's no icon font to load */
-.faq summary::after,
-.faq summary::before{
-  content:'';position:absolute;right:.4rem;top:50%;background:var(--gold);
-  transition:transform .35s var(--ease),opacity .35s var(--ease);
-}
+.faq summary::after,.faq summary::before{content:'';position:absolute;right:.4rem;top:50%;background:var(--gold-solid);border-radius:2px;transition:transform var(--d-base) var(--ease),opacity var(--d-base) var(--ease)}
 .faq summary::after{width:14px;height:2px;transform:translateY(-50%)}
 .faq summary::before{width:2px;height:14px;right:.75rem;transform:translateY(-50%)}
 .faq details[open] summary::before{transform:translateY(-50%) rotate(90deg);opacity:0}
-.faq details p{
-  padding:0 2.5rem 1.7rem 0;margin-top:-.3rem;
-  font-size:.97rem;line-height:1.85;color:var(--muted);max-width:52rem;
-}
+.faq details p{padding:0 2.5rem 1.5rem 0;margin-top:-.2rem;font-size:var(--t-body);line-height:1.7;color:var(--body);max-width:52rem}
 
 /* ── REVEAL (GSAP drives; CSS is the fallback) ────────────── */
 .rv{opacity:0}
 .no-gsap .rv{opacity:1}
-.line-mask{overflow:hidden;display:block}
+.line-mask{overflow:hidden;display:block;padding-bottom:.06em}
 
 /* ── RESPONSIVE ───────────────────────────────────────────── */
 @media(max-width:1100px){.grid4,.nums{grid-template-columns:repeat(2,1fr)}}
@@ -518,18 +447,20 @@ footer{border-top:1px solid var(--border);padding:clamp(3rem,6vw,5rem) var(--pad
   .nav-links,.nav-cta{display:none}
   .burger{display:flex}
   .mobnav{display:flex}
+  nav{padding:0 6px 0 18px;height:58px;top:10px;width:calc(100% - 20px)}
   .hero{grid-template-columns:1fr;min-height:auto;gap:3rem}
   .hero .lede{max-width:none}
   .phone{width:min(17rem,80%)}
   .split{grid-template-columns:1fr}
   .tiers{grid-template-columns:1fr}
-  .gtrio{grid-template-columns:1fr;gap:1.4rem}
+  .gtrio{grid-template-columns:1fr}
   .fgrid{grid-template-columns:1fr 1fr}
   .scrollcue{display:none}
 }
 @media(max-width:560px){
   .grid4,.nums{grid-template-columns:1fr}
   .fgrid{grid-template-columns:1fr}
+  .hero-actions .btn{flex:1 1 100%}
 }
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
@@ -550,7 +481,7 @@ footer{border-top:1px solid var(--border);padding:clamp(3rem,6vw,5rem) var(--pad
     <li><a href="#proof">Results</a></li>
     <li><a href="#faq">FAQ</a></li>
   </ul>
-  <a href="#apply" class="btn nav-cta">Get Started Now</a>
+  <a href="#apply" class="btn btn-gold nav-cta">Get Started Now</a>
   <button class="burger" id="burger" aria-label="Menu"><span></span><span></span><span></span></button>
 </nav>
 
@@ -569,12 +500,12 @@ footer{border-top:1px solid var(--border);padding:clamp(3rem,6vw,5rem) var(--pad
       <h1 class="kicker">Short-form video editing for podcasters, coaches &amp; founders</h1>
       <h2 class="display hero-h2">
         <span class="line-mask"><span class="ln">Get</span></span>
-        <span class="line-mask"><span class="ln">Seen</span></span>
+        <span class="line-mask"><span class="ln gold-text">seen.</span></span>
       </h2>
       <p class="lede rv">BEJÚ Creative edits short-form video for podcasters, coaches and founders — cut for retention, not just views.</p>
       <div class="hero-actions rv">
-        <a class="btn solid" href="mailto:bejusipe@gmail.com?subject=Free%20Sample%20Clip%20Request&amp;body=Hey%20BEJU%2C%20I%27d%20love%20a%20free%20sample%20clip.%20My%20podcast%2Faccount%20is%3A%20">Get a free sample clip</a>
-        <a class="btn ghost" href="#work">See our work</a>
+        <a class="btn btn-gold" href="mailto:bejusipe@gmail.com?subject=Free%20Sample%20Clip%20Request&amp;body=Hey%20BEJU%2C%20I%27d%20love%20a%20free%20sample%20clip.%20My%20podcast%2Faccount%20is%3A%20">Get a free sample clip</a>
+        <a class="btn btn-glass" href="#work">See our work</a>
       </div>
       <div class="hero-note rv"><b>Free</b> · No commitment · Reply in 24h</div>
     </div>
@@ -607,7 +538,7 @@ footer{border-top:1px solid var(--border);padding:clamp(3rem,6vw,5rem) var(--pad
 
   <section class="rule">
     <div class="wrap split">
-      <div class="eqbox rv">
+      <div class="eqbox panel rv">
         <b>1 Upload</b><i>=</i><b>10 Clips</b>
         <small>From one recording session</small>
       </div>
@@ -615,7 +546,7 @@ footer{border-top:1px solid var(--border);padding:clamp(3rem,6vw,5rem) var(--pad
         <div class="kicker rv">Why it works</div>
         <h2 class="display grad rv">No time<br>to edit?</h2>
         <p class="body rv" style="margin-top:1.6rem">You're already making the content — a podcast, a coaching call, a talk to camera. The footage exists. What's missing is someone to cut it into the ten pieces that actually travel. <strong>Send the raw file, get back a month of posts.</strong> No shot lists, no scripts, nothing new to film.</p>
-        <div class="rv" style="margin-top:2.4rem"><a class="btn" href="#apply">Get a free sample clip</a></div>
+        <div class="rv" style="margin-top:2.4rem"><a class="btn btn-glass" href="#apply">Get a free sample clip</a></div>
       </div>
     </div>
   </section>
@@ -625,9 +556,9 @@ footer{border-top:1px solid var(--border);padding:clamp(3rem,6vw,5rem) var(--pad
       <div class="kicker">Editing services</div>
       <h2 class="display grad" id="services-title">Start with<br>your footage</h2>
       <div class="grid4" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))">
-        <div class="cell"><h3>Podcast video editing</h3><p>Turn interview recordings into standalone clips. Keep the context, frame the speaker and make each takeaway easy to follow.</p><p><a href="/podcast-video-editing/">Explore podcast editing →</a></p></div>
-        <div class="cell"><h3>Short-form video editing</h3><p>Shape existing footage into Reels, TikToks and YouTube Shorts, with focused hooks, captions and platform-ready framing.</p><p><a href="/short-form-video-editing/">Explore short-form editing →</a></p></div>
-        <div class="cell"><h3>Editing for coaches</h3><p>Make educational and talking-head recordings clearer without losing your voice. Brief us on the audience, takeaway and style.</p><p><a href="/video-editing-for-coaches/">Explore editing for coaches →</a></p></div>
+        <div class="cell panel"><h3>Podcast video editing</h3><p>Turn interview recordings into standalone clips. Keep the context, frame the speaker and make each takeaway easy to follow.</p><p><a href="/podcast-video-editing/">Explore podcast editing →</a></p></div>
+        <div class="cell panel"><h3>Short-form video editing</h3><p>Shape existing footage into Reels, TikToks and YouTube Shorts, with focused hooks, captions and platform-ready framing.</p><p><a href="/short-form-video-editing/">Explore short-form editing →</a></p></div>
+        <div class="cell panel"><h3>Editing for coaches</h3><p>Make educational and talking-head recordings clearer without losing your voice. Brief us on the audience, takeaway and style.</p><p><a href="/video-editing-for-coaches/">Explore editing for coaches →</a></p></div>
       </div>
     </div>
   </section>
@@ -637,10 +568,10 @@ footer{border-top:1px solid var(--border);padding:clamp(3rem,6vw,5rem) var(--pad
       <div class="kicker rv">How it works</div>
       <h2 class="display grad rv">Full service from<br>brief to delivery</h2>
       <div class="grid4">
-        <div class="cell rv"><span class="n">Step 01</span><h3>Brief</h3><p>You send footage and tell us who it's for. That's the whole ask — no forms, no onboarding call.</p></div>
-        <div class="cell rv"><span class="n">Step 02</span><h3>Edit</h3><p>Hooks, pacing, captions, sound design. Cut for retention first — every trim has a reason behind it.</p></div>
-        <div class="cell rv"><span class="n">Step 03</span><h3>Review</h3><p>One fast round of changes. Tell us what to fix and it comes back the same day, not the same week.</p></div>
-        <div class="cell rv"><span class="n">Step 04</span><h3>Deliver</h3><p>Ready to post in 24 hours — exported and sized for every platform without you touching a thing.</p></div>
+        <div class="cell panel rv"><span class="n">Step 01</span><h3>Brief</h3><p>You send footage and tell us who it's for. That's the whole ask — no forms, no onboarding call.</p></div>
+        <div class="cell panel rv"><span class="n">Step 02</span><h3>Edit</h3><p>Hooks, pacing, captions, sound design. Cut for retention first — every trim has a reason behind it.</p></div>
+        <div class="cell panel rv"><span class="n">Step 03</span><h3>Review</h3><p>One fast round of changes. Tell us what to fix and it comes back the same day, not the same week.</p></div>
+        <div class="cell panel rv"><span class="n">Step 04</span><h3>Deliver</h3><p>Ready to post in 24 hours — exported and sized for every platform without you touching a thing.</p></div>
       </div>
       <div class="platforms rv">Formatted for <b>Instagram Reels</b> · <b>TikTok</b> · <b>YouTube Shorts</b> · <b>LinkedIn</b></div>
     </div>
@@ -661,7 +592,7 @@ footer{border-top:1px solid var(--border);padding:clamp(3rem,6vw,5rem) var(--pad
           <div class="check rv"><i>✓</i><p><b>You film nothing extra.</b> We work from footage you've already shot, so the only thing you spend is the upload.</p></div>
           <div class="check rv"><i>✓</i><p><b>Two editors, not a queue.</b> You're talking to the people actually cutting your video. Nothing gets handed to a junior.</p></div>
         </div>
-        <div class="rv" style="margin-top:2.4rem"><a class="btn" href="#pricing">See what it costs</a></div>
+        <div class="rv" style="margin-top:2.4rem"><a class="btn btn-glass" href="#pricing">See what it costs</a></div>
       </div>
     </div>
   </section>
@@ -671,10 +602,10 @@ footer{border-top:1px solid var(--border);padding:clamp(3rem,6vw,5rem) var(--pad
       <div class="kicker rv">The receipts</div>
       <h2 class="display grad rv">The numbers<br>don't lie</h2>
       <div class="nums">
-        <div class="num rv"><b class="count" data-to="35" data-suffix="+">0</b><p>creators, coaches and podcasters we've cut video for.</p></div>
-        <div class="num rv"><b class="count" data-to="10" data-suffix="M+">0</b><p>views generated across the content we've edited.</p></div>
-        <div class="num rv"><b class="count" data-to="24" data-suffix="hr">0</b><p>average turnaround, from your upload to ready-to-post.</p></div>
-        <div class="num rv"><b class="count" data-to="97" data-suffix="%">0</b><p>of clients stay with us after their first batch.</p></div>
+        <div class="num panel rv"><b class="count" data-to="35" data-suffix="+">0</b><p>creators, coaches and podcasters we've cut video for.</p></div>
+        <div class="num panel rv"><b class="count" data-to="10" data-suffix="M+">0</b><p>views generated across the content we've edited.</p></div>
+        <div class="num panel rv"><b class="count" data-to="24" data-suffix="hr">0</b><p>average turnaround, from your upload to ready-to-post.</p></div>
+        <div class="num panel rv"><b class="count" data-to="97" data-suffix="%">0</b><p>of clients stay with us after their first batch.</p></div>
       </div>
     </div>
   </section>
@@ -694,15 +625,15 @@ footer{border-top:1px solid var(--border);padding:clamp(3rem,6vw,5rem) var(--pad
         <div class="clip v"><span class="tag">Ad</span><video muted loop playsinline preload="none" poster="rail-08.jpg" data-start="6"><source src="rail-08.mp4" type="video/mp4"></video><span class="cap">Software Ad</span></div>
       </div>
       <div class="railnav">
-        <button id="railPrev" aria-label="Previous">←</button>
-        <button id="railNext" aria-label="Next">→</button>
+        <button class="glass" id="railPrev" aria-label="Previous">←</button>
+        <button class="glass" id="railNext" aria-label="Next">→</button>
       </div>
     </div>
   </section>
 
   <section class="rule">
     <div class="wrap">
-      <div class="guarantee rv">
+      <div class="guarantee panel gold-ring rv">
         <div class="kicker mid">The BEJÚ guarantee</div>
         <h2 class="display">Double your views,<br>or you don't&nbsp;pay</h2>
         <p class="body">If our edits don't at least 2× your average views within 30 days of posting, we refund you in full. No fine print. No hard feelings. We only win when you win.</p>
@@ -711,7 +642,7 @@ footer{border-top:1px solid var(--border);padding:clamp(3rem,6vw,5rem) var(--pad
           <div><b>Full refund</b><p>100% back — no credits, no vouchers.</p></div>
           <div><b>No questions</b><p>If you don't win, we don't deserve to keep it.</p></div>
         </div>
-        <a class="btn solid" href="#apply">Get started now</a>
+        <a class="btn btn-gold" href="#apply">Get started now</a>
       </div>
     </div>
   </section>
@@ -722,18 +653,18 @@ footer{border-top:1px solid var(--border);padding:clamp(3rem,6vw,5rem) var(--pad
       <h2 class="display grad rv">Simple,<br>volume-based</h2>
       <p class="grouplbl rv">Short-form</p>
       <div class="tiers">
-        <div class="tier rv"><div class="q">1 video</div><div class="p">$27</div><div class="u">Single edit</div></div>
-        <div class="tier rv"><div class="q">3 videos</div><div class="p">$60</div><div class="u">$20 / edit</div></div>
-        <div class="tier best rv"><div class="q">5 videos</div><div class="p">$75</div><div class="u">$15 / edit</div></div>
+        <div class="tier panel rv"><div class="q">1 video</div><div class="p">$27</div><div class="u">Single edit</div></div>
+        <div class="tier panel rv"><div class="q">3 videos</div><div class="p">$60</div><div class="u">$20 / edit</div></div>
+        <div class="tier best panel gold-ring rv"><div class="q">5 videos</div><div class="p">$75</div><div class="u">$15 / edit</div></div>
       </div>
       <p class="grouplbl rv">Long-form — priced per finished video</p>
       <div class="tiers">
-        <div class="tier rv"><div class="q">1 video</div><div class="p">$75</div><div class="u">Single edit</div></div>
-        <div class="tier rv"><div class="q">3 videos</div><div class="p">$180</div><div class="u">$60 / edit</div></div>
-        <div class="tier rv"><div class="q">5 videos</div><div class="p">$255</div><div class="u">$51 / edit</div></div>
+        <div class="tier panel rv"><div class="q">1 video</div><div class="p">$75</div><div class="u">Single edit</div></div>
+        <div class="tier panel rv"><div class="q">3 videos</div><div class="p">$180</div><div class="u">$60 / edit</div></div>
+        <div class="tier panel rv"><div class="q">5 videos</div><div class="p">$255</div><div class="u">$51 / edit</div></div>
       </div>
       <p class="pricenote rv">Prices aren't fixed — they vary with the average length of the videos you want edited. These are average prices for 15–40 second reels.</p>
-      <div class="pricecta rv"><a class="btn solid" href="#apply">Get a free sample clip</a></div>
+      <div class="pricecta rv"><a class="btn btn-gold" href="#apply">Get a free sample clip</a></div>
     </div>
   </section>
 
@@ -769,11 +700,11 @@ footer{border-top:1px solid var(--border);padding:clamp(3rem,6vw,5rem) var(--pad
   <section class="rule" id="faq">
     <div class="wrap mission">
       <div class="kicker rv">Questions</div>
-      <h2 class="display grad rv">Before you<br>ask</h2>
+      <h2 class="display grad rv">Before you ask</h2>
       <!-- The reveal lives on the container, not each <details>. Putting .rv on
            the disclosure elements left them stuck at opacity 0 and the whole
            section rendered greyed out. -->
-      <div class="faq rv">
+      <div class="faq panel rv">
         <details open>
           <summary>How much does short-form video editing cost?</summary>
           <p>Short-form edits start at $27 for a single video, $60 for three, and $75 for five — $15 per edit at the five-video tier. Long-form is priced per finished video, from $75. Prices vary with the length of the source footage; these are averages for 15–40 second reels.</p>
@@ -807,7 +738,7 @@ footer{border-top:1px solid var(--border);padding:clamp(3rem,6vw,5rem) var(--pad
       <div class="kicker mid rv">Get started</div>
       <h2 class="display grad rv">Got footage that deserves an audience?</h2>
       <p class="lede rv">Send us your podcast and we'll edit one clip — free, no commitment. See the quality before you spend a dollar.</p>
-      <div class="rv"><a class="btn solid" href="mailto:bejusipe@gmail.com?subject=Free%20Sample%20Clip%20Request&amp;body=Hey%20BEJU%2C%20I%27d%20love%20a%20free%20sample%20clip.%20My%20podcast%2Faccount%20is%3A%20">Get my free sample clip</a></div>
+      <div class="rv"><a class="btn btn-gold" href="mailto:bejusipe@gmail.com?subject=Free%20Sample%20Clip%20Request&amp;body=Hey%20BEJU%2C%20I%27d%20love%20a%20free%20sample%20clip.%20My%20podcast%2Faccount%20is%3A%20">Get my free sample clip</a></div>
       <div><a class="applymail" href="mailto:bejusipe@gmail.com?subject=Portfolio%20Inquiry">bejusipe@gmail.com</a></div>
     </div>
   </section>
@@ -858,6 +789,7 @@ footer{border-top:1px solid var(--border);padding:clamp(3rem,6vw,5rem) var(--pad
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/ScrollTrigger.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/ScrollToPlugin.min.js"></script>
 <script>
 (function () {
   'use strict';
@@ -1062,6 +994,23 @@ footer{border-top:1px solid var(--border);padding:clamp(3rem,6vw,5rem) var(--pad
   }
 
   gsap.registerPlugin(ScrollTrigger);
+
+  /* In-page links: GSAP drives the scroll. CSS scroll-behavior:smooth fought
+     ScrollTrigger — every image/video load mid-scroll triggers a refresh that
+     restores the scroll position — so nav links stalled and never arrived
+     (desktop stopped ~850px short; the phone menu barely moved). */
+  if (window.ScrollToPlugin) {
+    gsap.registerPlugin(ScrollToPlugin);
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest && e.target.closest('a[href^="#"]');
+      if (!a || e.defaultPrevented) return;
+      var id = a.getAttribute('href'), t = id.length > 1 && document.querySelector(id);
+      if (!t) return;
+      e.preventDefault();
+      gsap.to(window, { duration: 0.9, ease: 'power3.inOut', scrollTo: { y: t, autoKill: false } });
+      history.pushState(null, '', id);
+    });
+  }
 
   /* Hero headline — masked line rise */
   gsap.set('.ln', { yPercent: 115 });

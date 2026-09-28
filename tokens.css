@@ -1,0 +1,182 @@
+/* BEJÚ Creative — Glass & Gold design tokens + shared primitives.
+   The system is documented in /DESIGN.md. Page stylesheets use these tokens only. */
+
+:root{
+  color-scheme:dark;
+
+  /* canvas & surfaces */
+  --canvas:#090B07;
+  --canvas-2:#0D1009;
+  --surface:#12150E;
+  --surface-2:#181C13;
+  --hairline:rgba(255,255,255,.08);
+  --hairline-strong:rgba(255,255,255,.14);
+
+  /* text ladder */
+  --ink:#F5F5F7;
+  --body:#C5C8BD;
+  --muted:#9A9E91;
+  --dim:#868A7E;
+
+  /* gold material */
+  --gold-bronze:#8A6424;
+  --gold-deep:#A9823A;
+  --gold:#C7A24B;
+  --gold-bright:#E2C676;
+  --gold-champagne:#F4E3AF;
+  --gold-solid:#D8B865;           /* small text & icons */
+  --on-gold:#1F1708;
+  --gold-metal:
+    radial-gradient(120% 140% at 28% -10%, rgba(255,248,226,.55) 0%, rgba(255,248,226,0) 46%),
+    linear-gradient(180deg, #F4E3AF 0%, #E2C676 20%, #C7A24B 48%, #A9823A 74%, #8A6424 100%);
+  --gold-metal-pressed:
+    linear-gradient(180deg, #D9BC6A 0%, #C29C45 40%, #A07A33 75%, #7E5B20 100%);
+  --gold-text:linear-gradient(180deg, #F7EAC0 0%, #E6CB7C 34%, #C7A24B 66%, #9C7630 100%);
+  --gold-ring:linear-gradient(135deg, rgba(244,227,175,.85), rgba(138,100,36,.45) 38%, rgba(244,227,175,.18) 64%, rgba(199,162,75,.75));
+  --gold-edge:
+    inset 0 1px 0 rgba(255,246,214,.85),
+    inset 0 -1px 0 rgba(90,62,18,.55),
+    inset 0 0 0 1px rgba(122,88,32,.5);
+  --gold-drop:0 1px 1px rgba(0,0,0,.35), 0 12px 28px -14px rgba(199,162,75,.55);
+
+  /* semantic — never gold */
+  --success:#4FD18B;
+  --warning:#F59E0B;
+  --error:#FF5F57;
+  --info:#5AC8FA;
+
+  /* glass */
+  --glass-fill:rgba(24,28,19,.58);
+  --glass-fill-strong:rgba(16,19,12,.78);
+  --glass-blur:saturate(165%) blur(22px);
+  --glass-highlight:inset 0 1px 0 rgba(255,255,255,.07);
+  --shadow-float:0 1px 0 rgba(0,0,0,.25), 0 24px 60px -28px rgba(0,0,0,.8);
+
+  /* type */
+  --font:system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --t-hero:clamp(3.2rem,8.2vw,6.6rem);
+  --t-h2:clamp(2.2rem,4.6vw,3.7rem);
+  --t-h3:1.2rem;
+  --t-lead:clamp(1.12rem,1.5vw,1.32rem);
+  --t-body:1.0625rem;
+  --t-caption:.875rem;
+  --t-label:.75rem;
+
+  /* space & shape */
+  --s-1:4px;--s-2:8px;--s-3:12px;--s-4:16px;--s-5:24px;--s-6:32px;--s-7:48px;--s-8:64px;
+  --section:clamp(5.5rem,10vw,9rem);
+  --pad:clamp(1.25rem,5vw,5rem);
+  --r-sm:10px;--r-md:14px;--r-lg:20px;--r-xl:28px;--r-pill:999px;
+
+  /* motion */
+  --ease:cubic-bezier(.22,1,.36,1);
+  --d-fast:160ms;--d-base:240ms;--d-sweep:850ms;
+}
+
+/* ── base ─────────────────────────────────────────────────── */
+html{background:var(--canvas);-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--font);font-size:var(--t-body);line-height:1.6;letter-spacing:-.01em;
+  color:var(--body);background:var(--canvas);
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+/* Ambient light for the glass to refract. Fixed, soft, never animated. */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(1100px 760px at 8% -8%, rgba(58,70,22,.42), transparent 62%),
+    radial-gradient(900px 640px at 94% 6%, rgba(199,162,75,.075), transparent 60%),
+    radial-gradient(1200px 900px at 50% 110%, rgba(30,36,12,.55), transparent 64%);
+}
+::selection{background:rgba(199,162,75,.35);color:var(--ink)}
+:focus-visible{outline:2px solid var(--gold-champagne);outline-offset:3px;border-radius:var(--r-sm)}
+
+/* ── glass ────────────────────────────────────────────────── */
+.glass{
+  background:var(--glass-fill);
+  -webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
+  border:1px solid var(--hairline);
+  box-shadow:var(--glass-highlight), var(--shadow-float);
+}
+@supports not ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){
+  .glass{background:var(--surface)}
+}
+
+/* Static glass: same fill, edge light and depth, no live blur. Over the calm canvas it
+   reads identically, and a page of blurred cards is what made scrolling lag before. */
+.panel{
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.012) 60%),var(--glass-fill);
+  border:1px solid var(--hairline);
+  box-shadow:var(--glass-highlight), var(--shadow-float);
+}
+
+/* 1px gold hairline for selected/featured panels (works over glass) */
+.gold-ring{position:relative}
+.gold-ring::before{
+  content:'';position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;
+  background:var(--gold-ring);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;
+}
+
+/* large gold type only (prices, stats, one hero word) */
+.gold-text{
+  background:var(--gold-text);-webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:var(--gold);
+}
+
+/* ── buttons ──────────────────────────────────────────────── */
+.btn-gold,.btn-glass{
+  display:inline-flex;align-items:center;justify-content:center;gap:.55rem;
+  min-height:48px;padding:.8rem 1.6rem;border-radius:var(--r-pill);
+  font:600 .95rem/1 var(--font);letter-spacing:-.005em;text-decoration:none;white-space:nowrap;
+  cursor:pointer;position:relative;overflow:hidden;isolation:isolate;
+  transition:background var(--d-base) var(--ease),border-color var(--d-base) var(--ease),
+             box-shadow var(--d-base) var(--ease),filter var(--d-base) var(--ease),scale var(--d-fast) var(--ease);
+}
+/* gold metal */
+.btn-gold{
+  color:var(--on-gold);background:var(--gold-metal);border:0;
+  box-shadow:var(--gold-edge), var(--gold-drop);
+  text-shadow:0 1px 0 rgba(255,244,210,.45);
+}
+.btn-gold::after{ /* one reflective sweep on hover/focus */
+  content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:linear-gradient(105deg,transparent 30%,rgba(255,252,238,.0) 36%,rgba(255,252,238,.85) 47%,rgba(255,252,238,.25) 55%,transparent 64%);
+  mix-blend-mode:soft-light;
+  transform:translateX(-120%);
+}
+.btn-gold:hover{filter:brightness(1.05) saturate(1.04)}
+.btn-gold:hover::after,.btn-gold:focus-visible::after{transform:translateX(120%);transition:transform var(--d-sweep) cubic-bezier(.45,.05,.25,1)}
+.btn-gold:active{scale:.97;background:var(--gold-metal-pressed);
+  box-shadow:inset 0 2px 6px rgba(70,48,12,.45),inset 0 0 0 1px rgba(122,88,32,.6),0 1px 1px rgba(0,0,0,.3)}
+/* glass secondary */
+.btn-glass{
+  color:var(--ink);background:rgba(255,255,255,.06);border:1px solid var(--hairline-strong);
+  -webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
+  box-shadow:var(--glass-highlight);
+}
+.btn-glass:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.24)}
+.btn-glass:active{scale:.97;background:rgba(255,255,255,.05)}
+/* disabled & loading */
+.btn-gold:disabled,.btn-glass:disabled,.btn-gold[aria-disabled="true"],.btn-glass[aria-disabled="true"]{
+  opacity:.45;cursor:not-allowed;filter:none;scale:1}
+.btn-gold:disabled::after,.btn-gold[aria-disabled="true"]::after{display:none}
+.btn-gold[aria-busy="true"],.btn-glass[aria-busy="true"]{color:transparent;text-shadow:none;pointer-events:none}
+.btn-gold[aria-busy="true"]::before,.btn-glass[aria-busy="true"]::before{
+  content:'';position:absolute;left:50%;top:50%;width:1.1rem;height:1.1rem;margin:-.55rem 0 0 -.55rem;
+  border-radius:50%;border:2px solid currentColor;border-color:var(--on-gold) transparent var(--on-gold) var(--on-gold);
+  animation:bj-spin .8s linear infinite}
+.btn-glass[aria-busy="true"]::before{border-color:var(--ink) transparent var(--ink) var(--ink)}
+@keyframes bj-spin{to{transform:rotate(360deg)}}
+
+/* small label */
+.label{font-size:var(--t-label);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-solid)}
+
+/* ── motion preferences ───────────────────────────────────── */
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto!important}
+  .btn-gold,.btn-glass{transition:none}
+  .btn-gold::after{display:none}
+  .btn-gold:active,.btn-glass:active{scale:1}
+}
