@@ -216,6 +216,7 @@ main,nav,footer{position:relative;z-index:1}
   font-family:'Archivo Black',Impact,sans-serif;
   font-weight:400;text-transform:uppercase;
   line-height:.9;letter-spacing:-.015em;color:var(--text);
+  text-wrap:balance; /* no single word stranded on the last line */
 }
 /* Their tail is #424242 on a #121211 ground. Ours sits on #0C0F08, which is
    darker — the same value reads as nearly invisible, so it is lifted just
@@ -242,7 +243,7 @@ h3{font-family:'Archivo Black',sans-serif;font-weight:400}
 
 .lede{
   font-size:.9rem;font-weight:500;line-height:1.85;letter-spacing:.13em;
-  text-transform:uppercase;color:var(--muted);max-width:34rem;
+  text-transform:uppercase;color:var(--muted);max-width:34rem;text-wrap:pretty;
 }
 .body{font-size:1rem;line-height:1.85;color:var(--muted);max-width:38rem}
 .body strong{color:var(--text);font-weight:600}
@@ -373,6 +374,8 @@ section{padding:clamp(5rem,11vw,10rem) var(--pad);position:relative}
 .cell .n{font-size:.62rem;letter-spacing:.22em;color:var(--gold);text-transform:uppercase;margin-bottom:1.4rem;display:block}
 .cell h3{font-size:1.15rem;text-transform:uppercase;color:var(--text);margin-bottom:.7rem;letter-spacing:-.01em}
 .cell p{font-size:.88rem;line-height:1.75;color:var(--muted)}
+.cell p a{display:inline-block;margin-top:.9rem;color:var(--gold);font-size:.7rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;text-decoration:none;transition:color .3s var(--ease)}
+.cell p a:hover{color:var(--gold-bright)}
 .platforms{display:flex;gap:1.4rem;flex-wrap:wrap;justify-content:center;margin-top:2.6rem;font-size:.64rem;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
 .platforms b{color:var(--muted);font-weight:600}
 
@@ -436,15 +439,17 @@ section{padding:clamp(5rem,11vw,10rem) var(--pad);position:relative}
 .tier .u{font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
 .grouplbl{font-size:.66rem;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);margin-top:3rem}
 .pricenote{margin-top:2rem;font-size:.78rem;line-height:1.8;color:var(--dim);max-width:42rem}
+.pricecta{margin-top:2.2rem;display:flex;flex-wrap:wrap;gap:.8rem}
 
 /* ── PROOF ────────────────────────────────────────────────── */
 .proof{display:flex;gap:1.25rem;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:1.5rem;scrollbar-width:none;margin-top:3rem}
 .proof::-webkit-scrollbar{display:none}
-.proof>div{flex:0 0 auto;width:clamp(13rem,18vw,16rem);scroll-snap-align:start;border:1px solid var(--border);background:#000;overflow:hidden}
-.proof video{aspect-ratio:9/16;object-fit:cover;width:100%}
-/* Reserve space before the screenshots decode, so nothing below them shifts
-   and ScrollTrigger's measurements stay valid. */
-.proof img{width:100%;min-height:14rem;object-fit:cover;background:#000}
+/* Same idea as the work rail: one height, width from each item's real shape
+   (--ar), so screenshots are never cropped or padded with empty space. The
+   declared aspect also reserves the space before images decode, so nothing
+   below shifts and ScrollTrigger's measurements stay valid. */
+.proof>div{flex:0 0 auto;height:clamp(17rem,30vw,26rem);aspect-ratio:var(--ar,9/16);scroll-snap-align:start;border:1px solid var(--border);background:#000;overflow:hidden}
+.proof video,.proof img{display:block;width:100%;height:100%;object-fit:cover}
 
 /* ── MISSION ──────────────────────────────────────────────── */
 .mission{max-width:52rem;margin:0 auto}
@@ -699,7 +704,7 @@ footer{border-top:1px solid var(--border);padding:clamp(3rem,6vw,5rem) var(--pad
     <div class="wrap">
       <div class="guarantee rv">
         <div class="kicker mid">The BEJÚ guarantee</div>
-        <h2 class="display">Double your views,<br>or you don't pay</h2>
+        <h2 class="display">Double your views,<br>or you don't&nbsp;pay</h2>
         <p class="body">If our edits don't at least 2× your average views within 30 days of posting, we refund you in full. No fine print. No hard feelings. We only win when you win.</p>
         <div class="gtrio">
           <div><b>30-day window</b><p>A full month to let the content do its job.</p></div>
@@ -728,6 +733,7 @@ footer{border-top:1px solid var(--border);padding:clamp(3rem,6vw,5rem) var(--pad
         <div class="tier rv"><div class="q">5 videos</div><div class="p">$255</div><div class="u">$51 / edit</div></div>
       </div>
       <p class="pricenote rv">Prices aren't fixed — they vary with the average length of the videos you want edited. These are average prices for 15–40 second reels.</p>
+      <div class="pricecta rv"><a class="btn solid" href="#apply">Get a free sample clip</a></div>
     </div>
   </section>
 
@@ -737,10 +743,10 @@ footer{border-top:1px solid var(--border);padding:clamp(3rem,6vw,5rem) var(--pad
       <h2 class="display grad rv">Real growth.<br>Real people.</h2>
       <div class="proof" id="proofRail">
         <div><video muted loop playsinline controls preload="metadata" poster="results/testimonial-1-poster.jpg"><source src="results/testimonial-1.mp4" type="video/mp4"></video></div>
-        <div><img src="results/testimonial-2.jpeg" alt="Client message about reel package results" loading="lazy"></div>
-        <div><img src="results/testimonial-3.jpeg" alt="Client message about follower growth" loading="lazy"></div>
-        <div><img src="results/testimonial-4.png" alt="Client message about views and sales" loading="lazy"></div>
-        <div><img src="results/testimonial-5.png" alt="Client message about overnight growth" loading="lazy"></div>
+        <div style="--ar:1179/890"><img src="results/testimonial-2.jpeg" alt="Client message about reel package results" loading="lazy"></div>
+        <div style="--ar:1179/783"><img src="results/testimonial-3.jpeg" alt="Client message about follower growth" loading="lazy"></div>
+        <div style="--ar:738/862"><img src="results/testimonial-4.png" alt="Client message about views and sales" loading="lazy"></div>
+        <div style="--ar:746/616"><img src="results/testimonial-5.png" alt="Client message about overnight growth" loading="lazy"></div>
         <div><video muted loop playsinline controls preload="metadata" poster="results/testimonial-6-poster.jpg"><source src="results/testimonial-6.mp4" type="video/mp4"></video></div>
       </div>
     </div>
@@ -749,7 +755,7 @@ footer{border-top:1px solid var(--border);padding:clamp(3rem,6vw,5rem) var(--pad
   <section class="rule">
     <div class="wrap mission">
       <div class="kicker rv">Our mission</div>
-      <h2 class="display grad rv">Good ideas<br>shouldn't lose to<br>better editing</h2>
+      <h2 class="display grad rv">Good ideas<br>shouldn't lose<br>to better editing</h2>
       <p class="rv">The best coach in your city is probably losing to someone half as good with a better editor. That's the part nobody says out loud. The algorithm doesn't rank expertise — it ranks <strong>retention</strong>. And retention is a craft.</p>
       <p class="rv">We started BEJÚ because that gap felt fixable. Most people who need this work can't justify $2,000 a month for it, so they either post something unedited or they don't post at all. Both lose. We're two editors, no account managers, no agency overhead — which is the entire reason we can charge what we charge and still hand back work we'd put our name on.</p>
       <p class="rv">So we made the offer simple: <strong>send us one video and we'll edit it free.</strong> No call, no contract, no pitch deck. We'd rather prove it than describe it.</p>
