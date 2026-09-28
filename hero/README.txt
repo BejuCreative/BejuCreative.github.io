@@ -5,7 +5,11 @@ DROP ONE FILE IN HERE, NAMED EXACTLY:
 
     hero.mp4
 
-That's it. Refresh the page and it appears in the phone.
+Run it through the optimizer first so it loads instantly:
+
+    scripts/optimize-video.sh my-export.mp4 hero/hero.mp4
+
+That also writes hero/hero.jpg - rename it to hero-poster.jpg.
 
 
 WHAT TO PUT IN IT

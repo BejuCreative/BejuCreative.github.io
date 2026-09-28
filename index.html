@@ -390,27 +390,23 @@ section{padding:clamp(5rem,11vw,10rem) var(--pad);position:relative}
 .num p{font-size:.82rem;line-height:1.7;color:var(--muted)}
 
 /* ── WORK RAIL ────────────────────────────────────────────── */
-/* Uniform card HEIGHT, width set by the footage's real aspect. Four of the
-   eight portfolio files are 16:9 exported into a 1080x1920 canvas — forcing
-   those into a 9:16 card shows the padding instead of the work. */
+/* Uniform card HEIGHT, width set by the footage's real aspect (--ar), so
+   nothing is cropped and there are no bars. v/w are fallbacks for cards that
+   don't set --ar. Letterboxed exports get their bars cut by
+   scripts/optimize-video.sh before they reach the page. */
 .rail{display:flex;gap:1.25rem;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:1.5rem;scrollbar-width:none;--railH:clamp(19rem,32vw,27rem)}
 .rail::-webkit-scrollbar{display:none}
 .clip{
-  flex:0 0 auto;height:var(--railH);scroll-snap-align:start;position:relative;
+  flex:0 0 auto;height:var(--railH);aspect-ratio:var(--ar);scroll-snap-align:start;position:relative;
   border:1px solid var(--border);background:#000;overflow:hidden;
 }
-.clip.v{width:calc(var(--railH) * 9 / 16)}
-.clip.w{width:calc(var(--railH) * 16 / 9)}
+.clip.v{--ar:9/16}
+.clip.w{--ar:16/9}
 .clip video{
-  position:absolute;left:50%;top:50%;
-  width:100%;height:auto;
-  transform:translate(-50%,-50%);
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
   transition:transform .7s var(--ease);
 }
-/* Vertical sources fill their card exactly; wide sources are centred so the
-   content band fills the frame and the black padding sits outside it. */
-.clip.v video{height:100%;width:auto;min-width:100%}
-.clip:hover video{transform:translate(-50%,-50%) scale(1.045)}
+.clip:hover video{transform:scale(1.045)}
 .clip .tag{position:absolute;top:0;left:0;background:var(--gold);color:var(--ground);font-size:.58rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;padding:.45rem .8rem;z-index:2}
 .clip .cap{position:absolute;left:0;right:0;bottom:0;padding:1rem;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text);background:linear-gradient(0deg,rgba(0,0,0,.9),transparent);z-index:2}
 .railnav{display:flex;gap:.6rem;margin-top:1.5rem}
@@ -581,13 +577,11 @@ footer{border-top:1px solid var(--border);padding:clamp(3rem,6vw,5rem) var(--pad
     <div class="phone" id="phone">
       <div class="phone-screen">
         <div class="phone-pill"></div>
-        <!-- Placeholder until hero/hero.mp4 exists. data-placeholder marks it so
-             the swap below knows the 5.5-17.5s loop window belongs to THIS clip
-             only (it dodges that file's white flash frames and its end card) and
-             must be dropped once a real hero video is supplied. -->
-        <video id="heroVid" autoplay muted loop playsinline preload="metadata" poster="hero-poster.jpg"
-               data-placeholder="1" disablepictureinpicture disableremoteplayback>
-          <source src="Podcast clip edit.mp4" type="video/mp4">
+        <!-- To change the hero clip, replace hero/hero.mp4 (+ hero-poster.jpg).
+             Run it through scripts/optimize-video.sh first. -->
+        <video id="heroVid" autoplay muted loop playsinline preload="auto" poster="hero/hero-poster.jpg"
+               disablepictureinpicture disableremoteplayback>
+          <source src="hero/hero.mp4" type="video/mp4">
         </video>
         <div class="phone-scrim"></div>
         <div class="phone-stat"><b>2×</b><span>Views or you don't pay</span></div>
@@ -685,14 +679,14 @@ footer{border-top:1px solid var(--border);padding:clamp(3rem,6vw,5rem) var(--pad
       <div class="kicker rv">Our work</div>
       <h2 class="display grad rv">The clips<br>never stop</h2>
       <div class="rail" id="rail" style="margin-top:3rem">
-        <div class="clip v"><span class="tag">Podcast</span><video muted loop playsinline preload="none" poster="rail-01.jpg" data-start="5"><source src="Podcast clip edit.mp4" type="video/mp4"></video><span class="cap">Podcast Clip Edit</span></div>
-        <div class="clip w"><span class="tag">Podcast</span><video muted loop playsinline preload="none" poster="rail-02.jpg" data-start="20"><source src="PODCAST  EDIT 1 BEJU CREATIVE.mp4" type="video/mp4"></video><span class="cap">Podcast Edit</span></div>
-        <div class="clip v"><span class="tag">Podcast</span><video muted loop playsinline preload="none" poster="rail-03.jpg" data-start="5"><source src="Podcast LT.mp4" type="video/mp4"></video><span class="cap">Podcast LT</span></div>
-        <div class="clip w"><span class="tag">Brand</span><video muted loop playsinline preload="none" poster="rail-04.jpg" data-start="6"><source src="PERSONAL BRAND EDIT Beju CREATIVE.mp4" type="video/mp4"></video><span class="cap">Personal Brand Edit</span></div>
-        <div class="clip w"><span class="tag">Brand</span><video muted loop playsinline preload="none" poster="rail-05.jpg" data-start="2"><source src="PERSONAL BRAND EDIT 2 Beju CREATIVE.mp4" type="video/mp4"></video><span class="cap">Personal Brand Edit 2</span></div>
-        <div class="clip w"><span class="tag">Brand</span><video muted loop playsinline preload="none" poster="rail-06.jpg" data-start="4"><source src="Personal brand1 beju.mp4" type="video/mp4"></video><span class="cap">Personal Brand Story</span></div>
-        <div class="clip w"><span class="tag">Brand</span><video muted loop playsinline preload="none" poster="rail-07.jpg" data-start="6"><source src="Personal brand2 beju.mp4" type="video/mp4"></video><span class="cap">Personal Brand Reel</span></div>
-        <div class="clip v"><span class="tag">Ad</span><video muted loop playsinline preload="none" poster="rail-08.jpg" data-start="6"><source src="Software Ad.mp4" type="video/mp4"></video><span class="cap">Software Ad</span></div>
+        <div class="clip v"><span class="tag">Podcast</span><video muted loop playsinline preload="none" poster="rail-01.jpg" data-start="5"><source src="rail-01.mp4" type="video/mp4"></video><span class="cap">Podcast Clip Edit</span></div>
+        <div class="clip w" style="--ar:1080/598"><span class="tag">Podcast</span><video muted loop playsinline preload="none" poster="rail-02.jpg" data-start="20"><source src="rail-02.mp4" type="video/mp4"></video><span class="cap">Podcast Edit</span></div>
+        <div class="clip v"><span class="tag">Podcast</span><video muted loop playsinline preload="none" poster="rail-03.jpg" data-start="5"><source src="rail-03.mp4" type="video/mp4"></video><span class="cap">Podcast LT</span></div>
+        <div class="clip w" style="--ar:1080/836"><span class="tag">Brand</span><video muted loop playsinline preload="none" poster="rail-04.jpg" data-start="6"><source src="rail-04.mp4" type="video/mp4"></video><span class="cap">Personal Brand Edit</span></div>
+        <div class="clip w" style="--ar:1004/718"><span class="tag">Brand</span><video muted loop playsinline preload="none" poster="rail-05.jpg" data-start="2"><source src="rail-05.mp4" type="video/mp4"></video><span class="cap">Personal Brand Edit 2</span></div>
+        <div class="clip w" style="--ar:1080/680"><span class="tag">Brand</span><video muted loop playsinline preload="none" poster="rail-06.jpg" data-start="4"><source src="rail-06.mp4" type="video/mp4"></video><span class="cap">Personal Brand Story</span></div>
+        <div class="clip w" style="--ar:1080/754"><span class="tag">Brand</span><video muted loop playsinline preload="none" poster="rail-07.jpg" data-start="6"><source src="rail-07.mp4" type="video/mp4"></video><span class="cap">Personal Brand Reel</span></div>
+        <div class="clip v"><span class="tag">Ad</span><video muted loop playsinline preload="none" poster="rail-08.jpg" data-start="6"><source src="rail-08.mp4" type="video/mp4"></video><span class="cap">Software Ad</span></div>
       </div>
       <div class="railnav">
         <button id="railPrev" aria-label="Previous">←</button>
@@ -883,54 +877,14 @@ footer{border-top:1px solid var(--border);padding:clamp(3rem,6vw,5rem) var(--pad
     });
   });
 
-  /* ── Hero clip: hold inside the usable window ─────────
-     The source has white flash frames near 4s and 18s, and an end card
-     after ~22s promoting the client's own episode. Loop 5.5s → 17.5s. */
-  var hv = document.getElementById('heroVid');
-  if (hv) {
-    var A = 5.5, B = 17.5;
-    var reset = function () {
-      if (!hv.dataset.placeholder) return;
-      try { hv.currentTime = A; } catch (e) {}
-    };
-    hv.addEventListener('loadedmetadata', reset);
-    hv.addEventListener('timeupdate', function () {
-      if (!hv.dataset.placeholder) return;
-      if (hv.currentTime >= B || hv.currentTime < A - 0.1) reset();
-    });
-    if (hv.readyState >= 1) reset();
-
-    /* If hero/hero.mp4 has been dropped in, use it and drop the loop window —
-       that window only exists to avoid the placeholder clip's flash frames. */
-    (function () {
-      var probe = document.createElement('video');
-      probe.muted = true;
-      probe.preload = 'metadata';
-      probe.addEventListener('loadedmetadata', function () {
-        delete hv.dataset.placeholder;
-        hv.innerHTML = '';
-        var s = document.createElement('source');
-        s.src = 'hero/hero.mp4';
-        s.type = 'video/mp4';
-        hv.appendChild(s);
-        var img = new Image();
-        img.onload = function () { hv.poster = 'hero/hero-poster.jpg'; };
-        img.src = 'hero/hero-poster.jpg';
-        hv.load();
-        hv.play().catch(function () {});
-      });
-      probe.src = 'hero/hero.mp4';
-    })();
-  }
-
   /* ── Work rail: pick up anything dropped into work/ ───────────────────
-     A static page can't list a directory, so probe 01..12 and keep whatever
-     answers. Any slot with no file is simply never added. If real files are
-     found, the sample clips shipped with the page step aside. */
+     A static page can't list a directory, so probe 01, 02, ... in order and
+     stop at the first slot with no file (slots are numbered without gaps —
+     see work/README.txt). One miss per visit instead of eleven 404s. */
   (function () {
     var railEl = document.getElementById('rail');
     if (!railEl) return;
-    var SLOTS = 12, pending = SLOTS, found = [];
+    var SLOTS = 12, found = [];
 
     var pad = function (n) { return (n < 10 ? '0' : '') + n; };
 
@@ -948,6 +902,7 @@ footer{border-top:1px solid var(--border);padding:clamp(3rem,6vw,5rem) var(--pad
          WIDE_SLOTS overrides it for letterboxed files, which report vertical. */
       var wide = ar > 1.05 || WIDE_SLOTS.indexOf(n) !== -1;
       card.className = 'clip ' + (wide ? 'w' : 'v');
+      if (WIDE_SLOTS.indexOf(n) === -1) card.style.setProperty('--ar', ar);
       card.dataset.slot = n;
       var tag = (meta && meta.tag) || '';
       var title = (meta && meta.title) || '';
@@ -971,8 +926,7 @@ footer{border-top:1px solid var(--border);padding:clamp(3rem,6vw,5rem) var(--pad
     };
 
     var done = function () {
-      if (--pending > 0 || !found.length) return;
-      found.sort(function (a, b) { return a.n - b.n; });
+      if (!found.length) return;
       /* Dropped-in clips LEAD the rail; the sample clips stay behind them.
          Replacing the whole rail with one file left a one-card work section,
          which is worse than the samples it removed. */
@@ -982,37 +936,40 @@ footer{border-top:1px solid var(--border);padding:clamp(3rem,6vw,5rem) var(--pad
         if (first) railEl.insertBefore(card, first);
         else railEl.appendChild(card);
       });
+      /* Scroll-snap keeps the old first card pinned when cards are inserted
+         before it, which left the new first card half off the left edge. */
+      railEl.scrollLeft = 0;
       if (window.ScrollTrigger) ScrollTrigger.refresh();
       document.dispatchEvent(new CustomEvent('rail:rebuilt'));
     };
 
-    for (var i = 1; i <= SLOTS; i++) {
-      (function (n) {
-        var probe = document.createElement('video');
-        probe.muted = true;
-        probe.preload = 'metadata';
-        probe.addEventListener('loadedmetadata', function () {
-          var ar = probe.videoWidth / probe.videoHeight;
-          /* optional work/NN.txt — line 1 title, line 2 gold badge */
-          var xhr = new XMLHttpRequest();
-          xhr.open('GET', 'work/' + pad(n) + '.txt', true);
-          xhr.onreadystatechange = function () {
-            if (xhr.readyState !== 4) return;
-            var meta = {};
-            if (xhr.status === 200 || (xhr.status === 0 && xhr.responseText)) {
-              var L = xhr.responseText.split('\n');
-              meta.title = (L[0] || '').trim();
-              meta.tag = (L[1] || '').trim();
-            }
-            found.push({ n: n, meta: meta, ar: ar });
-            done();
-          };
-          try { xhr.send(); } catch (e) { found.push({ n: n, meta: {}, ar: ar }); done(); }
-        });
-        probe.addEventListener('error', done);
-        probe.src = 'work/' + pad(n) + '.mp4';
-      })(i);
-    }
+    var probeSlot = function (n) {
+      if (n > SLOTS) return done();
+      var probe = document.createElement('video');
+      probe.muted = true;
+      probe.preload = 'metadata';
+      probe.addEventListener('loadedmetadata', function () {
+        var ar = probe.videoWidth / probe.videoHeight;
+        /* optional work/NN.txt — line 1 title, line 2 gold badge */
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', 'work/' + pad(n) + '.txt', true);
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState !== 4) return;
+          var meta = {};
+          if (xhr.status === 200 || (xhr.status === 0 && xhr.responseText)) {
+            var L = xhr.responseText.split('\n');
+            meta.title = (L[0] || '').trim();
+            meta.tag = (L[1] || '').trim();
+          }
+          found.push({ n: n, meta: meta, ar: ar });
+          probeSlot(n + 1);
+        };
+        try { xhr.send(); } catch (e) { found.push({ n: n, meta: {}, ar: ar }); probeSlot(n + 1); }
+      });
+      probe.addEventListener('error', done);
+      probe.src = 'work/' + pad(n) + '.mp4';
+    };
+    probeSlot(1);
   })();
 
   /* ── Work rail: only play what's on screen ─────────────
@@ -1050,7 +1007,9 @@ footer{border-top:1px solid var(--border);padding:clamp(3rem,6vw,5rem) var(--pad
         }
       });
     }, { threshold: 0.35 });
-    Array.prototype.forEach.call(document.querySelectorAll('.clip video'), function (v) {
+    var watch = function (v) {
+      if (v.dataset.watched) return;
+      v.dataset.watched = '1';
       /* Each loop restarts at 0, so clear the latch and seek back into the
          good stretch instead of replaying the intro. */
       v.addEventListener('seeked', function () {
@@ -1060,7 +1019,14 @@ footer{border-top:1px solid var(--border);padding:clamp(3rem,6vw,5rem) var(--pad
         if (v.currentTime < 0.3 && v.dataset.seeked) { delete v.dataset.seeked; seekStart(v); }
       });
       vo.observe(v);
-    });
+    };
+    var watchAll = function () {
+      Array.prototype.forEach.call(document.querySelectorAll('.clip video'), watch);
+    };
+    watchAll();
+    /* Cards from work/ are added after the probes answer, i.e. after the pass
+       above — without this they were never observed and never played. */
+    document.addEventListener('rail:rebuilt', watchAll);
   }
 
   var rail = document.getElementById('rail');

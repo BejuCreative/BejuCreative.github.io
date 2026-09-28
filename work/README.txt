@@ -67,21 +67,19 @@ WHAT WORKS BEST
 
   - 10-30 seconds each. They autoplay muted on scroll and loop.
 
-  - Keep each file under ~15MB if you can. Eight 60MB files makes
-    the page slow to load. Your current "PODCAST EDIT 1" is 62MB —
-    that one's worth compressing.
+  - ALWAYS run each video through the optimizer before adding it.
+    Raw exports (1080p60, ~12 Mbps) are what made the site lag.
 
 
-COMPRESSING (if a file is too big)
-----------------------------------
-Ask me and I'll do it, or run:
+COMPRESSING (do this for every video)
+-------------------------------------
+    scripts/optimize-video.sh my-export.mp4 work/02.mp4
 
-    ffmpeg -i input.mp4 -c:v libx264 -crf 23 -preset slow \
-      -movflags +faststart -c:a aac -b:a 128k output.mp4
+That writes work/02.mp4 (small, starts instantly) AND work/02.jpg
+(the poster still). Letterboxed file? Pass the crop box as the 4th
+argument - the script's header explains how to find it.
 
 
 POSTERS
 -------
-Don't worry about these. I generate a still from each video
-automatically so the cards aren't black before they load.
-Just tell me when you've added the videos and I'll cut them.
+The optimizer writes these for you (NN.jpg next to NN.mp4).
