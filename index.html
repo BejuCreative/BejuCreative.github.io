@@ -228,12 +228,7 @@
 .rail-ctrl button:disabled{opacity:.35;cursor:default}
 .rail-ctrl svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.75;fill:none;stroke-linecap:round;stroke-linejoin:round}
 
-/* ── launches: wide feature + two-up at matched heights ── */
-.launch-feature{display:block;width:100%;padding:0;border:0;color:inherit;text-align:left}
-.launch-meta{display:flex;justify-content:space-between;gap:1rem;margin-top:.8rem}
-.launch-meta b{color:var(--ink);font-weight:600}
-.launch-two{display:flex;gap:var(--gutter);margin-top:var(--gutter)}
-.launch-two .frame{flex:var(--grow) 1 0;padding:0;border:0;color:inherit}
+/* ── launches (gallery itself lives in site.css) ── */
 .launch-cta{margin-top:2.5rem}
 
 /* ── services: lockup + intro, then four equal cards ── */
@@ -366,8 +361,6 @@
   .faq-side{position:static}
   .tiers,.gtrio{grid-template-columns:1fr}
   .tier{min-height:0}
-  .launch-two{flex-direction:column}
-  .launch-two .frame{flex:none;width:100%}
 }
 @media(max-width:560px){
   .cards4,.steps,.stat-row{grid-template-columns:1fr}

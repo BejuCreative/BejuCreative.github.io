@@ -116,6 +116,15 @@ body.menu-open{overflow:hidden}
 }
 .playable:focus-visible{outline:2px solid var(--gold-champagne);outline-offset:4px}
 
+/* launch gallery: a wide feature, then a two-up whose frames share one height
+   (--grow is each clip's W/H, so flex widths come out proportional) */
+.launch-feature{display:block;width:100%;padding:0;border:0;color:inherit;text-align:left}
+.launch-meta{display:flex;justify-content:space-between;gap:1rem;margin-top:.8rem}
+.launch-meta b{color:var(--ink);font-weight:600}
+.launch-two{display:flex;gap:var(--gutter);margin-top:var(--gutter)}
+.launch-two .frame{flex:var(--grow) 1 0;padding:0;border:0;color:inherit}
+@media(max-width:900px){.launch-two{flex-direction:column}.launch-two .frame{flex:none;width:100%}}
+
 /* ── FAQ accordion (details/summary, height animated by site.js) ── */
 .acc details{border-bottom:1px solid var(--hairline)}
 .acc details:first-child{border-top:1px solid var(--hairline)}
@@ -198,7 +207,7 @@ body.menu-open{overflow:hidden}
 .fhead{font-size:var(--t-label);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-solid);margin-bottom:.9rem}
 .foot-col a{display:flex;align-items:center;min-height:40px;font-size:.92rem;color:var(--muted);transition:color var(--dur-1) var(--ease-out)}
 .foot-col a:hover{color:var(--ink)}
-.foot-bot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem;padding-top:1.4rem;font-size:.82rem;color:var(--dim)}
+.foot-bot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem;padding-top:1.4rem;font-size:.82rem;color:var(--dim)}
 .foot-bot a{display:inline-flex;align-items:center;min-height:44px;color:var(--muted)}
 .foot-bot a:hover{color:var(--ink)}
 @media(max-width:900px){.foot-brand{grid-column:1 / -1}.foot-col,.foot-brand + .foot-col{grid-column:span 4}}
