@@ -3,7 +3,7 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 import {fileURLToPath} from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const pages = ['index.html', 'podcast-video-editing/index.html', 'short-form-video-editing/index.html', 'video-editing-for-coaches/index.html'];
+const pages = ['index.html', 'podcast-video-editing/index.html', 'short-form-video-editing/index.html', 'video-editing-for-coaches/index.html', 'saas-launch-videos/index.html'];
 const titles = new Set();
 const descriptions = new Set();
 const sitemap = fs.readFileSync(path.join(root, 'sitemap.xml'), 'utf8');
