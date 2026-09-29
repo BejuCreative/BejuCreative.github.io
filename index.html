@@ -27,12 +27,13 @@
 <meta name="twitter:description" content="Reels, TikToks and Shorts cut for retention. Free sample clip, 24hr turnaround.">
 <meta name="twitter:image" content="https://bejucreative.digital/og-image.jpg">
 
-<meta name="theme-color" content="#0C0F08">
+<meta name="theme-color" content="#090B07">
+
 
 <!-- Structured data. Organization + Service + FAQPage.
-     Every FAQ below also appears as visible text on the page — Google treats
-     schema describing content that isn't there as spam, and it's a manual
-     action risk. No ratings claimed: those need genuine public reviews. -->
+     Every FAQ below also appears as visible text on the page, word for word —
+     Google treats schema describing content that isn't there as spam. No ratings
+     claimed: those need genuine public reviews. -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -44,7 +45,7 @@
       "url": "https://bejucreative.digital/",
       "logo": "https://bejucreative.digital/beju-mark.png",
       "image": "https://bejucreative.digital/og-image.jpg",
-      "description": "Short-form video editing for podcasters, coaches and founders. Reels, TikToks and YouTube Shorts cut for retention.",
+      "description": "Short-form video editing for podcasters, coaches and founders, and launch videos for SaaS, apps and product launches.",
       "email": "bejusipe@gmail.com",
       "sameAs": ["https://instagram.com/bejucreative"],
       "founder": [
@@ -58,7 +59,8 @@
         "TikTok editing",
         "YouTube Shorts editing",
         "Retention editing",
-        "Video captions and subtitles"
+        "Video captions and subtitles",
+        "Launch videos for SaaS and apps"
       ]
     },
     {
@@ -95,6 +97,16 @@
       }
     },
     {
+      "@type": "Service",
+      "@id": "https://bejucreative.digital/#launch-videos",
+      "name": "SaaS & App Launch Videos",
+      "serviceType": "Launch video production",
+      "provider": { "@id": "https://bejucreative.digital/#org" },
+      "areaServed": "Worldwide",
+      "url": "https://bejucreative.digital/saas-launch-videos/",
+      "description": "Short launch videos for SaaS products, apps and product launches. Quoted per project."
+    },
+    {
       "@type": "FAQPage",
       "@id": "https://bejucreative.digital/#faq",
       "mainEntity": [
@@ -127,7 +139,7 @@
           "name": "What happens if the edits don't perform?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "If our edits don't at least double your average views within 30 days of posting, we refund you in full — no credits, no vouchers, no questions."
+            "text": "If our edits don't at least double your average views within 30 days of posting, we refund you in full — no credits, no vouchers. To claim, send us your view numbers within 35 days of posting."
           }
         },
         {
@@ -145,6 +157,14 @@
             "@type": "Answer",
             "text": "Instagram Reels, TikTok, YouTube Shorts and LinkedIn. Every clip is exported and sized for each platform, with captions burned in."
           }
+        },
+        {
+          "@type": "Question",
+          "name": "Do you make launch videos for SaaS and apps?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes — short launch videos for SaaS products, apps and other product launches. They're quoted per project: tell us about your launch and we'll reply with a quote within 24 hours."
+          }
         }
       ]
     }
@@ -155,967 +175,609 @@
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="preload" as="image" href="hero/hero-poster.jpg" fetchpriority="high">
 <link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="site.css">
 <style>
-/* ============================================================
-   BEJÚ CREATIVE — homepage layout. Glass & Gold system:
-   tokens and shared primitives live in /tokens.css (see DESIGN.md).
-============================================================ */
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-/* No CSS smooth scrolling here: it fights ScrollTrigger (see the in-page link handler). */
-body{overflow-x:hidden}
-img,video{max-width:100%;display:block}
-a{color:inherit;text-decoration:none}
-ul{list-style:none}
-main,nav,footer{position:relative;z-index:1}
+/* Homepage-only compositions. Shared structure lives in /site.css, tokens in /tokens.css. */
 
-/* ── TYPE ─────────────────────────────────────────────────── */
-.display{
-  font-family:var(--font);font-weight:700;color:var(--ink);
-  line-height:1.04;letter-spacing:-.035em;text-wrap:balance;
-}
-/* brushed-silver sheen on headlines; stays >12:1 on the canvas */
-.grad{
-  background:linear-gradient(180deg,#FFFFFF 0%,#EDEDEF 52%,#BDBEB8 100%);
-  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-}
-h2.display{font-size:var(--t-h2)}
-/* The hero headline is an h2 so the real h1 can carry keywords for search. */
-h2.display.hero-h2{font-size:var(--t-hero);line-height:.9;letter-spacing:-.045em}
-h3{font-family:var(--font);font-weight:600;letter-spacing:-.015em;color:var(--ink)}
-
-.kicker{
-  font-size:var(--t-label);font-weight:600;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--gold-solid);display:flex;align-items:center;gap:.75rem;margin-bottom:1.25rem;
-}
-.kicker::before{content:'';width:1.6rem;height:1px;background:linear-gradient(90deg,var(--gold-bronze),var(--gold-champagne));flex-shrink:0}
-.kicker.mid{justify-content:center}
-.lede{font-size:var(--t-lead);line-height:1.5;letter-spacing:-.01em;color:var(--body);max-width:34rem;text-wrap:pretty}
-.body{font-size:var(--t-body);line-height:1.65;color:var(--body);max-width:38rem}
-.body strong{color:var(--ink);font-weight:600}
-
-/* ── BUTTONS (materials in tokens.css; .btn is the GSAP magnetic hook) ── */
-.btn{will-change:transform}
-
-/* ── NAV — floating glass capsule ─────────────────────────── */
-nav{
-  position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:1000;
-  width:min(76rem,calc(100% - 28px));height:64px;padding:0 10px 0 22px;border-radius:var(--r-xl);
-  display:flex;align-items:center;justify-content:space-between;gap:1rem;
-  background:var(--glass-fill-strong);
-  -webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
-  border:1px solid var(--hairline);box-shadow:var(--glass-highlight),var(--shadow-float);
-  transition:background var(--dur-1) var(--ease-out),border-color var(--dur-1) var(--ease-out);
-}
-nav.stuck{border-color:var(--hairline-strong)}
-@supports not ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){nav{background:var(--surface)}}
-.brand{display:flex;align-items:center;flex-shrink:0;min-height:44px;border-radius:var(--r-sm)}
-.brand img{height:1.75rem;width:auto;display:block;transition:opacity var(--dur-1) var(--ease-out)}
-.brand:hover img{opacity:.75}
-footer .brand img{height:2.4rem}
-.nav-links{display:flex;gap:.25rem;align-items:center}
-.nav-links a{
-  display:block;padding:.6rem .9rem;border-radius:var(--r-pill);
-  font-size:.9rem;font-weight:500;letter-spacing:-.01em;color:var(--body);
-  transition:color var(--dur-1) var(--ease-out),background var(--dur-1) var(--ease-out);
-}
-.nav-links a:hover{color:var(--ink);background:rgba(255,255,255,.06)}
-.nav-cta{min-height:44px;padding:.65rem 1.25rem;font-size:.88rem}
-.burger{display:none;flex-direction:column;justify-content:center;gap:5px;width:44px;height:44px;background:none;border:0;cursor:pointer;border-radius:var(--r-pill);align-items:center;z-index:1001}
-.burger span{display:block;width:20px;height:1.5px;background:var(--ink);border-radius:2px;transition:transform var(--dur-1) var(--ease-out),opacity var(--dur-1)}
-.burger.open span:nth-child(1){transform:translateY(6.5px) rotate(45deg)}
-.burger.open span:nth-child(2){opacity:0}
-.burger.open span:nth-child(3){transform:translateY(-6.5px) rotate(-45deg)}
-.mobnav{
-  position:fixed;inset:0;z-index:999;display:none;flex-direction:column;align-items:center;justify-content:center;gap:.5rem;
-  background:rgba(9,11,7,.72);-webkit-backdrop-filter:saturate(160%) blur(30px);backdrop-filter:saturate(160%) blur(30px);
-  opacity:0;pointer-events:none;transition:opacity var(--dur-1) var(--ease-out);
-}
-@supports not ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){.mobnav{background:var(--canvas)}}
-.mobnav.open{opacity:1;pointer-events:auto}
-.mobnav a{font-size:1.9rem;font-weight:700;letter-spacing:-.03em;color:var(--ink);padding:.5rem 1.2rem;border-radius:var(--r-sm)}
-.mobnav a:hover{color:var(--gold-solid)}
-
-/* ── SHELL ────────────────────────────────────────────────── */
-section{padding:var(--sec-m) var(--pad);position:relative}
-.wrap{max-width:74rem;margin:0 auto;width:100%}
-.rule{border-top:1px solid rgba(255,255,255,.05)}
-
-/* ── HERO ─────────────────────────────────────────────────── */
-.hero{
-  min-height:100svh;display:grid;align-items:center;
-  grid-template-columns:1.15fr .85fr;gap:clamp(2rem,5vw,5rem);
-  padding-top:clamp(8rem,16vh,11rem);padding-bottom:clamp(4rem,8vh,7rem);
-  max-width:calc(74rem + 2 * var(--pad));margin:0 auto;
-}
-.hero h2{margin:.2rem 0 1.8rem}
-.hero .lede{margin-bottom:2.4rem}
-.hero-actions{display:flex;gap:.75rem;flex-wrap:wrap;align-items:center}
-.hero-note{margin-top:1.4rem;font-size:var(--t-caption);color:var(--muted);display:flex;align-items:center;gap:.5rem}
-.hero-note b{color:var(--gold-solid);font-weight:600}
-
-/* titanium-framed phone */
-.phone{
-  position:relative;width:min(19.5rem,100%);margin-inline:auto;padding:.5rem;border-radius:3rem;
+/* ── hero: renders instantly; the headline only "settles" (transform, no fade) ── */
+.hero{min-height:100svh;display:flex;align-items:center;padding:clamp(7.5rem,15vh,10rem) 0 clamp(3rem,7vh,5rem)}
+.hero-grid{align-items:center;row-gap:2.5rem}
+.hero-copy{grid-column:1 / span 7}
+.hero-media{grid-column:9 / span 4}
+.hero-title{font-size:clamp(3.4rem,8.4vw,8.4rem);line-height:.86;letter-spacing:-.05em;margin:.15rem 0 1.6rem}
+.hero-title .hl{display:inline-block;animation:settle var(--dur-3) var(--ease-out) both}
+.hero-title .hl + .hl{animation-delay:70ms}
+@keyframes settle{from{transform:translateY(.12em)}to{transform:none}}
+.hero .lede{max-width:34ch}
+.hero .btn-row{margin-top:2.2rem}
+.hero-note{margin-top:1.2rem;font-size:var(--t-caption);color:var(--muted)}
+.hero-note b{color:var(--ink);font-weight:600}
+/* gold stays on the hero word and the action; the in-copy link is ink */
+.hero .lede .link{color:var(--ink);text-decoration-color:rgba(245,245,247,.35)}
+.hero .lede .link:hover{color:var(--gold-champagne);text-decoration-color:var(--gold-champagne)}
+/* titanium-framed phone; radii are concentric (outer = inner + padding) */
+.phone{--p:.5rem;position:relative;width:min(22rem,100%);margin-inline:auto;padding:var(--p);border-radius:calc(var(--r-xl) + var(--p));
   background:linear-gradient(145deg,#34362F 0%,#16170F 38%,#0B0C08 60%,#26271F 100%);
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.14),inset 0 1px 0 rgba(255,255,255,.22),
-             0 40px 90px -30px rgba(0,0,0,.9),0 0 0 1px rgba(0,0,0,.6);
-  will-change:transform;
-}
-.phone-screen{position:relative;overflow:hidden;border-radius:2.5rem;background:#000;aspect-ratio:9/16}
-.phone-screen video{width:100%;height:100%;object-fit:cover}
-.phone-scrim{position:absolute;inset:0;z-index:2;background:linear-gradient(180deg,rgba(0,0,0,.45) 0%,transparent 24%,transparent 58%,rgba(0,0,0,.86) 100%)}
-.phone-pill{position:absolute;top:.75rem;left:50%;transform:translateX(-50%);width:5rem;height:1.35rem;background:#000;border-radius:var(--r-pill);z-index:3}
-.phone-stat{position:absolute;left:0;right:0;bottom:1.5rem;text-align:center;z-index:3}
-.phone-stat b{display:block;font-size:2.7rem;font-weight:700;line-height:1;letter-spacing:-.04em;
-  background:var(--gold-text);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.14),inset 0 1px 0 rgba(255,255,255,.22),0 40px 90px -30px rgba(0,0,0,.9),0 0 0 1px rgba(0,0,0,.6);will-change:transform}
+.phone-screen{position:relative;overflow:hidden;border-radius:var(--r-xl);background:#000;aspect-ratio:9/16}
+.phone-screen video,.phone-screen img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.phone-scrim{position:absolute;inset:0;z-index:2;background:linear-gradient(180deg,rgba(0,0,0,.4) 0%,transparent 22%,transparent 60%,rgba(0,0,0,.85) 100%)}
+.phone-pill{position:absolute;top:.7rem;left:50%;width:5rem;height:1.35rem;margin-left:-2.5rem;background:#000;border-radius:var(--r-pill);z-index:3}
+.phone-stat{position:absolute;left:0;right:0;bottom:1.4rem;text-align:center;z-index:3}
+.phone-stat b{display:block;font-size:2.6rem;font-weight:700;line-height:1;letter-spacing:-.04em;font-variant-numeric:tabular-nums;color:var(--ink)}
 .phone-stat span{font-size:.7rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
-.scrollcue{position:absolute;left:var(--pad);bottom:2rem;display:flex;align-items:center;gap:.7rem;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
-.scrollcue i{display:block;width:2.6rem;height:1px;background:var(--hairline-strong);position:relative;overflow:hidden}
-.scrollcue i::after{content:'';position:absolute;inset:0;background:var(--gold);transform:translateX(-100%);animation:cue 2.4s var(--ease-out) infinite}
-@keyframes cue{0%{transform:translateX(-100%)}60%,100%{transform:translateX(100%)}}
 
-/* ── MARQUEE ──────────────────────────────────────────────── */
-.marquee{border-top:1px solid var(--hairline);border-bottom:1px solid var(--hairline);background:rgba(255,255,255,.015);overflow:hidden;padding:1.3rem 0}
-.marquee-row{display:flex;width:max-content;will-change:transform}
-.marquee-row span{
-  font-size:clamp(1.1rem,2vw,1.6rem);font-weight:700;letter-spacing:-.02em;
-  color:transparent;padding:0 1.5rem;white-space:nowrap;-webkit-text-stroke:1px rgba(255,255,255,.2);
-}
-.marquee-row span.on{-webkit-text-stroke:0;background:var(--gold-text);-webkit-background-clip:text;background-clip:text;color:var(--gold)}
+/* ── section heads: 7/5 editorial split ── */
+.head{align-items:end;row-gap:1.25rem;margin-bottom:clamp(2rem,4vw,3.5rem)}
+.head > :first-child{grid-column:1 / span 7}
+.head > :last-child{grid-column:9 / span 4}
+.head .caption,.head .body{margin-bottom:.35rem}
 
-/* ── SPLIT ────────────────────────────────────────────────── */
-.split{display:grid;grid-template-columns:1fr 1fr;gap:clamp(2.5rem,6vw,6rem);align-items:center}
-.split.top{align-items:start}
-.eqbox{border-radius:var(--r-xl);padding:clamp(2.2rem,4vw,3.6rem);text-align:center}
-.eqbox b{display:block;font-size:clamp(2rem,4vw,3.1rem);font-weight:700;letter-spacing:-.04em;color:var(--ink);line-height:1}
-.eqbox i{display:block;font-style:normal;font-size:1.8rem;font-weight:600;margin:.8rem 0;
-  background:var(--gold-text);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-.eqbox small{display:block;margin-top:1.1rem;font-size:var(--t-caption);color:var(--muted)}
+/* ── work: full-bleed gallery rail ── */
+.rail{--railH:clamp(20rem,34vw,30rem);display:flex;gap:16px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scrollbar-width:none;
+  padding:0 max(var(--pad),calc((100% - var(--container)) / 2)) 1.5rem;scroll-padding-inline:max(var(--pad),calc((100% - var(--container)) / 2))}
+.rail::-webkit-scrollbar{display:none}
+.clip{flex:0 0 auto;height:var(--railH);aspect-ratio:var(--ar);scroll-snap-align:start;padding:0;border:0;color:inherit;text-align:left}
+.clip .cap{position:absolute;left:0;right:0;bottom:0;z-index:1;padding:3rem 1rem 1rem;font-size:.85rem;font-weight:600;color:var(--ink);background:linear-gradient(0deg,rgba(0,0,0,.8),transparent);pointer-events:none}
+.clip .cap + .watch{bottom:auto;top:12px;right:12px}
+.rail-ctrl{display:flex;gap:8px;justify-content:flex-end}
+.rail-ctrl button{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;cursor:pointer;color:var(--ink);transition:background var(--dur-1) var(--ease-out),opacity var(--dur-1),scale var(--dur-1) var(--ease-out)}
+.rail-ctrl button:hover{background:rgba(40,46,32,.7)} .rail-ctrl button:active{scale:.94}
+.rail-ctrl button:disabled{opacity:.35;cursor:default}
+.rail-ctrl svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.75;fill:none;stroke-linecap:round;stroke-linejoin:round}
 
-/* ── CARDS ────────────────────────────────────────────────── */
-.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s-4);margin-top:3rem}
-.cell{border-radius:var(--r-lg);padding:clamp(1.5rem,2.2vw,2rem);transition:border-color var(--dur-1) var(--ease-out),transform var(--dur-1) var(--ease-out)}
-.cell:hover{border-color:var(--hairline-strong)}
-.cell .n{display:block;margin-bottom:1.2rem;font-size:var(--t-label);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-solid)}
-.cell h3{font-size:var(--t-h3);margin-bottom:.55rem}
-.cell p{font-size:.95rem;line-height:1.6;color:var(--body)}
-.cell p a{display:inline-flex;align-items:center;min-height:44px;margin-top:.4rem;color:var(--gold-solid);font-weight:600;font-size:.95rem;transition:color var(--dur-1) var(--ease-out)}
-.cell p a:hover{color:var(--gold-champagne)}
-.platforms{display:flex;gap:.5rem 1.2rem;flex-wrap:wrap;justify-content:center;margin-top:2.4rem;font-size:var(--t-caption);color:var(--muted)}
+/* ── launches: wide feature + two-up at matched heights ── */
+.launch-feature{display:block;width:100%;padding:0;border:0;color:inherit;text-align:left}
+.launch-meta{display:flex;justify-content:space-between;gap:1rem;margin-top:.8rem}
+.launch-meta b{color:var(--ink);font-weight:600}
+.launch-two{display:flex;gap:var(--gutter);margin-top:var(--gutter)}
+.launch-two .frame{flex:var(--grow) 1 0;padding:0;border:0;color:inherit}
+.launch-cta{margin-top:2.5rem}
+
+/* ── services: lockup + intro, then four equal cards ── */
+.svc-top{align-items:center;row-gap:2rem;margin-bottom:clamp(2rem,4vw,3rem)}
+.lockup{grid-column:1 / span 5;border-radius:var(--r-xl);padding:clamp(2rem,4vw,3.2rem);text-align:center}
+.lockup b{display:block;font-size:clamp(2rem,4vw,3.1rem);font-weight:700;letter-spacing:-.04em;line-height:1;color:var(--ink)}
+.lockup i{display:block;margin:.7rem 0;font-style:normal;font-size:1.8rem;font-weight:600;line-height:1;background:var(--gold-text);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.lockup small{display:block;margin-top:1rem;font-size:var(--t-caption);color:var(--muted)}
+.svc-intro{grid-column:7 / span 6}
+.cards4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--gutter)}
+.cards4 .card{display:flex;flex-direction:column}
+.cards4 h3{margin-bottom:.5rem}
+.cards4 p{font-size:.95rem;line-height:1.6;color:var(--body)}
+.cards4 .arrow-link{margin-top:auto;padding-top:.8rem}
+.card-new{position:relative}
+.card-new .badge{position:absolute;top:1.1rem;right:1.1rem;font-size:.68rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-solid)}
+
+/* ── how: a numbered line, not another card grid ── */
+.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--gutter);position:relative;counter-reset:s}
+.steps::before{content:'';position:absolute;left:0;right:0;top:20px;height:1px;background:linear-gradient(90deg,var(--gold-bronze),rgba(199,162,75,.15))}
+.steps li{position:relative;padding-top:3.4rem}
+.steps li::before{counter-increment:s;content:'0' counter(s);position:absolute;top:0;left:0;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;
+  font-size:.8rem;font-weight:600;font-variant-numeric:tabular-nums;color:var(--on-gold);background:var(--gold-metal);box-shadow:var(--gold-edge)}
+.steps h3{margin-bottom:.45rem}
+.steps p{font-size:.95rem;line-height:1.6;color:var(--body);max-width:30ch}
+.platforms{margin-top:2.5rem;font-size:var(--t-caption);color:var(--muted)}
 .platforms b{color:var(--ink);font-weight:600}
 
-/* ── CHECKS ───────────────────────────────────────────────── */
-.checks{display:flex;flex-direction:column;gap:1.5rem}
-.check{display:flex;gap:1rem;align-items:flex-start}
-.check i{flex-shrink:0;width:1.6rem;height:1.6rem;border-radius:50%;margin-top:.15rem;
-  display:flex;align-items:center;justify-content:center;font-style:normal;font-size:.72rem;font-weight:700;
-  color:var(--on-gold);background:var(--gold-metal);box-shadow:var(--gold-edge)}
-.check p{font-size:var(--t-body);line-height:1.6;color:var(--body)}
-.check p b{color:var(--ink);font-weight:600}
-
-/* ── NUMBERS ──────────────────────────────────────────────── */
-.nums{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s-4);margin-top:3rem}
-.num{border-radius:var(--r-lg);padding:clamp(1.7rem,2.6vw,2.4rem)}
-.num b{display:block;font-size:clamp(2.6rem,4.6vw,3.8rem);font-weight:700;line-height:1;letter-spacing:-.045em;margin-bottom:.9rem;
+/* ── why: argument left, one oversized number right ── */
+.why{row-gap:3rem;align-items:start}
+.why-copy{grid-column:1 / span 6}
+.why-stats{grid-column:8 / span 5}
+.checks{display:grid;gap:1.15rem;margin:2rem 0 1rem}
+.checks li{display:grid;grid-template-columns:1.6rem 1fr;gap:.9rem;line-height:1.6;color:var(--body)}
+.checks li::before{content:'';width:1.6rem;height:1.6rem;margin-top:.1rem;border-radius:50%;background:var(--gold-metal);box-shadow:var(--gold-edge);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 12.5l3.2 3.2L17 9' fill='none' stroke='%231F1708' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"),var(--gold-metal);
+  background-size:100% 100%,auto}
+.checks b{color:var(--ink);font-weight:600}
+.big{font-size:clamp(5.5rem,13vw,11rem);font-weight:700;line-height:.85;letter-spacing:-.06em;font-variant-numeric:tabular-nums;margin:.4rem 0 .9rem;
   background:var(--gold-text);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:var(--gold)}
-.num p{font-size:.95rem;line-height:1.55;color:var(--body)}
+.stat-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--gutter);margin-top:2.4rem;padding-top:1.6rem;border-top:1px solid var(--hairline)}
+.stat-row b{display:block;font-size:clamp(1.8rem,3vw,2.4rem);font-weight:700;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums;color:var(--ink);margin-bottom:.5rem}
+.stat-row p{font-size:.85rem;line-height:1.5;color:var(--muted)}
+.stats-title{margin-top:.2rem}
 
-/* ── WORK RAIL ────────────────────────────────────────────── */
-/* Uniform card HEIGHT, width set by the footage's real aspect (--ar), so
-   nothing is cropped and there are no bars. v/w are fallbacks for cards that
-   don't set --ar. Letterboxed exports get their bars cut by
-   scripts/optimize-video.sh before they reach the page. */
-.rail{display:flex;gap:var(--s-4);overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:1.5rem;scrollbar-width:none;--railH:clamp(19rem,32vw,27rem)}
-.rail::-webkit-scrollbar{display:none}
-.clip{
-  flex:0 0 auto;height:var(--railH);aspect-ratio:var(--ar);scroll-snap-align:start;position:relative;
-  border-radius:var(--r-lg);background:#000;overflow:hidden;
-  box-shadow:inset 0 0 0 1px var(--hairline),var(--shadow-float);
-}
-.clip.v{--ar:9/16}
-.clip.w{--ar:16/9}
-.clip video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .7s var(--ease-out)}
-.clip:hover video{transform:scale(1.035)}
-/* label chip: real glass, it floats over moving video */
-.clip .tag{
-  position:absolute;top:12px;left:12px;z-index:2;padding:.4rem .7rem;border-radius:var(--r-pill);
-  font-size:.7rem;font-weight:600;letter-spacing:.02em;color:var(--ink);
-  background:rgba(12,14,10,.65);-webkit-backdrop-filter:saturate(160%) blur(14px);backdrop-filter:saturate(160%) blur(14px);
-  border:1px solid rgba(255,255,255,.14);
-}
-@supports not ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){.clip .tag{background:rgba(12,14,10,.85)}}
-.clip .cap{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:2.2rem 1rem 1rem;font-size:.85rem;font-weight:600;color:var(--ink);background:linear-gradient(0deg,rgba(0,0,0,.85),transparent)}
-.railnav{display:flex;gap:.6rem;margin-top:1.25rem}
-.railnav button{
-  width:44px;height:44px;border-radius:50%;cursor:pointer;color:var(--ink);font-size:1rem;
-  display:flex;align-items:center;justify-content:center;
-  transition:border-color var(--dur-1) var(--ease-out),background var(--dur-1) var(--ease-out),scale var(--dur-1) var(--ease-out);
-}
-.railnav button:hover{border-color:rgba(255,255,255,.26);background:rgba(40,46,32,.7)}
-.railnav button:active{scale:.94}
-
-/* ── GUARANTEE ────────────────────────────────────────────── */
-.guarantee{border-radius:var(--r-xl);padding:clamp(2.6rem,6vw,5rem);text-align:center}
-.guarantee h2{margin:.6rem 0 1.4rem;font-size:var(--t-h2)}
-.guarantee .body{margin:0 auto 2.6rem;text-align:center}
-.gtrio{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s-4);margin-bottom:2.6rem;text-align:left}
-.gtrio div{padding:1.1rem 1.2rem;border-radius:var(--r-sm);background:rgba(255,255,255,.035);border:1px solid var(--hairline)}
-.gtrio b{display:block;font-size:1rem;font-weight:600;color:var(--ink);margin-bottom:.3rem;letter-spacing:-.01em}
+/* ── guarantee ── */
+.guarantee{border-radius:var(--r-xl);padding:clamp(2.4rem,6vw,5rem);text-align:center}
+.guarantee .display{margin:.4rem auto 1.3rem}
+.guarantee .body{margin:0 auto 2.4rem;text-align:center}
+.gtrio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--gutter);margin:0 auto 2.4rem;max-width:56rem;text-align:left}
+.gtrio div{padding:1.1rem 1.2rem;border-radius:var(--r-lg);background:rgba(255,255,255,.035);border:1px solid var(--hairline)}
+.gtrio b{display:block;color:var(--ink);font-weight:600;margin-bottom:.3rem}
 .gtrio p{font-size:.9rem;line-height:1.55;color:var(--body)}
+.guarantee .btn-row{justify-content:center}
 
-/* ── PRICING ──────────────────────────────────────────────── */
-.tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s-4);margin-top:1rem}
-.tier{border-radius:var(--r-lg);padding:clamp(1.6rem,2.4vw,2.1rem);transition:border-color var(--dur-1) var(--ease-out)}
-.tier:hover{border-color:var(--hairline-strong)}
-.tier.best::after{
-  content:'Best offer';position:absolute;top:14px;right:14px;padding:.35rem .65rem;border-radius:var(--r-pill);
-  font-size:.7rem;font-weight:700;letter-spacing:.02em;color:var(--on-gold);background:var(--gold-metal);box-shadow:var(--gold-edge);
-}
+/* ── pricing: toggle + crossfading panels in one grid cell (no layout shift) ── */
+.seg{display:inline-flex;padding:4px;border-radius:var(--r-pill);background:rgba(255,255,255,.05);border:1px solid var(--hairline)}
+.seg button{min-height:44px;padding:0 1.2rem;border:0;border-radius:var(--r-pill);background:transparent;color:var(--body);font-size:.92rem;font-weight:600;cursor:pointer;
+  transition:background var(--dur-1) var(--ease-out),color var(--dur-1) var(--ease-out)}
+.seg button[aria-selected="true"]{background:rgba(255,255,255,.1);color:var(--ink);box-shadow:var(--glass-highlight)}
+.panes{display:grid}
+.pane{grid-area:1 / 1;opacity:0;transition:opacity var(--dur-2) var(--ease-out)}
+.pane.is-on{opacity:1}
+.tiers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--gutter)}
+.tier{border-radius:var(--r-lg);padding:clamp(1.5rem,2.4vw,2rem);min-height:10.5rem;display:flex;flex-direction:column}
 .tier .q{font-size:var(--t-caption);font-weight:600;color:var(--muted)}
-.tier .p{font-size:clamp(2.2rem,3.4vw,2.9rem);font-weight:700;letter-spacing:-.04em;line-height:1;margin:.6rem 0 .35rem;
-  background:var(--gold-text);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:var(--gold)}
-.tier .u{font-size:var(--t-caption);color:var(--muted)}
-.grouplbl{margin-top:3rem;font-size:var(--t-label);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-solid)}
-.pricenote{margin-top:1.8rem;font-size:var(--t-caption);line-height:1.6;color:var(--muted);max-width:42rem}
-.pricecta{margin-top:2rem;display:flex;flex-wrap:wrap;gap:.75rem}
+.tier .p{font-size:clamp(2.4rem,3.6vw,3rem);font-weight:700;letter-spacing:-.045em;line-height:1;margin:.7rem 0 .4rem;font-variant-numeric:tabular-nums;color:var(--ink)}
+.tier.best .p{background:var(--gold-text);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:var(--gold)}
+.tier .u{font-size:var(--t-caption);color:var(--muted);margin-top:auto}
+.tier.best::after{content:'Best offer';position:absolute;top:14px;right:14px;padding:.35rem .65rem;border-radius:var(--r-pill);font-size:.7rem;font-weight:600;color:var(--on-gold);background:var(--gold-metal);box-shadow:var(--gold-edge)}
+.pane-note{margin-top:1rem;font-size:var(--t-caption);color:var(--muted)}
+.price-foot{align-items:center;row-gap:1.4rem;margin-top:2.2rem}
+.price-foot > :first-child{grid-column:1 / span 7}
+.price-foot > :last-child{grid-column:9 / span 4;justify-self:end}
 
-/* ── PROOF ────────────────────────────────────────────────── */
-.proof{display:flex;gap:var(--s-4);overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:1.5rem;scrollbar-width:none;margin-top:3rem}
+/* ── results rail ── */
+.proof{--railH:clamp(18rem,30vw,26rem);display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;
+  padding:0 max(var(--pad),calc((100% - var(--container)) / 2)) 1.5rem;scroll-padding-inline:max(var(--pad),calc((100% - var(--container)) / 2))}
 .proof::-webkit-scrollbar{display:none}
-/* Same idea as the work rail: one height, width from each item's real shape
-   (--ar), so screenshots are never cropped or padded with empty space. The
-   declared aspect also reserves the space before images decode, so nothing
-   below shifts and ScrollTrigger's measurements stay valid. */
-.proof>div{flex:0 0 auto;height:clamp(17rem,30vw,26rem);aspect-ratio:var(--ar,9/16);scroll-snap-align:start;
-  border-radius:var(--r-lg);background:#000;overflow:hidden;box-shadow:inset 0 0 0 1px var(--hairline),var(--shadow-float)}
-.proof video,.proof img{display:block;width:100%;height:100%;object-fit:cover}
+.proof .frame{flex:0 0 auto;height:var(--railH);aspect-ratio:var(--ar,9/16);scroll-snap-align:start}
+.proof video{object-fit:cover}
 
-/* ── MISSION ──────────────────────────────────────────────── */
-.mission{max-width:46rem;margin:0 auto}
-.mission h2{margin:.4rem 0 2.2rem}
-.mission p{font-size:1.125rem;line-height:1.75;color:var(--body);margin-bottom:1.4rem}
-.mission p strong{color:var(--ink);font-weight:600}
+/* ── mission: the one quiet, text-only section ── */
+.mission{grid-column:1 / span 8}
+.mission .display{margin-bottom:2rem}
+.mission .pull{font-size:clamp(1.3rem,2.2vw,1.65rem);line-height:1.45;letter-spacing:-.015em;color:var(--ink);text-wrap:pretty;hanging-punctuation:first}
+.mission .pull + .body{margin-top:1.6rem}
 
-/* ── APPLY ────────────────────────────────────────────────── */
-.apply{text-align:center}
-.apply h2{margin:.4rem auto 1.4rem;max-width:16ch}
-.apply .lede{margin:0 auto 2.4rem}
-.applymail{display:inline-flex;align-items:center;min-height:44px;margin-top:1.4rem;font-size:.95rem;font-weight:500;color:var(--gold-solid);border-bottom:1px solid rgba(216,184,101,.35);transition:border-color var(--dur-1),color var(--dur-1)}
-.applymail:hover{color:var(--gold-champagne);border-color:var(--gold-champagne)}
+/* ── FAQ: sticky title left, accordion right ── */
+.faq-grid{row-gap:2rem;align-items:start}
+.faq-side{grid-column:1 / span 4;position:sticky;top:110px}
+.faq-side .caption{margin-top:1rem}
+.acc{grid-column:6 / span 7}
 
-/* ── FOOTER ───────────────────────────────────────────────── */
-footer{border-top:1px solid var(--hairline);padding:clamp(3rem,6vw,4.5rem) var(--pad) 2rem;background:var(--canvas-2)}
-.fgrid{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:2.5rem;max-width:74rem;margin:0 auto 2.5rem;padding-bottom:2.5rem;border-bottom:1px solid var(--hairline)}
-.fgrid p{font-size:var(--t-caption);line-height:1.6;color:var(--muted);max-width:20rem;margin-top:1rem}
-.fcol h4{font-size:var(--t-label);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-solid);margin-bottom:1rem}
-.fcol li{margin-bottom:0}
-.fcol a{display:inline-flex;align-items:center;min-height:44px;font-size:.92rem;color:var(--muted);transition:color var(--dur-1)}
-.fcol a:hover{color:var(--ink)}
-.fbot{max-width:74rem;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;font-size:.8rem;color:var(--dim)}
-.fbot a{display:inline-flex;align-items:center;min-height:44px;color:var(--muted)}
-.fbot a:hover{color:var(--gold-solid)}
+/* ── apply ── */
+.apply-grid{row-gap:2.5rem;align-items:start}
+.apply-copy{grid-column:1 / span 5}
+.apply-copy .lede{margin-top:1.4rem}
+.contact-list{margin-top:2rem;display:grid;gap:2px}
+.contact-list a{display:flex;align-items:center;justify-content:space-between;gap:1rem;min-height:52px;border-bottom:1px solid var(--hairline);color:var(--body);transition:color var(--dur-1) var(--ease-out)}
+.contact-list a span{color:var(--muted);font-size:var(--t-caption)}
+.contact-list a:hover{color:var(--ink)}
+.apply-form{grid-column:7 / span 6;border-radius:var(--r-xl);padding:clamp(1.5rem,3.5vw,2.5rem)}
 
-/* Visually hidden, but read by Google and screen readers. */
-.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-
-/* ── FAQ ──────────────────────────────────────────────────── */
-.faq{margin-top:2.4rem;border-radius:var(--r-lg);padding:.4rem clamp(1.2rem,2.5vw,2rem)}
-.faq details{border-bottom:1px solid var(--hairline)}
-.faq details:last-child{border-bottom:0}
-.faq summary{
-  list-style:none;cursor:pointer;padding:1.3rem 2.5rem 1.3rem 0;position:relative;border-radius:var(--r-sm);
-  font-size:1.05rem;font-weight:600;letter-spacing:-.01em;color:var(--ink);transition:color var(--dur-1) var(--ease-out);
+/* ── responsive ── */
+@media(max-width:1100px){
+  .cards4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .steps{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:2.5rem}
+  .steps::before{display:none}
 }
-.faq summary::-webkit-details-marker{display:none}
-.faq summary:hover{color:var(--gold-champagne)}
-/* plus/minus built from two rules so there's no icon font to load */
-.faq summary::after,.faq summary::before{content:'';position:absolute;right:.4rem;top:50%;background:var(--gold-solid);border-radius:2px;transition:transform var(--dur-1) var(--ease-out),opacity var(--dur-1) var(--ease-out)}
-.faq summary::after{width:14px;height:2px;transform:translateY(-50%)}
-.faq summary::before{width:2px;height:14px;right:.75rem;transform:translateY(-50%)}
-.faq details[open] summary::before{transform:translateY(-50%) rotate(90deg);opacity:0}
-.faq details p{padding:0 2.5rem 1.5rem 0;margin-top:-.2rem;font-size:var(--t-body);line-height:1.7;color:var(--body);max-width:52rem}
-
-/* ── REVEAL (GSAP drives; CSS is the fallback) ────────────── */
-.rv{opacity:0}
-.no-gsap .rv{opacity:1}
-.line-mask{overflow:hidden;display:block;padding-bottom:.06em}
-
-/* ── RESPONSIVE ───────────────────────────────────────────── */
-@media(max-width:1100px){.grid4,.nums{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:900px){
-  .nav-links,.nav-cta{display:none}
-  .burger{display:flex}
-  .mobnav{display:flex}
-  nav{padding:0 6px 0 18px;height:58px;top:10px;width:calc(100% - 20px)}
-  .hero{grid-template-columns:1fr;min-height:auto;gap:3rem}
+  .hero{min-height:auto;padding-top:6.5rem}
+  .hero-grid{grid-template-columns:minmax(0,1fr) minmax(0,.62fr);column-gap:1rem;align-items:start}
+  .hero-copy{display:contents}
+  .hero-copy > .kicker{grid-column:1 / -1;grid-row:1}
+  .hero-title{grid-column:1;grid-row:2;align-self:center;margin:0}
+  .hero-media{grid-column:2;grid-row:2}
+  .hero .lede{grid-column:1 / -1;grid-row:3}
+  .hero .btn-row{grid-column:1 / -1;grid-row:4}
+  .hero-note{grid-column:1 / -1;grid-row:5;margin-top:-.4rem}
   .hero .lede{max-width:none}
-  .phone{width:min(17rem,80%)}
-  .split{grid-template-columns:1fr}
-  .tiers{grid-template-columns:1fr}
-  .gtrio{grid-template-columns:1fr}
-  .fgrid{grid-template-columns:1fr 1fr}
-  .scrollcue{display:none}
+  .hero .btn-row{margin-top:0}
+  .hero-grid{row-gap:1.4rem}
+  .phone{--p:.3rem}
+  .phone-stat{display:none}  /* too small to read inside the mini phone; the guarantee has its own section */
+  .phone-pill{width:3rem;height:.85rem;margin-left:-1.5rem;top:.45rem}
+  .head > :first-child,.head > :last-child,.svc-intro,.lockup,.why-copy,.why-stats,.mission,.faq-side,.acc,.apply-copy,.apply-form,.price-foot > :first-child,.price-foot > :last-child{grid-column:1 / -1}
+  .head > :last-child{justify-self:start}
+  .price-foot > :last-child{justify-self:start}
+  .faq-side{position:static}
+  .tiers,.gtrio{grid-template-columns:1fr}
+  .tier{min-height:0}
+  .launch-two{flex-direction:column}
+  .launch-two .frame{flex:none;width:100%}
 }
 @media(max-width:560px){
-  .grid4,.nums{grid-template-columns:1fr}
-  .fgrid{grid-template-columns:1fr}
-  .hero-actions .btn{flex:1 1 100%}
+  .cards4,.steps,.stat-row{grid-template-columns:1fr}
+  .stat-row{row-gap:1.4rem}
+  .hero .btn-row > *{flex:1 1 100%}
+  .hero-title{font-size:clamp(3rem,15vw,4.2rem)}
 }
-@media(prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
-  .rv{opacity:1!important;transform:none!important}
-}
+@media(prefers-reduced-motion:reduce){.hero-title .hl{animation:none}.pane{transition:none}}
 </style>
 </head>
 <body>
+<a class="skip" href="#top">Skip to content</a>
 
-<nav id="nav">
-  <a href="#top" class="brand" aria-label="BEJÚ Creative — home">
-    <img src="beju-mark.png" alt="BEJÚ Creative" width="1560" height="1000">
-  </a>
-  <ul class="nav-links">
-    <li><a href="#how">How It Works</a></li>
-    <li><a href="#work">Our Work</a></li>
-    <li><a href="#pricing">Pricing</a></li>
-    <li><a href="#proof">Results</a></li>
-    <li><a href="#faq">FAQ</a></li>
-  </ul>
-  <a href="#apply" class="btn btn-gold nav-cta">Get Started Now</a>
-  <button class="burger" id="burger" aria-label="Menu"><span></span><span></span><span></span></button>
-</nav>
+<header class="nav" id="nav">
+  <a href="#top" class="brand" aria-label="BEJÚ Creative — home"><img src="beju-mark.png" alt="BEJÚ Creative" width="1486" height="884"></a>
+  <nav class="nav-links" aria-label="Main">
+    <a href="#work">Work</a>
+    <a href="#launches">Launches</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#faq">FAQ</a>
+  </nav>
+  <div class="nav-end">
+    <a class="btn-gold btn-sm magnetic" href="#apply">Start a project</a>
+    <button class="burger" type="button" aria-expanded="false" aria-controls="sheet" aria-label="Open menu"><span></span><span></span><span></span></button>
+  </div>
+</header>
 
-<div class="mobnav" id="mobnav">
-  <a href="#how">How It Works</a>
-  <a href="#work">Our Work</a>
-  <a href="#pricing">Pricing</a>
-  <a href="#proof">Results</a>
-  <a href="#apply">Get Started</a>
+<div class="sheet" id="sheet">
+  <nav aria-label="Menu">
+    <a href="#work">Work</a>
+    <a href="#launches">Launches</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#faq">FAQ</a>
+  </nav>
+  <a class="btn-gold" href="#apply">Start a project</a>
+  <p class="caption">We reply within 24 hours · bejusipe@gmail.com</p>
 </div>
 
 <main id="top">
 
-  <section class="hero">
-    <div>
-      <h1 class="kicker">Short-form video editing for podcasters, coaches &amp; founders</h1>
-      <h2 class="display hero-h2">
-        <span class="line-mask"><span class="ln">Get</span></span>
-        <span class="line-mask"><span class="ln gold-text">seen.</span></span>
-      </h2>
-      <p class="lede rv">BEJÚ Creative edits short-form video for podcasters, coaches and founders — cut for retention, not just views.</p>
-      <div class="hero-actions rv">
-        <a class="btn btn-gold" href="mailto:bejusipe@gmail.com?subject=Free%20Sample%20Clip%20Request&amp;body=Hey%20BEJU%2C%20I%27d%20love%20a%20free%20sample%20clip.%20My%20podcast%2Faccount%20is%3A%20">Get a free sample clip</a>
-        <a class="btn btn-glass" href="#work">See our work</a>
-      </div>
-      <div class="hero-note rv"><b>Free</b> · No commitment · Reply in 24h</div>
-    </div>
-
-    <div class="phone" id="phone">
-      <div class="phone-screen">
-        <div class="phone-pill"></div>
-        <!-- To change the hero clip, replace hero/hero.mp4 (+ hero-poster.jpg).
-             Run it through scripts/optimize-video.sh first. -->
-        <video id="heroVid" autoplay muted loop playsinline preload="auto" poster="hero/hero-poster.jpg"
-               disablepictureinpicture disableremoteplayback>
-          <source src="hero/hero.mp4" type="video/mp4">
-        </video>
-        <div class="phone-scrim"></div>
-        <div class="phone-stat"><b>2×</b><span>Views or you don't pay</span></div>
-      </div>
-    </div>
-
-    <div class="scrollcue"><i></i> Scroll</div>
-  </section>
-
-  <div class="marquee">
-    <div class="marquee-row" id="mq1">
-      <span>Reels</span><span class="on">TikTok</span><span>YouTube Shorts</span><span class="on">Podcasts</span>
-      <span>Hooks</span><span class="on">Retention</span><span>Captions</span><span class="on">24hr</span>
-      <span>Reels</span><span class="on">TikTok</span><span>YouTube Shorts</span><span class="on">Podcasts</span>
-      <span>Hooks</span><span class="on">Retention</span><span>Captions</span><span class="on">24hr</span>
-    </div>
-  </div>
-
-  <section class="rule">
-    <div class="wrap split">
-      <div class="eqbox panel rv">
-        <b>1 Upload</b><i>=</i><b>10 Clips</b>
-        <small>From one recording session</small>
-      </div>
-      <div>
-        <div class="kicker rv">Why it works</div>
-        <h2 class="display grad rv">No time<br>to edit?</h2>
-        <p class="body rv" style="margin-top:1.6rem">You're already making the content — a podcast, a coaching call, a talk to camera. The footage exists. What's missing is someone to cut it into the ten pieces that actually travel. <strong>Send the raw file, get back a month of posts.</strong> No shot lists, no scripts, nothing new to film.</p>
-        <div class="rv" style="margin-top:2.4rem"><a class="btn btn-glass" href="#apply">Get a free sample clip</a></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="rule" id="services" aria-labelledby="services-title">
-    <div class="wrap">
-      <div class="kicker">Editing services</div>
-      <h2 class="display grad" id="services-title">Start with<br>your footage</h2>
-      <div class="grid4" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))">
-        <div class="cell panel"><h3>Podcast video editing</h3><p>Turn interview recordings into standalone clips. Keep the context, frame the speaker and make each takeaway easy to follow.</p><p><a href="/podcast-video-editing/">Explore podcast editing →</a></p></div>
-        <div class="cell panel"><h3>Short-form video editing</h3><p>Shape existing footage into Reels, TikToks and YouTube Shorts, with focused hooks, captions and platform-ready framing.</p><p><a href="/short-form-video-editing/">Explore short-form editing →</a></p></div>
-        <div class="cell panel"><h3>Editing for coaches</h3><p>Make educational and talking-head recordings clearer without losing your voice. Brief us on the audience, takeaway and style.</p><p><a href="/video-editing-for-coaches/">Explore editing for coaches →</a></p></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="rule" id="how">
-    <div class="wrap">
-      <div class="kicker rv">How it works</div>
-      <h2 class="display grad rv">Full service from<br>brief to delivery</h2>
-      <div class="grid4">
-        <div class="cell panel rv"><span class="n">Step 01</span><h3>Brief</h3><p>You send footage and tell us who it's for. That's the whole ask — no forms, no onboarding call.</p></div>
-        <div class="cell panel rv"><span class="n">Step 02</span><h3>Edit</h3><p>Hooks, pacing, captions, sound design. Cut for retention first — every trim has a reason behind it.</p></div>
-        <div class="cell panel rv"><span class="n">Step 03</span><h3>Review</h3><p>One fast round of changes. Tell us what to fix and it comes back the same day, not the same week.</p></div>
-        <div class="cell panel rv"><span class="n">Step 04</span><h3>Deliver</h3><p>Ready to post in 24 hours — exported and sized for every platform without you touching a thing.</p></div>
-      </div>
-      <div class="platforms rv">Formatted for <b>Instagram Reels</b> · <b>TikTok</b> · <b>YouTube Shorts</b> · <b>LinkedIn</b></div>
-    </div>
-  </section>
-
-  <section class="rule">
-    <div class="wrap split top">
-      <div>
-        <div class="kicker rv">The honest pitch</div>
-        <h2 class="display grad rv">So what's<br>the ROI<br>on all this?</h2>
-        <p class="body rv" style="margin-top:1.6rem">Here's the maths nobody runs. A month of clips from us costs less than a single session with most of the people we edit for. <strong>You need one client from it for the whole thing to have paid for itself</strong> — and you own every file forever.</p>
-        <p class="body rv" style="margin-top:1.2rem">We're not going to promise you a viral video. Anyone who does is guessing. What we'll promise is work that looks like someone who cared made it.</p>
-      </div>
-      <div>
-        <div class="checks">
-          <div class="check rv"><i>✓</i><p><b>You risk nothing to find out.</b> The first clip is free and there's no call attached. Send a file, get an edit back, decide then.</p></div>
-          <div class="check rv"><i>✓</i><p><b>No retainer, no lock-in.</b> Buy five clips. If they don't perform, walk. Most people come back — but that's their choice.</p></div>
-          <div class="check rv"><i>✓</i><p><b>You film nothing extra.</b> We work from footage you've already shot, so the only thing you spend is the upload.</p></div>
-          <div class="check rv"><i>✓</i><p><b>Two editors, not a queue.</b> You're talking to the people actually cutting your video. Nothing gets handed to a junior.</p></div>
+  <!-- ══ HERO ══ -->
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="wrap g12 hero-grid">
+      <div class="hero-copy">
+        <h1 class="kicker">Short-form video editing for podcasters, coaches &amp; founders</h1>
+        <h2 class="display hero-title" id="hero-title"><span class="hl">Get</span><br><span class="hl gold-text">seen.</span></h2>
+        <p class="lede">BEJÚ Creative edits short-form video for podcasters, coaches and founders — cut for retention, not just views. We also make <a class="link" href="#launches">launch videos for SaaS, apps and product launches</a>.</p>
+        <div class="btn-row">
+          <a class="btn-gold magnetic" href="#apply" data-need="Podcast clips">Get a free sample clip</a>
+          <a class="btn-glass" href="#work">See our work</a>
         </div>
-        <div class="rv" style="margin-top:2.4rem"><a class="btn btn-glass" href="#pricing">See what it costs</a></div>
+        <p class="hero-note"><b>Free</b> · No commitment · Reply in 24h</p>
+      </div>
+      <div class="hero-media">
+        <div class="phone" data-parallax>
+          <div class="phone-screen">
+            <!-- To change the hero clip, replace hero/hero.mp4 (+ hero-poster.jpg).
+                 Run it through scripts/optimize-video.sh first. -->
+            <img src="hero/hero-poster.jpg" alt="" width="720" height="1280" fetchpriority="high">
+            <video autoplay muted loop playsinline preload="auto" poster="hero/hero-poster.jpg" aria-label="BEJÚ Creative showreel: The Edit Effect"
+                   disablepictureinpicture disableremoteplayback>
+              <source src="hero/hero.mp4" type="video/mp4">
+            </video>
+            <div class="phone-pill"></div>
+            <div class="phone-scrim"></div>
+            <div class="phone-stat"><b>2×</b><span>Views or you don't pay</span></div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
-  <section class="rule" id="numbers">
+  <!-- ══ WORK ══ -->
+  <section class="sec" id="work" aria-labelledby="work-title">
+    <div class="wrap g12 head">
+      <div>
+        <p class="kicker rv">Our work</p>
+        <h2 class="display grad rv" id="work-title" data-lr>The clips<br>never stop</h2>
+      </div>
+      <div class="rv">
+        <p class="caption">Podcast clips, personal brands and ads. Tap any clip to watch it full screen.</p>
+        <div class="rail-ctrl" style="margin-top:1rem">
+          <button class="glass" type="button" data-rail-prev="rail" aria-label="Previous clips"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+          <button class="glass" type="button" data-rail-next="rail" aria-label="Next clips"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button>
+        </div>
+      </div>
+    </div>
+    <!-- To add a clip: run it through scripts/optimize-video.sh, then copy one of the
+         buttons below and set --ar to the clip's width/height. See work/README.txt. -->
+    <div class="rail" id="rail" data-rail>
+      <button class="clip frame playable" type="button" style="--ar:720/1280" data-lb="work" data-src="work/01.mp4" data-poster="work/01.jpg" data-title="The Edit Effect — BEJÚ promo" aria-label="Play The Edit Effect — BEJÚ promo">
+        <video muted loop playsinline preload="none" poster="work/01.jpg" data-inview aria-hidden="true"><source src="work/01.mp4" type="video/mp4"></video>
+        <span class="chip">Showreel</span><span class="cap">The Edit Effect — BEJÚ promo</span></button>
+      <button class="clip frame playable" type="button" style="--ar:720/1280" data-lb="work" data-src="rail-01.mp4" data-poster="rail-01.jpg" data-audio="0" data-title="Podcast Clip Edit" aria-label="Play Podcast Clip Edit">
+        <video muted loop playsinline preload="none" poster="rail-01.jpg" data-start="5" data-inview aria-hidden="true"><source src="rail-01.mp4" type="video/mp4"></video>
+        <span class="chip">Podcast</span><span class="cap">Podcast Clip Edit</span></button>
+      <button class="clip frame playable" type="button" style="--ar:1080/598" data-lb="work" data-src="rail-02.mp4" data-poster="rail-02.jpg" data-audio="0" data-title="Podcast Edit" aria-label="Play Podcast Edit">
+        <video muted loop playsinline preload="none" poster="rail-02.jpg" data-start="20" data-inview aria-hidden="true"><source src="rail-02.mp4" type="video/mp4"></video>
+        <span class="chip">Podcast</span><span class="cap">Podcast Edit</span></button>
+      <button class="clip frame playable" type="button" style="--ar:720/1280" data-lb="work" data-src="rail-03.mp4" data-poster="rail-03.jpg" data-audio="0" data-title="Podcast LT" aria-label="Play Podcast LT">
+        <video muted loop playsinline preload="none" poster="rail-03.jpg" data-start="5" data-inview aria-hidden="true"><source src="rail-03.mp4" type="video/mp4"></video>
+        <span class="chip">Podcast</span><span class="cap">Podcast LT</span></button>
+      <button class="clip frame playable" type="button" style="--ar:1080/836" data-lb="work" data-src="rail-04.mp4" data-poster="rail-04.jpg" data-audio="0" data-title="Personal Brand Edit" aria-label="Play Personal Brand Edit">
+        <video muted loop playsinline preload="none" poster="rail-04.jpg" data-start="6" data-inview aria-hidden="true"><source src="rail-04.mp4" type="video/mp4"></video>
+        <span class="chip">Brand</span><span class="cap">Personal Brand Edit</span></button>
+      <button class="clip frame playable" type="button" style="--ar:1004/718" data-lb="work" data-src="rail-05.mp4" data-poster="rail-05.jpg" data-audio="0" data-title="Personal Brand Edit 2" aria-label="Play Personal Brand Edit 2">
+        <video muted loop playsinline preload="none" poster="rail-05.jpg" data-start="2" data-inview aria-hidden="true"><source src="rail-05.mp4" type="video/mp4"></video>
+        <span class="chip">Brand</span><span class="cap">Personal Brand Edit 2</span></button>
+      <button class="clip frame playable" type="button" style="--ar:1080/680" data-lb="work" data-src="rail-06.mp4" data-poster="rail-06.jpg" data-audio="0" data-title="Personal Brand Story" aria-label="Play Personal Brand Story">
+        <video muted loop playsinline preload="none" poster="rail-06.jpg" data-start="4" data-inview aria-hidden="true"><source src="rail-06.mp4" type="video/mp4"></video>
+        <span class="chip">Brand</span><span class="cap">Personal Brand Story</span></button>
+      <button class="clip frame playable" type="button" style="--ar:1080/754" data-lb="work" data-src="rail-07.mp4" data-poster="rail-07.jpg" data-audio="0" data-title="Personal Brand Reel" aria-label="Play Personal Brand Reel">
+        <video muted loop playsinline preload="none" poster="rail-07.jpg" data-start="6" data-inview aria-hidden="true"><source src="rail-07.mp4" type="video/mp4"></video>
+        <span class="chip">Brand</span><span class="cap">Personal Brand Reel</span></button>
+      <button class="clip frame playable" type="button" style="--ar:720/1280" data-lb="work" data-src="rail-08.mp4" data-poster="rail-08.jpg" data-title="Software Ad" aria-label="Play Software Ad">
+        <video muted loop playsinline preload="none" poster="rail-08.jpg" data-start="6" data-inview aria-hidden="true"><source src="rail-08.mp4" type="video/mp4"></video>
+        <span class="chip">Ad</span><span class="cap">Software Ad</span></button>
+    </div>
+  </section>
+
+  <!-- ══ LAUNCHES ══ -->
+  <section class="sec" id="launches" aria-labelledby="launch-title">
     <div class="wrap">
-      <div class="kicker rv">The receipts</div>
-      <h2 class="display grad rv">The numbers<br>don't lie</h2>
-      <div class="nums">
-        <div class="num panel rv"><b class="count" data-to="35" data-suffix="+">0</b><p>creators, coaches and podcasters we've cut video for.</p></div>
-        <div class="num panel rv"><b class="count" data-to="10" data-suffix="M+">0</b><p>views generated across the content we've edited.</p></div>
-        <div class="num panel rv"><b class="count" data-to="24" data-suffix="hr">0</b><p>average turnaround, from your upload to ready-to-post.</p></div>
-        <div class="num panel rv"><b class="count" data-to="97" data-suffix="%">0</b><p>of clients stay with us after their first batch.</p></div>
+      <div class="g12 head">
+        <div>
+          <p class="kicker rv">Launch videos</p>
+          <h2 class="display grad rv" id="launch-title" data-lr>Launch videos for SaaS, apps and products</h2>
+        </div>
+        <p class="body rv">Short, cinematic launch films that show what your product does — for your launch post, landing page and socials.</p>
+      </div>
+      <button class="launch-feature frame playable rv" type="button" style="--ar:16/9" data-lb="launch" data-src="launch/launch-01.mp4" data-poster="launch/launch-01.jpg" data-title="Mac app launch" aria-label="Play Mac app launch video with sound">
+        <video muted loop playsinline preload="none" poster="launch/launch-01.jpg" data-inview aria-hidden="true"><source src="launch/launch-01.mp4" type="video/mp4"></video>
+        <span class="chip">Mac app launch</span><span class="watch">Watch with sound</span></button>
+      <p class="launch-meta caption rv"><span><b>Mac app launch</b> · 16:9 · 25 s</span></p>
+      <div class="launch-two">
+        <button class="frame playable rv" type="button" style="--ar:16/9;--grow:1.7778" data-lb="launch" data-src="launch/launch-02.mp4" data-poster="launch/launch-02.jpg" data-title="AI marketing tool launch" aria-label="Play AI marketing tool launch video with sound">
+          <video muted loop playsinline preload="none" poster="launch/launch-02.jpg" data-inview aria-hidden="true"><source src="launch/launch-02.mp4" type="video/mp4"></video>
+          <span class="chip">AI marketing tool</span><span class="watch">Watch</span></button>
+        <button class="frame playable rv" type="button" style="--ar:1/1;--grow:1" data-lb="launch" data-src="launch/launch-03.mp4" data-poster="launch/launch-03.jpg" data-title="Course launch" aria-label="Play course launch video with sound">
+          <video muted loop playsinline preload="none" poster="launch/launch-03.jpg" data-inview aria-hidden="true"><source src="launch/launch-03.mp4" type="video/mp4"></video>
+          <span class="chip">Course launch</span><span class="watch">Watch</span></button>
+      </div>
+      <div class="btn-row launch-cta rv">
+        <a class="btn-glass" href="#apply" data-need="Launch video">Get a launch-video quote</a>
+        <a class="arrow-link" href="/saas-launch-videos/">How launch videos work</a>
       </div>
     </div>
   </section>
 
-  <section class="rule" id="work">
+  <!-- ══ SERVICES ══ -->
+  <section class="sec" id="services" aria-labelledby="services-title">
     <div class="wrap">
-      <div class="kicker rv">Our work</div>
-      <h2 class="display grad rv">The clips<br>never stop</h2>
-      <div class="rail" id="rail" style="margin-top:3rem">
-        <div class="clip v"><span class="tag">Podcast</span><video muted loop playsinline preload="none" poster="rail-01.jpg" data-start="5"><source src="rail-01.mp4" type="video/mp4"></video><span class="cap">Podcast Clip Edit</span></div>
-        <div class="clip w" style="--ar:1080/598"><span class="tag">Podcast</span><video muted loop playsinline preload="none" poster="rail-02.jpg" data-start="20"><source src="rail-02.mp4" type="video/mp4"></video><span class="cap">Podcast Edit</span></div>
-        <div class="clip v"><span class="tag">Podcast</span><video muted loop playsinline preload="none" poster="rail-03.jpg" data-start="5"><source src="rail-03.mp4" type="video/mp4"></video><span class="cap">Podcast LT</span></div>
-        <div class="clip w" style="--ar:1080/836"><span class="tag">Brand</span><video muted loop playsinline preload="none" poster="rail-04.jpg" data-start="6"><source src="rail-04.mp4" type="video/mp4"></video><span class="cap">Personal Brand Edit</span></div>
-        <div class="clip w" style="--ar:1004/718"><span class="tag">Brand</span><video muted loop playsinline preload="none" poster="rail-05.jpg" data-start="2"><source src="rail-05.mp4" type="video/mp4"></video><span class="cap">Personal Brand Edit 2</span></div>
-        <div class="clip w" style="--ar:1080/680"><span class="tag">Brand</span><video muted loop playsinline preload="none" poster="rail-06.jpg" data-start="4"><source src="rail-06.mp4" type="video/mp4"></video><span class="cap">Personal Brand Story</span></div>
-        <div class="clip w" style="--ar:1080/754"><span class="tag">Brand</span><video muted loop playsinline preload="none" poster="rail-07.jpg" data-start="6"><source src="rail-07.mp4" type="video/mp4"></video><span class="cap">Personal Brand Reel</span></div>
-        <div class="clip v"><span class="tag">Ad</span><video muted loop playsinline preload="none" poster="rail-08.jpg" data-start="6"><source src="rail-08.mp4" type="video/mp4"></video><span class="cap">Software Ad</span></div>
+      <div class="g12 svc-top">
+        <div class="lockup panel rv"><b>1 upload</b><i>=</i><b>10 clips</b><small>From one recording session</small></div>
+        <div class="svc-intro">
+          <p class="kicker rv">Editing services</p>
+          <h2 class="display grad rv" id="services-title" data-lr>No time to edit? Start with your footage.</h2>
+          <p class="body rv" style="margin-top:1.4rem">You're already making the content — a podcast, a coaching call, a talk to camera. The footage exists. What's missing is someone to cut it into the ten pieces that actually travel. <strong>Send the raw file, get back a month of posts.</strong> No shot lists, no scripts, nothing new to film.</p>
+        </div>
       </div>
-      <div class="railnav">
-        <button class="glass" id="railPrev" aria-label="Previous">←</button>
-        <button class="glass" id="railNext" aria-label="Next">→</button>
+      <div class="cards4">
+        <div class="card panel rv"><h3>Podcast video editing</h3><p>Turn interview recordings into standalone clips. Keep the context, frame the speaker and make each takeaway easy to follow.</p><a class="arrow-link" href="/podcast-video-editing/">Podcast editing</a></div>
+        <div class="card panel rv"><h3>Short-form video editing</h3><p>Shape existing footage into Reels, TikToks and YouTube Shorts, with focused hooks, captions and platform-ready framing.</p><a class="arrow-link" href="/short-form-video-editing/">Short-form editing</a></div>
+        <div class="card panel rv"><h3>Editing for coaches</h3><p>Make educational and talking-head recordings clearer without losing your voice. Brief us on the audience, takeaway and style.</p><a class="arrow-link" href="/video-editing-for-coaches/">Editing for coaches</a></div>
+        <div class="card panel card-new rv"><span class="badge">New</span><h3>SaaS &amp; app launch videos</h3><p>Short launch films for SaaS products, apps and product launches — built to show what the product does, fast.</p><a class="arrow-link" href="/saas-launch-videos/">Launch videos</a></div>
       </div>
     </div>
   </section>
 
-  <section class="rule">
+  <!-- ══ HOW ══ -->
+  <section class="sec" id="how" aria-labelledby="how-title">
+    <div class="wrap">
+      <div class="g12 head">
+        <div>
+          <p class="kicker rv">How it works</p>
+          <h2 class="display grad rv" id="how-title" data-lr>Full service from<br>brief to delivery</h2>
+        </div>
+        <p class="caption rv">Formatted for <b style="color:var(--ink);font-weight:600">Instagram Reels</b> · <b style="color:var(--ink);font-weight:600">TikTok</b> · <b style="color:var(--ink);font-weight:600">YouTube Shorts</b> · <b style="color:var(--ink);font-weight:600">LinkedIn</b></p>
+      </div>
+      <ol class="steps">
+        <li class="rv"><h3>Brief</h3><p>You send footage and tell us who it's for. That's the whole ask — no onboarding call.</p></li>
+        <li class="rv"><h3>Edit</h3><p>Hooks, pacing, captions, sound design. Cut for retention first — every trim has a reason behind it.</p></li>
+        <li class="rv"><h3>Review</h3><p>One fast round of changes. Tell us what to fix and it comes back the same day, not the same week.</p></li>
+        <li class="rv"><h3>Deliver</h3><p>Ready to post in 24 hours — exported and sized for every platform without you touching a thing.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ══ WHY (the honest pitch + the receipts) ══ -->
+  <section class="sec" id="why" aria-labelledby="why-title">
+    <div class="wrap g12 why">
+      <div class="why-copy">
+        <p class="kicker rv">The honest pitch</p>
+        <h2 class="display grad rv" id="why-title" data-lr>So what's the ROI on all this?</h2>
+        <p class="body rv" style="margin-top:1.4rem">Here's the maths nobody runs. A month of clips from us costs less than a single session with most of the people we edit for. <strong>You need one client from it for the whole thing to have paid for itself</strong> — and you own every file forever.</p>
+        <p class="body rv">We're not going to promise you a viral video. Anyone who does is guessing. What we'll promise is work that looks like someone who cared made it.</p>
+        <ul class="checks">
+          <li class="rv"><span><b>You risk nothing to find out.</b> The first clip is free and there's no call attached. Send a file, get an edit back, decide then.</span></li>
+          <li class="rv"><span><b>No retainer, no lock-in.</b> Buy five clips. If they don't perform, walk. Most people come back — but that's their choice.</span></li>
+          <li class="rv"><span><b>You film nothing extra.</b> We work from footage you've already shot, so the only thing you spend is the upload.</span></li>
+          <li class="rv"><span><b>Two editors, not a queue.</b> You're talking to the people actually cutting your video. Nothing gets handed to a junior.</span></li>
+        </ul>
+        <a class="arrow-link rv" href="#pricing">See what it costs</a>
+      </div>
+      <div class="why-stats">
+        <p class="kicker rv">The receipts</p>
+        <h3 class="stats-title rv">The numbers don't lie</h3>
+        <p class="big rv" data-count="10" data-suffix="M+">10M+</p>
+        <p class="body rv">views generated across the content we've edited.</p>
+        <div class="stat-row">
+          <div class="rv"><b data-count="35" data-suffix="+">35+</b><p>creators, coaches and podcasters we've cut video for.</p></div>
+          <div class="rv"><b data-count="24" data-suffix="hr">24hr</b><p>average turnaround, from your upload to ready-to-post.</p></div>
+          <div class="rv"><b data-count="97" data-suffix="%">97%</b><p>of clients stay with us after their first batch.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ GUARANTEE ══ -->
+  <section class="sec" id="guarantee" aria-labelledby="guarantee-title">
     <div class="wrap">
       <div class="guarantee panel gold-ring rv">
-        <div class="kicker mid">The BEJÚ guarantee</div>
-        <h2 class="display">Double your views,<br>or you don't&nbsp;pay</h2>
-        <p class="body">If our edits don't at least 2× your average views within 30 days of posting, we refund you in full. No fine print. No hard feelings. We only win when you win.</p>
+        <p class="kicker center">The BEJÚ guarantee</p>
+        <h2 class="display" id="guarantee-title">Double your views,<br>or you don't&nbsp;pay</h2>
+        <p class="body">If our edits don't at least 2× your average views within 30 days of posting, we refund you in full. No hard feelings. We only win when you win.</p>
         <div class="gtrio">
           <div><b>30-day window</b><p>A full month to let the content do its job.</p></div>
           <div><b>Full refund</b><p>100% back — no credits, no vouchers.</p></div>
-          <div><b>No questions</b><p>If you don't win, we don't deserve to keep it.</p></div>
+          <div><b>Easy to claim</b><p>Send us your view numbers within 35 days of posting.</p></div>
         </div>
-        <a class="btn btn-gold" href="#apply">Get started now</a>
+        <div class="btn-row">
+          <a class="btn-gold" href="#apply" data-need="Podcast clips">Get started now</a>
+          <a class="arrow-link" href="terms.html#guarantee">Read the terms</a>
+        </div>
       </div>
     </div>
   </section>
 
-  <section class="rule" id="pricing">
+  <!-- ══ PRICING ══ -->
+  <section class="sec" id="pricing" aria-labelledby="pricing-title">
     <div class="wrap">
-      <div class="kicker rv">Pricing</div>
-      <h2 class="display grad rv">Simple,<br>volume-based</h2>
-      <p class="grouplbl rv">Short-form</p>
-      <div class="tiers">
-        <div class="tier panel rv"><div class="q">1 video</div><div class="p">$27</div><div class="u">Single edit</div></div>
-        <div class="tier panel rv"><div class="q">3 videos</div><div class="p">$60</div><div class="u">$20 / edit</div></div>
-        <div class="tier best panel gold-ring rv"><div class="q">5 videos</div><div class="p">$75</div><div class="u">$15 / edit</div></div>
+      <div class="g12 head">
+        <div>
+          <p class="kicker rv">Pricing</p>
+          <h2 class="display grad rv" id="pricing-title" data-lr>Simple,<br>volume-based</h2>
+        </div>
+        <div class="rv">
+          <div class="seg" role="tablist" aria-label="Video length" data-toggle="panes">
+            <button type="button" role="tab" aria-selected="true" aria-controls="pane-short" id="tab-short">Short-form</button>
+            <button type="button" role="tab" aria-selected="false" aria-controls="pane-long" id="tab-long" tabindex="-1">Long-form</button>
+          </div>
+        </div>
       </div>
-      <p class="grouplbl rv">Long-form — priced per finished video</p>
-      <div class="tiers">
-        <div class="tier panel rv"><div class="q">1 video</div><div class="p">$75</div><div class="u">Single edit</div></div>
-        <div class="tier panel rv"><div class="q">3 videos</div><div class="p">$180</div><div class="u">$60 / edit</div></div>
-        <div class="tier panel rv"><div class="q">5 videos</div><div class="p">$255</div><div class="u">$51 / edit</div></div>
+      <div class="panes" id="panes">
+        <div class="pane is-on" id="pane-short" role="tabpanel" aria-labelledby="tab-short" data-panel>
+          <div class="tiers">
+            <div class="tier panel rv"><div class="q">1 video</div><div class="p">$27</div><div class="u">Single edit</div></div>
+            <div class="tier panel rv"><div class="q">3 videos</div><div class="p">$60</div><div class="u">$20 / edit</div></div>
+            <div class="tier best panel gold-ring rv"><div class="q">5 videos</div><div class="p">$75</div><div class="u">$15 / edit</div></div>
+          </div>
+          <p class="pane-note">Short-form — clips for Reels, TikTok and Shorts.</p>
+        </div>
+        <div class="pane" id="pane-long" role="tabpanel" aria-labelledby="tab-long" data-panel aria-hidden="true" inert>
+          <div class="tiers">
+            <div class="tier panel"><div class="q">1 video</div><div class="p">$75</div><div class="u">Single edit</div></div>
+            <div class="tier panel"><div class="q">3 videos</div><div class="p">$180</div><div class="u">$60 / edit</div></div>
+            <div class="tier panel"><div class="q">5 videos</div><div class="p">$255</div><div class="u">$51 / edit</div></div>
+          </div>
+          <p class="pane-note">Long-form — priced per finished video.</p>
+        </div>
       </div>
-      <p class="pricenote rv">Prices aren't fixed — they vary with the average length of the videos you want edited. These are average prices for 15–40 second reels.</p>
-      <div class="pricecta rv"><a class="btn btn-gold" href="#apply">Get a free sample clip</a></div>
-    </div>
-  </section>
-
-  <section class="rule" id="proof">
-    <div class="wrap">
-      <div class="kicker rv">Results</div>
-      <h2 class="display grad rv">Real growth.<br>Real people.</h2>
-      <div class="proof" id="proofRail">
-        <div><video muted loop playsinline controls preload="metadata" poster="results/testimonial-1-poster.jpg"><source src="results/testimonial-1.mp4" type="video/mp4"></video></div>
-        <div style="--ar:1179/890"><img src="results/testimonial-2.jpeg" alt="Client message about reel package results" loading="lazy"></div>
-        <div style="--ar:1179/783"><img src="results/testimonial-3.jpeg" alt="Client message about follower growth" loading="lazy"></div>
-        <div style="--ar:738/862"><img src="results/testimonial-4.png" alt="Client message about views and sales" loading="lazy"></div>
-        <div style="--ar:746/616"><img src="results/testimonial-5.png" alt="Client message about overnight growth" loading="lazy"></div>
-        <div><video muted loop playsinline controls preload="metadata" poster="results/testimonial-6-poster.jpg"><source src="results/testimonial-6.mp4" type="video/mp4"></video></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="rule">
-    <div class="wrap mission">
-      <div class="kicker rv">Our mission</div>
-      <h2 class="display grad rv">Good ideas<br>shouldn't lose<br>to better editing</h2>
-      <p class="rv">The best coach in your city is probably losing to someone half as good with a better editor. That's the part nobody says out loud. The algorithm doesn't rank expertise — it ranks <strong>retention</strong>. And retention is a craft.</p>
-      <p class="rv">We started BEJÚ because that gap felt fixable. Most people who need this work can't justify $2,000 a month for it, so they either post something unedited or they don't post at all. Both lose. We're two editors, no account managers, no agency overhead — which is the entire reason we can charge what we charge and still hand back work we'd put our name on.</p>
-      <p class="rv">So we made the offer simple: <strong>send us one video and we'll edit it free.</strong> No call, no contract, no pitch deck. We'd rather prove it than describe it.</p>
-    </div>
-  </section>
-
-  <!-- ══ FAQ ══
-       These must stay on the page and match the FAQPage schema in <head>
-       word for word. Schema describing content that isn't visible is a
-       Google policy violation, not a shortcut. -->
-  <section class="rule" id="faq">
-    <div class="wrap mission">
-      <div class="kicker rv">Questions</div>
-      <h2 class="display grad rv">Before you ask</h2>
-      <!-- The reveal lives on the container, not each <details>. Putting .rv on
-           the disclosure elements left them stuck at opacity 0 and the whole
-           section rendered greyed out. -->
-      <div class="faq panel rv">
-        <details open>
-          <summary>How much does short-form video editing cost?</summary>
-          <p>Short-form edits start at $27 for a single video, $60 for three, and $75 for five — $15 per edit at the five-video tier. Long-form is priced per finished video, from $75. Prices vary with the length of the source footage; these are averages for 15–40 second reels.</p>
-        </details>
-        <details>
-          <summary>Do you offer a free sample edit?</summary>
-          <p>Yes. Send us one video and we'll edit a clip from it free, with no call and no contract. You see the quality before you spend anything.</p>
-        </details>
-        <details>
-          <summary>How fast is the turnaround?</summary>
-          <p>24 hours on average, from the moment you send footage to a finished clip ready to post. Revisions come back the same day.</p>
-        </details>
-        <details>
-          <summary>What happens if the edits don't perform?</summary>
-          <p>If our edits don't at least double your average views within 30 days of posting, we refund you in full — no credits, no vouchers, no questions.</p>
-        </details>
-        <details>
-          <summary>What footage do you need from me?</summary>
-          <p>Whatever you already have — a podcast recording, a coaching call, or a talk to camera. We cut it into short clips. You don't need to film anything new, write scripts or prepare shot lists.</p>
-        </details>
-        <details>
-          <summary>Which platforms do you format for?</summary>
-          <p>Instagram Reels, TikTok, YouTube Shorts and LinkedIn. Every clip is exported and sized for each platform, with captions burned in.</p>
-        </details>
+      <div class="g12 price-foot">
+        <p class="caption rv">Prices aren't fixed — they vary with the average length of the videos you want edited. These are average prices for 15–40 second reels. Launch videos are quoted per project — <a class="link" href="#apply" data-need="Launch video">get a quote</a>.</p>
+        <div class="rv"><a class="btn-gold" href="#apply" data-need="Podcast clips">Get a free sample clip</a></div>
       </div>
     </div>
   </section>
 
-  <section class="rule apply" id="apply">
-    <div class="wrap">
-      <div class="kicker mid rv">Get started</div>
-      <h2 class="display grad rv">Got footage that deserves an audience?</h2>
-      <p class="lede rv">Send us your podcast and we'll edit one clip — free, no commitment. See the quality before you spend a dollar.</p>
-      <div class="rv"><a class="btn btn-gold" href="mailto:bejusipe@gmail.com?subject=Free%20Sample%20Clip%20Request&amp;body=Hey%20BEJU%2C%20I%27d%20love%20a%20free%20sample%20clip.%20My%20podcast%2Faccount%20is%3A%20">Get my free sample clip</a></div>
-      <div><a class="applymail" href="mailto:bejusipe@gmail.com?subject=Portfolio%20Inquiry">bejusipe@gmail.com</a></div>
+  <!-- ══ RESULTS ══ -->
+  <section class="sec" id="proof" aria-labelledby="proof-title">
+    <div class="wrap g12 head">
+      <div>
+        <p class="kicker rv">Results</p>
+        <h2 class="display grad rv" id="proof-title" data-lr>Real growth.<br>Real people.</h2>
+      </div>
+      <div class="rv">
+        <p class="caption">Messages from clients, shared with permission.</p>
+        <div class="rail-ctrl" style="margin-top:1rem">
+          <button class="glass" type="button" data-rail-prev="proofRail" aria-label="Previous results"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+          <button class="glass" type="button" data-rail-next="proofRail" aria-label="Next results"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button>
+        </div>
+      </div>
+    </div>
+    <div class="proof" id="proofRail" data-rail>
+      <div class="frame" style="--ar:9/16"><video muted playsinline controls preload="metadata" poster="results/testimonial-1-poster.jpg" aria-label="Client video testimonial"><source src="results/testimonial-1.mp4" type="video/mp4"></video></div>
+      <div class="frame" style="--ar:1179/890"><img src="results/testimonial-2.jpeg" alt="Client message about reel package results" loading="lazy" width="1179" height="890"></div>
+      <div class="frame" style="--ar:1179/783"><img src="results/testimonial-3.jpeg" alt="Client message about follower growth" loading="lazy" width="1179" height="783"></div>
+      <div class="frame" style="--ar:738/862"><img src="results/testimonial-4.png" alt="Client message about views and sales" loading="lazy" width="738" height="862"></div>
+      <div class="frame" style="--ar:746/616"><img src="results/testimonial-5.png" alt="Client message about overnight growth" loading="lazy" width="746" height="616"></div>
+      <div class="frame" style="--ar:9/16"><video muted playsinline controls preload="metadata" poster="results/testimonial-6-poster.jpg" aria-label="Client video testimonial"><source src="results/testimonial-6.mp4" type="video/mp4"></video></div>
+    </div>
+  </section>
+
+  <!-- ══ MISSION (the quiet section) ══ -->
+  <section class="sec-l" aria-labelledby="mission-title">
+    <div class="wrap g12">
+      <div class="mission">
+        <p class="kicker rv">Our mission</p>
+        <h2 class="display grad rv" id="mission-title" data-lr>Good ideas shouldn't lose to better editing</h2>
+        <p class="pull rv">The best coach in your city is probably losing to someone half as good with a better editor. That's the part nobody says out loud. The algorithm doesn't rank expertise — it ranks <strong>retention</strong>. And retention is a craft.</p>
+        <p class="body rv">We started BEJÚ because that gap felt fixable. Most people who need this work can't justify $2,000 a month for it, so they either post something unedited or they don't post at all. Both lose. We're two editors, no account managers, no agency overhead — which is the entire reason we can charge what we charge and still hand back work we'd put our name on.</p>
+        <p class="body rv">So we made the offer simple: <strong>send us one video and we'll edit it free.</strong> No call, no contract, no pitch deck. We'd rather prove it than describe it.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ FAQ ══ These must match the FAQPage schema in <head> word for word. -->
+  <section class="sec" id="faq" aria-labelledby="faq-title">
+    <div class="wrap g12 faq-grid">
+      <div class="faq-side">
+        <p class="kicker rv">Questions</p>
+        <h2 class="display grad rv" id="faq-title" data-lr>Before you ask</h2>
+        <p class="caption rv">Anything else? <a class="link" href="mailto:bejusipe@gmail.com">bejusipe@gmail.com</a> — we reply within 24 hours.</p>
+      </div>
+      <div class="acc rv">
+        <details open><summary>How much does short-form video editing cost?<span class="ico" aria-hidden="true"></span></summary><div class="ans"><p>Short-form edits start at $27 for a single video, $60 for three, and $75 for five — $15 per edit at the five-video tier. Long-form is priced per finished video, from $75. Prices vary with the length of the source footage; these are averages for 15–40 second reels.</p></div></details>
+        <details><summary>Do you offer a free sample edit?<span class="ico" aria-hidden="true"></span></summary><div class="ans"><p>Yes. Send us one video and we'll edit a clip from it free, with no call and no contract. You see the quality before you spend anything.</p></div></details>
+        <details><summary>How fast is the turnaround?<span class="ico" aria-hidden="true"></span></summary><div class="ans"><p>24 hours on average, from the moment you send footage to a finished clip ready to post. Revisions come back the same day.</p></div></details>
+        <details><summary>What happens if the edits don't perform?<span class="ico" aria-hidden="true"></span></summary><div class="ans"><p>If our edits don't at least double your average views within 30 days of posting, we refund you in full — no credits, no vouchers. To claim, send us your view numbers within 35 days of posting.</p></div></details>
+        <details><summary>What footage do you need from me?<span class="ico" aria-hidden="true"></span></summary><div class="ans"><p>Whatever you already have — a podcast recording, a coaching call, or a talk to camera. We cut it into short clips. You don't need to film anything new, write scripts or prepare shot lists.</p></div></details>
+        <details><summary>Which platforms do you format for?<span class="ico" aria-hidden="true"></span></summary><div class="ans"><p>Instagram Reels, TikTok, YouTube Shorts and LinkedIn. Every clip is exported and sized for each platform, with captions burned in.</p></div></details>
+        <details><summary>Do you make launch videos for SaaS and apps?<span class="ico" aria-hidden="true"></span></summary><div class="ans"><p>Yes — short launch videos for SaaS products, apps and other product launches. They're quoted per project: tell us about your launch and we'll reply with a quote within 24 hours.</p></div></details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ APPLY ══ -->
+  <section class="sec" id="apply" aria-labelledby="apply-title">
+    <div class="wrap g12 apply-grid">
+      <div class="apply-copy">
+        <p class="kicker rv">Get started</p>
+        <h2 class="display grad rv" id="apply-title" data-lr>Got footage that deserves an audience?</h2>
+        <p class="lede rv">Send us your podcast and we'll edit one clip — free, no commitment. See the quality before you spend a dollar.</p>
+        <div class="contact-list rv">
+          <a href="mailto:bejusipe@gmail.com">bejusipe@gmail.com <span>Email</span></a>
+          <a href="https://wa.me/37069575791" target="_blank" rel="noopener">+370 695 75791 <span>WhatsApp</span></a>
+          <a href="https://instagram.com/bejucreative" target="_blank" rel="noopener">@bejucreative <span>Instagram DM</span></a>
+        </div>
+      </div>
+      <!-- Posts to a Google Form owned by bejusipe@gmail.com (GitHub Pages has no backend).
+           Edit: https://docs.google.com/forms/d/1IWaiwE3iQqxJ9oHpM4bELU1FjEbYJs3OP-nLLxUFfKs/edit -->
+      <form class="apply-form panel form rv" id="start-form" novalidate
+            data-action="https://docs.google.com/forms/d/e/1FAIpQLSd5A6WuEn_0lC8ipkhkyCQyyDUfw2E5WQGSbClqHBilJR5UQA/formResponse"
+            data-entries='{"name":"entry.391804260","email":"entry.1987136427","need":"entry.279043260","link":"entry.466673457","message":"entry.309328892"}'>
+        <div class="row">
+          <div class="field"><label for="f-name">Name</label><input id="f-name" name="name" autocomplete="name" required><span class="err" aria-live="polite"></span></div>
+          <div class="field"><label for="f-email">Email</label><input id="f-email" name="email" type="email" autocomplete="email" inputmode="email" required><span class="err" aria-live="polite"></span></div>
+        </div>
+        <div class="field"><label for="f-need">What do you need?</label>
+          <select id="f-need" name="need" required>
+            <option value="">Choose one</option>
+            <option>Podcast clips</option>
+            <option>Short-form edits</option>
+            <option>Launch video</option>
+            <option>Not sure yet</option>
+          </select><span class="err" aria-live="polite"></span></div>
+        <div class="field"><label for="f-link">Link to your show, product or footage <span>(optional)</span></label><input id="f-link" name="link" type="url" inputmode="url" placeholder="https://"></div>
+        <div class="field"><label for="f-msg">Anything else? <span>(optional)</span></label><textarea id="f-msg" name="message" rows="4"></textarea></div>
+        <div class="form-status" role="status" tabindex="-1" hidden></div>
+        <div class="btn-row"><button class="btn-gold" type="submit">Send</button><p class="fine">We reply within 24 hours.</p></div>
+      </form>
     </div>
   </section>
 
 </main>
 
-<footer>
-  <div class="fgrid">
-    <div>
-      <a href="#top" class="brand" aria-label="BEJÚ Creative — home">
-        <img src="beju-mark.png" alt="BEJÚ Creative" width="1560" height="1000">
-      </a>
-      <p>Short-form editing for podcasters, coaches and founders. Two editors, fast turnaround, work we'd put our name on — at a fraction of agency rates.</p>
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <img src="beju-mark.png" alt="BEJÚ Creative" width="1486" height="884" loading="lazy">
+        <p>Short-form editing for podcasters, coaches and founders, and launch videos for SaaS and apps. Two editors, fast turnaround, work we'd put our name on.</p>
+      </div>
+      <div class="foot-col">
+        <p class="fhead">Services</p>
+        <a href="/podcast-video-editing/">Podcast video editing</a>
+        <a href="/short-form-video-editing/">Short-form video editing</a>
+        <a href="/video-editing-for-coaches/">Editing for coaches</a>
+        <a href="/saas-launch-videos/">SaaS &amp; app launch videos</a>
+      </div>
+      <div class="foot-col">
+        <p class="fhead">Studio</p>
+        <a href="#work">Our work</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#faq">FAQ</a>
+        <a href="#apply">Free sample clip</a>
+      </div>
+      <div class="foot-col">
+        <p class="fhead">Contact</p>
+        <a href="mailto:bejusipe@gmail.com">Email</a>
+        <a href="https://wa.me/37069575791" target="_blank" rel="noopener">WhatsApp</a>
+        <a href="https://instagram.com/bejucreative" target="_blank" rel="noopener">Instagram</a>
+      </div>
     </div>
-    <div class="fcol">
-      <h4>Services</h4>
-      <ul>
-        <li><a href="/short-form-video-editing/">Short-Form Video Editing</a></li>
-        <li><a href="#how">Retention Cuts</a></li>
-        <li><a href="#how">Captions &amp; Subtitles</a></li>
-        <li><a href="#pricing">Long-Form Editing</a></li>
-      </ul>
-    </div>
-    <div class="fcol">
-      <h4>Who We Work With</h4>
-      <ul>
-        <li><a href="/podcast-video-editing/">Podcast Video Editing</a></li>
-        <li><a href="/video-editing-for-coaches/">Editing for Coaches &amp; Trainers</a></li>
-        <li><a href="#work">Course Creators</a></li>
-        <li><a href="#work">Founders</a></li>
-      </ul>
-    </div>
-    <div class="fcol">
-      <h4>Start Here</h4>
-      <ul>
-        <li><a href="#apply">Free Sample Clip</a></li>
-        <li><a href="#pricing">Pricing</a></li>
-        <li><a href="https://instagram.com/bejucreative" target="_blank" rel="noopener">Instagram</a></li>
-        <li><a href="mailto:bejusipe@gmail.com?subject=Portfolio%20Inquiry">Email Us</a></li>
-      </ul>
-    </div>
-  </div>
-  <div class="fbot">
-    <span>© 2026 BEJÚ Creative. All rights reserved.</span>
-    <span><a href="terms.html">Terms of Service</a></span>
+    <div class="foot-bot"><span>© 2026 BEJÚ Creative</span><a href="terms.html">Terms of service</a></div>
   </div>
 </footer>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/gsap.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/ScrollTrigger.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/ScrollToPlugin.min.js"></script>
-<script>
-(function () {
-  'use strict';
-
-  /* ── Nav ─────────────────────────────────────────────── */
-  var nav = document.getElementById('nav');
-  var onScroll = function () { nav.classList.toggle('stuck', window.scrollY > 40); };
-  window.addEventListener('scroll', onScroll, { passive: true });
-  onScroll();
-
-  var burger = document.getElementById('burger');
-  var mobnav = document.getElementById('mobnav');
-  burger.addEventListener('click', function () {
-    var open = mobnav.classList.toggle('open');
-    burger.classList.toggle('open', open);
-    document.body.style.overflow = open ? 'hidden' : '';
-  });
-  Array.prototype.forEach.call(mobnav.querySelectorAll('a'), function (a) {
-    a.addEventListener('click', function () {
-      mobnav.classList.remove('open');
-      burger.classList.remove('open');
-      document.body.style.overflow = '';
-    });
-  });
-
-  /* ── Work rail: pick up anything dropped into work/ ───────────────────
-     A static page can't list a directory, so probe 01, 02, ... in order and
-     stop at the first slot with no file (slots are numbered without gaps —
-     see work/README.txt). One miss per visit instead of eleven 404s. */
-  (function () {
-    var railEl = document.getElementById('rail');
-    if (!railEl) return;
-    var SLOTS = 12, found = [];
-
-    var pad = function (n) { return (n < 10 ? '0' : '') + n; };
-
-    /* Optional per-slot override for files that are 16:9 letterboxed into a
-       1080x1920 canvas. Such a file REPORTS 1080x1920, so nothing in the
-       browser can tell it from a true vertical — the bars are picture data.
-       List slot numbers here to force a wide card:  WIDE_SLOTS = [2, 5];  */
-    var WIDE_SLOTS = [];
-
-    var build = function (n, meta, ar) {
-      var card = document.createElement('div');
-      /* Aspect comes from the probe, which has already loaded metadata. The
-         card's own <video> is preload="none", so waiting on ITS metadata
-         leaves the card with no size class and therefore no width.
-         WIDE_SLOTS overrides it for letterboxed files, which report vertical. */
-      var wide = ar > 1.05 || WIDE_SLOTS.indexOf(n) !== -1;
-      card.className = 'clip ' + (wide ? 'w' : 'v');
-      if (WIDE_SLOTS.indexOf(n) === -1) card.style.setProperty('--ar', ar);
-      card.dataset.slot = n;
-      var tag = (meta && meta.tag) || '';
-      var title = (meta && meta.title) || '';
-      card.innerHTML =
-        (tag ? '<span class="tag"></span>' : '') +
-        '<video muted loop playsinline preload="none"></video>' +
-        (title ? '<span class="cap"></span>' : '');
-      if (tag) card.querySelector('.tag').textContent = tag;
-      if (title) card.querySelector('.cap').textContent = title;
-      var v = card.querySelector('video');
-      /* Optional work/NN.jpg still. Without it the card is black until the
-         video loads, and these videos are preload="none" by design. */
-      var pimg = new Image();
-      pimg.onload = function () { v.poster = 'work/' + pad(n) + '.jpg'; };
-      pimg.src = 'work/' + pad(n) + '.jpg';
-      var s = document.createElement('source');
-      s.src = 'work/' + pad(n) + '.mp4';
-      s.type = 'video/mp4';
-      v.appendChild(s);
-      return card;
-    };
-
-    var done = function () {
-      if (!found.length) return;
-      /* Dropped-in clips LEAD the rail; the sample clips stay behind them.
-         Replacing the whole rail with one file left a one-card work section,
-         which is worse than the samples it removed. */
-      var first = railEl.querySelector('.clip');
-      found.forEach(function (f) {
-        var card = build(f.n, f.meta, f.ar);
-        if (first) railEl.insertBefore(card, first);
-        else railEl.appendChild(card);
-      });
-      /* Scroll-snap keeps the old first card pinned when cards are inserted
-         before it, which left the new first card half off the left edge. */
-      railEl.scrollLeft = 0;
-      if (window.ScrollTrigger) ScrollTrigger.refresh();
-      document.dispatchEvent(new CustomEvent('rail:rebuilt'));
-    };
-
-    var probeSlot = function (n) {
-      if (n > SLOTS) return done();
-      var probe = document.createElement('video');
-      probe.muted = true;
-      probe.preload = 'metadata';
-      probe.addEventListener('loadedmetadata', function () {
-        var ar = probe.videoWidth / probe.videoHeight;
-        /* optional work/NN.txt — line 1 title, line 2 gold badge */
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', 'work/' + pad(n) + '.txt', true);
-        xhr.onreadystatechange = function () {
-          if (xhr.readyState !== 4) return;
-          var meta = {};
-          if (xhr.status === 200 || (xhr.status === 0 && xhr.responseText)) {
-            var L = xhr.responseText.split('\n');
-            meta.title = (L[0] || '').trim();
-            meta.tag = (L[1] || '').trim();
-          }
-          found.push({ n: n, meta: meta, ar: ar });
-          probeSlot(n + 1);
-        };
-        try { xhr.send(); } catch (e) { found.push({ n: n, meta: {}, ar: ar }); probeSlot(n + 1); }
-      });
-      probe.addEventListener('error', done);
-      probe.src = 'work/' + pad(n) + '.mp4';
-    };
-    probeSlot(1);
-  })();
-
-  /* ── Work rail: only play what's on screen ─────────────
-     Each clip starts at the timestamp its poster was cut from. Playing from 0
-     would replace a good poster with the clip's opening black frame the moment
-     the card scrolls into view — which is exactly what it looked like. */
-  if ('IntersectionObserver' in window) {
-    /* Setting currentTime at loadedmetadata gets overwritten once play() starts
-       from the buffered head, so the clip creeps back to ~0. Re-assert it on
-       'playing' too, and only once — after that the clip runs on naturally. */
-    var seekStart = function (v) {
-      var s = parseFloat(v.getAttribute('data-start') || '0');
-      if (!s || v.dataset.seeked) return;
-      var go = function () {
-        if (v.dataset.seeked) return;
-        try {
-          if (v.currentTime < s - 0.3) { v.currentTime = s; }
-          if (v.currentTime >= s - 0.3) { v.dataset.seeked = '1'; }
-        } catch (e) {}
-      };
-      if (v.readyState >= 1) go();
-      v.addEventListener('loadedmetadata', go);
-      v.addEventListener('loadeddata', go);
-      v.addEventListener('playing', go);
-    };
-    var vo = new IntersectionObserver(function (es) {
-      es.forEach(function (e) {
-        var v = e.target;
-        if (e.isIntersecting) {
-          v.preload = 'metadata';
-          seekStart(v);
-          v.play().catch(function () {});
-        } else {
-          v.pause();
-        }
-      });
-    }, { threshold: 0.35 });
-    var watch = function (v) {
-      if (v.dataset.watched) return;
-      v.dataset.watched = '1';
-      /* Each loop restarts at 0, so clear the latch and seek back into the
-         good stretch instead of replaying the intro. */
-      v.addEventListener('seeked', function () {
-        if (v.currentTime < 0.3) { delete v.dataset.seeked; seekStart(v); }
-      });
-      v.addEventListener('timeupdate', function () {
-        if (v.currentTime < 0.3 && v.dataset.seeked) { delete v.dataset.seeked; seekStart(v); }
-      });
-      vo.observe(v);
-    };
-    var watchAll = function () {
-      Array.prototype.forEach.call(document.querySelectorAll('.clip video'), watch);
-    };
-    watchAll();
-    /* Cards from work/ are added after the probes answer, i.e. after the pass
-       above — without this they were never observed and never played. */
-    document.addEventListener('rail:rebuilt', watchAll);
-  }
-
-  var rail = document.getElementById('rail');
-  if (rail) {
-    var step = function () {
-      var c = rail.querySelector('.clip');
-      return c ? c.offsetWidth + 20 : 300;
-    };
-    document.getElementById('railPrev').addEventListener('click', function () {
-      rail.scrollBy({ left: -step(), behavior: 'smooth' });
-    });
-    document.getElementById('railNext').addEventListener('click', function () {
-      rail.scrollBy({ left: step(), behavior: 'smooth' });
-    });
-  }
-
-  /* ── Motion ──────────────────────────────────────────── */
-  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  if (!window.gsap || !window.ScrollTrigger || reduce) {
-    document.documentElement.classList.add('no-gsap');
-    Array.prototype.forEach.call(document.querySelectorAll('.rv'), function (el) { el.style.opacity = 1; });
-    Array.prototype.forEach.call(document.querySelectorAll('.count'), function (el) {
-      el.textContent = el.getAttribute('data-to') + (el.getAttribute('data-suffix') || '');
-    });
-    return;
-  }
-
-  gsap.registerPlugin(ScrollTrigger);
-
-  /* In-page links: GSAP drives the scroll. CSS scroll-behavior:smooth fought
-     ScrollTrigger — every image/video load mid-scroll triggers a refresh that
-     restores the scroll position — so nav links stalled and never arrived
-     (desktop stopped ~850px short; the phone menu barely moved). */
-  if (window.ScrollToPlugin) {
-    gsap.registerPlugin(ScrollToPlugin);
-    document.addEventListener('click', function (e) {
-      var a = e.target.closest && e.target.closest('a[href^="#"]');
-      if (!a || e.defaultPrevented) return;
-      var id = a.getAttribute('href'), t = id.length > 1 && document.querySelector(id);
-      if (!t) return;
-      e.preventDefault();
-      gsap.to(window, { duration: 0.9, ease: 'power3.inOut', scrollTo: { y: t, autoKill: false } });
-      history.pushState(null, '', id);
-    });
-  }
-
-  /* Hero headline — masked line rise */
-  gsap.set('.ln', { yPercent: 115 });
-  gsap.to('.ln', { yPercent: 0, duration: 1.15, ease: 'power4.out', stagger: 0.09, delay: 0.15 });
-
-  /* Hero supporting elements */
-  gsap.fromTo('.hero .rv', { opacity: 0, y: 22 },
-    { opacity: 1, y: 0, duration: 0.9, ease: 'power3.out', stagger: 0.08, delay: 0.5 });
-
-  gsap.fromTo('#phone', { opacity: 0, y: 40 },
-    { opacity: 1, y: 0, duration: 1.2, ease: 'power3.out', delay: 0.35 });
-
-  /* Phone parallax, scrubbed to scroll */
-  gsap.to('#phone', {
-    yPercent: -12, ease: 'none',
-    scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: 0.6 }
-  });
-
-  /* Every other reveal */
-  gsap.utils.toArray('.rv').forEach(function (el) {
-    if (el.closest('.hero')) return;
-    gsap.fromTo(el, { opacity: 0, y: 34 },
-      { opacity: 1, y: 0, duration: 0.95, ease: 'power3.out',
-        scrollTrigger: { trigger: el, start: 'top 88%', once: true } });
-  });
-
-  /* Counters */
-  gsap.utils.toArray('.count').forEach(function (el) {
-    var o = { v: 0 };
-    var to = parseFloat(el.getAttribute('data-to'));
-    var sfx = el.getAttribute('data-suffix') || '';
-    ScrollTrigger.create({
-      trigger: el, start: 'top 88%', once: true,
-      onEnter: function () {
-        gsap.to(o, { v: to, duration: 1.8, ease: 'power2.out',
-          onUpdate: function () { el.textContent = Math.round(o.v) + sfx; } });
-      }
-    });
-  });
-
-  /* Marquee — loops, and leans with scroll velocity */
-  var mq = document.getElementById('mq1');
-  if (mq) {
-    var half = mq.scrollWidth / 2;
-    var loop = gsap.to(mq, {
-      x: -half, duration: 26, ease: 'none', repeat: -1,
-      modifiers: { x: function (x) { return (parseFloat(x) % half) + 'px'; } }
-    });
-    ScrollTrigger.create({
-      onUpdate: function (self) {
-        var d = self.direction === -1 ? -1 : 1;
-        var boost = 1 + Math.min(Math.abs(self.getVelocity()) / 1800, 2.5);
-        gsap.to(loop, { timeScale: d * boost, duration: 0.35, overwrite: true });
-      }
-    });
-  }
-
-  /* Magnetic buttons */
-  if (window.matchMedia('(hover:hover)').matches) {
-    Array.prototype.forEach.call(document.querySelectorAll('.btn'), function (b) {
-      b.addEventListener('mousemove', function (e) {
-        var r = b.getBoundingClientRect();
-        gsap.to(b, {
-          x: (e.clientX - r.left - r.width / 2) * 0.28,
-          y: (e.clientY - r.top - r.height / 2) * 0.4,
-          duration: 0.5, ease: 'power3.out'
-        });
-      });
-      b.addEventListener('mouseleave', function () {
-        gsap.to(b, { x: 0, y: 0, duration: 0.6, ease: 'elastic.out(1,0.4)' });
-      });
-    });
-  }
-
-  /* ── Keep trigger positions honest ────────────────────
-     Videos, lazy images and webfonts all land after first paint and change
-     the page height. Without a re-measure, every trigger below them is
-     computed against a layout that no longer exists and those sections
-     never reveal — they just sit at opacity 0 forever. */
-  var refresh = function () { ScrollTrigger.refresh(); };
-
-  window.addEventListener('load', refresh);
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(refresh);
-  Array.prototype.forEach.call(document.querySelectorAll('img'), function (im) {
-    if (!im.complete) im.addEventListener('load', refresh, { once: true });
-  });
-  Array.prototype.forEach.call(document.querySelectorAll('video'), function (v) {
-    v.addEventListener('loadedmetadata', refresh, { once: true });
-  });
-  setTimeout(refresh, 1200);
-  setTimeout(refresh, 3000);
-
-  /* Last-resort net: nothing should ever be left invisible. If an element is
-     still hidden once it is genuinely on screen, just show it. */
-  setInterval(function () {
-    var vh = window.innerHeight;
-    Array.prototype.forEach.call(document.querySelectorAll('.rv'), function (el) {
-      if (getComputedStyle(el).opacity !== '0') return;
-      var r = el.getBoundingClientRect();
-      if (r.top < vh * 0.95 && r.bottom > 0) gsap.to(el, { opacity: 1, y: 0, duration: 0.5 });
-    });
-  }, 900);
-
-  refresh();
-})();
-</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/gsap.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/ScrollToPlugin.min.js" defer></script>
+<script src="site.js" defer></script>
 </body>
 </html>
