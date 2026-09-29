@@ -11,6 +11,12 @@
 #
 # Writes OUT.mp4 plus OUT.jpg (the poster), so the card is never black.
 #
+# Optional overrides (environment variables) for special cases:
+#   MAX=1920       long-side cap (default 1280). Only for a wide feature video that
+#                  displays ~1200 px wide, where 720p looks soft on Retina screens.
+#   CRF=28 MAXRATE=1.6M   stronger compression for fast-motion clips that would
+#                  otherwise blow the ~2–3 MB budget (default CRF 23, MAXRATE 3M).
+#
 # Why these settings: the raw exports were 1080p60 at ~12 Mbps with their index
 # at the END of the file. The browser couldn't start until it fetched the tail,
 # and 12 Mbps is faster than most phone connections, so they stalled. Output is
@@ -19,15 +25,16 @@
 set -euo pipefail
 
 in=$1; out=$2; poster_at=${3:-0}; crop=${4:-}
+max=${MAX:-1280}; crf=${CRF:-23}; maxrate=${MAXRATE:-3M}
 
 vf=""
 [ -n "$crop" ] && vf="crop=$crop,"
-# Long side capped at 1280, never upscaled, dimensions kept even for H.264.
-vf="${vf}scale='if(gt(iw,ih),min(1280,iw),-2)':'if(gt(iw,ih),-2,min(1280,ih))'"
+# Long side capped at $max (default 1280), never upscaled, dimensions kept even for H.264.
+vf="${vf}scale='if(gt(iw,ih),min($max,iw),-2)':'if(gt(iw,ih),-2,min($max,ih))'"
 
 ffmpeg -v error -y -i "$in" -vf "$vf" \
-  -c:v libx264 -preset slow -crf 23 -profile:v high -pix_fmt yuv420p \
-  -maxrate 3M -bufsize 6M -force_key_frames 'expr:gte(t,n_forced*2)' \
+  -c:v libx264 -preset slow -crf "$crf" -profile:v high -pix_fmt yuv420p \
+  -maxrate "$maxrate" -bufsize 6M -force_key_frames 'expr:gte(t,n_forced*2)' \
   -c:a aac -b:a 128k -movflags +faststart "$out"
 
 ffmpeg -v error -y -ss "$poster_at" -i "$out" -frames:v 1 -q:v 3 "${out%.*}.jpg"
