@@ -63,12 +63,15 @@
     e.preventDefault();
     if (a.hasAttribute('data-need')) setNeed(a.getAttribute('data-need'));
     if (menuOpen) { menuOpen = false; sheet.classList.remove('is-open'); burger.setAttribute('aria-expanded', 'false'); d.body.classList.remove('menu-open'); }
-    var offset = t.tagName === 'SECTION' ? 0 : 96;
+    // layout position, not getBoundingClientRect: a section still waiting to reveal is
+    // translated 16 px, and measuring that made the scroll land 16 px short
+    var y = 0; for (var el = t; el; el = el.offsetParent) y += el.offsetTop;
+    y = Math.max(0, y - (t.tagName === 'SECTION' ? 0 : 96));
     if (!reduce && w.gsap && w.ScrollToPlugin) {
       gsap.registerPlugin(ScrollToPlugin);
-      gsap.to(w, { duration: 0.9, ease: 'power3.inOut', scrollTo: { y: t, offsetY: offset, autoKill: false } });
+      gsap.to(w, { duration: 0.9, ease: 'power3.inOut', scrollTo: { y: y, autoKill: false } });
     } else {
-      w.scrollTo(0, t.getBoundingClientRect().top + w.scrollY - offset);
+      w.scrollTo(0, y);
     }
     history.pushState(null, '', id);
     if (!t.hasAttribute('tabindex')) t.setAttribute('tabindex', '-1');
