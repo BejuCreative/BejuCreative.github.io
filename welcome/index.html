@@ -11,263 +11,270 @@
 <link rel="icon" href="/favicon.ico">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="stylesheet" href="/tokens.css">
+<meta name="theme-color" content="#090B07">
+<link rel="stylesheet" href="/tokens.css"><link rel="stylesheet" href="/site.css"><link rel="stylesheet" href="/services.css">
 <style>
-/* Layout only — tokens and primitives come from /tokens.css (see DESIGN.md). */
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{overflow-x:hidden}
-header,main,footer{position:relative;z-index:1}
-a{color:inherit}
-img{display:block;max-width:100%}
-.wrap{max-width:60rem;margin:0 auto;padding:0 var(--pad)}
-
-/* floating glass header */
-header{
-  position:sticky;top:12px;z-index:10;display:flex;align-items:center;justify-content:space-between;
-  width:min(62rem,calc(100% - 24px));margin:12px auto 0;height:60px;padding:0 8px 0 20px;border-radius:var(--r-xl);
-  background:var(--glass-fill-strong);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
-  border:1px solid var(--hairline);box-shadow:var(--glass-highlight),var(--shadow-float);
-}
-@supports not ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){header{background:var(--surface)}}
-.brand{display:flex;align-items:center;min-height:44px;border-radius:var(--r-sm)}
-.brand img{height:1.7rem;width:auto}
-.help{display:inline-flex;align-items:center;min-height:44px;padding:0 1rem;border-radius:var(--r-pill);font-size:.9rem;font-weight:500;color:var(--ink);text-decoration:none;
-  background:rgba(255,255,255,.06);border:1px solid var(--hairline-strong);transition:background var(--dur-1) var(--ease-out)}
-.help:hover{background:rgba(255,255,255,.1)}
-
-.display{font-weight:700;color:var(--ink);letter-spacing:-.04em;line-height:1.04;text-wrap:balance}
-.grad{background:linear-gradient(180deg,#FFFFFF 0%,#EDEDEF 52%,#BDBEB8 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-h1.display{font-size:clamp(2.9rem,8vw,5.6rem);line-height:.98;letter-spacing:-.045em}
-h2.display{font-size:clamp(1.9rem,4.4vw,3rem);margin-bottom:1.4rem}
-h3{font-weight:600;color:var(--ink);font-size:1.1rem;letter-spacing:-.015em;margin-bottom:.4rem}
-.kicker{font-size:var(--t-label);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-solid);display:flex;align-items:center;gap:.75rem;margin-bottom:1.1rem}
-.kicker::before{content:'';width:1.6rem;height:1px;background:linear-gradient(90deg,var(--gold-bronze),var(--gold-champagne));flex-shrink:0}
-.lede{font-size:var(--t-lead);line-height:1.5;color:var(--body);max-width:36rem;text-wrap:pretty}
-p{max-width:42rem;text-wrap:pretty}
-strong{color:var(--ink);font-weight:600}
-
-section{padding:clamp(3.5rem,8vw,5.5rem) 0;border-top:1px solid rgba(255,255,255,.05)}
-.hero{padding:clamp(4rem,10vw,7rem) 0 clamp(3.5rem,8vw,5.5rem);border-top:0}
-.hero .lede{margin-top:1.8rem}
-.paid{display:inline-flex;align-items:center;gap:.55rem;margin-bottom:1.8rem;padding:.45rem .9rem;border-radius:var(--r-pill);
+/* Welcome-only pieces. Layout, nav, footer, sections: /site.css + /services.css. */
+.paid{display:inline-flex;align-items:center;gap:.55rem;margin-bottom:1.6rem;padding:.45rem .9rem;border-radius:var(--r-pill);
   font-size:.8rem;font-weight:600;color:var(--ink);background:rgba(255,255,255,.06);border:1px solid var(--hairline-strong)}
 .paid i{width:.5rem;height:.5rem;border-radius:50%;background:var(--success);box-shadow:0 0 0 4px rgba(79,209,139,.16)}
+.svc-head .kicker{margin-bottom:1rem}
+.svc-head h2{text-wrap:balance}
 
-/* three steps */
-.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr));gap:var(--s-4)}
-.step{border-radius:var(--r-lg);padding:clamp(1.4rem,2.4vw,1.9rem);display:flex;flex-direction:column}
-.step .n{font-size:var(--t-label);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-solid);margin-bottom:1rem}
-.step p{font-size:.95rem;line-height:1.6;color:var(--body)}
-.step .tag{margin-top:auto;padding-top:1.1rem;font-size:var(--t-caption);color:var(--muted)}
-.optional{display:inline-block;margin-left:.4rem;font-size:.7rem;font-weight:600;color:var(--muted);border:1px solid var(--hairline-strong);border-radius:var(--r-pill);padding:.1rem .5rem;vertical-align:middle}
-.after{margin-top:1.4rem;font-size:.95rem;color:var(--body)}
-.cta{margin-top:1.6rem}
+/* card grids: explicit columns, so they never break 2 + 1 */
+.cards{display:grid;gap:var(--gutter)}
+.cards.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.cards.c4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:1023px){.cards.c3{grid-template-columns:1fr}.cards.c4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.cards.c4{grid-template-columns:1fr}}
+.cards .card{display:flex;flex-direction:column}
+.cards h3{margin:0 0 .45rem}
+.svc-sec .cards p{font-size:.95rem;line-height:1.6}
+.n{font-size:var(--t-label);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-solid);margin-bottom:1rem}
+.tag{margin-top:auto;padding-top:1.1rem;font-size:var(--t-caption);color:var(--muted)}
+.optional{display:inline-block;margin-left:.35rem;font-size:.7rem;font-weight:600;color:var(--muted);border:1px solid var(--hairline-strong);border-radius:var(--r-pill);padding:.1rem .5rem;vertical-align:.15em}
+.nowrap{white-space:nowrap}
+.steps-foot{display:flex;flex-wrap:wrap;align-items:center;gap:1rem 2rem;margin-top:2rem}
+.svc-sec .steps-foot p{max-width:62ch;font-size:.95rem}
+.fact b{display:block;font-weight:600;color:var(--ink);margin-bottom:.3rem}
+.svc-sec .fact p{font-size:.92rem;line-height:1.55}
 
-/* lists */
-.list{display:grid;gap:1rem;margin-top:1.4rem}
-.list li{list-style:none;display:grid;grid-template-columns:1.6rem 1fr;gap:.5rem;color:var(--body);line-height:1.65}
-.list li::before{content:'';width:1.15rem;height:1.15rem;margin-top:.22rem;border-radius:50%;background:var(--gold-metal);box-shadow:var(--gold-edge)}
-.list.dots li::before{width:.5rem;height:.5rem;margin:.62rem 0 0 .3rem;box-shadow:none;background:var(--gold-solid)}
+/* timeline: a gold-dotted rule, not the numbered list rows */
+.svc-sec .timeline{border:0;border-left:1px solid var(--hairline-strong);margin:.4rem 0 0 .45rem}
+.svc-sec .timeline > li{border:0;padding:0 0 1.7rem 1.8rem}
+.svc-sec .timeline > li:last-child{padding-bottom:0}
+.svc-sec .timeline > li::before{content:'';left:-.4rem;top:.4rem;width:.8rem;height:.8rem;border-radius:50%;background:var(--gold-metal);box-shadow:var(--gold-edge),0 0 0 4px var(--canvas)}
+.when{display:block;font-size:var(--t-label);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-solid);margin-bottom:.25rem}
+.svc-sec .timeline h3{margin:0 0 .2rem}
 
-/* timeline */
-.timeline{margin:.4rem 0 0 .45rem;border-left:1px solid var(--hairline-strong)}
-.timeline li{list-style:none;position:relative;padding:0 0 1.7rem 1.8rem}
-.timeline li:last-child{padding-bottom:0}
-.timeline li::before{content:'';position:absolute;left:-.4rem;top:.35rem;width:.8rem;height:.8rem;border-radius:50%;background:var(--gold-metal);box-shadow:var(--gold-edge),0 0 0 4px var(--canvas)}
-.timeline .when{display:block;font-size:var(--t-label);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-solid);margin-bottom:.25rem}
-.timeline p{color:var(--body)}
-
-/* facts */
-.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,13rem),1fr));gap:var(--s-4)}
-.fact{border-radius:var(--r-lg);padding:1.3rem 1.4rem}
-.fact b{display:block;font-weight:600;color:var(--ink);font-size:1rem;margin-bottom:.3rem}
-.fact span{font-size:.92rem;color:var(--body);line-height:1.55}
-
-/* feedback example */
-.example{margin-top:1.6rem;max-width:36rem;border-radius:var(--r-lg);padding:1.2rem 1.4rem}
+.example{margin-top:1.75rem;border-radius:var(--r-lg);padding:1.2rem 1.4rem}
 .example .lbl{font-size:var(--t-label);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-solid);margin-bottom:.6rem}
-.example p{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88rem;line-height:1.8;color:var(--ink)}
+.svc-sec .example p{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88rem;line-height:1.8;color:var(--ink)}
+.svc-sec .small{margin-top:1.25rem;font-size:var(--t-caption);color:var(--muted)}
 
-/* contact */
-.channels{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,14rem),1fr));gap:var(--s-3);margin-top:1.2rem}
-.channel{display:block;border-radius:var(--r-lg);padding:1.1rem 1.3rem;text-decoration:none;transition:border-color var(--dur-1) var(--ease-out),scale var(--dur-1) var(--ease-out)}
+/* guarantee: the one gold-ring panel, heading left / terms right inside it */
+.guarantee{border-radius:var(--r-xl);padding:clamp(1.75rem,4vw,3rem);display:grid;grid-template-columns:5fr 6fr;gap:1.5rem clamp(2rem,5vw,4.5rem)}
+.guarantee h2{font-size:clamp(1.65rem,2.7vw,2.3rem);line-height:1.12;letter-spacing:-.03em;max-width:14ch}
+.guarantee ul{margin:1.4rem 0 0}
+@media(max-width:900px){.guarantee{grid-template-columns:1fr}}
+
+.channel{text-decoration:none;transition:border-color var(--dur-1) var(--ease-out),scale var(--dur-1) var(--ease-out)}
 .channel:hover{border-color:rgba(216,184,101,.55)}
 .channel:active{scale:.98}
 .channel small{display:block;font-size:var(--t-label);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-solid);margin-bottom:.35rem}
-.channel span{color:var(--ink);font-weight:600;word-break:break-word}
-.note{margin-top:1.3rem;font-size:.95rem;color:var(--body)}
-
-.guarantee{border-radius:var(--r-xl);padding:clamp(1.6rem,4vw,2.8rem)}
-.small{font-size:var(--t-caption);color:var(--muted);margin-top:1.2rem}
-.small a,.note a{color:var(--gold-solid)}
-.small a:hover{color:var(--gold-champagne)}
-
-footer{border-top:1px solid var(--hairline);padding:2rem var(--pad);display:flex;flex-wrap:wrap;gap:1rem;justify-content:space-between;font-size:.82rem;color:var(--muted)}
-footer a{display:inline-flex;align-items:center;min-height:44px;text-decoration:none;color:var(--body)}
-footer a:hover{color:var(--gold-solid)}
-@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+.channel span{color:var(--ink);font-weight:600;overflow-wrap:anywhere}
+.channels{margin-top:1.75rem}
+.svc-sec .note{margin-top:1.5rem}
+.svc-sec .more-cta{margin-top:1.75rem}
+@media(prefers-reduced-motion:reduce){.channel{transition:none}.channel:active{scale:1}}
 </style>
 </head>
 <body>
-
-<header>
-  <a class="brand" href="/" aria-label="BEJÚ Creative — home"><img src="/beju-mark.png" alt="BEJÚ Creative" width="1560" height="1000"></a>
-  <a class="help" href="#contact">Need help?</a>
+<a class="skip" href="#main">Skip to content</a>
+<header class="nav" id="nav">
+  <a href="/" class="brand" aria-label="BEJÚ Creative — home"><img src="/beju-mark.png" alt="BEJÚ Creative" width="1486" height="884"></a>
+  <nav class="nav-links" aria-label="Your guide">
+    <a href="#steps">Steps</a>
+    <a href="#footage">Footage</a>
+    <a href="#revisions">Revisions</a>
+    <a href="#guarantee">Guarantee</a>
+  </nav>
+  <div class="nav-end">
+    <a class="btn-glass btn-sm" href="#contact">Need help?</a>
+    <button class="burger" type="button" aria-expanded="false" aria-controls="sheet" aria-label="Open menu"><span></span><span></span><span></span></button>
+  </div>
 </header>
 
-<main>
-  <div class="wrap">
+<div class="sheet" id="sheet">
+  <nav aria-label="Menu">
+    <a href="#steps">Steps</a>
+    <a href="#footage">Footage</a>
+    <a href="#revisions">Revisions</a>
+    <a href="#guarantee">Guarantee</a>
+  </nav>
+  <a class="btn-gold" href="#contact">Need help?</a>
+  <p class="caption">We reply within 24 hours · bejusipe@gmail.com</p>
+</div>
 
-    <!-- ── WELCOME ─────────────────────────────────────── -->
-    <section class="hero">
+<main id="main">
+
+  <!-- ── WELCOME ─────────────────────────────────────── -->
+  <div class="svc-hero wrap g12">
+    <div class="svc-title">
       <div class="paid"><i></i> Payment received</div>
-      <div class="kicker">Welcome to the team</div>
+      <p class="kicker">Welcome to the team</p>
       <h1 class="display grad">You're in.<br>Let's get you <span class="gold-text">seen.</span></h1>
+    </div>
+    <div class="svc-intro">
       <p class="lede">Thanks for trusting us with your content. This page is everything you need — how to send footage, what happens next, and how to reach us. Two minutes to read.</p>
-    </section>
-
-    <!-- ── NEXT STEPS ──────────────────────────────────── -->
-    <section id="steps">
-      <div class="kicker">Your next steps</div>
-      <h2 class="display grad">Three steps.<br>That's it.</h2>
-      <div class="steps">
-        <div class="step panel">
-          <span class="n">Step 01</span>
-          <h3>Watch your inbox</h3>
-          <p>We'll email you a link to your own <strong>private upload folder</strong> on Google Drive, from <strong>bejusipe@gmail.com</strong>. Can't find it? Check spam, or message us.</p>
-          <span class="tag">We do this</span>
-        </div>
-        <div class="step panel">
-          <span class="n">Step 02</span>
-          <h3>Upload your footage</h3>
-          <p>Drop your recording into that folder. The full episode or session is perfect — finding the best moments is our job.</p>
-          <span class="tag">About 2 minutes</span>
-        </div>
-        <div class="step panel">
-          <span class="n">Step 03</span>
-          <h3>Tell us your style <span class="optional">Optional</span></h3>
-          <p>Want your first edits to land perfectly? A short form covers your handles, style, and anything we should never show.</p>
-          <span class="tag">About 1 minute</span>
-        </div>
-      </div>
-      <a class="btn-gold cta" href="https://docs.google.com/forms/d/e/1FAIpQLScAvi65xVF4LodUVE2Qq1ZVLu4WAXAmARcTEX_j4yfsdMtruQ/viewform" target="_blank" rel="noopener">Tell us your style →</a>
-      <p class="after">Skip the form and we'll edit in our proven style — you can always give feedback on the first cut. <strong>Your first edits arrive within 24 hours of us receiving usable footage.</strong></p>
-    </section>
-
-    <!-- ── SENDING FOOTAGE ─────────────────────────────── -->
-    <section id="footage">
-      <div class="kicker">Sending footage</div>
-      <h2 class="display grad">Better footage,<br>better clips</h2>
-      <p>Open the folder link from our email, then drag your files in. On your phone: open it in the <strong>Google Drive app</strong>, tap <strong>+</strong>, then <strong>Upload</strong>.</p>
-      <ul class="list" style="margin-top:1.6rem">
-        <li><span><strong>Send the original file.</strong> Export straight from your camera, Riverside, Zoom or editing app. Files sent through WhatsApp, Instagram or a screen recording lose most of their quality.</span></li>
-        <li><span><strong>Longer is fine.</strong> Send the whole recording — one good episode can become a month of clips.</span></li>
-        <li><span><strong>Separate cameras or audio?</strong> Upload every angle and audio track you have. More angles means more cutting options.</span></li>
-        <li><span><strong>Got favourite moments?</strong> Send us the timestamps and we'll start there.</span></li>
-        <li><span><strong>Big files take a while.</strong> Keep the tab open until Drive says the upload is complete. The 24-hour clock starts once we have usable footage — if a file is corrupted or missing audio, we'll ask you to resend it.</span></li>
-      </ul>
-    </section>
-
-    <!-- ── WHAT HAPPENS NEXT ───────────────────────────── -->
-    <section id="process">
-      <div class="kicker">What happens next</div>
-      <h2 class="display grad">From upload<br>to posted</h2>
-      <ol class="timeline">
-        <li><span class="when">Day 0</span><h3>You upload</h3><p>We check the footage and pick the moments worth clipping.</p></li>
-        <li><span class="when">Within 24 hours</span><h3>Your edits arrive</h3><p>Finished clips land in the same Drive folder, and we message you when they're ready.</p></li>
-        <li><span class="when">Your turn</span><h3>You review</h3><p>Watch them, then send any changes in one message (tips below).</p></li>
-        <li><span class="when">Same day</span><h3>Revisions come back</h3><p>We make the fixes and update the files in your folder.</p></li>
-        <li><span class="when">Then</span><h3>You post</h3><p>The clips are yours — post them, reuse them, run them as ads.</p></li>
-      </ol>
-    </section>
-
-    <!-- ── WHAT YOU GET ────────────────────────────────── -->
-    <section id="deliverables">
-      <div class="kicker">What you get</div>
-      <h2 class="display grad">Ready to post</h2>
-      <div class="facts">
-        <div class="fact panel"><b>Vertical 9:16</b><span>1080 × 1920, sized for Reels, TikTok, YouTube Shorts and LinkedIn.</span></div>
-        <div class="fact panel"><b>Captions burned in</b><span>Styled captions already on the video, so there's nothing to add.</span></div>
-        <div class="fact panel"><b>Links never expire</b><span>Everything stays in your Drive folder. Download any time.</span></div>
-        <div class="fact panel"><b>Yours to keep</b><span>Once your order is paid, you own the edits and can use them however you like.</span></div>
-      </div>
-    </section>
-
-    <!-- ── FEEDBACK & REVISIONS ────────────────────────── -->
-    <section id="revisions">
-      <div class="kicker">Feedback &amp; revisions</div>
-      <h2 class="display grad">One round.<br>Make it count.</h2>
-      <p>Every order includes <strong>one round of revisions</strong>, and changes come back the same day. To get exactly what you want in one go:</p>
-      <ul class="list" style="margin-top:1.6rem">
-        <li><span><strong>Send all your changes in one message.</strong> List every note for every clip together.</span></li>
-        <li><span><strong>Use timestamps.</strong> "0:12" is faster and clearer than "near the start".</span></li>
-        <li><span><strong>Say what you liked, too.</strong> It tells us what to keep doing in your next pack.</span></li>
-      </ul>
-      <div class="example panel">
-        <div class="lbl">Example of great feedback</div>
-        <p>Clip 2 — 0:04 cut the pause<br>Clip 2 — 0:18 her name is spelled "Sara"<br>Clip 4 — use the other hook<br>Loved clip 3's captions — more like that</p>
-      </div>
-      <p class="small">Fixes and tweaks are covered by your revision round. A completely different edit from the original brief may be treated as a new order — see our <a href="/terms.html">terms</a>.</p>
-    </section>
-
-    <!-- ── POSTING TIPS ────────────────────────────────── -->
-    <section id="posting">
-      <div class="kicker">Get the most views</div>
-      <h2 class="display grad">How to post<br>your clips</h2>
-      <ul class="list dots">
-        <li><span><strong>Post consistently.</strong> Several clips a week beats a burst of five on one day and then silence.</span></li>
-        <li><span><strong>Upload natively to each platform.</strong> Upload the file to each app directly rather than sharing a link or cross-posting.</span></li>
-        <li><span><strong>Write a caption with a hook.</strong> A short line that makes people want to watch, plus the words people would search for.</span></li>
-        <li><span><strong>Reply to comments early.</strong> Engagement in the first hour helps the clip reach more people.</span></li>
-        <li><span><strong>Don't delete slow starters.</strong> Some clips pick up days later.</span></li>
-        <li><span><strong>Screenshot your views.</strong> Handy for tracking what works — and you'll need them if you ever claim the guarantee.</span></li>
-      </ul>
-    </section>
-
-    <!-- ── GUARANTEE ───────────────────────────────────── -->
-    <section id="guarantee">
-      <div class="guarantee panel gold-ring">
-        <div class="kicker">The BEJÚ guarantee</div>
-        <h2 class="display grad">Double your views,<br>or you don't&nbsp;pay</h2>
-        <p>If the clips we deliver don't reach at least <strong>2× your average views within 30 days of you posting them</strong>, you get a full refund.</p>
-        <ul class="list dots" style="margin-top:1.4rem">
-          <li><span>The 30 days start from when <strong>you post</strong> each clip, not when we deliver it — so clips need to be posted to count.</span></li>
-          <li><span>"Average views" means your account's own recent average, using the view numbers the platform shows you.</span></li>
-          <li><span>To claim, message us <strong>within 35 days of posting</strong> with your view numbers (screenshots are perfect).</span></li>
-        </ul>
-        <p class="small">Full details in our <a href="/terms.html">terms of service</a>.</p>
-      </div>
-    </section>
-
-    <!-- ── CONTACT ─────────────────────────────────────── -->
-    <section id="contact">
-      <div class="kicker">Talk to us</div>
-      <h2 class="display grad">We're right here</h2>
-      <p>You're working directly with <strong>Benas and Simas</strong>, the two editors cutting your videos. No account managers, no hand-offs. Reach us wherever suits you:</p>
-      <div class="channels">
-        <a class="channel panel" href="mailto:bejusipe@gmail.com"><small>Email</small><span>bejusipe@gmail.com</span></a>
-        <a class="channel panel" href="https://wa.me/37069575791" target="_blank" rel="noopener"><small>WhatsApp</small><span>+370 695 75791</span></a>
-        <a class="channel panel" href="https://instagram.com/bejucreative" target="_blank" rel="noopener"><small>Instagram DM</small><span>@bejucreative</span></a>
-      </div>
-      <p class="note"><strong>We reply within 24 hours.</strong> We're based in Lithuania — about 7 hours ahead of New York — so a message sent in your evening is often answered by your morning.</p>
-    </section>
-
-    <!-- ── REORDER ─────────────────────────────────────── -->
-    <section id="more">
-      <div class="kicker">When you want more</div>
-      <h2 class="display grad">Keep the clips<br>coming</h2>
-      <p>Ready for your next pack? Message us on any channel above, or pick a package — the more you order at once, the less each clip costs.</p>
-      <a class="btn-glass cta" href="/#pricing">See packages</a>
-    </section>
-
+    </div>
   </div>
+
+  <!-- ── NEXT STEPS ──────────────────────────────────── -->
+  <section class="svc-sec wide wrap g12" id="steps">
+    <div class="svc-head"><p class="kicker">Your next steps</p><h2>Three steps.<br>That's it.</h2></div>
+    <div class="cards c3">
+      <div class="card panel">
+        <span class="n">Step 01</span>
+        <h3>Send your footage</h3>
+        <p>Share a download link — <strong>Google Drive, Dropbox or WeTransfer</strong> — by email or WhatsApp. The full episode or session is perfect — finding the best moments is our job.</p>
+        <span class="tag">About 2 minutes</span>
+      </div>
+      <div class="card panel">
+        <span class="n">Step 02</span>
+        <h3>Tell us your <span class="nowrap">style <span class="optional">Optional</span></span></h3>
+        <p>Want your first edits to land perfectly? A short form covers your handles, style, and anything we should never show.</p>
+        <span class="tag">About 1 minute</span>
+      </div>
+      <div class="card panel">
+        <span class="n">Step 03</span>
+        <h3>Watch your inbox</h3>
+        <p>Your finished clips arrive as a <strong>Google Drive link</strong> from <strong>bejusipe@gmail.com</strong>. Can't find it? Check spam, or message us.</p>
+        <span class="tag">We do this</span>
+      </div>
+    </div>
+    <div class="steps-foot">
+      <a class="btn-gold magnetic" href="https://docs.google.com/forms/d/e/1FAIpQLScAvi65xVF4LodUVE2Qq1ZVLu4WAXAmARcTEX_j4yfsdMtruQ/viewform" target="_blank" rel="noopener">Tell us your style →</a>
+      <p>Skip the form and we'll edit in our proven style — you can always give feedback on the first cut. <strong>Your first edits arrive within 24 hours of us receiving usable footage.</strong></p>
+    </div>
+  </section>
+
+  <!-- ── SENDING FOOTAGE ─────────────────────────────── -->
+  <section class="svc-sec wrap g12 rv" id="footage">
+    <div class="svc-head"><p class="kicker">Sending footage</p><h2>Better footage,<br>better clips</h2></div>
+    <p>Upload your files to <strong>Google Drive, Dropbox or WeTransfer</strong>, then send us the download link by email or WhatsApp. Prefer a private Google Drive folder to upload into? Ask and we'll set one up for you.</p>
+    <ul>
+      <li><strong>Send the original file.</strong> Export straight from your camera, Riverside, Zoom or editing app. Files sent through WhatsApp, Instagram or a screen recording lose most of their quality.</li>
+      <li><strong>Longer is fine.</strong> Send the whole recording — one good episode can become a month of clips.</li>
+      <li><strong>Separate cameras or audio?</strong> Send every angle and audio track you have. More angles means more cutting options.</li>
+      <li><strong>Got favourite moments?</strong> Send us the timestamps and we'll start there.</li>
+      <li><strong>Big files take a while.</strong> Keep the tab open until the upload says it's complete. The 24-hour clock starts once we have usable footage — if a file is corrupted or missing audio, we'll ask you to resend it.</li>
+    </ul>
+  </section>
+
+  <!-- ── WHAT HAPPENS NEXT ───────────────────────────── -->
+  <section class="svc-sec wrap g12 rv" id="process">
+    <div class="svc-head"><p class="kicker">What happens next</p><h2>From footage<br>to posted</h2></div>
+    <ol class="timeline">
+      <li><span class="when">Day 0</span><h3>You send footage</h3><p>We check the footage and pick the moments worth clipping.</p></li>
+      <li><span class="when">Within 24 hours</span><h3>Your edits arrive</h3><p>We send your finished clips as a Google Drive link and message you when they're ready.</p></li>
+      <li><span class="when">Your turn</span><h3>You review</h3><p>Watch them, then send any changes in one message (tips below).</p></li>
+      <li><span class="when">Same day</span><h3>Revisions come back</h3><p>We make the fixes and update the files at the same link.</p></li>
+      <li><span class="when">Then</span><h3>You post</h3><p>The clips are yours — post them, reuse them, run them as ads.</p></li>
+    </ol>
+  </section>
+
+  <!-- ── WHAT YOU GET ────────────────────────────────── -->
+  <section class="svc-sec wide wrap g12 rv" id="deliverables">
+    <div class="svc-head"><p class="kicker">What you get</p><h2>Ready to post</h2></div>
+    <div class="cards c4">
+      <div class="card panel fact"><b>Vertical 9:16</b><p>1080 × 1920, sized for Reels, TikTok, YouTube Shorts and LinkedIn.</p></div>
+      <div class="card panel fact"><b>Captions burned in</b><p>Styled captions already on the video, so there's nothing to add.</p></div>
+      <div class="card panel fact"><b>Links never expire</b><p>Everything stays at your Google Drive link. Download any time.</p></div>
+      <div class="card panel fact"><b>Yours to keep</b><p>Once your order is paid, you own the edits and can use them however you like.</p></div>
+    </div>
+  </section>
+
+  <!-- ── FEEDBACK & REVISIONS ────────────────────────── -->
+  <section class="svc-sec wrap g12 rv" id="revisions">
+    <div class="svc-head"><p class="kicker">Feedback &amp; revisions</p><h2>One round.<br>Make it count.</h2></div>
+    <p>Every order includes <strong>one round of revisions</strong>, and changes come back the same day. To get exactly what you want in one go:</p>
+    <ul>
+      <li><strong>Send all your changes in one message.</strong> List every note for every clip together.</li>
+      <li><strong>Use timestamps.</strong> "0:12" is faster and clearer than "near the start".</li>
+      <li><strong>Say what you liked, too.</strong> It tells us what to keep doing in your next pack.</li>
+    </ul>
+    <div class="example panel">
+      <p class="lbl">Example of great feedback</p>
+      <p>Clip 2 — 0:04 cut the pause<br>Clip 2 — 0:18 her name is spelled "Sara"<br>Clip 4 — use the other hook<br>Loved clip 3's captions — more like that</p>
+    </div>
+    <p class="small">Fixes and tweaks are covered by your revision round. A completely different edit from the original brief may be treated as a new order — see our <a href="/terms.html">terms</a>.</p>
+  </section>
+
+  <!-- ── POSTING TIPS ────────────────────────────────── -->
+  <section class="svc-sec wrap g12 rv" id="posting">
+    <div class="svc-head"><p class="kicker">Get the most views</p><h2>How to post<br>your clips</h2></div>
+    <ul>
+      <li><strong>Post consistently.</strong> Several clips a week beats a burst of five on one day and then silence.</li>
+      <li><strong>Upload natively to each platform.</strong> Upload the file to each app directly rather than sharing a link or cross-posting.</li>
+      <li><strong>Write a caption with a hook.</strong> A short line that makes people want to watch, plus the words people would search for.</li>
+      <li><strong>Reply to comments early.</strong> Engagement in the first hour helps the clip reach more people.</li>
+      <li><strong>Don't delete slow starters.</strong> Some clips pick up days later.</li>
+      <li><strong>Screenshot your views.</strong> Handy for tracking what works — and you'll need them if you ever claim the guarantee.</li>
+    </ul>
+  </section>
+
+  <!-- ── GUARANTEE ───────────────────────────────────── -->
+  <section class="svc-sec wide wrap g12 rv" id="guarantee" aria-labelledby="g-title">
+    <div class="guarantee card panel gold-ring">
+      <div><p class="kicker">The BEJÚ guarantee</p><h2 class="display grad" id="g-title">Double your views, or you don't&nbsp;pay</h2></div>
+      <div>
+        <p>If the clips we deliver don't reach at least <strong>2× your average views within 30 days of you posting them</strong>, you get a full refund.</p>
+        <ul>
+          <li>The 30 days start from when <strong>you post</strong> each clip, not when we deliver it — so clips need to be posted to count.</li>
+          <li>"Average views" means your account's own recent average, using the view numbers the platform shows you.</li>
+          <li>To claim, message us <strong>within 35 days of posting</strong> with your view numbers (screenshots are perfect).</li>
+        </ul>
+        <p class="small">Full details in our <a href="/terms.html#guarantee">terms of service</a>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CONTACT ─────────────────────────────────────── -->
+  <section class="svc-sec wide wrap g12 rv" id="contact">
+    <div class="svc-head"><p class="kicker">Talk to us</p><h2>We're right here</h2></div>
+    <p>You're working directly with <strong>Benas and Simas</strong>, the two editors cutting your videos. No account managers, no hand-offs. Reach us wherever suits you:</p>
+    <div class="cards c3 channels">
+      <a class="channel card panel" href="mailto:bejusipe@gmail.com"><small>Email</small><span>bejusipe@gmail.com</span></a>
+      <a class="channel card panel" href="https://wa.me/37069575791" target="_blank" rel="noopener"><small>WhatsApp</small><span>+370 695 75791</span></a>
+      <a class="channel card panel" href="https://instagram.com/bejucreative" target="_blank" rel="noopener"><small>Instagram DM</small><span>@bejucreative</span></a>
+    </div>
+    <p class="note"><strong>We reply within 24 hours.</strong> We're based in Lithuania — about 7 hours ahead of New York — so a message sent in your evening is often answered by your morning.</p>
+  </section>
+
+  <!-- ── REORDER ─────────────────────────────────────── -->
+  <section class="svc-sec wrap g12 rv" id="more">
+    <div class="svc-head"><p class="kicker">When you want more</p><h2>Keep the clips coming</h2></div>
+    <p>Ready for your next pack? Message us on any channel above, or pick a package — the more you order at once, the less each clip costs.</p>
+    <div class="more-cta"><a class="btn-glass" href="/#pricing">See packages</a></div>
+  </section>
+
 </main>
 
-<footer>
-  <span>© 2026 BEJÚ Creative · Benas &amp; Simas</span>
-  <span><a href="/terms.html">Terms of service</a> · <a href="/">bejucreative.digital</a></span>
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <img src="/beju-mark.png" alt="BEJÚ Creative" width="1486" height="884" loading="lazy">
+        <p>Short-form editing for podcasters, coaches and founders, and launch videos for SaaS and apps. Two editors, fast turnaround, work we'd put our name on.</p>
+      </div>
+      <div class="foot-col">
+        <p class="fhead">Services</p>
+        <a href="/podcast-video-editing/">Podcast video editing</a>
+        <a href="/short-form-video-editing/">Short-form video editing</a>
+        <a href="/video-editing-for-coaches/">Editing for coaches</a>
+        <a href="/saas-launch-videos/">SaaS &amp; app launch videos</a>
+      </div>
+      <div class="foot-col">
+        <p class="fhead">Studio</p>
+        <a href="/#work">Our work</a>
+        <a href="/#pricing">Pricing</a>
+        <a href="/#faq">FAQ</a>
+        <a href="/#apply">Free sample clip</a>
+      </div>
+      <div class="foot-col">
+        <p class="fhead">Contact</p>
+        <a href="mailto:bejusipe@gmail.com">Email</a>
+        <a href="https://wa.me/37069575791" target="_blank" rel="noopener">WhatsApp</a>
+        <a href="https://instagram.com/bejucreative" target="_blank" rel="noopener">Instagram</a>
+      </div>
+    </div>
+    <div class="foot-bot"><span>© 2026 BEJÚ Creative · Benas &amp; Simas</span><a href="/terms.html">Terms of service</a></div>
+  </div>
 </footer>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/gsap.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/ScrollToPlugin.min.js" defer></script>
+<script src="/site.js" defer></script>
 </body>
 </html>
