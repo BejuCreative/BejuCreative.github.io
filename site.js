@@ -80,15 +80,22 @@
 
   /* ── Reveals: only elements that start below the fold, once, 16 px, staggered ── */
   var io = 'IntersectionObserver' in w;
+  var pending = [], counts = [];
   if (!reduce && io) {
     var vh = w.innerHeight;
+    var reveal = function (el) {
+      rvObs.unobserve(el); pending.splice(pending.indexOf(el), 1);
+      el.classList.remove('rv-wait'); el.classList.add('rv-in');
+      if (el.hasAttribute('data-lr')) revealLines(el);
+    };
+    // The observer only sees what is on screen at a frame. A fast scroll during a long
+    // frame (a clip starting to decode) can carry elements past unseen, and they'd stay
+    // invisible. So whenever anything enters, reveal every pending element above the line.
     var rvObs = new IntersectionObserver(function (es) {
-      es.forEach(function (e) {
-        if (!e.isIntersecting) return;
-        var el = e.target; rvObs.unobserve(el);
-        el.classList.remove('rv-wait'); el.classList.add('rv-in');
-        if (el.hasAttribute('data-lr')) revealLines(el);
-      });
+      if (!es.some(function (e) { return e.isIntersecting; })) return;
+      var line = w.innerHeight * 0.92;
+      pending.slice().forEach(function (el) { if (el.getBoundingClientRect().top < line) reveal(el); });
+      settleCounts();
     }, { rootMargin: '0px 0px -8% 0px' });
     $$('.rv').forEach(function (el) {
       if (el.getBoundingClientRect().top < vh * 0.96) return;   // on screen at load: leave it alone
@@ -96,7 +103,7 @@
       var i = Math.max(0, sib.indexOf(el));
       el.style.setProperty('--rv-delay', Math.min(i, 6) * 55 + 'ms');
       if (el.hasAttribute('data-lr')) splitLines(el); else el.classList.add('rv-wait');
-      rvObs.observe(el);
+      pending.push(el); rvObs.observe(el);
     });
   }
 
@@ -274,10 +281,18 @@
   }
 
   /* ── Count-up once in view (HTML already holds the final value) ── */
+  var finalText = function (el) { return el.getAttribute('data-count') + (el.getAttribute('data-suffix') || ''); };
+  // a count that was scrolled past unseen just shows its final value
+  function settleCounts() {
+    counts.slice().forEach(function (el) {
+      if (el.getBoundingClientRect().bottom >= 0) return;
+      cObs.unobserve(el); counts.splice(counts.indexOf(el), 1); el.textContent = finalText(el);
+    });
+  }
   if (!reduce && io) {
     var cObs = new IntersectionObserver(function (es) {
       es.forEach(function (e) {
-        if (!e.isIntersecting) return; cObs.unobserve(e.target);
+        if (!e.isIntersecting) return; cObs.unobserve(e.target); counts.splice(counts.indexOf(e.target), 1);
         var el = e.target, to = parseFloat(el.getAttribute('data-count')), sfx = el.getAttribute('data-suffix') || '', t0 = performance.now();
         (function tick(t) {
           var p = Math.min(1, (t - t0) / 1400), ease = 1 - Math.pow(2, -10 * p);   // expo.out
@@ -288,7 +303,7 @@
     }, { threshold: 0.6 });
     $$('[data-count]').forEach(function (el) {
       if (el.getBoundingClientRect().top < w.innerHeight) return;
-      el.textContent = '0' + (el.getAttribute('data-suffix') || ''); cObs.observe(el);
+      el.textContent = '0' + (el.getAttribute('data-suffix') || ''); counts.push(el); cObs.observe(el);
     });
   }
 
