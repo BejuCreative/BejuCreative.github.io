@@ -33,7 +33,7 @@ header{
 .brand{display:flex;align-items:center;min-height:44px;border-radius:var(--r-sm)}
 .brand img{height:1.7rem;width:auto}
 .help{display:inline-flex;align-items:center;min-height:44px;padding:0 1rem;border-radius:var(--r-pill);font-size:.9rem;font-weight:500;color:var(--ink);text-decoration:none;
-  background:rgba(255,255,255,.06);border:1px solid var(--hairline-strong);transition:background var(--d-fast) var(--ease)}
+  background:rgba(255,255,255,.06);border:1px solid var(--hairline-strong);transition:background var(--dur-1) var(--ease-out)}
 .help:hover{background:rgba(255,255,255,.1)}
 
 .display{font-weight:700;color:var(--ink);letter-spacing:-.04em;line-height:1.04;text-wrap:balance}
@@ -91,7 +91,7 @@ section{padding:clamp(3.5rem,8vw,5.5rem) 0;border-top:1px solid rgba(255,255,255
 
 /* contact */
 .channels{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,14rem),1fr));gap:var(--s-3);margin-top:1.2rem}
-.channel{display:block;border-radius:var(--r-lg);padding:1.1rem 1.3rem;text-decoration:none;transition:border-color var(--d-fast) var(--ease),scale var(--d-fast) var(--ease)}
+.channel{display:block;border-radius:var(--r-lg);padding:1.1rem 1.3rem;text-decoration:none;transition:border-color var(--dur-1) var(--ease-out),scale var(--dur-1) var(--ease-out)}
 .channel:hover{border-color:rgba(216,184,101,.55)}
 .channel:active{scale:.98}
 .channel small{display:block;font-size:var(--t-label);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-solid);margin-bottom:.35rem}

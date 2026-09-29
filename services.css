@@ -3,7 +3,7 @@
 html{scroll-behavior:smooth}
 body{margin:0;overflow-x:hidden}
 header,main,footer{position:relative;z-index:1}
-a{color:var(--gold-solid);text-underline-offset:4px;text-decoration-thickness:1px;border-radius:4px;transition:color var(--d-fast) var(--ease)}
+a{color:var(--gold-solid);text-underline-offset:4px;text-decoration-thickness:1px;border-radius:4px;transition:color var(--dur-1) var(--ease-out)}
 a:hover{color:var(--gold-champagne)}
 
 /* floating glass header */
@@ -41,12 +41,12 @@ section{margin-top:56px;padding-top:40px;border-top:1px solid var(--hairline)}
   border-radius:var(--r-pill);font:600 .95rem/1 var(--font);text-decoration:none;white-space:nowrap;
   color:var(--on-gold);background:var(--gold-metal);box-shadow:var(--gold-edge),var(--gold-drop);
   text-shadow:0 1px 0 rgba(255,244,210,.45);position:relative;overflow:hidden;isolation:isolate;
-  transition:filter var(--d-base) var(--ease),scale var(--d-fast) var(--ease);
+  transition:filter var(--dur-1) var(--ease-out),scale var(--dur-1) var(--ease-out);
 }
 .button::after{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;mix-blend-mode:soft-light;
   background:linear-gradient(105deg,transparent 30%,rgba(255,252,238,.85) 47%,rgba(255,252,238,.25) 55%,transparent 64%);transform:translateX(-120%)}
 .button:hover{color:var(--on-gold);filter:brightness(1.05) saturate(1.04)}
-.button:hover::after,.button:focus-visible::after{transform:translateX(120%);transition:transform var(--d-sweep) cubic-bezier(.45,.05,.25,1)}
+.button:hover::after,.button:focus-visible::after{transform:translateX(120%);transition:transform var(--dur-3) var(--ease-in-out)}
 .button:active{scale:.97;background:var(--gold-metal-pressed)}
 
 /* selected panels */
@@ -72,7 +72,7 @@ footer nav{display:flex;flex-direction:column;gap:2px}
 footer nav a{display:inline-flex;align-items:center;min-height:44px;color:var(--body);text-decoration:none}
 footer nav a:hover{color:var(--ink)}
 
-.skip{position:absolute;top:-100px;left:20px;z-index:20;padding:12px 16px;border-radius:var(--r-md);background:var(--surface);color:var(--ink)}
+.skip{position:absolute;top:-100px;left:20px;z-index:20;padding:12px 16px;border-radius:var(--r-sm);background:var(--surface);color:var(--ink)}
 .skip:focus{top:10px}
 
 @media(max-width:640px){

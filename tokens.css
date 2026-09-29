@@ -64,17 +64,28 @@
 
   /* space & shape */
   --s-1:4px;--s-2:8px;--s-3:12px;--s-4:16px;--s-5:24px;--s-6:32px;--s-7:48px;--s-8:64px;
-  --section:clamp(5.5rem,10vw,9rem);
-  --pad:clamp(1.25rem,5vw,5rem);
-  --r-sm:10px;--r-md:14px;--r-lg:20px;--r-xl:28px;--r-pill:999px;
+  /* section rhythm: one scale, three steps (desktop 96 / 128 / 160 · phone 64 / 80) */
+  --sec-s:clamp(4rem,7.5vw,6rem);
+  --sec-m:clamp(5rem,10vw,8rem);
+  --sec-l:clamp(5rem,12.5vw,10rem);
+  --pad:clamp(1.25rem,5vw,5rem);            /* page gutter */
+  --container:74rem;                          /* every section snaps to this */
+  --gutter:clamp(1rem,2vw,1.5rem);            /* 12-column grid gap */
+  /* radius grammar: 8 · 18 · pill (+ 28 for feature panels and the phone) */
+  --r-sm:8px;--r-lg:18px;--r-xl:28px;--r-pill:999px;
 
-  /* motion */
-  --ease:cubic-bezier(.22,1,.36,1);
-  --d-fast:160ms;--d-base:240ms;--d-sweep:850ms;
+  /* motion — everything eases out, nothing bounces */
+  --ease-out:cubic-bezier(.16,1,.3,1);
+  --ease-in-out:cubic-bezier(.65,0,.35,1);
+  --dur-1:180ms;   /* micro: hover, press, colour */
+  --dur-2:400ms;   /* UI: menus, accordions, toggles */
+  --dur-3:800ms;   /* reveals, the gold sweep */
 }
 
 /* ── base ─────────────────────────────────────────────────── */
 html{background:var(--canvas);-webkit-text-size-adjust:100%}
+/* controls don't inherit type by default — they rendered in Arial */
+button,input,select,textarea{font:inherit;color:inherit;letter-spacing:inherit}
 body{
   font-family:var(--font);font-size:var(--t-body);line-height:1.6;letter-spacing:-.01em;
   color:var(--body);background:var(--canvas);
@@ -90,6 +101,15 @@ body::before{
 }
 ::selection{background:rgba(199,162,75,.35);color:var(--ink)}
 :focus-visible{outline:2px solid var(--gold-champagne);outline-offset:3px;border-radius:var(--r-sm)}
+.tnum{font-variant-numeric:tabular-nums}
+/* desktop scrollbar: a thin dark track, warm thumb */
+@media (hover:hover) and (pointer:fine){
+  html{scrollbar-width:thin;scrollbar-color:rgba(199,162,75,.35) var(--canvas)}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-track{background:var(--canvas)}
+  ::-webkit-scrollbar-thumb{background:rgba(199,162,75,.28);border-radius:var(--r-pill);border:3px solid var(--canvas)}
+  ::-webkit-scrollbar-thumb:hover{background:rgba(199,162,75,.45)}
+}
 
 /* ── glass ────────────────────────────────────────────────── */
 .glass{
@@ -131,8 +151,8 @@ body::before{
   min-height:48px;padding:.8rem 1.6rem;border-radius:var(--r-pill);
   font:600 .95rem/1 var(--font);letter-spacing:-.005em;text-decoration:none;white-space:nowrap;
   cursor:pointer;position:relative;overflow:hidden;isolation:isolate;
-  transition:background var(--d-base) var(--ease),border-color var(--d-base) var(--ease),
-             box-shadow var(--d-base) var(--ease),filter var(--d-base) var(--ease),scale var(--d-fast) var(--ease);
+  transition:background var(--dur-1) var(--ease-out),border-color var(--dur-1) var(--ease-out),
+             box-shadow var(--dur-1) var(--ease-out),filter var(--dur-1) var(--ease-out),scale var(--dur-1) var(--ease-out);
 }
 /* gold metal */
 .btn-gold{
@@ -147,7 +167,7 @@ body::before{
   transform:translateX(-120%);
 }
 .btn-gold:hover{filter:brightness(1.05) saturate(1.04)}
-.btn-gold:hover::after,.btn-gold:focus-visible::after{transform:translateX(120%);transition:transform var(--d-sweep) cubic-bezier(.45,.05,.25,1)}
+.btn-gold:hover::after,.btn-gold:focus-visible::after{transform:translateX(120%);transition:transform var(--dur-3) var(--ease-in-out)}
 .btn-gold:active{scale:.97;background:var(--gold-metal-pressed);
   box-shadow:inset 0 2px 6px rgba(70,48,12,.45),inset 0 0 0 1px rgba(122,88,32,.6),0 1px 1px rgba(0,0,0,.3)}
 /* glass secondary */
