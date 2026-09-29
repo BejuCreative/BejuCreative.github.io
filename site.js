@@ -1,0 +1,358 @@
+/* BEJÚ Creative — shared behaviour for every page. Documented in /DESIGN.md (Motion).
+   Rules: animate transform/opacity only; nothing already on screen at load animates;
+   everything is instant under prefers-reduced-motion; the page is fully usable if
+   this file (or GSAP) never loads. */
+(function () {
+  'use strict';
+  var d = document, w = window, root = d.documentElement;
+  var reduce = w.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var finePointer = w.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  var $ = function (s, c) { return (c || d).querySelector(s); };
+  var $$ = function (s, c) { return Array.prototype.slice.call((c || d).querySelectorAll(s)); };
+
+  /* ── Nav: strong glass after 40 px, hides on scroll down, returns on scroll up ── */
+  var nav = $('.nav'), burger = $('.burger'), sheet = $('.sheet');
+  var menuOpen = false, lastY = w.scrollY, ticking = false;
+  function onScroll() {
+    var y = w.scrollY;
+    if (nav) {
+      nav.classList.toggle('is-strong', y > 40);
+      var down = y > lastY + 4, up = y < lastY - 4;
+      if (!menuOpen && !nav.contains(d.activeElement)) {
+        if (down && y > 160) nav.classList.add('is-hidden');
+        else if (up || y < 160) nav.classList.remove('is-hidden');
+      }
+    }
+    if (parallax) parallax();
+    lastY = y; ticking = false;
+  }
+  w.addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(onScroll); } }, { passive: true });
+
+  /* ── Mobile menu: glass sheet, focus trap, Esc to close ── */
+  function setMenu(open) {
+    if (!sheet || !burger) return;
+    menuOpen = open;
+    sheet.classList.toggle('is-open', open);
+    burger.setAttribute('aria-expanded', String(open));
+    burger.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    d.body.classList.toggle('menu-open', open);
+    if (open) { nav && nav.classList.remove('is-hidden'); var first = $('a', sheet); first && first.focus(); }
+    else burger.focus({ preventScroll: true });
+  }
+  if (burger && sheet) {
+    burger.addEventListener('click', function () { setMenu(!menuOpen); });
+    d.addEventListener('keydown', function (e) {
+      if (!menuOpen) return;
+      if (e.key === 'Escape') { e.preventDefault(); setMenu(false); return; }
+      if (e.key !== 'Tab') return;
+      // move focus ourselves on every Tab: Safari doesn't Tab to links by default,
+      // so leaving it to the browser let focus slip out of the menu
+      e.preventDefault();
+      var f = [burger].concat($$('a,button', sheet)), i = f.indexOf(d.activeElement);
+      f[(i + (e.shiftKey ? -1 : 1) + f.length) % f.length].focus();
+    });
+  }
+
+  /* ── In-page links: GSAP ScrollToPlugin drives the scroll. CSS scroll-behavior:smooth
+       is banned here: it fought ScrollTrigger refreshes and nav links stalled. ── */
+  d.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href^="#"]');
+    if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey) return;
+    var id = a.getAttribute('href'); if (id.length < 2) return;
+    var t = d.getElementById(id.slice(1)); if (!t) return;
+    e.preventDefault();
+    if (a.hasAttribute('data-need')) setNeed(a.getAttribute('data-need'));
+    if (menuOpen) { menuOpen = false; sheet.classList.remove('is-open'); burger.setAttribute('aria-expanded', 'false'); d.body.classList.remove('menu-open'); }
+    var offset = t.tagName === 'SECTION' ? 0 : 96;
+    if (!reduce && w.gsap && w.ScrollToPlugin) {
+      gsap.registerPlugin(ScrollToPlugin);
+      gsap.to(w, { duration: 0.9, ease: 'power3.inOut', scrollTo: { y: t, offsetY: offset, autoKill: false } });
+    } else {
+      w.scrollTo(0, t.getBoundingClientRect().top + w.scrollY - offset);
+    }
+    history.pushState(null, '', id);
+    if (!t.hasAttribute('tabindex')) t.setAttribute('tabindex', '-1');
+    t.focus({ preventScroll: true });
+  });
+
+  /* ── Reveals: only elements that start below the fold, once, 16 px, staggered ── */
+  var io = 'IntersectionObserver' in w;
+  if (!reduce && io) {
+    var vh = w.innerHeight;
+    var rvObs = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        var el = e.target; rvObs.unobserve(el);
+        el.classList.remove('rv-wait'); el.classList.add('rv-in');
+        if (el.hasAttribute('data-lr')) revealLines(el);
+      });
+    }, { rootMargin: '0px 0px -8% 0px' });
+    $$('.rv').forEach(function (el) {
+      if (el.getBoundingClientRect().top < vh * 0.96) return;   // on screen at load: leave it alone
+      var sib = el.parentElement ? $$(':scope > .rv', el.parentElement) : [el];
+      var i = Math.max(0, sib.indexOf(el));
+      el.style.setProperty('--rv-delay', Math.min(i, 6) * 55 + 'ms');
+      if (el.hasAttribute('data-lr')) splitLines(el); else el.classList.add('rv-wait');
+      rvObs.observe(el);
+    });
+  }
+
+  /* Headline line reveal. Text stays accessible (aria-label on the heading, split
+     copy aria-hidden) and the original markup is restored once the lines land. */
+  function splitLines(h) {
+    if ($$('*', h).some(function (n) { return n.tagName !== 'BR'; })) { h.classList.add('rv-wait'); return; }
+    var html = h.innerHTML, text = h.textContent.replace(/\s+/g, ' ').trim();
+    var parts = html.split(/<br\s*\/?>/i), words = [];
+    h.innerHTML = parts.map(function (p, pi) {
+      return p.trim().split(/\s+/).filter(Boolean).map(function (wd) { return '<span class="lr-w">' + wd + '</span>'; }).join(' ') + (pi < parts.length - 1 ? '<br>' : '');
+    }).join('');
+    var lines = [], hb = h.getBoundingClientRect();
+    $$('.lr-w', h).forEach(function (s) {
+      var top = Math.round(s.getBoundingClientRect().top), L = lines[lines.length - 1];
+      if (!L || Math.abs(L.top - top) > 4) lines.push(L = { top: top, words: [] });
+      L.words.push(s.textContent);
+    });
+    var grad = h.classList.contains('grad'), H = hb.height;
+    h.setAttribute('aria-label', text); h.dataset.orig = html;
+    h.innerHTML = '<span aria-hidden="true">' + lines.map(function (L, i) {
+      var g = grad ? ' style="background-size:100% ' + H + 'px;background-position:0 ' + (hb.top - L.top) + 'px"' : '';
+      return '<span class="lr-line"><span class="lr-inner' + (grad ? ' grad' : '') + '" style="--i:' + i + '"' + g + '>' + L.words.join(' ') + '</span></span>';
+    }).join('') + '</span>';
+    if (grad) h.classList.add('lr-flat');
+  }
+  function revealLines(h) {
+    if (!h.dataset.orig) return;
+    requestAnimationFrame(function () {
+      h.classList.add('lr-in');
+      var n = $$('.lr-line', h).length;
+      setTimeout(function () {  // restore real markup so resizing reflows normally
+        h.innerHTML = h.dataset.orig; delete h.dataset.orig; h.removeAttribute('aria-label');
+        h.classList.remove('lr-in', 'lr-flat');
+      }, 800 + n * 60 + 80);
+    });
+  }
+
+  /* ── FAQ: height-animated <details>, icon rotates via CSS ── */
+  $$('.acc details').forEach(function (det) {
+    var sum = $('summary', det), ans = $('.ans', det);
+    if (!sum || !ans || reduce || !ans.animate) return;
+    sum.addEventListener('click', function (e) {
+      e.preventDefault();
+      if (det.dataset.busy) return; det.dataset.busy = '1';
+      if (!det.open) {
+        det.open = true;
+        var h = ans.scrollHeight;
+        ans.animate([{ height: '0px', opacity: 0 }, { height: h + 'px', opacity: 1 }], { duration: 400, easing: 'cubic-bezier(.16,1,.3,1)' })
+          .onfinish = function () { delete det.dataset.busy; };
+      } else {
+        det.classList.add('closing');
+        ans.animate([{ height: ans.scrollHeight + 'px', opacity: 1 }, { height: '0px', opacity: 0 }], { duration: 320, easing: 'cubic-bezier(.65,0,.35,1)' })
+          .onfinish = function () { det.open = false; det.classList.remove('closing'); delete det.dataset.busy; };
+      }
+    });
+  });
+
+  /* ── Videos: autoplay muted only while in view; pause off-screen ── */
+  function seekStart(v) {
+    var s = parseFloat(v.getAttribute('data-start') || '0');
+    if (!s || v.dataset.seeked) return;
+    var go = function () { if (v.dataset.seeked) return; try { if (v.currentTime < s - 0.3) v.currentTime = s; if (v.currentTime >= s - 0.3) v.dataset.seeked = '1'; } catch (e) {} };
+    if (v.readyState >= 1) go();
+    v.addEventListener('loadedmetadata', go); v.addEventListener('playing', go);
+  }
+  if (io) {
+    var vObs = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        var v = e.target;
+        if (e.isIntersecting && !d.hidden) { v.preload = 'auto'; seekStart(v); var p = v.play(); p && p.catch(function () {}); }
+        else v.pause();
+      });
+    }, { threshold: 0.5 });
+    $$('video[data-inview]').forEach(function (v) {
+      v.addEventListener('timeupdate', function () { if (v.currentTime < 0.3 && v.dataset.seeked) { delete v.dataset.seeked; seekStart(v); } });
+      vObs.observe(v);
+    });
+  }
+
+  /* ── Lightbox: native <dialog> (focus trap + Esc), ←/→ and swipe ── */
+  var lb, lbVideo, lbCap, lbItems = [], lbIndex = 0, opener = null;
+  function buildLb() {
+    lb = d.createElement('dialog'); lb.className = 'lb'; lb.setAttribute('aria-label', 'Video player');
+    var ico = function (p) { return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + p + '"/></svg>'; };
+    lb.innerHTML = '<div class="lb-stage"><video playsinline controls preload="auto"></video></div>' +
+      '<div class="lb-bar"><p class="lb-cap" aria-live="polite"></p><div class="lb-nav">' +
+      '<button class="lb-btn lb-prev" type="button" aria-label="Previous video">' + ico('M15 18l-6-6 6-6') + '</button>' +
+      '<button class="lb-btn lb-next" type="button" aria-label="Next video">' + ico('M9 18l6-6-6-6') + '</button></div></div>' +
+      '<button class="lb-btn lb-close" type="button" aria-label="Close player">' + ico('M18 6L6 18M6 6l12 12') + '</button>';
+    d.body.appendChild(lb);
+    lbVideo = $('video', lb); lbCap = $('.lb-cap', lb);
+    $('.lb-close', lb).addEventListener('click', closeLb);
+    $('.lb-prev', lb).addEventListener('click', function () { stepLb(-1); });
+    $('.lb-next', lb).addEventListener('click', function () { stepLb(1); });
+    lb.addEventListener('close', function () { lbVideo.pause(); lbVideo.removeAttribute('src'); lbVideo.load(); opener && opener.focus({ preventScroll: true }); });
+    lb.addEventListener('click', function (e) { if (e.target === lb || e.target.classList.contains('lb-stage')) closeLb(); });
+    lb.addEventListener('keydown', function (e) { if (e.key === 'ArrowLeft') stepLb(-1); if (e.key === 'ArrowRight') stepLb(1); });
+    var sx = null;
+    $('.lb-stage', lb).addEventListener('pointerdown', function (e) { if (e.pointerType !== 'mouse') sx = e.clientX; });
+    $('.lb-stage', lb).addEventListener('pointerup', function (e) { if (sx === null) return; var dx = e.clientX - sx; sx = null; if (Math.abs(dx) > 50) stepLb(dx < 0 ? 1 : -1); });
+  }
+  function showLb() {
+    var it = lbItems[lbIndex];
+    lbVideo.src = it.getAttribute('data-src');
+    lbVideo.poster = it.getAttribute('data-poster') || '';
+    var hasAudio = it.getAttribute('data-audio') !== '0';
+    lbVideo.muted = !hasAudio;
+    lbVideo.setAttribute('aria-label', it.getAttribute('data-title') || 'Video');
+    lbCap.innerHTML = '<b></b> <span></span>';
+    lbCap.firstChild.textContent = it.getAttribute('data-title') || '';
+    lbCap.lastChild.textContent = (lbItems.length > 1 ? '· ' + (lbIndex + 1) + ' / ' + lbItems.length : '') + (hasAudio ? '' : ' · no audio track');
+    lb.setAttribute('data-count', String(lbItems.length));
+    var p = lbVideo.play(); p && p.catch(function () {});
+  }
+  function stepLb(n) { if (lbItems.length < 2) return; lbIndex = (lbIndex + n + lbItems.length) % lbItems.length; showLb(); }
+  function closeLb() { lb && lb.open && lb.close(); }
+  $$('[data-lb]').forEach(function (el) {
+    el.addEventListener('click', function (e) {
+      if (el.dataset.dragged) { e.preventDefault(); return; }
+      if (!lb) buildLb();
+      opener = el;
+      var g = el.getAttribute('data-lb');
+      lbItems = $$('[data-lb="' + g + '"]'); lbIndex = lbItems.indexOf(el);
+      if (typeof lb.showModal === 'function') lb.showModal(); else lb.setAttribute('open', '');
+      $$('video[data-inview]').forEach(function (v) { v.pause(); });
+      showLb();
+    });
+  });
+
+  /* ── Rail: native scroll + snap for touch/trackpad; mouse drag with momentum ── */
+  $$('[data-rail]').forEach(function (rail) {
+    var prev = $('[data-rail-prev="' + rail.id + '"]'), next = $('[data-rail-next="' + rail.id + '"]');
+    var step = function () { var c = rail.firstElementChild; return c ? c.getBoundingClientRect().width + 16 : 320; };
+    prev && prev.addEventListener('click', function () { rail.scrollBy({ left: -step(), behavior: reduce ? 'auto' : 'smooth' }); });
+    next && next.addEventListener('click', function () { rail.scrollBy({ left: step(), behavior: reduce ? 'auto' : 'smooth' }); });
+    var sync = function () {
+      var max = rail.scrollWidth - rail.clientWidth - 2;
+      if (prev) prev.disabled = rail.scrollLeft <= 2; if (next) next.disabled = rail.scrollLeft >= max;
+    };
+    rail.addEventListener('scroll', sync, { passive: true }); w.addEventListener('resize', sync); sync();
+    if (!finePointer) return;
+    var down = false, x0 = 0, s0 = 0, lastX = 0, lastT = 0, vel = 0, moved = 0, raf = 0;
+    rail.addEventListener('pointerdown', function (e) {
+      if (e.pointerType !== 'mouse' || e.button !== 0) return;
+      down = true; moved = 0; x0 = lastX = e.clientX; s0 = rail.scrollLeft; lastT = performance.now(); vel = 0;
+      cancelAnimationFrame(raf); rail.classList.add('is-dragging');
+    });
+    w.addEventListener('pointermove', function (e) {
+      if (!down) return;
+      var now = performance.now(), dx = e.clientX - x0; moved = Math.max(moved, Math.abs(dx));
+      rail.scrollLeft = s0 - dx; vel = (e.clientX - lastX) / Math.max(1, now - lastT); lastX = e.clientX; lastT = now;
+    });
+    w.addEventListener('pointerup', function () {
+      if (!down) return; down = false;
+      $$('[data-lb]', rail).forEach(function (c) { if (moved > 6) { c.dataset.dragged = '1'; setTimeout(function () { delete c.dataset.dragged; }, 50); } });
+      var v = -vel * 16;   // px per frame
+      (function glide() {
+        if (Math.abs(v) < 0.4 || reduce) { rail.classList.remove('is-dragging'); return; }
+        rail.scrollLeft += v; v *= 0.93; raf = requestAnimationFrame(glide);
+      })();
+    });
+  });
+
+  /* ── Primary CTA: subtle magnetic pull, desktop only, ≤ 6 px, no bounce ── */
+  if (finePointer && !reduce) {
+    $$('.magnetic').forEach(function (b) {
+      b.addEventListener('pointermove', function (e) {
+        var r = b.getBoundingClientRect();
+        var x = Math.max(-6, Math.min(6, (e.clientX - r.left - r.width / 2) * 0.12));
+        var y = Math.max(-6, Math.min(6, (e.clientY - r.top - r.height / 2) * 0.2));
+        b.style.translate = x.toFixed(1) + 'px ' + y.toFixed(1) + 'px';
+      });
+      b.addEventListener('pointerleave', function () { b.style.translate = ''; });
+    });
+  }
+
+  /* ── Count-up once in view (HTML already holds the final value) ── */
+  if (!reduce && io) {
+    var cObs = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        if (!e.isIntersecting) return; cObs.unobserve(e.target);
+        var el = e.target, to = parseFloat(el.getAttribute('data-count')), sfx = el.getAttribute('data-suffix') || '', t0 = performance.now();
+        (function tick(t) {
+          var p = Math.min(1, (t - t0) / 1400), ease = 1 - Math.pow(2, -10 * p);   // expo.out
+          el.textContent = Math.round(to * (p === 1 ? 1 : ease)) + sfx;
+          if (p < 1) requestAnimationFrame(tick);
+        })(t0);
+      });
+    }, { threshold: 0.6 });
+    $$('[data-count]').forEach(function (el) {
+      if (el.getBoundingClientRect().top < w.innerHeight) return;
+      el.textContent = '0' + (el.getAttribute('data-suffix') || ''); cObs.observe(el);
+    });
+  }
+
+  /* ── Hero: video frame drifts and scales ≤ 1.05 as the hero scrolls out ── */
+  var heroMedia = $('[data-parallax]'), parallax = null;
+  if (heroMedia && !reduce) {
+    var hero = heroMedia.closest('section');
+    parallax = function () {
+      var h = hero.offsetHeight, y = w.scrollY; if (y > h) return;
+      var p = Math.max(0, Math.min(1, y / h));
+      heroMedia.style.transform = 'translate3d(0,' + (p * -48).toFixed(1) + 'px,0) scale(' + (1 + p * 0.05).toFixed(4) + ')';
+    };
+  }
+
+  /* ── Pricing toggle: crossfade, no layout shift (panels share one grid cell) ── */
+  $$('[data-toggle]').forEach(function (grp) {
+    var tabs = $$('[role="tab"]', grp), panels = $$('[data-panel]', d.getElementById(grp.getAttribute('data-toggle')));
+    var pick = function (i, focus) {
+      tabs.forEach(function (t, j) { t.setAttribute('aria-selected', String(i === j)); t.tabIndex = i === j ? 0 : -1; });
+      panels.forEach(function (p, j) { var on = i === j; p.classList.toggle('is-on', on); p.setAttribute('aria-hidden', String(!on)); if (on) p.removeAttribute('inert'); else p.setAttribute('inert', ''); });
+      if (focus) tabs[i].focus();
+    };
+    tabs.forEach(function (t, i) {
+      t.addEventListener('click', function () { pick(i); });
+      t.addEventListener('keydown', function (e) { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); pick((i + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length, true); } });
+    });
+  });
+
+  /* ── Start-a-project form → Google Form (no backend on GitHub Pages) ── */
+  var form = $('#start-form');
+  function setNeed(v) { var s = form && form.elements.namedItem('need'); if (s) s.value = v; }
+  if (form) {
+    var status = $('.form-status', form), btn = $('button[type="submit"]', form);
+    var fields = ['name', 'email', 'need'];
+    var check = function (name) {
+      var el = form.elements.namedItem(name), f = el.closest('.field'), msg = '';
+      if (!el.value.trim()) msg = 'Please fill this in.';
+      else if (name === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(el.value.trim())) msg = 'That email doesn’t look right.';
+      f.classList.toggle('is-invalid', !!msg); el.setAttribute('aria-invalid', String(!!msg));
+      $('.err', f).textContent = msg; return !msg;
+    };
+    fields.forEach(function (n) { form.elements.namedItem(n).addEventListener('blur', function () { if (this.value) check(n); }); });
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var ok = fields.map(check).every(Boolean);
+      if (!ok) { var bad = $('.is-invalid input, .is-invalid select', form); bad && bad.focus(); return; }
+      var data = new URLSearchParams(), map = JSON.parse(form.getAttribute('data-entries'));
+      Object.keys(map).forEach(function (k) { data.append(map[k], (form.elements.namedItem(k).value || '').trim()); });
+      btn.setAttribute('aria-busy', 'true'); btn.disabled = true; status.hidden = true;
+      fetch(form.getAttribute('data-action'), { method: 'POST', mode: 'no-cors', body: data })
+        .then(function () {
+          status.className = 'form-status ok'; status.hidden = false;
+          status.textContent = 'Got it — we’ll reply within 24 hours (check spam if you don’t see us).';
+          form.reset();
+        })
+        .catch(function () {   // keep everything they typed; offer e-mail as a fallback
+          var v = function (k) { return (form.elements.namedItem(k).value || '').trim(); };
+          var body = 'Name: ' + v('name') + '\nNeed: ' + v('need') + '\nLink: ' + v('link') + '\n\n' + v('message');
+          status.className = 'form-status bad'; status.hidden = false;
+          status.innerHTML = 'That didn’t send — your connection may have dropped. Your answers are still here. <a class="link" href="mailto:bejusipe@gmail.com?subject=' +
+            encodeURIComponent('New project — ' + v('need')) + '&body=' + encodeURIComponent(body) + '">Send it by email instead</a>.';
+        })
+        .then(function () { btn.removeAttribute('aria-busy'); btn.disabled = false; status.focus && status.focus(); });
+    });
+  }
+  $$('a[data-need]').forEach(function (a) { a.addEventListener('click', function () { setNeed(a.getAttribute('data-need')); }); });
+
+  onScroll();
+})();
