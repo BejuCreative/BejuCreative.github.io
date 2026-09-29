@@ -17,10 +17,10 @@ ADD A CLIP (two steps)
 2. In index.html, copy one of the <button class="clip …"> blocks inside
    id="rail" and change:
      - style="--ar:W/H"   the clip's real width/height (e.g. 720/1280)
-     - data-src / data-poster / <source src> / poster   → your files
-     - data-title, aria-label, the chip (Podcast / Brand / Ad) and the caption
-     - data-audio="0"     only if the clip has NO sound (the player then
-                          plays it muted with a "no audio track" note)
+     - data-src / data-poster / <img src> / <source src>   → your files
+       (the still is a lazy <img> under the video — don't add a poster= attribute)
+     - data-title, the chip (Podcast / Brand / Ad) and the caption
+   The full-screen player plays every clip with its sound.
    Order in the HTML = order on the page.
 
 Keep each file around 2–3 MB. Never upload raw exports — 1080p60 at 12 Mbps is

@@ -165,9 +165,13 @@ white-to-silver sheen, like brushed metal, and stay above 12:1 contrast.
   Labels are `.chip`s (65% dark glass, ≥ 5.6:1 over white); `.watch` is the play badge.
   `.playable` frames are `<button>`s that lift 3px on hover.
 - **Video**: every file goes through `scripts/optimize-video.sh` (faststart, poster, ~2–3 MB).
-  Inline clips are `muted loop playsinline preload="none" data-inview` — they play only while
-  ≥ 50% on screen and pause off-screen (`data-start` seeks past a slow intro). Clicking opens
-  the **lightbox** with sound.
+  Inline clips are `<img src="poster" loading="lazy" alt="">` + `<video muted loop playsinline
+  preload="none" data-inview>` — the still is a lazy image under the video (a `poster`
+  attribute can't be lazy, and ten eager posters were what made mobile LCP 4.9 s). Only a
+  clip that is itself the first screen's LCP keeps a `poster` (+ a preload). Clips start only
+  after first contentful paint + load, play while ≥ 50% on screen, pause off-screen, fade in
+  once actually playing (no first-frame flash), and never autoplay under reduced motion.
+  `data-start` seeks past a slow intro. Clicking opens the **lightbox** with sound.
 - **Lightbox**: native `<dialog class="lb">` built by site.js from `[data-lb="group"]` items
   (`data-src`, `data-poster`, `data-title`): focus trap and Esc for free, ←/→ and swipe step
   through the group, backdrop click closes, focus returns to the clip that opened it.
@@ -207,8 +211,12 @@ white-to-silver sheen, like brushed metal, and stay above 12:1 contrast.
 - **Nothing already on screen at load animates**: the hero renders instantly (no waiting on
   GSAP). Below the fold, `.rv` elements rise 16px and fade in once (55ms stagger, max 6);
   `[data-lr]` headings reveal line by line and restore their real markup afterwards.
+  Whenever anything enters, every pending element above the line reveals too, so a fast
+  scroll during a long frame can never leave content invisible.
 - **In-page anchors** go through GSAP ScrollToPlugin (0.9s, `power3.inOut`), measured from
-  layout position so a section that hasn't revealed yet still lands exactly. **Never** CSS
+  layout position so a section that hasn't revealed yet still lands exactly. site.js loads
+  GSAP itself after first paint + load (it only drives scrolling); until it arrives, anchors
+  jump instantly. Don't add `<script>` tags for GSAP to pages. **Never** CSS
   `scroll-behavior:smooth` — it fought ScrollTrigger refreshes and made nav links stall.
 - Magnetic pull on the primary CTA only: desktop, ≤ 6px, eases back, no bounce.
 - Hero media drifts up ≤ 48px and scales ≤ 1.05 as the hero scrolls out.
