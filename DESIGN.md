@@ -127,7 +127,9 @@ white-to-silver sheen, like brushed metal, and stay above 12:1 contrast.
   breathing moment, e.g. the mission line). Classes `.sec-s` / `.sec` / `.sec-l`.
 - **Radius grammar: 8 · 18 · pill** (+ one large): `--r-sm 8px` (inputs, small controls, focus
   rings) · `--r-lg 18px` (cards, media) · `--r-xl 28px` (feature panels, the nav capsule, the
-  phone) · `--r-pill 999px` (buttons, chips). No other radii.
+  phone) · `--r-pill 999px` (buttons, chips). No other radii on UI surfaces. Only exceptions:
+  nested frames are concentric (outer = inner radius + padding, e.g. the phone bezel 28 + 8 = 36px),
+  round icons/dots are circles (`50%`), and 1.5px lines get rounded ends.
 - Depth comes from glass layering and hairlines; shadows are soft and only on floating things.
 
 ## Layout
