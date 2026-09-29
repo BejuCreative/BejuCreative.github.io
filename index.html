@@ -309,7 +309,6 @@
   padding:0 max(var(--pad),calc((100% - var(--container)) / 2)) 1.5rem;scroll-padding-inline:max(var(--pad),calc((100% - var(--container)) / 2))}
 .proof::-webkit-scrollbar{display:none}
 .proof .frame{flex:0 0 auto;height:var(--railH);aspect-ratio:var(--ar,9/16);scroll-snap-align:start}
-.proof video{object-fit:cover}
 
 /* ── mission: the one quiet, text-only section ── */
 .mission{grid-column:1 / span 8}
@@ -375,7 +374,7 @@
 <a class="skip" href="#top">Skip to content</a>
 
 <header class="nav" id="nav">
-  <a href="#top" class="brand" aria-label="BEJÚ Creative — home"><img src="beju-mark.png" alt="BEJÚ Creative" width="1486" height="884"></a>
+  <a href="#top" class="brand" aria-label="BEJÚ Creative — home"><img src="beju-mark-sm.png" alt="BEJÚ Creative" width="180" height="107"></a>
   <nav class="nav-links" aria-label="Main">
     <a href="#work">Work</a>
     <a href="#launches">Launches</a>
@@ -420,7 +419,7 @@
             <!-- To change the hero clip, replace hero/hero.mp4 (+ hero-poster.jpg).
                  Run it through scripts/optimize-video.sh first. -->
             <img src="hero/hero-poster.jpg" alt="" width="720" height="1280" fetchpriority="high">
-            <video autoplay muted loop playsinline preload="auto" poster="hero/hero-poster.jpg" aria-label="BEJÚ Creative showreel: The Edit Effect"
+            <video muted loop playsinline preload="none" data-inview aria-label="BEJÚ Creative showreel: The Edit Effect"
                    disablepictureinpicture disableremoteplayback>
               <source src="hero/hero.mp4" type="video/mp4">
             </video>
@@ -451,32 +450,32 @@
     <!-- To add a clip: run it through scripts/optimize-video.sh, then copy one of the
          buttons below and set --ar to the clip's width/height. See work/README.txt. -->
     <div class="rail" id="rail" data-rail>
-      <button class="clip frame playable" type="button" style="--ar:720/1280" data-lb="work" data-src="work/01.mp4" data-poster="work/01.jpg" data-title="The Edit Effect — BEJÚ promo" aria-label="Play The Edit Effect — BEJÚ promo">
-        <video muted loop playsinline preload="none" poster="work/01.jpg" data-inview aria-hidden="true"><source src="work/01.mp4" type="video/mp4"></video>
+      <button class="clip frame playable" type="button" style="--ar:720/1280" data-lb="work" data-src="work/01.mp4" data-poster="work/01.jpg" data-title="The Edit Effect — BEJÚ promo">
+        <img src="work/01.jpg" alt="" loading="lazy" decoding="async"><video muted loop playsinline preload="none" data-inview aria-hidden="true"><source src="work/01.mp4" type="video/mp4"></video>
         <span class="chip">Showreel</span><span class="cap">The Edit Effect — BEJÚ promo</span></button>
-      <button class="clip frame playable" type="button" style="--ar:720/1280" data-lb="work" data-src="rail-01.mp4" data-poster="rail-01.jpg" data-title="Podcast Clip Edit" aria-label="Play Podcast Clip Edit">
-        <video muted loop playsinline preload="none" poster="rail-01.jpg" data-start="5" data-inview aria-hidden="true"><source src="rail-01.mp4" type="video/mp4"></video>
+      <button class="clip frame playable" type="button" style="--ar:720/1280" data-lb="work" data-src="rail-01.mp4" data-poster="rail-01.jpg" data-title="Podcast Clip Edit">
+        <img src="rail-01.jpg" alt="" loading="lazy" decoding="async"><video muted loop playsinline preload="none" data-start="5" data-inview aria-hidden="true"><source src="rail-01.mp4" type="video/mp4"></video>
         <span class="chip">Podcast</span><span class="cap">Podcast Clip Edit</span></button>
-      <button class="clip frame playable" type="button" style="--ar:1080/598" data-lb="work" data-src="rail-02.mp4" data-poster="rail-02.jpg" data-title="Podcast Edit" aria-label="Play Podcast Edit">
-        <video muted loop playsinline preload="none" poster="rail-02.jpg" data-start="20" data-inview aria-hidden="true"><source src="rail-02.mp4" type="video/mp4"></video>
+      <button class="clip frame playable" type="button" style="--ar:1080/598" data-lb="work" data-src="rail-02.mp4" data-poster="rail-02.jpg" data-title="Podcast Edit">
+        <img src="rail-02.jpg" alt="" loading="lazy" decoding="async"><video muted loop playsinline preload="none" data-start="20" data-inview aria-hidden="true"><source src="rail-02.mp4" type="video/mp4"></video>
         <span class="chip">Podcast</span><span class="cap">Podcast Edit</span></button>
-      <button class="clip frame playable" type="button" style="--ar:720/1280" data-lb="work" data-src="rail-03.mp4" data-poster="rail-03.jpg" data-title="Podcast LT" aria-label="Play Podcast LT">
-        <video muted loop playsinline preload="none" poster="rail-03.jpg" data-start="5" data-inview aria-hidden="true"><source src="rail-03.mp4" type="video/mp4"></video>
+      <button class="clip frame playable" type="button" style="--ar:720/1280" data-lb="work" data-src="rail-03.mp4" data-poster="rail-03.jpg" data-title="Podcast LT">
+        <img src="rail-03.jpg" alt="" loading="lazy" decoding="async"><video muted loop playsinline preload="none" data-start="5" data-inview aria-hidden="true"><source src="rail-03.mp4" type="video/mp4"></video>
         <span class="chip">Podcast</span><span class="cap">Podcast LT</span></button>
-      <button class="clip frame playable" type="button" style="--ar:1080/836" data-lb="work" data-src="rail-04.mp4" data-poster="rail-04.jpg" data-title="Personal Brand Edit" aria-label="Play Personal Brand Edit">
-        <video muted loop playsinline preload="none" poster="rail-04.jpg" data-start="6" data-inview aria-hidden="true"><source src="rail-04.mp4" type="video/mp4"></video>
+      <button class="clip frame playable" type="button" style="--ar:1080/836" data-lb="work" data-src="rail-04.mp4" data-poster="rail-04.jpg" data-title="Personal Brand Edit">
+        <img src="rail-04.jpg" alt="" loading="lazy" decoding="async"><video muted loop playsinline preload="none" data-start="6" data-inview aria-hidden="true"><source src="rail-04.mp4" type="video/mp4"></video>
         <span class="chip">Brand</span><span class="cap">Personal Brand Edit</span></button>
-      <button class="clip frame playable" type="button" style="--ar:1004/718" data-lb="work" data-src="rail-05.mp4" data-poster="rail-05.jpg" data-title="Personal Brand Edit 2" aria-label="Play Personal Brand Edit 2">
-        <video muted loop playsinline preload="none" poster="rail-05.jpg" data-start="2" data-inview aria-hidden="true"><source src="rail-05.mp4" type="video/mp4"></video>
+      <button class="clip frame playable" type="button" style="--ar:1004/718" data-lb="work" data-src="rail-05.mp4" data-poster="rail-05.jpg" data-title="Personal Brand Edit 2">
+        <img src="rail-05.jpg" alt="" loading="lazy" decoding="async"><video muted loop playsinline preload="none" data-start="2" data-inview aria-hidden="true"><source src="rail-05.mp4" type="video/mp4"></video>
         <span class="chip">Brand</span><span class="cap">Personal Brand Edit 2</span></button>
-      <button class="clip frame playable" type="button" style="--ar:1080/680" data-lb="work" data-src="rail-06.mp4" data-poster="rail-06.jpg" data-title="Personal Brand Story" aria-label="Play Personal Brand Story">
-        <video muted loop playsinline preload="none" poster="rail-06.jpg" data-start="4" data-inview aria-hidden="true"><source src="rail-06.mp4" type="video/mp4"></video>
+      <button class="clip frame playable" type="button" style="--ar:1080/680" data-lb="work" data-src="rail-06.mp4" data-poster="rail-06.jpg" data-title="Personal Brand Story">
+        <img src="rail-06.jpg" alt="" loading="lazy" decoding="async"><video muted loop playsinline preload="none" data-start="4" data-inview aria-hidden="true"><source src="rail-06.mp4" type="video/mp4"></video>
         <span class="chip">Brand</span><span class="cap">Personal Brand Story</span></button>
-      <button class="clip frame playable" type="button" style="--ar:1080/754" data-lb="work" data-src="rail-07.mp4" data-poster="rail-07.jpg" data-title="Personal Brand Reel" aria-label="Play Personal Brand Reel">
-        <video muted loop playsinline preload="none" poster="rail-07.jpg" data-start="6" data-inview aria-hidden="true"><source src="rail-07.mp4" type="video/mp4"></video>
+      <button class="clip frame playable" type="button" style="--ar:1080/754" data-lb="work" data-src="rail-07.mp4" data-poster="rail-07.jpg" data-title="Personal Brand Reel">
+        <img src="rail-07.jpg" alt="" loading="lazy" decoding="async"><video muted loop playsinline preload="none" data-start="6" data-inview aria-hidden="true"><source src="rail-07.mp4" type="video/mp4"></video>
         <span class="chip">Brand</span><span class="cap">Personal Brand Reel</span></button>
-      <button class="clip frame playable" type="button" style="--ar:720/1280" data-lb="work" data-src="rail-08.mp4" data-poster="rail-08.jpg" data-title="Software Ad" aria-label="Play Software Ad">
-        <video muted loop playsinline preload="none" poster="rail-08.jpg" data-start="6" data-inview aria-hidden="true"><source src="rail-08.mp4" type="video/mp4"></video>
+      <button class="clip frame playable" type="button" style="--ar:720/1280" data-lb="work" data-src="rail-08.mp4" data-poster="rail-08.jpg" data-title="Software Ad">
+        <img src="rail-08.jpg" alt="" loading="lazy" decoding="async"><video muted loop playsinline preload="none" data-start="6" data-inview aria-hidden="true"><source src="rail-08.mp4" type="video/mp4"></video>
         <span class="chip">Ad</span><span class="cap">Software Ad</span></button>
     </div>
   </section>
@@ -491,16 +490,16 @@
         </div>
         <p class="body rv">Short, cinematic launch films that show what your product does — for your launch post, landing page and socials.</p>
       </div>
-      <button class="launch-feature frame playable rv" type="button" style="--ar:16/9" data-lb="launch" data-src="launch/launch-01.mp4" data-poster="launch/launch-01.jpg" data-title="Mac app launch" aria-label="Play Mac app launch video with sound">
-        <video muted loop playsinline preload="none" poster="launch/launch-01.jpg" data-inview aria-hidden="true"><source src="launch/launch-01.mp4" type="video/mp4"></video>
+      <button class="launch-feature frame playable rv" type="button" style="--ar:16/9" data-lb="launch" data-src="launch/launch-01.mp4" data-poster="launch/launch-01.jpg" data-title="Mac app launch">
+        <img src="launch/launch-01.jpg" alt="" loading="lazy" decoding="async"><video muted loop playsinline preload="none" data-inview aria-hidden="true"><source src="launch/launch-01.mp4" type="video/mp4"></video>
         <span class="chip">Mac app launch</span><span class="watch">Watch with sound</span></button>
       <p class="launch-meta caption rv"><span><b>Mac app launch</b> · 16:9 · 25 s</span></p>
       <div class="launch-two">
-        <button class="frame playable rv" type="button" style="--ar:16/9;--grow:1.7778" data-lb="launch" data-src="launch/launch-02.mp4" data-poster="launch/launch-02.jpg" data-title="AI marketing tool launch" aria-label="Play AI marketing tool launch video with sound">
-          <video muted loop playsinline preload="none" poster="launch/launch-02.jpg" data-inview aria-hidden="true"><source src="launch/launch-02.mp4" type="video/mp4"></video>
+        <button class="frame playable rv" type="button" style="--ar:16/9;--grow:1.7778" data-lb="launch" data-src="launch/launch-02.mp4" data-poster="launch/launch-02.jpg" data-title="AI marketing tool launch">
+          <img src="launch/launch-02.jpg" alt="" loading="lazy" decoding="async"><video muted loop playsinline preload="none" data-inview aria-hidden="true"><source src="launch/launch-02.mp4" type="video/mp4"></video>
           <span class="chip">AI marketing tool</span><span class="watch">Watch</span></button>
-        <button class="frame playable rv" type="button" style="--ar:1/1;--grow:1" data-lb="launch" data-src="launch/launch-03.mp4" data-poster="launch/launch-03.jpg" data-title="Course launch" aria-label="Play course launch video with sound">
-          <video muted loop playsinline preload="none" poster="launch/launch-03.jpg" data-inview aria-hidden="true"><source src="launch/launch-03.mp4" type="video/mp4"></video>
+        <button class="frame playable rv" type="button" style="--ar:1/1;--grow:1" data-lb="launch" data-src="launch/launch-03.mp4" data-poster="launch/launch-03.jpg" data-title="Course launch">
+          <img src="launch/launch-03.jpg" alt="" loading="lazy" decoding="async"><video muted loop playsinline preload="none" data-inview aria-hidden="true"><source src="launch/launch-03.mp4" type="video/mp4"></video>
           <span class="chip">Course launch</span><span class="watch">Watch</span></button>
       </div>
       <div class="btn-row launch-cta rv">
@@ -655,12 +654,12 @@
       </div>
     </div>
     <div class="proof" id="proofRail" data-rail>
-      <div class="frame" style="--ar:9/16"><video playsinline controls preload="metadata" poster="results/testimonial-1-poster.jpg" aria-label="Client video testimonial"><source src="results/testimonial-1.mp4" type="video/mp4"></video></div>
+      <button class="frame playable" type="button" style="--ar:9/16" data-lb="proof" data-src="results/testimonial-1.mp4" data-poster="results/testimonial-1-poster.jpg" data-title="Client video testimonial"><img src="results/testimonial-1-poster.jpg" alt="" loading="lazy" decoding="async"><span class="sr-only">Client video testimonial, </span><span class="watch">Watch with sound</span></button>
       <div class="frame" style="--ar:1179/890"><img src="results/testimonial-2.jpeg" alt="Client message about reel package results" loading="lazy" width="1179" height="890"></div>
       <div class="frame" style="--ar:1179/783"><img src="results/testimonial-3.jpeg" alt="Client message about follower growth" loading="lazy" width="1179" height="783"></div>
       <div class="frame" style="--ar:738/862"><img src="results/testimonial-4.png" alt="Client message about views and sales" loading="lazy" width="738" height="862"></div>
       <div class="frame" style="--ar:746/616"><img src="results/testimonial-5.png" alt="Client message about overnight growth" loading="lazy" width="746" height="616"></div>
-      <div class="frame" style="--ar:9/16"><video playsinline controls preload="metadata" poster="results/testimonial-6-poster.jpg" aria-label="Client video testimonial"><source src="results/testimonial-6.mp4" type="video/mp4"></video></div>
+      <button class="frame playable" type="button" style="--ar:9/16" data-lb="proof" data-src="results/testimonial-6.mp4" data-poster="results/testimonial-6-poster.jpg" data-title="Client video testimonial"><img src="results/testimonial-6-poster.jpg" alt="" loading="lazy" decoding="async"><span class="sr-only">Client video testimonial, </span><span class="watch">Watch with sound</span></button>
     </div>
   </section>
 
@@ -741,7 +740,7 @@
   <div class="wrap">
     <div class="foot-grid">
       <div class="foot-brand">
-        <img src="beju-mark.png" alt="BEJÚ Creative" width="1486" height="884" loading="lazy">
+        <img src="beju-mark-sm.png" alt="BEJÚ Creative" width="180" height="107" loading="lazy">
         <p>Short-form editing for podcasters, coaches and founders, and launch videos for SaaS and apps. Two editors, fast turnaround, work we'd put our name on.</p>
       </div>
       <div class="foot-col">
@@ -769,8 +768,6 @@
   </div>
 </footer>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/gsap.min.js" defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/ScrollToPlugin.min.js" defer></script>
 <script src="site.js" defer></script>
 </body>
 </html>

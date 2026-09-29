@@ -101,6 +101,11 @@ body.menu-open{overflow:hidden}
 .frame{position:relative;border-radius:var(--r-lg);overflow:hidden;background:#000;aspect-ratio:var(--ar,16/9);box-shadow:var(--shadow-float)}
 .frame video,.frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .frame::after{content:'';position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 1px var(--hairline);pointer-events:none}
+button.frame{padding:0;border:0;color:inherit;text-align:left}
+/* a clip's still is a lazy <img> under its video (a poster attribute can't be lazy);
+   the video fades in once it is actually playing, so its first frame never flashes */
+img + video[data-inview]{opacity:0;transition:opacity var(--dur-2) var(--ease-out)}
+img + video[data-inview].is-playing{opacity:1}
 /* chips + play badge float over moving video: live glass is allowed here */
 .chip{position:absolute;top:12px;left:12px;z-index:2;padding:.4rem .7rem;border-radius:var(--r-pill);font-size:.72rem;font-weight:600;letter-spacing:0;color:var(--ink);
   background:rgba(12,14,10,.65);-webkit-backdrop-filter:saturate(160%) blur(14px);backdrop-filter:saturate(160%) blur(14px);border:1px solid rgba(255,255,255,.14)}
@@ -222,4 +227,5 @@ body.menu-open{overflow:hidden}
   .nav,.sheet,.playable,.acc .ico,.burger span{transition:none}
   .nav.is-hidden{transform:none}
   .lb video{animation:none}
+  img + video[data-inview]{transition:none}
 }

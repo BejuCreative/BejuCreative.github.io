@@ -170,7 +170,10 @@
     if (v.readyState >= 1) go();
     v.addEventListener('loadedmetadata', go); v.addEventListener('playing', go);
   }
-  if (io) {
+  // Starts only after the page has loaded and painted, so no clip download competes with
+  // the first screen. Under reduced motion nothing autoplays: the stills stay.
+  function startClips() {
+    if (!io || reduce) return;
     var vObs = new IntersectionObserver(function (es) {
       es.forEach(function (e) {
         var v = e.target;
@@ -180,9 +183,22 @@
     }, { threshold: 0.5 });
     $$('video[data-inview]').forEach(function (v) {
       v.addEventListener('timeupdate', function () { if (v.currentTime < 0.3 && v.dataset.seeked) { delete v.dataset.seeked; seekStart(v); } });
+      v.addEventListener('playing', function () { v.classList.add('is-playing'); });
       vObs.observe(v);
     });
   }
+  // Non-critical work waits for both the first contentful paint and the load event
+  // (on a fast connection load can fire before anything is painted).
+  var settledQ = [], painted = false, loaded = d.readyState === 'complete';
+  function settle() { if (!painted || !loaded) return; while (settledQ.length) setTimeout(settledQ.shift(), 0); }
+  function whenSettled(fn) { settledQ.push(fn); settle(); }
+  var PO = w.PerformanceObserver;
+  if (PO && PO.supportedEntryTypes && PO.supportedEntryTypes.indexOf('paint') > -1) {
+    new PO(function (l) { if (l.getEntriesByName('first-contentful-paint').length) { painted = true; settle(); } }).observe({ type: 'paint', buffered: true });
+  } else painted = true;
+  if (!loaded) w.addEventListener('load', function () { loaded = true; settle(); });
+  setTimeout(function () { painted = loaded = true; settle(); }, 8000);   // never wait forever
+  whenSettled(startClips);
 
   /* ── Lightbox: native <dialog> (focus trap + Esc), ←/→ and swipe ── */
   var lb, lbVideo, lbCap, lbItems = [], lbIndex = 0, opener = null;
@@ -370,6 +386,17 @@
     });
   }
   $$('a[data-need]').forEach(function (a) { a.addEventListener('click', function () { setNeed(a.getAttribute('data-need')); }); });
+
+  /* GSAP only drives anchor scrolling, so it loads after the page has: until it arrives
+     (or if it never does) anchors jump instantly. */
+  function loadGsap() {
+    if (reduce || w.gsap) return;
+    var add = function (src, next) { var sc = d.createElement('script'); sc.src = src; sc.onload = next; d.head.appendChild(sc); };
+    add('https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/gsap.min.js', function () {
+      add('https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/ScrollToPlugin.min.js');
+    });
+  }
+  whenSettled(loadGsap);
 
   onScroll();
 })();
