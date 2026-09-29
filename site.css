@@ -29,6 +29,7 @@ h3,.h3{font-size:var(--t-h3);font-weight:600;letter-spacing:-.015em;line-height:
 .kicker{
   display:flex;align-items:flex-start;gap:.75rem;margin-bottom:1.25rem;
   font-size:var(--t-label);font-weight:600;letter-spacing:.12em;line-height:1.5;text-transform:uppercase;color:var(--gold-solid);
+  text-wrap:balance;
 }
 /* the rule sits on the FIRST line even when the kicker wraps */
 .kicker::before{content:'';flex:0 0 1.6rem;height:1px;margin-top:.75em;background:linear-gradient(90deg,var(--gold-bronze),var(--gold-champagne))}
@@ -205,7 +206,7 @@ body.menu-open{overflow:hidden}
 .foot-col{grid-column:span 2}
 .foot-brand + .foot-col{grid-column:7 / span 2}
 .fhead{font-size:var(--t-label);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-solid);margin-bottom:.9rem}
-.foot-col a{display:flex;align-items:center;min-height:40px;font-size:.92rem;color:var(--muted);transition:color var(--dur-1) var(--ease-out)}
+.foot-col a{display:flex;align-items:center;min-height:44px;font-size:.92rem;color:var(--muted);transition:color var(--dur-1) var(--ease-out)}
 .foot-col a:hover{color:var(--ink)}
 .foot-bot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem;padding-top:1.4rem;font-size:.82rem;color:var(--dim)}
 .foot-bot a{display:inline-flex;align-items:center;min-height:44px;color:var(--muted)}

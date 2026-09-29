@@ -19,7 +19,7 @@
 /* ── sections: heading left, reading column right ───────────── */
 .svc-sec{padding-block:var(--sec-s);border-top:1px solid var(--hairline)}
 .svc-sec > :is(h2,.svc-head){grid-column:1 / span 5;grid-row:1 / span 40;align-self:start}
-.svc-sec > h2,.svc-head h2{max-width:16ch;
+.svc-sec > h2,.svc-head h2{
   font-size:clamp(1.65rem,2.7vw,2.3rem);line-height:1.12;letter-spacing:-.03em;font-weight:700;color:var(--ink);text-wrap:balance}
 .svc-sec > :not(h2,.svc-head){grid-column:7 / -1;max-width:62ch}
 @media(min-width:901px) and (min-height:640px){.svc-sec > :is(h2,.svc-head){position:sticky;top:112px}}
@@ -84,9 +84,10 @@
 .svc-404 nav{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:2.25rem}
 .svc-404 .btn-row{margin-top:1.5rem}
 
+/* 320-class phones: two words per line instead of a lone last word */
+@media(max-width:359px){.svc-hero h1,.svc-404 h1{font-size:2.25rem}}
 @media(max-width:900px){
   .svc-sec > :is(h2,.svc-head),.svc-sec > :not(h2,.svc-head){grid-column:1 / -1;grid-row:auto}
   .svc-sec > :is(h2,.svc-head){margin-bottom:1.5rem}
-  .svc-sec > h2,.svc-head h2{max-width:22ch}
   .svc-cta .card{grid-column:1 / -1}
 }

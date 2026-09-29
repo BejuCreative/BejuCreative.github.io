@@ -301,7 +301,7 @@
 .tier.best::after{content:'Best offer';position:absolute;top:14px;right:14px;padding:.35rem .65rem;border-radius:var(--r-pill);font-size:.7rem;font-weight:600;color:var(--on-gold);background:var(--gold-metal);box-shadow:var(--gold-edge)}
 .pane-note{margin-top:1rem;font-size:var(--t-caption);color:var(--muted)}
 .price-foot{align-items:center;row-gap:1.4rem;margin-top:2.2rem}
-.price-foot > :first-child{grid-column:1 / span 7}
+.price-foot > :first-child{grid-column:1 / span 7;max-width:68ch}
 .price-foot > :last-child{grid-column:9 / span 4;justify-self:end}
 
 /* ── results rail ── */
@@ -647,7 +647,7 @@
         <h2 class="display grad rv" id="proof-title" data-lr>Real growth.<br>Real people.</h2>
       </div>
       <div class="rv">
-        <p class="caption">Messages from clients, shared with permission.</p>
+        <p class="caption">Messages and video testimonials from our clients.</p>
         <div class="rail-ctrl" style="margin-top:1rem">
           <button class="glass" type="button" data-rail-prev="proofRail" aria-label="Previous results"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
           <button class="glass" type="button" data-rail-next="proofRail" aria-label="Next results"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button>
