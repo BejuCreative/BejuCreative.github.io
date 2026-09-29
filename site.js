@@ -200,12 +200,11 @@
     var it = lbItems[lbIndex];
     lbVideo.src = it.getAttribute('data-src');
     lbVideo.poster = it.getAttribute('data-poster') || '';
-    var hasAudio = it.getAttribute('data-audio') !== '0';
-    lbVideo.muted = !hasAudio;
+    lbVideo.muted = false;
     lbVideo.setAttribute('aria-label', it.getAttribute('data-title') || 'Video');
     lbCap.innerHTML = '<b></b> <span></span>';
     lbCap.firstChild.textContent = it.getAttribute('data-title') || '';
-    lbCap.lastChild.textContent = (lbItems.length > 1 ? '· ' + (lbIndex + 1) + ' / ' + lbItems.length : '') + (hasAudio ? '' : ' · no audio track');
+    lbCap.lastChild.textContent = lbItems.length > 1 ? '· ' + (lbIndex + 1) + ' / ' + lbItems.length : '';
     lb.setAttribute('data-count', String(lbItems.length));
     var p = lbVideo.play(); p && p.catch(function () {});
   }
