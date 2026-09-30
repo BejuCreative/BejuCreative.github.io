@@ -26,6 +26,8 @@
   --sheet-fill:rgba(9,11,7,.78);
   --media-glass:rgba(12,14,10,.65);
   --stage-light:radial-gradient(ellipse at 50% 44%,rgba(58,70,22,.14),transparent 65%);
+  --glass-bar:linear-gradient(145deg,rgba(255,255,255,.065),rgba(255,255,255,.012) 55%),rgba(16,19,12,.68);
+  --glass-bar-edge:inset 0 1px 0 rgba(255,255,255,.13),inset 0 -1px 0 rgba(0,0,0,.2);
 
   /* gold material */
   --gold-bronze:#8A6424;

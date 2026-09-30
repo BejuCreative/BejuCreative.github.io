@@ -32,6 +32,17 @@ offers, prices, guarantee, testimonials, SEO metadata and form mappings are pres
 
 ## Copy changes
 
+Latest hero refinement (owner-approved 2026-09-30):
+
+- Hero paragraph: “Your footage. A sharper story. Short-form edits built to hold
+  attention, and launch films for SaaS and apps.” → “Your footage, turned into
+  short-form stories worth watching.” Launch services remain in the main nav and section.
+- Video subtitle: “BEJÚ showreel · Tap to play” → “Watch the showreel”.
+- Removed decorative “BEJÚ / In the frame”, “01”, and the repeated lower service list.
+- Original H1 wording, offer, buttons, reassurance, guarantee and all prices unchanged.
+
+The table below records the earlier layout pass:
+
 | Location | Previous | Current |
 |---|---|---|
 | Hero introduction | BEJÚ Creative edits short-form video for podcasters, coaches and founders — cut for retention, not just views. We also make launch videos for SaaS, apps and product launches. | Your footage. A sharper story. Short-form edits built to hold attention, and launch films for SaaS and apps. |
@@ -45,6 +56,13 @@ offers, prices, guarantee, testimonials, SEO metadata and form mappings are pres
 
 ## Verification
 
+- Latest glass/hero pass: **129/129** functional checks pass; focused nav-marker,
+  filters, media and reduced-motion checks pass in Chrome, WebKit and Firefox.
+  **20 homepage captures** across 320–2560px in Chrome/WebKit report no overflow,
+  headline widows, small touch targets or console errors. Desktop and phone heroes
+  were visually reviewed. Fresh Lighthouse: homepage mobile and desktop plus podcast
+  service mobile all score **100/100/100/100**, with **0 layout shift**. Homepage
+  mobile LCP is **1.73s**. These are local lab results, not production field data.
 - Olive-and-gold revision: interaction checks pass in Chrome, WebKit and Firefox;
   SEO validation passes; fresh mobile Lighthouse accessibility is 100, including contrast.
   The full performance/layout results below describe the preceding layout pass.

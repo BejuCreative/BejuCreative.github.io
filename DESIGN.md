@@ -153,6 +153,21 @@ white-to-silver sheen, like brushed metal, and stay above 12:1 contrast.
 
 ## Components (site.css unless noted)
 
+### Minimal hero and glass bars — owner-approved 2026-09-30
+
+- Keep the original H1 wording for SEO; render it in sentence case at 14–15px,
+  normal weight with compact tracking, not tiny spaced capitals. One supporting sentence.
+- The hero has two actions in a compact glass dock (`--glass-bar`, `--glass-bar-edge`).
+  The same layered material appears in the navigation; ordinary cards stay static.
+  This is an intentional extension of the live-blur allowance to the hero action bar.
+- Remove decorative stage numbering and repeated service labels. The film footer has
+  its title and “Watch the showreel”; pause/play remains available.
+- The hero stage settles upward 14px once, without hiding first-screen content.
+  A decorative navigation pill moves with hover, focus and active chapter using a
+  400ms transform-only FLIP transition. Hit targets do not move. Gallery progress
+  eases between positions. All new motion is disabled for reduced-motion visitors.
+- No added libraries, fonts, video files, autoplay loops or scroll pinning.
+
 - **Primary button** `.btn-gold`: gold metal pill, `--on-gold` text, 15px/600, min-height 48px
   (`.btn-sm` 44px). Hover: slightly brighter + one reflective sweep. Pressed: `scale .97` +
   inner bronze shading. Focus: 2px champagne ring, 3px offset. One per view.

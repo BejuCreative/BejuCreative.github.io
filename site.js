@@ -341,6 +341,37 @@
     });
   }
 
+  /* One glass highlight travels between links; transform-only, no moving hit targets. */
+  var navLinks = $('.nav-links'), navMarker, markerLink = null, markerMotion = null;
+  function moveNavMarker(link) {
+    if (!navMarker) return;
+    var previous = navMarker.getBoundingClientRect();
+    if (markerMotion) markerMotion.cancel();
+    if (!link || !link.offsetWidth) { navMarker.style.opacity = '0'; markerLink = null; return; }
+    var x = link.offsetLeft, width = link.offsetWidth, hadLink = !!markerLink;
+    navMarker.style.width = width + 'px'; navMarker.style.transform = 'translateX(' + x + 'px)'; navMarker.style.opacity = '1';
+    if (hadLink && !reduce && navMarker.animate) {
+      var left = navLinks.getBoundingClientRect().left;
+      markerMotion = navMarker.animate([
+        { transform: 'translateX(' + (previous.left - left) + 'px) scaleX(' + previous.width / width + ')' },
+        { transform: 'translateX(' + x + 'px) scaleX(1)' }
+      ], { duration: 400, easing: 'cubic-bezier(.16,1,.3,1)' });
+    }
+    markerLink = link;
+  }
+  function restoreNavMarker() { moveNavMarker($('a[aria-current="location"]', navLinks)); }
+  if (navLinks) {
+    navMarker = d.createElement('span'); navMarker.className = 'nav-marker'; navMarker.setAttribute('aria-hidden', 'true');
+    navLinks.appendChild(navMarker); navLinks.classList.add('has-marker');
+    $$('a', navLinks).forEach(function (a) {
+      a.addEventListener('pointerenter', function () { moveNavMarker(a); });
+      a.addEventListener('focus', function () { moveNavMarker(a); });
+    });
+    navLinks.addEventListener('pointerleave', restoreNavMarker);
+    navLinks.addEventListener('focusout', function (e) { if (!navLinks.contains(e.relatedTarget)) restoreNavMarker(); });
+    w.addEventListener('resize', restoreNavMarker, { passive: true });
+  }
+
   /* The nav highlights the chapter currently being read. */
   if (io && nav) {
     var chapterLinks = $$('.nav-links a[href^="#"]'), chapters = chapterLinks.map(function (a) { return $(a.getAttribute('href')); }).filter(Boolean);
@@ -348,6 +379,7 @@
       entries.forEach(function (entry) {
         if (!entry.isIntersecting) return;
         chapterLinks.forEach(function (a) { if (a.hash === '#' + entry.target.id) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current'); });
+        restoreNavMarker();
       });
     }, { rootMargin: '-15% 0px -65% 0px' });
     chapters.forEach(function (section) { chapterObs.observe(section); });

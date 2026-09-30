@@ -185,20 +185,23 @@
 .hero{min-height:100svh;display:flex;flex-direction:column;justify-content:center;padding:clamp(7.5rem,15vh,10rem) 0 2rem;position:relative}
 .hero-grid{align-items:center;row-gap:2.5rem}
 .hero-copy{grid-column:1 / span 7}
-.hero-media{grid-column:8 / -1;position:relative;padding:2.8rem 1.5rem 1rem;border:1px solid var(--hairline);border-radius:var(--r-xl);background:var(--stage-light),var(--canvas-2);perspective:1100px}
+.hero-media{grid-column:8 / -1;position:relative;padding:1.8rem 1.5rem 1rem;border:1px solid var(--hairline);border-radius:var(--r-xl);background:var(--stage-light),var(--canvas-2);perspective:1100px;animation:stage-settle var(--dur-3) var(--ease-out) both}
+@keyframes stage-settle{from{transform:translateY(14px)}to{transform:none}}
 .hero-title{font-size:clamp(5rem,12.5vw,11.2rem);line-height:.86;letter-spacing:-.065em;margin:.15rem 0 2rem}
-.hero .kicker{max-width:48ch;font-size:.68rem;line-height:1.65;letter-spacing:.1em;color:var(--muted)}
-.hero .kicker::before{background:var(--muted);flex-basis:1rem}
+.hero .kicker{max-width:37ch;font-size:clamp(.85rem,1vw,.95rem);font-weight:400;line-height:1.55;letter-spacing:-.01em;text-transform:none;color:var(--body);margin-bottom:1.6rem;text-wrap:pretty}
+.hero .kicker::before{display:none}
 .hero-title .hl{display:inline-block;animation:settle var(--dur-3) var(--ease-out) both}
 .hero-title .hl + .hl{animation-delay:70ms}
 @keyframes settle{from{transform:translateY(.12em)}to{transform:none}}
-.hero .lede{max-width:33ch;font-size:clamp(1.05rem,1.45vw,1.25rem)}
-.hero .btn-row{margin-top:2.2rem}
-.hero-note{margin-top:1.2rem;font-size:var(--t-caption);color:var(--muted)}
-.hero-note b{color:var(--ink);font-weight:600}
-/* gold stays on the hero word and the action; the in-copy link is ink */
-.hero .lede .link{color:var(--ink);text-decoration-color:rgba(245,245,247,.35)}
-.hero .lede .link:hover{color:var(--gold-champagne);text-decoration-color:var(--gold-champagne)}
+.hero .lede{max-width:36ch;font-size:clamp(1rem,1.35vw,1.15rem);line-height:1.6;letter-spacing:-.015em}
+.hero .btn-row{margin-top:1.8rem;display:inline-flex;padding:6px;gap:4px;border:1px solid var(--hairline-strong);border-radius:var(--r-xl);background:var(--glass-bar);box-shadow:var(--glass-bar-edge),var(--shadow-float);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);position:relative;isolation:isolate}
+.hero .btn-row::before{content:'';position:absolute;inset:0;pointer-events:none;border-radius:inherit;box-shadow:inset 0 1px 0 rgba(255,255,255,.22);opacity:0;transition:opacity var(--dur-2) var(--ease-out)}
+.hero .btn-row:hover::before,.hero .btn-row:focus-within::before{opacity:1}
+@supports not ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){.hero .btn-row{background:var(--surface)}}
+.hero .btn-row .btn-glass{background:transparent;border-color:transparent;box-shadow:none}
+.hero .btn-row .btn-glass:hover{background:rgba(255,255,255,.05)}
+.hero-note{margin-top:.9rem;font-size:.78rem;line-height:1.5;letter-spacing:0;color:var(--muted)}
+.hero-note b{color:var(--body);font-weight:400}
 /* titanium-framed phone; radii are concentric (outer = inner + padding) */
 .phone{--p:.4rem;position:relative;width:min(16.5rem,75%);margin-inline:auto;padding:var(--p);border-radius:calc(var(--r-xl) + var(--p));background:var(--device-metal);
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.14),inset 0 1px 0 rgba(255,255,255,.22),0 35px 60px -20px rgba(0,0,0,.8);transform:translate3d(0,var(--hero-drift,0px),0) rotateX(var(--tilt-x,0deg)) rotateY(var(--tilt-y,0deg)) rotate(-4deg) scale(var(--hero-scale,1));transition:transform var(--dur-2) var(--ease-out)}
@@ -212,10 +215,9 @@
 .hero-play{position:absolute;inset:0;width:100%;height:100%;z-index:4;background:transparent;border:0;border-radius:inherit;cursor:pointer}
 .hero-play::after{content:'↗';position:absolute;right:12px;top:12px;display:grid;place-items:center;width:44px;height:44px;border-radius:var(--r-pill);color:var(--ink);background:var(--media-glass);border:1px solid var(--hairline-strong);transition:transform var(--dur-2) var(--ease-out)}
 .hero-play:hover::after{transform:rotate(45deg)}
-.stage-label{position:absolute;top:1rem;left:1.3rem;right:1.3rem;display:flex;justify-content:space-between;color:var(--muted);font-size:.6rem;letter-spacing:.13em;text-transform:uppercase}
 .stage-footer{display:flex;align-items:center;justify-content:space-between;gap:1rem;min-height:calc(45px + .9rem);margin-top:2rem;padding-top:.9rem;border-top:1px solid var(--hairline)}
-.stage-footer p{font-size:.78rem;font-weight:600;color:var(--ink);line-height:1.5}.stage-footer p span{display:block;color:var(--muted);font-size:.7rem;font-weight:400}
-.hero-bottom{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-top:clamp(2rem,6vh,5rem);border-top:1px solid var(--hairline);padding-top:1rem;font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.stage-footer p{font-size:.85rem;font-weight:600;color:var(--ink);line-height:1.5}.stage-footer p span{display:block;color:var(--muted);font-size:.75rem;font-weight:400;margin-top:2px}
+.hero-bottom{display:flex;justify-content:flex-end;align-items:center;gap:1rem;margin-top:clamp(2rem,6vh,5rem);border-top:1px solid var(--hairline);padding-top:1rem;font-size:.8rem;letter-spacing:0;color:var(--muted)}
 .hero-bottom a{display:inline-flex;align-items:center;gap:1rem;min-height:44px}.hero-bottom a span{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;border:1px solid var(--hairline-strong);font-size:1rem;transition:transform var(--dur-2) var(--ease-out)}
 .hero-bottom a:hover span{transform:translateY(3px)}
 
@@ -363,14 +365,14 @@
   .hero-copy > .kicker{grid-column:1 / -1;grid-row:1}
   .hero-title{grid-column:1;grid-row:2;align-self:center;margin:0}
   .hero-media{grid-column:2;grid-row:2;background:none;border:0;padding:0;align-self:center}
-  .stage-label,.stage-footer,.hero-bottom{display:none}
+  .stage-footer,.hero-bottom{display:none}
   .stage-footer{display:flex;min-height:44px;margin-top:.6rem;padding:0;border:0;justify-content:center}
   .stage-footer p{display:none}.stage-footer .preview-toggle{padding-inline:.55rem;font-size:.62rem;gap:.35rem;white-space:nowrap}
   .hero .lede{grid-column:1 / -1;grid-row:3}
   .hero .btn-row{grid-column:1 / -1;grid-row:4}
   .hero-note{grid-column:1 / -1;grid-row:5;margin-top:-.4rem}
   .hero .lede{max-width:none}
-  .hero .btn-row{margin-top:0}
+  .hero .btn-row{margin-top:0;display:flex}
   .hero-grid{row-gap:1.4rem}
   .phone{--p:.3rem;width:100%;transform:none;transition:none}
   .phone-stat{display:none}  /* too small to read inside the mini phone; the guarantee has its own section */
@@ -388,7 +390,7 @@
   .hero .btn-row > *{flex:1 1 100%}
   .hero-title{font-size:clamp(3rem,15vw,4.2rem)}
 }
-@media(prefers-reduced-motion:reduce){.hero-title .hl{animation:none}.pane,.cards4 .card,.phone,.hero-play::after,.seg::before{transition:none}.phone,.cinema-stage,.cards4 .card:hover{transform:none}}
+@media(prefers-reduced-motion:reduce){.hero-title .hl,.hero-media{animation:none}.pane,.cards4 .card,.phone,.hero-play::after,.seg::before,.hero .btn-row::before{transition:none}.phone,.cinema-stage,.cards4 .card:hover{transform:none}}
 </style>
 </head>
 <body>
@@ -427,7 +429,7 @@
       <div class="hero-copy">
         <h1 class="kicker"><span><span class="nowrap">Short-form</span> video editing for podcasters, coaches &amp; founders</span></h1>
         <h2 class="display hero-title" id="hero-title"><span class="hl">Get</span><br><span class="hl gold-text">seen.</span></h2>
-        <p class="lede">Your footage. A sharper story. Short-form edits built to hold attention, and <a class="link" href="#launches">launch films for SaaS and apps</a>.</p>
+        <p class="lede">Your footage, turned into short-form stories worth watching.</p>
         <div class="btn-row">
           <a class="btn-gold magnetic" href="#apply" data-need="Podcast clips">Get a free sample clip</a>
           <a class="btn-glass" href="#work">See our work</a>
@@ -435,7 +437,6 @@
         <p class="hero-note"><b>Free</b> · No commitment · Reply in 24h</p>
       </div>
       <div class="hero-media">
-        <div class="stage-label" aria-hidden="true"><span>BEJÚ / In the frame</span><span>01</span></div>
         <div class="phone" data-parallax>
           <div class="phone-screen">
             <!-- To change the hero clip, replace hero/hero.mp4 (+ hero-poster.jpg).
@@ -451,10 +452,10 @@
             <button class="hero-play" type="button" data-lb="hero" data-src="hero/hero.mp4" data-poster="hero/hero-poster.jpg" data-title="The Edit Effect — BEJÚ showreel" aria-label="Watch The Edit Effect — BEJÚ showreel"></button>
           </div>
         </div>
-        <div class="stage-footer"><p>The Edit Effect<span>BEJÚ showreel · Tap to play</span></p><button class="preview-toggle" type="button" data-preview-toggle aria-pressed="false" hidden>Pause previews</button></div>
+        <div class="stage-footer"><p>The Edit Effect<span>Watch the showreel</span></p><button class="preview-toggle" type="button" data-preview-toggle aria-pressed="false" hidden>Pause previews</button></div>
       </div>
     </div>
-    <div class="wrap hero-bottom"><span>Short-form · Podcasts · Product films</span><a href="#work">Explore the work <span aria-hidden="true">↓</span></a></div>
+    <div class="wrap hero-bottom"><a href="#work">Explore the work <span aria-hidden="true">↓</span></a></div>
   </section>
 
   <!-- ══ WORK ══ -->
