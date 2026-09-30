@@ -1,30 +1,31 @@
-/* BEJÚ Creative — Graphite & Champagne design tokens + shared primitives.
+/* BEJÚ Creative — Glass & Gold design tokens + shared primitives.
    The system is documented in /DESIGN.md. Page stylesheets use these tokens only. */
 
 :root{
   color-scheme:dark;
 
   /* canvas & surfaces */
-  --canvas:#0B0B0D;
-  --canvas-2:#101013;
-  --surface:#161619;
-  --surface-2:#202024;
+  --canvas:#090B07;
+  --canvas-2:#0D1009;
+  --surface:#12150E;
+  --surface-2:#181C13;
   --hairline:rgba(255,255,255,.08);
   --hairline-strong:rgba(255,255,255,.14);
 
   /* text ladder */
   --ink:#F5F5F7;
-  --body:#C8C8CD;
-  --muted:#A1A1A9;
-  --dim:#898991;
+  --body:#C5C8BD;
+  --muted:#9A9E91;
+  --dim:#868A7E;
+
+  /* New component materials follow the original olive-and-gold palette. */
   --media-black:#000;
-  --silver-text:linear-gradient(180deg,#FFFFFF 0%,#EDEDEF 60%,#C4C4CD 100%);
-  --device-metal:linear-gradient(145deg,#6A6A70 0%,#26262B 30%,#121215 65%,#45454B 100%);
-  --nav-fill:rgba(20,20,24,.58);
-  --sheet-fill:rgba(11,11,13,.88);
-  --media-glass:rgba(12,12,16,.76);
-  --ambient:radial-gradient(1000px 700px at 80% 0%,rgba(184,169,140,.055),transparent 70%);
-  --stage-light:radial-gradient(ellipse at 50% 44%,rgba(203,197,181,.085),transparent 65%);
+  --silver-text:linear-gradient(180deg,#FFFFFF 0%,#EDEDEF 52%,#BDBEB8 100%);
+  --device-metal:linear-gradient(145deg,#34362F 0%,#16170F 38%,#0B0C08 60%,#26271F 100%);
+  --nav-fill:rgba(16,19,12,.42);
+  --sheet-fill:rgba(9,11,7,.78);
+  --media-glass:rgba(12,14,10,.65);
+  --stage-light:radial-gradient(ellipse at 50% 44%,rgba(58,70,22,.14),transparent 65%);
 
   /* gold material */
   --gold-bronze:#8A6424;
@@ -32,17 +33,20 @@
   --gold:#C7A24B;
   --gold-bright:#E2C676;
   --gold-champagne:#F4E3AF;
-  --gold-solid:#DDC797;           /* small text & icons */
+  --gold-solid:#D8B865;           /* small text & icons */
   --on-gold:#1F1708;
   --gold-metal:
-    linear-gradient(145deg,#F0DFB9 0%,#DDC797 100%);
+    radial-gradient(120% 140% at 28% -10%, rgba(255,248,226,.35) 0%, rgba(255,248,226,0) 46%),
+    linear-gradient(180deg, #F4E3AF 0%, #E2C676 20%, #C7A24B 48%, #A9823A 74%, #A9823A 100%);
   --gold-metal-pressed:
-    linear-gradient(145deg,#DDC797 0%,#C8AC76 100%);
-  --gold-text:linear-gradient(120deg,#F1E6CD 0%,#DDC797 55%,#BC9C61 100%);
+    linear-gradient(180deg, #D9BC6A 0%, #C29C45 40%, #A07A33 75%, #7E5B20 100%);
+  --gold-text:linear-gradient(180deg, #F7EAC0 0%, #E6CB7C 34%, #C7A24B 66%, #B58F40 100%);
   --gold-ring:linear-gradient(135deg, rgba(244,227,175,.85), rgba(138,100,36,.45) 38%, rgba(244,227,175,.18) 64%, rgba(199,162,75,.75));
   --gold-edge:
-    inset 0 1px 0 rgba(255,246,214,.4);
-  --gold-drop:0 4px 16px -8px rgba(0,0,0,.5);
+    inset 0 1px 0 rgba(255,246,214,.85),
+    inset 0 -1px 0 rgba(90,62,18,.55),
+    inset 0 0 0 1px rgba(122,88,32,.5);
+  --gold-drop:0 1px 1px rgba(0,0,0,.35), 0 12px 28px -14px rgba(199,162,75,.55);
 
   /* semantic — never gold */
   --success:#4FD18B;
@@ -51,8 +55,8 @@
   --info:#5AC8FA;
 
   /* glass */
-  --glass-fill:rgba(25,25,30,.7);
-  --glass-fill-strong:rgba(20,20,24,.88);
+  --glass-fill:rgba(24,28,19,.58);
+  --glass-fill-strong:rgba(16,19,12,.78);
   --glass-blur:saturate(165%) blur(22px);
   --glass-highlight:inset 0 1px 0 rgba(255,255,255,.07);
   --shadow-float:0 1px 0 rgba(0,0,0,.25), 0 24px 60px -28px rgba(0,0,0,.8);
@@ -99,7 +103,10 @@ body{
 /* Ambient light for the glass to refract. Fixed, soft, never animated. */
 body::before{
   content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
-  background:var(--ambient);
+  background:
+    radial-gradient(1100px 760px at 8% -8%, rgba(58,70,22,.32), transparent 62%),
+    radial-gradient(900px 640px at 94% 6%, rgba(199,162,75,.055), transparent 60%),
+    radial-gradient(1200px 900px at 50% 110%, rgba(30,36,12,.42), transparent 64%);
 }
 ::selection{background:rgba(199,162,75,.35);color:var(--ink)}
 :focus-visible{outline:2px solid var(--gold-champagne);outline-offset:3px;border-radius:var(--r-sm)}
@@ -160,7 +167,7 @@ body::before{
 .btn-gold{
   color:var(--on-gold);background:var(--gold-metal);border:0;
   box-shadow:var(--gold-edge), var(--gold-drop);
-  text-shadow:none;
+  text-shadow:0 1px 0 rgba(255,244,210,.45);
 }
 .btn-gold::after{ /* one reflective sweep on hover/focus */
   content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;

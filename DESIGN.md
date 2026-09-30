@@ -1,9 +1,9 @@
-# BEJÚ Creative — Design System: Graphite & Champagne
+# BEJÚ Creative — Design System: Ambient Olive & Metallic Gold
 
-A dark, calm, precise interface: graphite surfaces, neutral glass and restrained champagne
-accents. The work (video) is the hero; the UI recedes, and gold marks only what matters.
-The Astra pass builds on `polish/flagship`, with a quieter material finish, larger opening
-typography and an interactive film gallery. System fonts remain unchanged.
+Claude’s final palette (`c3fb516`) is the reference: deep olive-green ambient fades,
+green-tinted glass and rich metallic gold accents. On 2026-09-30 Benas requested
+slightly subtler gradients while keeping the new layout and all interactions.
+No neon green. System fonts remain unchanged.
 
 Implemented in **`/tokens.css`** (tokens + material primitives), **`/site.css`** (shared layout and
 components), **`/site.js`** (shared behaviour) and **`/services.css`** (the long-form article
@@ -20,39 +20,35 @@ From [VoltAgent/awesome-design-md](https://github.com/VoltAgent/awesome-design-m
 | `design-md/raycast/DESIGN.md` | Dark-mode surface ladder, hairline borders instead of heavy shadows, off-white ink over near-black, a stepped text-contrast ladder, and semantic accent colours kept separate from the brand accent. Its "keycap gradient" informed the restrained inset shading on gold. |
 
 Apple-inspired principles are used for typography, responsive controls and restrained motion.
-BEJÚ keeps its own dark canvas, champagne accent and portfolio-led composition.
+BEJÚ keeps its deep olive canvas, metallic gold accents and portfolio-led composition.
 
 ## Colour
 
 ### Canvas & surfaces
 | Token | Value | Use |
 |---|---|---|
-| `--canvas` | `#0B0B0D` | Graphite page background |
-| `--canvas-2` | `#101013` | Footer, launch gallery, recessed bands |
-| `--surface` | `#161619` | Solid cards and glass fallback |
-| `--surface-2` | `#202024` | Raised solid surface, hover |
+| `--canvas` | `#090B07` | Page background (near-black with the brand's olive cast) |
+| `--canvas-2` | `#0D1009` | Footer, recessed bands |
+| `--surface` | `#12150E` | Solid cards (and the glass fallback) |
+| `--surface-2` | `#181C13` | Raised solid surface, hover |
 | `--hairline` | `rgba(255,255,255,.08)` | Default 1px border |
 | `--hairline-strong` | `rgba(255,255,255,.14)` | Borders on hover/focus, dividers that must read |
 
-`--ambient` is a single faint champagne wash at the top right, fixed and unanimated.
-`--stage-light` lights the showreel frame locally. `--device-metal` is the neutral titanium
-phone edge. `--media-black`, `--media-glass`, `--nav-fill`, `--sheet-fill` and `--silver-text`
-keep media, overlays and headline materials consistent across pages.
+Ambient light behind glass: two soft fixed radial glows (olive top-left, warm gold top-right)
+so blur has something to refract. Never busy, never animated.
 
 ### Text (contrast ladder, WCAG ratios measured)
-Contrast ratios below are calculated against the solid canvas and raised surface
-`#202024`. Rendered glass, images and controls are also checked by Lighthouse.
+"Worst" = the lightest point any text can sit on: a glass card over the olive ambient glow.
 
-| Token | Value | On canvas | On raised surface | Use |
+| Token | Value | On canvas | Worst | Use |
 |---|---|---|---|---|
-| `--ink` | `#F5F5F7` | 18.06:1 | 14.91:1 | Headlines, strong text |
-| `--body` | `#C8C8CD` | 11.80:1 | 9.74:1 | Paragraphs |
-| `--muted` | `#A1A1A9` | 7.67:1 | 6.33:1 | Secondary copy, captions |
-| `--dim` | `#898991` | 5.67:1 | 4.68:1 | Fine print on the plain canvas only, **never on cards** |
+| `--ink` | `#F5F5F7` | 18.2:1 | 13.4:1 | Headlines, strong text |
+| `--body` | `#C5C8BD` | 11.6:1 | 8.6:1 | Paragraphs |
+| `--muted` | `#9A9E91` | 7.2:1 | 5.3:1 | Secondary copy, captions |
+| `--dim` | `#868A7E` | 5.6:1 | 4.5:1 (on glow) | Fine print on the plain canvas only, **never on cards** |
 
 ### Gold — a material, not a colour
-The primary action uses a soft champagne ramp, with a subtle top edge and no dark bevel.
-Bronze remains only in fine selected borders. Gold display type uses a muted champagne gradient.
+Built from three light zones like polished metal: bronze shadow → gold midtone → champagne highlight.
 
 | Token | Value | Role |
 |---|---|---|
@@ -61,13 +57,15 @@ Bronze remains only in fine selected borders. Gold display type uses a muted cha
 | `--gold` | `#C7A24B` | Midtone (body of the metal) |
 | `--gold-bright` | `#E2C676` | Upper midtone |
 | `--gold-champagne` | `#F4E3AF` | Highlight, top edge light |
-| `--gold-solid` | `#DDC797` | Solid champagne for small text/icons |
+| `--gold-solid` | `#D8B865` | **Solid gold for small text/icons** (10.3:1 on canvas, 7.6:1 worst) |
 | `--on-gold` | `#1F1708` | Text on gold metal (7.3–10.6:1 across the band the label sits on) |
 
-- `--gold-metal` — `#F0DFB9 → #DDC797`, 145 degrees. Primary actions and selected details.
-- `--gold-text` — `#F1E6CD → #DDC797 → #BC9C61` for large gold type (prices, stats, one hero word).
+- `--gold-metal` — vertical gradient champagne → bright → midtone → deep → bronze, plus a soft
+  specular highlight layer. Used for primary buttons, badges and the check marks.
+- `--gold-text` — the same ramp for **large** gold type only (prices, stats, one hero word).
 - `--gold-ring` — angled gradient for 1px gold hairline borders on selected panels.
-- Edges: one quiet top highlight; no raised bottom bevel or heavy glow.
+- Edges: a 1px champagne inset highlight on top, a bronze inset on the bottom, and a thin
+  bronze outline. That is what makes it read as metal and not as paint.
 - **Reflective sweep**: a narrow champagne band crosses the surface once on hover/focus
   (`--dur-3` 800ms, `--ease-in-out`). Resting state is static. No looping shimmer, no glitter, no outer glow beyond a
   soft warm drop.
@@ -76,12 +74,21 @@ Bronze remains only in fine selected borders. Gold display type uses a muted cha
 `--success #4FD18B` · `--warning #F59E0B` · `--error #FF5F57` · `--info #5AC8FA`.
 Warning is deliberately orange, not yellow, so it can't be mistaken for the brand gold.
 
+### Owner-requested gradient refinement
+
+The original hues stay intact. Olive ambient opacity drops from .42 to .32
+at the top and .55 to .42 at the bottom; the warm wash drops from .075 to .055.
+The gold button highlight drops from .55 to .35; its darkest stop uses deep gold
+rather than bronze. Display gold ends at `#B58F40`, softening its dark edge.
+New component materials match the original warm silver, olive titanium and tinted
+overlays. The showreel stage has a static olive glow. Layout and motion are unchanged.
+
 ## Glass
 
 | Token | Value |
 |---|---|
-| `--glass-fill` | `rgba(25,25,30,.7)` — panels |
-| `--glass-fill-strong` | `rgba(20,20,24,.88)` — nav, sheets, anything text-dense |
+| `--glass-fill` | `rgba(24,28,19,.58)` — panels |
+| `--glass-fill-strong` | `rgba(16,19,12,.78)` — nav, sheets, anything text-dense |
 | `--glass-blur` | `saturate(165%) blur(22px)` |
 | `--glass-edge` | 1px `--hairline` + inset top highlight `rgba(255,255,255,.07)` |
 | `--shadow-float` | `0 1px 0 rgba(0,0,0,.25), 0 24px 60px -28px rgba(0,0,0,.8)` |

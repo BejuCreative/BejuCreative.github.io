@@ -5,15 +5,15 @@ Preview: http://localhost:8767/
 
 ## Direction
 
-Graphite and soft champagne, with a larger editorial opening and a framed film.
-The visual priorities are the work, a clear invitation to start, and quiet interaction.
-Three guidance questions were sent about colour, motion and conversion priorities;
-the recommended choices were used while answers were pending.
+Benas’s final direction on 2026-09-30: deep ambient olive-green fades and rich
+metallic gold based on Claude’s final `c3fb516` palette, with subtler gradients.
+Keep the new layout, filters and animations. The graphite/champagne proposal and
+brief lime-green experiment are superseded. This colour revision changes no copy.
 
 ## What changed
 
-- Neutral graphite canvas and glass across all eight pages; quieter champagne actions,
-  silver typography and titanium media edging. Browser theme colour matches the canvas.
+- Deep olive canvas and tinted glass across all eight pages; metallic gold actions,
+  warm-silver typography and olive titanium edging. Theme colour matches the canvas.
 - Larger hero typography, shorter introduction and a framed showreel that opens in the
   full-screen player. Desktop pointer tilt and scroll drift give the film depth.
 - Portfolio filters for podcasts, brands and ads, with result counts, a gallery progress
@@ -45,6 +45,9 @@ offers, prices, guarantee, testimonials, SEO metadata and form mappings are pres
 
 ## Verification
 
+- Olive-and-gold revision: interaction checks pass in Chrome, WebKit and Firefox;
+  SEO validation passes; fresh mobile Lighthouse accessibility is 100, including contrast.
+  The full performance/layout results below describe the preceding layout pass.
 - Existing functional suite: **129/129 pass** across Chrome, WebKit and Firefox.
   Form submissions were intercepted; no test lead was submitted to Google Forms.
 - New interaction suite: passes in all three engines. Covers filters, filtered lightbox
