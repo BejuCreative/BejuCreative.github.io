@@ -25,6 +25,7 @@
     }
     if (parallax) parallax();
     if (cinemaMotion) cinemaMotion();
+    if (showcaseMotion) showcaseMotion();
     lastY = y; ticking = false;
   }
   w.addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(onScroll); } }, { passive: true });
@@ -185,6 +186,7 @@
       b.hidden = false; b.setAttribute('aria-pressed', String(previewsPaused));
       b.textContent = previewsPaused ? 'Play previews' : 'Pause previews';
     });
+    if (syncShowcase) syncShowcase();
   }
   // Article pages get a local control next to their media, using the same preference.
   if (!$$('[data-preview-toggle]').length && $('video[data-inview]')) {
@@ -278,6 +280,7 @@
       lbItems = $$('[data-lb="' + g + '"]').filter(function (it) { return !it.hidden; }); lbIndex = lbItems.indexOf(el);
       if (typeof lb.showModal === 'function') lb.showModal(); else lb.setAttribute('open', '');
       $$('video[data-inview]').forEach(function (v) { v.pause(); });
+      if (syncShowcase) syncShowcase();
       showLb();
     });
   });
@@ -373,16 +376,17 @@
   }
 
   /* The nav highlights the chapter currently being read. */
-  if (io && nav) {
-    var chapterLinks = $$('.nav-links a[href^="#"]'), chapters = chapterLinks.map(function (a) { return $(a.getAttribute('href')); }).filter(Boolean);
+  var chapterLinks = $$('.nav-links a[href^="#"]');
+  if (io && nav && chapterLinks.length) {
     var chapterObs = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
         if (!entry.isIntersecting) return;
-        chapterLinks.forEach(function (a) { if (a.hash === '#' + entry.target.id) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current'); });
+        var id = entry.target.id;   // sections that aren't nav chapters (hero, services…) clear it
+        chapterLinks.forEach(function (a) { if (id && a.hash === '#' + id) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current'); });
         restoreNavMarker();
       });
     }, { rootMargin: '-15% 0px -65% 0px' });
-    chapters.forEach(function (section) { chapterObs.observe(section); });
+    $$('main > section, main > .svc-hero').forEach(function (section) { chapterObs.observe(section); });
   }
 
   /* ── Primary CTA: subtle magnetic pull, desktop only, ≤ 6 px, no bounce ── */
@@ -453,6 +457,60 @@
       var p = Math.max(0, Math.min(1, (w.innerHeight - r.top) / (w.innerHeight * .75)));
       cinema.style.setProperty('--cinema-scale', (.94 + .06 * p).toFixed(4));
     };
+  }
+
+  /* ── Work showcase: the deck fans out as you scroll and the reel in focus lifts and plays.
+       Native scroll + position:sticky, so nothing hijacks the wheel. Only the reel in focus
+       ever decodes. Reduced motion / no JS: a still, already-open fan (see index.html). ── */
+  var showcase = $('[data-showcase]'), showcaseMotion = null, syncShowcase = null;
+  if (showcase && !reduce) {
+    var fan = $('[data-fan]', showcase), slots = $$('.sc-slot', fan), beats = $$('.sc-beats li', showcase);
+    var FOCUS = [2, 3, 1], focus = -1, scInView = false;   // slot in focus per beat: centre, right, left
+    showcase.classList.add('is-live'); fan.style.setProperty('--o', 0);
+    syncShowcase = function () {
+      slots.forEach(function (s) {
+        var v = $('video', s); if (!v) return;
+        if (clipsReady && scInView && s.classList.contains('is-focus') && !previewsPaused && !d.hidden && !(lb && lb.open)) {
+          v.preload = 'auto'; seekStart(v); var pl = v.play(); pl && pl.catch(function () {});
+        } else v.pause();
+      });
+    };
+    // Only the reel in focus is a target: the others are inert (no click, tab stop or screen-reader
+    // entry), so overlapping cards never compete. A card that has keyboard focus keeps it until
+    // focus leaves; every clip is also in the full gallery below.
+    var applyInert = function () {
+      slots.forEach(function (s) { var on = s.classList.contains('is-focus'); if (on || s.contains(d.activeElement)) s.removeAttribute('inert'); else s.setAttribute('inert', ''); });
+    };
+    fan.addEventListener('focusout', function () { setTimeout(applyInert, 0); });
+    var setFocus = function (b) {
+      if (b === focus) return; focus = b;
+      slots.forEach(function (s, i) { s.classList.toggle('is-focus', i === FOCUS[b]); });
+      applyInert();
+      beats.forEach(function (li, i) { li.classList.toggle('is-on', i === b); });
+      syncShowcase();
+    };
+    // a reel fades in only once it has reached its start point, so no intro frame flashes
+    $$('video', fan).forEach(function (v) {
+      var s = parseFloat(v.getAttribute('data-start') || '0');
+      v.addEventListener('timeupdate', function () { if (!v.paused && v.currentTime >= s - 0.3) v.classList.add('is-playing'); });
+      v.addEventListener('pause', function () { v.classList.remove('is-playing'); });
+    });
+    showcaseMotion = function () {
+      var r = showcase.getBoundingClientRect(), vh = w.innerHeight;
+      if (r.bottom < 0 || r.top > vh) return;
+      var p = Math.max(0, Math.min(1, -r.top / Math.max(1, r.height - vh)));
+      var o = Math.min(1, p / 0.28); o = 1 - Math.pow(1 - o, 3);   // the deck opens over the first ~quarter
+      fan.style.setProperty('--o', o.toFixed(4));
+      setFocus(p < 0.28 ? 0 : Math.min(2, Math.floor((p - 0.28) / 0.72 * 3)));
+    };
+    var pin = $('.sc-pin', showcase), grid = $('.sc-grid', showcase);
+    var trim = function () {   // empty band under the pinned content, minus a normal section gap
+      var slack = pin.getBoundingClientRect().bottom - grid.getBoundingClientRect().bottom;
+      showcase.style.setProperty('--sc-trim', Math.max(0, Math.round(slack - parseFloat(getComputedStyle(root).fontSize) * (w.innerWidth <= 900 ? 3.75 : 2.5))) + 'px');   // phones: fanned cards overhang more
+    };
+    trim(); w.addEventListener('resize', trim, { passive: true });
+    if (io) new IntersectionObserver(function (es) { scInView = es[0].isIntersecting; syncShowcase(); }).observe(fan);
+    whenSettled(function () { syncShowcase(); });
   }
   w.addEventListener('resize', onScroll, { passive: true });
 

@@ -26,6 +26,13 @@
   --sheet-fill:rgba(9,11,7,.78);
   --media-glass:rgba(12,14,10,.65);
   --stage-light:radial-gradient(ellipse at 50% 44%,rgba(58,70,22,.14),transparent 65%);
+  /* hero device: side buttons, a warm rim catching the gold light, glass glare, warm stage glow */
+  --device-button:linear-gradient(90deg,#15160F 0%,#3A3B33 50%,#15160F 100%);
+  --device-rim:inset -1px 0 0 rgba(244,227,175,.3),inset 1px 0 0 rgba(255,255,255,.07);
+  --screen-glare:linear-gradient(118deg,transparent 30%,rgba(255,255,255,.2) 45%,rgba(255,255,255,.05) 52%,transparent 62%);
+  --stage-warm:radial-gradient(40% 32% at 52% 60%,rgba(199,162,75,.11),transparent 72%);
+  --device-edge:#2B2C25;
+  --fan-glow:radial-gradient(closest-side,rgba(199,162,75,.15),rgba(58,70,22,.08) 55%,transparent);
   --glass-bar:linear-gradient(145deg,rgba(255,255,255,.065),rgba(255,255,255,.012) 55%),rgba(16,19,12,.68);
   --glass-bar-edge:inset 0 1px 0 rgba(255,255,255,.13),inset 0 -1px 0 rgba(0,0,0,.2);
 

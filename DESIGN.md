@@ -166,7 +166,39 @@ white-to-silver sheen, like brushed metal, and stay above 12:1 contrast.
   A decorative navigation pill moves with hover, focus and active chapter using a
   400ms transform-only FLIP transition. Hit targets do not move. Gallery progress
   eases between positions. All new motion is disabled for reduced-motion visitors.
-- No added libraries, fonts, video files, autoplay loops or scroll pinning.
+- No added libraries, fonts, video files or autoplay loops. Scroll pinning is limited to the
+  one work showcase below (owner-approved 2026-09-30, superseding the earlier no-pinning rule).
+
+### Premium hero phone and work showcase — owner-approved 2026-09-30
+
+- **Hero phone** (`index.html`, tokens `--device-button`, `--device-edge`, `--device-rim`,
+  `--screen-glare`, `--stage-warm`): side buttons, a warm rim catching the gold light, a gold
+  floor glow under the device and one glare sweep across the glass shortly after load
+  (transform-only, once, off under reduced motion). The play affordance is a glass disc with a
+  play glyph that appears on hover/focus, never a permanent icon over the footage. On phones the
+  pause control is a 44px icon on the device corner and a small "Watch" label sits on the screen;
+  the button dock keeps both actions side by side whenever they fit.
+- **Work showcase** (`[data-showcase]`, top of `#work`): a deck of five reels that fans out as
+  you scroll, while three claims ("Hooks that stop the scroll." · "Captions people actually
+  read." · "Cut for retention, not just views.") light up in turn and a matching reel lifts into
+  focus. Built on native scroll + `position:sticky` (a 150vh track, 120vh on phones): nothing
+  intercepts the wheel or touch. site.js sets `--o` (0 closed → 1 open over the first ~28% of the
+  track) and moves `.is-focus`; each `.sc-slot` has `--i` (place in the fan, −2…2) and `--d`
+  (distance from the centre), and the transform is plain CSS math (`--sw` card width,
+  `--spread`). Out-of-focus reels sit a step back (45% canvas veil); the reel in focus gets a
+  gold hairline and glow, its chip and "Watch" badge.
+- **One reel decodes at a time.** Only the reel in focus plays, and only while the fan is on
+  screen; it fades in once it reaches its `data-start`, so no intro frame flashes. The session
+  "Pause previews" preference, hidden tabs and an open lightbox pause it too. Outer cards are
+  stills (no `<video>`). Tapping any card opens the full-screen player with sound (`data-lb="showcase"`).
+- **No dead gap, no blocked clicks.** The pinned screen is viewport-tall, so site.js measures the
+  empty band under its content and the gallery slides up into it (`--sc-trim`, a negative
+  margin). The track and pin are `pointer-events:none`; only the copy and the reels take clicks,
+  so the filters and rail arrows underneath always work.
+- **Without JS or with reduced motion** the showcase is a normal-height section with the fan
+  already open, all three claims lit, nothing playing and no pin.
+- To change a reel: edit the `.sc-slot` buttons in `index.html` (keep vertical clips in the three
+  centre slots; outer slots are stills and take `style="--pos:X% Y%"` to frame a landscape still).
 
 - **Primary button** `.btn-gold`: gold metal pill, `--on-gold` text, 15px/600, min-height 48px
   (`.btn-sm` 44px). Hover: slightly brighter + one reflective sweep. Pressed: `scale .97` +
@@ -247,7 +279,11 @@ white-to-silver sheen, like brushed metal, and stay above 12:1 contrast.
   Pointer position adds at most 2.5° vertical / 3.5° horizontal tilt to the phone's fixed -4°
   composition angle. No tilt or drift on mobile or with reduced motion.
 - The launch feature expands from 94% to 100% as it enters the desktop viewport. Native
-  page scrolling remains uninterrupted; no pinning or scroll interception.
+  page scrolling remains uninterrupted.
+- The work showcase is the site's one pinned moment: sticky, scroll-linked, transform-only,
+  never intercepting the wheel or touch (see Components). Its cards ease with `--dur-2`.
+- The hero glass catches the light once after load (`calc(var(--dur-3) * 2)`, delayed
+  `--dur-3`); nothing repeats.
 - Stat count-ups run once in view (expo-out, 1.4s); the HTML already holds the final number.
 - `prefers-reduced-motion`: no reveals, sweep, parallax, magnetic pull, count-ups or
   animated scrolling; every state change is instant and the page still looks finished.

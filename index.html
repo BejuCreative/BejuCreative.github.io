@@ -185,7 +185,7 @@
 .hero{min-height:100svh;display:flex;flex-direction:column;justify-content:center;padding:clamp(7.5rem,15vh,10rem) 0 2rem;position:relative}
 .hero-grid{align-items:center;row-gap:2.5rem}
 .hero-copy{grid-column:1 / span 7}
-.hero-media{grid-column:8 / -1;position:relative;padding:1.8rem 1.5rem 1rem;border:1px solid var(--hairline);border-radius:var(--r-xl);background:var(--stage-light),var(--canvas-2);perspective:1100px;animation:stage-settle var(--dur-3) var(--ease-out) both}
+.hero-media{grid-column:8 / -1;position:relative;padding:1.8rem 1.5rem 1rem;border:1px solid var(--hairline);border-radius:var(--r-xl);background:var(--stage-warm),var(--stage-light),var(--canvas-2);perspective:1100px;animation:stage-settle var(--dur-3) var(--ease-out) both}
 @keyframes stage-settle{from{transform:translateY(14px)}to{transform:none}}
 .hero-title{font-size:clamp(5rem,12.5vw,11.2rem);line-height:.86;letter-spacing:-.065em;margin:.15rem 0 2rem}
 .hero .kicker{max-width:37ch;font-size:clamp(.85rem,1vw,.95rem);font-weight:400;line-height:1.55;letter-spacing:-.01em;text-transform:none;color:var(--body);margin-bottom:1.6rem;text-wrap:pretty}
@@ -204,8 +204,14 @@
 .hero-note b{color:var(--body);font-weight:400}
 /* titanium-framed phone; radii are concentric (outer = inner + padding) */
 .phone{--p:.4rem;position:relative;width:min(16.5rem,75%);margin-inline:auto;padding:var(--p);border-radius:calc(var(--r-xl) + var(--p));background:var(--device-metal);
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.14),inset 0 1px 0 rgba(255,255,255,.22),0 35px 60px -20px rgba(0,0,0,.8);transform:translate3d(0,var(--hero-drift,0px),0) rotateX(var(--tilt-x,0deg)) rotateY(var(--tilt-y,0deg)) rotate(-4deg) scale(var(--hero-scale,1));transition:transform var(--dur-2) var(--ease-out)}
+  box-shadow:var(--device-rim),inset 0 0 0 1px rgba(255,255,255,.14),inset 0 1px 0 rgba(255,255,255,.22),0 35px 60px -20px rgba(0,0,0,.8),0 70px 90px -50px rgba(199,162,75,.22);transform:translate3d(0,var(--hero-drift,0px),0) rotateX(var(--tilt-x,0deg)) rotateY(var(--tilt-y,0deg)) rotate(-4deg) scale(var(--hero-scale,1));transition:transform var(--dur-2) var(--ease-out)}
+.phone::before,.phone::after{content:'';position:absolute;width:3px;pointer-events:none}
+.phone::before{right:-2px;top:25%;height:13%;border-radius:0 3px 3px 0;background:var(--device-button)}
+.phone::after{left:-2px;top:19%;height:17%;border-radius:3px 0 0 3px;background:linear-gradient(180deg,var(--device-edge) 0 42%,transparent 42% 58%,var(--device-edge) 58%)}
 .phone-screen{position:relative;overflow:hidden;border-radius:var(--r-xl);background:var(--media-black);aspect-ratio:9/16}
+/* light catches the glass once as the page opens; transform-only */
+.phone-screen::after{content:'';position:absolute;top:0;bottom:0;left:-100%;width:300%;z-index:5;pointer-events:none;background:var(--screen-glare);transform:translateX(-45%);animation:glare calc(var(--dur-3) * 2) var(--ease-in-out) var(--dur-3) both}
+@keyframes glare{from{transform:translateX(-45%)}to{transform:translateX(45%)}}
 .phone-screen video,.phone-screen img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .phone-scrim{position:absolute;inset:0;z-index:2;background:linear-gradient(180deg,rgba(0,0,0,.4) 0%,transparent 22%,transparent 60%,rgba(0,0,0,.85) 100%)}
 .phone-pill{position:absolute;top:.7rem;left:50%;width:5rem;height:1.35rem;margin-left:-2.5rem;background:var(--media-black);border-radius:var(--r-pill);z-index:3}
@@ -213,8 +219,11 @@
 .phone-stat b{display:block;font-size:2.6rem;font-weight:700;line-height:1;letter-spacing:-.04em;font-variant-numeric:tabular-nums;color:var(--ink)}
 .phone-stat span{font-size:.7rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
 .hero-play{position:absolute;inset:0;width:100%;height:100%;z-index:4;background:transparent;border:0;border-radius:inherit;cursor:pointer}
-.hero-play::after{content:'↗';position:absolute;right:12px;top:12px;display:grid;place-items:center;width:44px;height:44px;border-radius:var(--r-pill);color:var(--ink);background:var(--media-glass);border:1px solid var(--hairline-strong);transition:transform var(--dur-2) var(--ease-out)}
-.hero-play:hover::after{transform:rotate(45deg)}
+.hero-play::before,.hero-play::after{content:'';position:absolute;left:50%;top:50%;pointer-events:none;opacity:0;transform:scale(.85);transition:opacity var(--dur-2) var(--ease-out),transform var(--dur-2) var(--ease-out)}
+.hero-play::after{z-index:0;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;background:var(--media-glass);border:1px solid var(--hairline-strong);-webkit-backdrop-filter:saturate(160%) blur(14px);backdrop-filter:saturate(160%) blur(14px)}
+.hero-play::before{z-index:1;margin:-10px 0 0 -6px;border-left:17px solid var(--ink);border-block:10px solid transparent}
+.hero-play:hover::before,.hero-play:hover::after,.hero-play:focus-visible::before,.hero-play:focus-visible::after{opacity:1;transform:none}
+.hero-watch{display:none}
 .stage-footer{display:flex;align-items:center;justify-content:space-between;gap:1rem;min-height:calc(45px + .9rem);margin-top:2rem;padding-top:.9rem;border-top:1px solid var(--hairline)}
 .stage-footer p{font-size:.85rem;font-weight:600;color:var(--ink);line-height:1.5}.stage-footer p span{display:block;color:var(--muted);font-size:.75rem;font-weight:400;margin-top:2px}
 .hero-bottom{display:flex;justify-content:flex-end;align-items:center;gap:1rem;margin-top:clamp(2rem,6vh,5rem);border-top:1px solid var(--hairline);padding-top:1rem;font-size:.8rem;letter-spacing:0;color:var(--muted)}
@@ -239,6 +248,52 @@
 .rail-ctrl button:hover{background:rgba(40,46,32,.7)} .rail-ctrl button:active{scale:.94}
 .rail-ctrl button:disabled{opacity:.35;cursor:default}
 .rail-ctrl svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.75;fill:none;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── work showcase: a deck of reels fans out as you scroll. site.js sets --o (how open,
+      0–1) and moves .is-focus; each slot's --i is its place in the fan, --d its distance
+      from the centre. Native scroll + position:sticky; nothing hijacks the wheel. ── */
+#work{padding-top:0}
+.showcase{position:relative}
+.sc-pin{display:flex;align-items:center;min-height:100svh;padding:clamp(5.5rem,11vh,7rem) 0 clamp(2rem,6vh,4rem);overflow:hidden}
+.showcase.is-live{height:calc(100svh + 150vh)}
+.showcase.is-live .sc-pin{position:sticky;top:0;height:100svh;min-height:0}
+/* the tall scroll track and the pin's empty band overlap the gallery below: only the
+   copy and the reels take clicks, so the filters and arrows under them stay reachable */
+.showcase.is-live,.showcase.is-live .sc-pin{pointer-events:none}
+.showcase.is-live .sc-copy,.showcase.is-live .sc-card{pointer-events:auto}
+/* the pinned screen is viewport-tall; site.js measures the empty band under its content and
+   the gallery slides up into it as the pin releases (no dead gap between the two) */
+.showcase.is-live{margin-bottom:calc(var(--sc-trim,0px) * -1)}
+.sc-grid{align-items:center;row-gap:clamp(1.25rem,4vh,2.5rem)}
+.sc-copy{grid-column:1 / span 5}
+.sc-beats{list-style:none;display:grid;gap:.6rem;margin-top:clamp(1.25rem,3vh,2rem)}
+.sc-beats li{position:relative;padding-left:1.1rem;font-size:clamp(1.2rem,1.9vw,1.65rem);font-weight:600;letter-spacing:-.025em;line-height:1.2;color:var(--ink);text-wrap:balance;transition:color var(--dur-2) var(--ease-out)}
+/* all three claims stay on screen (same height with or without JS: no layout shift);
+   the one being shown is lit and gets a gold bar */
+.sc-beats li::before{content:'';position:absolute;left:0;top:.15em;bottom:.15em;width:2px;border-radius:var(--r-pill);background:var(--gold-metal);transform:scaleY(0);transition:transform var(--dur-2) var(--ease-out)}
+.showcase.is-live .sc-beats li{color:var(--dim)}
+.showcase.is-live .sc-beats li.is-on{color:var(--ink)}
+.showcase.is-live .sc-beats li.is-on::before{transform:none}
+.sc-fan{--o:1;--sw:clamp(9.5rem,14.5vw,13.5rem);--spread:.74;grid-column:6 / -1;position:relative;height:calc(var(--sw) * 1.78 + 6rem);perspective:1400px}
+.sc-slot{--f:0;position:absolute;left:50%;top:50%;width:var(--sw);aspect-ratio:9/16;margin:calc(var(--sw) * -.889) 0 0 calc(var(--sw) / -2);z-index:calc(10 - var(--d));
+  transform:translate3d(calc(var(--i) * (var(--sw) * var(--spread) * var(--o) + .5rem * (1 - var(--o)))),calc(var(--d) * var(--d) * .9rem * var(--o) + (1 - var(--o)) * 2.5rem - var(--f) * 1.5rem),0)
+    rotateY(calc(var(--i) * -9deg * var(--o))) rotate(calc(var(--i) * (4.5deg * var(--o) + 2.2deg * (1 - var(--o)) + 1deg))) scale(calc(1 - var(--d) * .07 * var(--o) + var(--f) * .06));
+  transition:transform var(--dur-2) var(--ease-out)}
+.sc-fan::before{content:'';position:absolute;inset:-14% -10%;pointer-events:none;background:var(--fan-glow);opacity:var(--o)}
+.sc-slot.is-focus{--f:1;z-index:20}
+.showcase.is-live .sc-slot{will-change:transform}
+.sc-card{display:block;width:100%;height:100%}
+.sc-card img,.sc-card video{object-position:var(--pos,50% 50%)}
+/* cards out of focus sit a step back in the dark; the one in focus catches the gold light */
+.sc-card::before{content:'';position:absolute;inset:0;z-index:3;border-radius:inherit;background:var(--canvas);opacity:.45;pointer-events:none;transition:opacity var(--dur-2) var(--ease-out)}
+.sc-slot.is-focus .sc-card::before{opacity:0}
+.sc-slot.is-focus .sc-card{box-shadow:0 0 0 1px rgba(216,184,101,.55),0 40px 90px -35px rgba(199,162,75,.5),var(--shadow-float)}
+.sc-card .chip,.sc-card .watch{opacity:0;transition:opacity var(--dur-2) var(--ease-out)}
+.sc-slot.is-focus .chip,.sc-slot.is-focus .watch{opacity:1}
+.sc-card video{opacity:0;transition:opacity var(--dur-2) var(--ease-out)}
+.sc-card video.is-playing{opacity:1}
+.gallery-head{display:flex;align-items:flex-end;justify-content:space-between;gap:1.5rem;margin-top:clamp(1rem,3vw,2rem);margin-bottom:1.25rem}
+.gallery-head .caption{max-width:40ch}
 
 /* ── launches (gallery itself lives in site.css) ── */
 .launch-cta{margin-top:2.5rem}
@@ -365,14 +420,25 @@
   .hero-copy > .kicker{grid-column:1 / -1;grid-row:1}
   .hero-title{grid-column:1;grid-row:2;align-self:center;margin:0}
   .hero-media{grid-column:2;grid-row:2;background:none;border:0;padding:0;align-self:center}
-  .stage-footer,.hero-bottom{display:none}
-  .stage-footer{display:flex;min-height:44px;margin-top:.6rem;padding:0;border:0;justify-content:center}
-  .stage-footer p{display:none}.stage-footer .preview-toggle{padding-inline:.55rem;font-size:.62rem;gap:.35rem;white-space:nowrap}
+  .hero-bottom{display:none}
+  .showcase.is-live{height:calc(100svh + 120vh)}
+  .sc-pin{padding-top:4.5rem}
+  .sc-copy,.sc-fan{grid-column:1 / -1}
+  .sc-fan{--sw:clamp(7rem,33vw,11rem);--spread:.62;height:calc(var(--sw) * 1.78 + 3rem)}
+  .sc-beats li{font-size:1.15rem}
+  .sc-card .chip{top:8px;left:8px;padding:.3rem .55rem;font-size:.62rem}
+  .sc-card .watch{right:8px;bottom:8px;min-height:28px;padding:0 .6rem 0 .5rem;font-size:.62rem}
+  .stage-footer{position:absolute;top:-.55rem;right:-.55rem;z-index:6;min-height:0;margin:0;padding:0;border:0}
+  .stage-footer p{display:none}
+  .stage-footer .preview-toggle{width:44px;height:44px;padding:0;gap:0;font-size:0;border-radius:50%;background:var(--media-glass);-webkit-backdrop-filter:saturate(160%) blur(14px);backdrop-filter:saturate(160%) blur(14px)}
+  .hero-watch{display:flex;right:50%;bottom:.5rem;transform:translateX(50%);min-height:24px;padding:0 .5rem 0 .4rem;gap:.3rem;font-size:.6rem}
+  .hero-watch::before{border-left-width:6px;border-top-width:4px;border-bottom-width:4px}
   .hero .lede{grid-column:1 / -1;grid-row:3}
   .hero .btn-row{grid-column:1 / -1;grid-row:4}
   .hero-note{grid-column:1 / -1;grid-row:5;margin-top:-.4rem}
   .hero .lede{max-width:none}
   .hero .btn-row{margin-top:0;display:flex}
+  .hero .btn-row > *{flex:1 1 auto}   /* the two actions share the dock instead of leaving an empty strip */
   .hero-grid{row-gap:1.4rem}
   .phone{--p:.3rem;width:100%;transform:none;transition:none}
   .phone-stat{display:none}  /* too small to read inside the mini phone; the guarantee has its own section */
@@ -384,13 +450,21 @@
   .tiers,.gtrio{grid-template-columns:1fr}
   .tier{min-height:0}
 }
+/* short phones: smaller fan and claims so the pinned screen never clips */
+@media(max-width:900px) and (max-height:720px){
+  .sc-pin{padding-top:4.25rem}
+  .sc-beats{gap:.35rem;margin-top:.9rem}
+  .sc-beats li{font-size:1rem}
+  .sc-fan{--sw:clamp(5.5rem,26vw,7.5rem);height:calc(var(--sw) * 1.78 + 2.25rem)}
+}
 @media(max-width:560px){
   .cards4,.steps,.stat-row{grid-template-columns:1fr}
   .stat-row{row-gap:1.4rem}
-  .hero .btn-row > *{flex:1 1 100%}
+  .hero .btn-row{flex-wrap:wrap}
+  .hero .btn-row > *{flex:1 1 auto;padding-inline:1.1rem}
   .hero-title{font-size:clamp(3rem,15vw,4.2rem)}
 }
-@media(prefers-reduced-motion:reduce){.hero-title .hl,.hero-media{animation:none}.pane,.cards4 .card,.phone,.hero-play::after,.seg::before,.hero .btn-row::before{transition:none}.phone,.cinema-stage,.cards4 .card:hover{transform:none}}
+@media(prefers-reduced-motion:reduce){.sc-slot,.sc-card::before,.sc-card video,.sc-beats li,.sc-beats li::before{transition:none}.hero-title .hl,.hero-media,.phone-screen::after{animation:none}.phone-screen::after{display:none}.pane,.cards4 .card,.phone,.hero-play::after,.seg::before,.hero .btn-row::before{transition:none}.phone,.cinema-stage,.cards4 .card:hover{transform:none}}
 </style>
 </head>
 <body>
@@ -449,7 +523,7 @@
             <div class="phone-pill"></div>
             <div class="phone-scrim"></div>
             <div class="phone-stat"><b>2×</b><span>Views or you don't pay</span></div>
-            <button class="hero-play" type="button" data-lb="hero" data-src="hero/hero.mp4" data-poster="hero/hero-poster.jpg" data-title="The Edit Effect — BEJÚ showreel" aria-label="Watch The Edit Effect — BEJÚ showreel"></button>
+            <button class="hero-play" type="button" data-lb="hero" data-src="hero/hero.mp4" data-poster="hero/hero-poster.jpg" data-title="The Edit Effect — BEJÚ showreel" aria-label="Watch The Edit Effect — BEJÚ showreel"><span class="watch hero-watch">Watch</span></button>
           </div>
         </div>
         <div class="stage-footer"><p>The Edit Effect<span>Watch the showreel</span></p><button class="preview-toggle" type="button" data-preview-toggle aria-pressed="false" hidden>Pause previews</button></div>
@@ -460,17 +534,35 @@
 
   <!-- ══ WORK ══ -->
   <section class="sec" id="work" aria-labelledby="work-title">
-    <div class="wrap g12 head">
-      <div>
-        <p class="kicker rv">Our work</p>
-        <h2 class="display grad rv" id="work-title" data-lr>Made to be<br>watched.</h2>
-      </div>
-      <div class="rv">
-        <p class="caption">Podcast clips, personal brands and ads. Tap any clip to watch it full screen.</p>
-        <div class="rail-ctrl" style="margin-top:1rem">
-          <button class="glass" type="button" data-rail-prev="rail" aria-label="Previous clips"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
-          <button class="glass" type="button" data-rail-next="rail" aria-label="Next clips"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button>
+    <!-- Showcase: a deck of five reels fans out as you scroll; the reel in focus lifts and
+         plays (site.js). Without JS or with reduced motion it is a still, already-open fan. -->
+    <div class="showcase" data-showcase>
+      <div class="sc-pin">
+        <div class="wrap g12 sc-grid">
+          <div class="sc-copy">
+            <p class="kicker rv">Our work</p>
+            <h2 class="display grad rv" id="work-title" data-lr>Made to be<br>watched.</h2>
+            <ol class="sc-beats">
+              <li class="is-on">Hooks that stop the scroll.</li>
+              <li>Captions people actually read.</li>
+              <li>Cut for retention, not just views.</li>
+            </ol>
+          </div>
+          <div class="sc-fan" data-fan>
+            <div class="sc-slot" style="--i:-2;--d:2" inert><button class="sc-card frame playable" type="button" style="--pos:24% 50%" data-lb="showcase" data-src="rail-05.mp4" data-poster="rail-05.jpg" data-title="Personal Brand Edit 2"><img src="rail-05.jpg" alt="" loading="lazy" decoding="async"><span class="chip">Brand</span><span class="sr-only">Personal Brand Edit 2, </span><span class="watch">Watch</span></button></div>
+            <div class="sc-slot" style="--i:-1;--d:1" inert><button class="sc-card frame playable" type="button" data-lb="showcase" data-src="work/01.mp4" data-poster="work/01.jpg" data-title="The Edit Effect — BEJÚ promo"><img src="work/01.jpg" alt="" loading="lazy" decoding="async"><video muted loop playsinline preload="none" data-sc aria-hidden="true"><source src="work/01.mp4" type="video/mp4"></video><span class="chip">Showreel</span><span class="sr-only">The Edit Effect — BEJÚ promo, </span><span class="watch">Watch</span></button></div>
+            <div class="sc-slot is-focus" style="--i:0;--d:0"><button class="sc-card frame playable" type="button" data-lb="showcase" data-src="rail-01.mp4" data-poster="rail-01.jpg" data-title="Podcast Clip Edit"><img src="rail-01.jpg" alt="" loading="lazy" decoding="async"><video muted loop playsinline preload="none" data-start="5" data-sc aria-hidden="true"><source src="rail-01.mp4" type="video/mp4"></video><span class="chip">Podcast</span><span class="sr-only">Podcast Clip Edit, </span><span class="watch">Watch</span></button></div>
+            <div class="sc-slot" style="--i:1;--d:1" inert><button class="sc-card frame playable" type="button" data-lb="showcase" data-src="rail-03.mp4" data-poster="rail-03.jpg" data-title="Podcast LT"><img src="rail-03.jpg" alt="" loading="lazy" decoding="async"><video muted loop playsinline preload="none" data-start="1" data-sc aria-hidden="true"><source src="rail-03.mp4" type="video/mp4"></video><span class="chip">Podcast</span><span class="sr-only">Podcast LT, </span><span class="watch">Watch</span></button></div>
+            <div class="sc-slot" style="--i:2;--d:2" inert><button class="sc-card frame playable" type="button" style="--pos:38% 50%" data-lb="showcase" data-src="rail-07.mp4" data-poster="rail-07.jpg" data-title="Personal Brand Reel"><img src="rail-07.jpg" alt="" loading="lazy" decoding="async"><span class="chip">Brand</span><span class="sr-only">Personal Brand Reel, </span><span class="watch">Watch</span></button></div>
+          </div>
         </div>
+      </div>
+    </div>
+    <div class="wrap gallery-head">
+      <p class="caption">Podcast clips, personal brands and ads. Tap any clip to watch it full screen.</p>
+      <div class="rail-ctrl">
+        <button class="glass" type="button" data-rail-prev="rail" aria-label="Previous clips"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <button class="glass" type="button" data-rail-next="rail" aria-label="Next clips"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button>
       </div>
     </div>
     <div class="wrap gallery-tools" hidden data-gallery-tools>
