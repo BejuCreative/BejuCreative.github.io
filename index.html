@@ -27,7 +27,7 @@
 <meta name="twitter:description" content="Reels, TikToks and Shorts cut for retention. Free sample clip, 24hr turnaround.">
 <meta name="twitter:image" content="https://bejucreative.digital/og-image.jpg">
 
-<meta name="theme-color" content="#090B07">
+<meta name="theme-color" content="#0B0B0D">
 
 
 <!-- Structured data. Organization + Service + FAQPage.
@@ -182,15 +182,17 @@
 /* Homepage-only compositions. Shared structure lives in /site.css, tokens in /tokens.css. */
 
 /* ── hero: renders instantly; the headline only "settles" (transform, no fade) ── */
-.hero{min-height:100svh;display:flex;align-items:center;padding:clamp(7.5rem,15vh,10rem) 0 clamp(3rem,7vh,5rem)}
+.hero{min-height:100svh;display:flex;flex-direction:column;justify-content:center;padding:clamp(7.5rem,15vh,10rem) 0 2rem;position:relative}
 .hero-grid{align-items:center;row-gap:2.5rem}
 .hero-copy{grid-column:1 / span 7}
-.hero-media{grid-column:9 / span 4}
-.hero-title{font-size:clamp(3.4rem,8.4vw,8.4rem);line-height:.86;letter-spacing:-.05em;margin:.15rem 0 1.6rem}
+.hero-media{grid-column:8 / -1;position:relative;padding:2.8rem 1.5rem 1rem;border:1px solid var(--hairline);border-radius:var(--r-xl);background:var(--stage-light),var(--canvas-2);perspective:1100px}
+.hero-title{font-size:clamp(5rem,12.5vw,11.2rem);line-height:.86;letter-spacing:-.065em;margin:.15rem 0 2rem}
+.hero .kicker{max-width:48ch;font-size:.68rem;line-height:1.65;letter-spacing:.1em;color:var(--muted)}
+.hero .kicker::before{background:var(--muted);flex-basis:1rem}
 .hero-title .hl{display:inline-block;animation:settle var(--dur-3) var(--ease-out) both}
 .hero-title .hl + .hl{animation-delay:70ms}
 @keyframes settle{from{transform:translateY(.12em)}to{transform:none}}
-.hero .lede{max-width:34ch}
+.hero .lede{max-width:33ch;font-size:clamp(1.05rem,1.45vw,1.25rem)}
 .hero .btn-row{margin-top:2.2rem}
 .hero-note{margin-top:1.2rem;font-size:var(--t-caption);color:var(--muted)}
 .hero-note b{color:var(--ink);font-weight:600}
@@ -198,16 +200,24 @@
 .hero .lede .link{color:var(--ink);text-decoration-color:rgba(245,245,247,.35)}
 .hero .lede .link:hover{color:var(--gold-champagne);text-decoration-color:var(--gold-champagne)}
 /* titanium-framed phone; radii are concentric (outer = inner + padding) */
-.phone{--p:.5rem;position:relative;width:min(22rem,100%);margin-inline:auto;padding:var(--p);border-radius:calc(var(--r-xl) + var(--p));
-  background:linear-gradient(145deg,#34362F 0%,#16170F 38%,#0B0C08 60%,#26271F 100%);
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.14),inset 0 1px 0 rgba(255,255,255,.22),0 40px 90px -30px rgba(0,0,0,.9),0 0 0 1px rgba(0,0,0,.6);will-change:transform}
-.phone-screen{position:relative;overflow:hidden;border-radius:var(--r-xl);background:#000;aspect-ratio:9/16}
+.phone{--p:.4rem;position:relative;width:min(16.5rem,75%);margin-inline:auto;padding:var(--p);border-radius:calc(var(--r-xl) + var(--p));background:var(--device-metal);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.14),inset 0 1px 0 rgba(255,255,255,.22),0 35px 60px -20px rgba(0,0,0,.8);transform:translate3d(0,var(--hero-drift,0px),0) rotateX(var(--tilt-x,0deg)) rotateY(var(--tilt-y,0deg)) rotate(-4deg) scale(var(--hero-scale,1));transition:transform var(--dur-2) var(--ease-out)}
+.phone-screen{position:relative;overflow:hidden;border-radius:var(--r-xl);background:var(--media-black);aspect-ratio:9/16}
 .phone-screen video,.phone-screen img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .phone-scrim{position:absolute;inset:0;z-index:2;background:linear-gradient(180deg,rgba(0,0,0,.4) 0%,transparent 22%,transparent 60%,rgba(0,0,0,.85) 100%)}
-.phone-pill{position:absolute;top:.7rem;left:50%;width:5rem;height:1.35rem;margin-left:-2.5rem;background:#000;border-radius:var(--r-pill);z-index:3}
+.phone-pill{position:absolute;top:.7rem;left:50%;width:5rem;height:1.35rem;margin-left:-2.5rem;background:var(--media-black);border-radius:var(--r-pill);z-index:3}
 .phone-stat{position:absolute;left:0;right:0;bottom:1.4rem;text-align:center;z-index:3}
 .phone-stat b{display:block;font-size:2.6rem;font-weight:700;line-height:1;letter-spacing:-.04em;font-variant-numeric:tabular-nums;color:var(--ink)}
 .phone-stat span{font-size:.7rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
+.hero-play{position:absolute;inset:0;width:100%;height:100%;z-index:4;background:transparent;border:0;border-radius:inherit;cursor:pointer}
+.hero-play::after{content:'↗';position:absolute;right:12px;top:12px;display:grid;place-items:center;width:44px;height:44px;border-radius:var(--r-pill);color:var(--ink);background:var(--media-glass);border:1px solid var(--hairline-strong);transition:transform var(--dur-2) var(--ease-out)}
+.hero-play:hover::after{transform:rotate(45deg)}
+.stage-label{position:absolute;top:1rem;left:1.3rem;right:1.3rem;display:flex;justify-content:space-between;color:var(--muted);font-size:.6rem;letter-spacing:.13em;text-transform:uppercase}
+.stage-footer{display:flex;align-items:center;justify-content:space-between;gap:1rem;min-height:calc(45px + .9rem);margin-top:2rem;padding-top:.9rem;border-top:1px solid var(--hairline)}
+.stage-footer p{font-size:.78rem;font-weight:600;color:var(--ink);line-height:1.5}.stage-footer p span{display:block;color:var(--muted);font-size:.7rem;font-weight:400}
+.hero-bottom{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-top:clamp(2rem,6vh,5rem);border-top:1px solid var(--hairline);padding-top:1rem;font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.hero-bottom a{display:inline-flex;align-items:center;gap:1rem;min-height:44px}.hero-bottom a span{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;border:1px solid var(--hairline-strong);font-size:1rem;transition:transform var(--dur-2) var(--ease-out)}
+.hero-bottom a:hover span{transform:translateY(3px)}
 
 /* ── section heads: 7/5 editorial split ── */
 .head{align-items:end;row-gap:1.25rem;margin-bottom:clamp(2rem,4vw,3.5rem)}
@@ -230,6 +240,9 @@
 
 /* ── launches (gallery itself lives in site.css) ── */
 .launch-cta{margin-top:2.5rem}
+.cinema-stage{transform:scale(var(--cinema-scale,1));transform-origin:50% 55%}
+#launches{background:var(--canvas-2)}
+#launches .launch-feature{border-radius:var(--r-xl)}
 
 /* ── services: lockup + intro, then four equal cards ── */
 .svc-top{align-items:center;row-gap:2rem;margin-bottom:clamp(2rem,4vw,3rem)}
@@ -239,7 +252,11 @@
 .lockup small{display:block;margin-top:1rem;font-size:var(--t-caption);color:var(--muted)}
 .svc-intro{grid-column:7 / span 6}
 .cards4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--gutter)}
-.cards4 .card{display:flex;flex-direction:column}
+.cards4{counter-reset:service}
+.cards4 .card{display:flex;flex-direction:column;position:relative;counter-increment:service;transition:transform var(--dur-2) var(--ease-out),border-color var(--dur-2) var(--ease-out),background var(--dur-2) var(--ease-out)}
+.cards4 .card::before{content:counter(service,decimal-leading-zero);font-size:.7rem;font-variant-numeric:tabular-nums;letter-spacing:.08em;color:var(--muted);margin-bottom:2.7rem}
+.cards4 .card:hover,.cards4 .card:focus-within{transform:translateY(-5px);background:var(--surface-2);border-color:var(--hairline-strong)}
+.cards4 .arrow-link{color:var(--ink);font-size:.85rem}
 .cards4 h3{margin-bottom:.5rem}
 .cards4 p{font-size:.95rem;line-height:1.6;color:var(--body)}
 .cards4 .arrow-link{margin-top:auto;padding-top:.8rem}
@@ -248,10 +265,10 @@
 
 /* ── how: a numbered line, not another card grid ── */
 .steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--gutter);position:relative;counter-reset:s}
-.steps::before{content:'';position:absolute;left:0;right:0;top:20px;height:1px;background:linear-gradient(90deg,var(--gold-bronze),rgba(199,162,75,.15))}
+.steps::before{content:'';position:absolute;left:0;right:0;top:20px;height:1px;background:var(--hairline-strong)}
 .steps li{position:relative;padding-top:3.4rem}
 .steps li::before{counter-increment:s;content:'0' counter(s);position:absolute;top:0;left:0;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;
-  font-size:.8rem;font-weight:600;font-variant-numeric:tabular-nums;color:var(--on-gold);background:var(--gold-metal);box-shadow:var(--gold-edge)}
+  font-size:.8rem;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink);background:var(--surface);border:1px solid var(--hairline-strong)}
 .steps h3{margin-bottom:.45rem}
 .steps p{font-size:.95rem;line-height:1.6;color:var(--body);max-width:30ch}
 .platforms{margin-top:2.5rem;font-size:var(--t-caption);color:var(--muted)}
@@ -285,10 +302,11 @@
 .guarantee .btn-row{justify-content:center}
 
 /* ── pricing: toggle + crossfading panels in one grid cell (no layout shift) ── */
-.seg{display:inline-flex;padding:4px;border-radius:var(--r-pill);background:rgba(255,255,255,.05);border:1px solid var(--hairline)}
+.seg{display:inline-grid;grid-template-columns:1fr 1fr;position:relative;isolation:isolate;padding:4px;border-radius:var(--r-pill);background:rgba(255,255,255,.05);border:1px solid var(--hairline)}
+.seg::before{content:'';position:absolute;z-index:-1;top:4px;bottom:4px;left:4px;width:calc(50% - 4px);border-radius:var(--r-pill);background:var(--surface-2);box-shadow:var(--glass-highlight);transform:translateX(calc(var(--selected-tab,0) * 100%));transition:transform var(--dur-2) var(--ease-out)}
 .seg button{min-height:44px;padding:0 1.2rem;border:0;border-radius:var(--r-pill);background:transparent;color:var(--body);font-size:.92rem;font-weight:600;cursor:pointer;
   transition:background var(--dur-1) var(--ease-out),color var(--dur-1) var(--ease-out)}
-.seg button[aria-selected="true"]{background:rgba(255,255,255,.1);color:var(--ink);box-shadow:var(--glass-highlight)}
+.seg button[aria-selected="true"]{color:var(--ink)}
 .panes{display:grid}
 .pane{grid-area:1 / 1;opacity:0;transition:opacity var(--dur-2) var(--ease-out)}
 .pane.is-on{opacity:1}
@@ -344,14 +362,17 @@
   .hero-copy{display:contents}
   .hero-copy > .kicker{grid-column:1 / -1;grid-row:1}
   .hero-title{grid-column:1;grid-row:2;align-self:center;margin:0}
-  .hero-media{grid-column:2;grid-row:2}
+  .hero-media{grid-column:2;grid-row:2;background:none;border:0;padding:0;align-self:center}
+  .stage-label,.stage-footer,.hero-bottom{display:none}
+  .stage-footer{display:flex;min-height:44px;margin-top:.6rem;padding:0;border:0;justify-content:center}
+  .stage-footer p{display:none}.stage-footer .preview-toggle{padding-inline:.55rem;font-size:.62rem;gap:.35rem;white-space:nowrap}
   .hero .lede{grid-column:1 / -1;grid-row:3}
   .hero .btn-row{grid-column:1 / -1;grid-row:4}
   .hero-note{grid-column:1 / -1;grid-row:5;margin-top:-.4rem}
   .hero .lede{max-width:none}
   .hero .btn-row{margin-top:0}
   .hero-grid{row-gap:1.4rem}
-  .phone{--p:.3rem}
+  .phone{--p:.3rem;width:100%;transform:none;transition:none}
   .phone-stat{display:none}  /* too small to read inside the mini phone; the guarantee has its own section */
   .phone-pill{width:3rem;height:.85rem;margin-left:-1.5rem;top:.45rem}
   .head > :first-child,.head > :last-child,.svc-intro,.lockup,.why-copy,.why-stats,.mission,.faq-side,.acc,.apply-copy,.apply-form,.price-foot > :first-child,.price-foot > :last-child{grid-column:1 / -1}
@@ -367,7 +388,7 @@
   .hero .btn-row > *{flex:1 1 100%}
   .hero-title{font-size:clamp(3rem,15vw,4.2rem)}
 }
-@media(prefers-reduced-motion:reduce){.hero-title .hl{animation:none}.pane{transition:none}}
+@media(prefers-reduced-motion:reduce){.hero-title .hl{animation:none}.pane,.cards4 .card,.phone,.hero-play::after,.seg::before{transition:none}.phone,.cinema-stage,.cards4 .card:hover{transform:none}}
 </style>
 </head>
 <body>
@@ -406,7 +427,7 @@
       <div class="hero-copy">
         <h1 class="kicker"><span><span class="nowrap">Short-form</span> video editing for podcasters, coaches &amp; founders</span></h1>
         <h2 class="display hero-title" id="hero-title"><span class="hl">Get</span><br><span class="hl gold-text">seen.</span></h2>
-        <p class="lede">BEJÚ Creative edits short-form video for podcasters, coaches and founders — cut for retention, not just views. We also make <a class="link" href="#launches">launch videos for SaaS, apps and product launches</a>.</p>
+        <p class="lede">Your footage. A sharper story. Short-form edits built to hold attention, and <a class="link" href="#launches">launch films for SaaS and apps</a>.</p>
         <div class="btn-row">
           <a class="btn-gold magnetic" href="#apply" data-need="Podcast clips">Get a free sample clip</a>
           <a class="btn-glass" href="#work">See our work</a>
@@ -414,6 +435,7 @@
         <p class="hero-note"><b>Free</b> · No commitment · Reply in 24h</p>
       </div>
       <div class="hero-media">
+        <div class="stage-label" aria-hidden="true"><span>BEJÚ / In the frame</span><span>01</span></div>
         <div class="phone" data-parallax>
           <div class="phone-screen">
             <!-- To change the hero clip, replace hero/hero.mp4 (+ hero-poster.jpg).
@@ -426,10 +448,13 @@
             <div class="phone-pill"></div>
             <div class="phone-scrim"></div>
             <div class="phone-stat"><b>2×</b><span>Views or you don't pay</span></div>
+            <button class="hero-play" type="button" data-lb="hero" data-src="hero/hero.mp4" data-poster="hero/hero-poster.jpg" data-title="The Edit Effect — BEJÚ showreel" aria-label="Watch The Edit Effect — BEJÚ showreel"></button>
           </div>
         </div>
+        <div class="stage-footer"><p>The Edit Effect<span>BEJÚ showreel · Tap to play</span></p><button class="preview-toggle" type="button" data-preview-toggle aria-pressed="false" hidden>Pause previews</button></div>
       </div>
     </div>
+    <div class="wrap hero-bottom"><span>Short-form · Podcasts · Product films</span><a href="#work">Explore the work <span aria-hidden="true">↓</span></a></div>
   </section>
 
   <!-- ══ WORK ══ -->
@@ -437,7 +462,7 @@
     <div class="wrap g12 head">
       <div>
         <p class="kicker rv">Our work</p>
-        <h2 class="display grad rv" id="work-title" data-lr>The clips<br>never stop</h2>
+        <h2 class="display grad rv" id="work-title" data-lr>Made to be<br>watched.</h2>
       </div>
       <div class="rv">
         <p class="caption">Podcast clips, personal brands and ads. Tap any clip to watch it full screen.</p>
@@ -446,6 +471,15 @@
           <button class="glass" type="button" data-rail-next="rail" aria-label="Next clips"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button>
         </div>
       </div>
+    </div>
+    <div class="wrap gallery-tools" hidden data-gallery-tools>
+      <div class="gallery-filters" role="group" aria-label="Filter selected work">
+        <button type="button" data-filter="all" aria-pressed="true">All work</button>
+        <button type="button" data-filter="podcast" aria-pressed="false">Podcasts</button>
+        <button type="button" data-filter="brand" aria-pressed="false">Brands</button>
+        <button type="button" data-filter="ad" aria-pressed="false">Ads</button>
+      </div>
+      <button class="preview-toggle" type="button" data-preview-toggle aria-pressed="false" hidden>Pause previews</button>
     </div>
     <!-- To add a clip: run it through scripts/optimize-video.sh, then copy one of the
          buttons below and set --ar to the clip's width/height. See work/README.txt. -->
@@ -478,6 +512,7 @@
         <img src="rail-08.jpg" alt="" loading="lazy" decoding="async"><video muted loop playsinline preload="none" data-start="6" data-inview aria-hidden="true"><source src="rail-08.mp4" type="video/mp4"></video>
         <span class="chip">Ad</span><span class="cap">Software Ad</span></button>
     </div>
+    <div class="wrap gallery-foot"><p class="gallery-status" aria-live="polite" data-gallery-status>9 selected films · Drag to explore</p><div class="rail-progress" aria-hidden="true"><span data-rail-progress="rail"></span></div></div>
   </section>
 
   <!-- ══ LAUNCHES ══ -->
@@ -490,9 +525,11 @@
         </div>
         <p class="body rv">Short, cinematic launch films that show what your product does — for your launch post, landing page and socials.</p>
       </div>
+      <div class="cinema-stage" data-cinema>
       <button class="launch-feature frame playable rv" type="button" style="--ar:16/9" data-lb="launch" data-src="launch/launch-01.mp4" data-poster="launch/launch-01.jpg" data-title="Mac app launch">
         <img src="launch/launch-01.jpg" alt="" loading="lazy" decoding="async"><video muted loop playsinline preload="none" data-inview aria-hidden="true"><source src="launch/launch-01.mp4" type="video/mp4"></video>
         <span class="chip">Mac app launch</span><span class="watch">Watch with sound</span></button>
+      </div>
       <p class="launch-meta caption rv"><span><b>Mac app launch</b> · 16:9 · 25 s</span></p>
       <div class="launch-two">
         <button class="frame playable rv" type="button" style="--ar:16/9;--grow:1.7778" data-lb="launch" data-src="launch/launch-02.mp4" data-poster="launch/launch-02.jpg" data-title="AI marketing tool launch">

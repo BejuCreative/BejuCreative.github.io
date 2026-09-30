@@ -24,6 +24,7 @@
       }
     }
     if (parallax) parallax();
+    if (cinemaMotion) cinemaMotion();
     lastY = y; ticking = false;
   }
   w.addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(onScroll); } }, { passive: true });
@@ -111,7 +112,9 @@
      copy aria-hidden) and the original markup is restored once the lines land. */
   function splitLines(h) {
     if ($$('*', h).some(function (n) { return n.tagName !== 'BR'; })) { h.classList.add('rv-wait'); return; }
-    var html = h.innerHTML, text = h.textContent.replace(/\s+/g, ' ').trim();
+    var html = h.innerHTML, accessibleCopy = h.cloneNode(true);
+    $$('br', accessibleCopy).forEach(function (br) { br.replaceWith(d.createTextNode(' ')); });
+    var text = accessibleCopy.textContent.replace(/\s+/g, ' ').trim();
     var parts = html.split(/<br\s*\/?>/i), words = [];
     h.innerHTML = parts.map(function (p, pi) {
       return p.trim().split(/\s+/).filter(Boolean).map(function (wd) { return '<span class="lr-w">' + wd + '</span>'; }).join(' ') + (pi < parts.length - 1 ? '<br>' : '');
@@ -170,15 +173,45 @@
     if (v.readyState >= 1) go();
     v.addEventListener('loadedmetadata', go); v.addEventListener('playing', go);
   }
+  var previewsPaused = reduce, visibleClips = new Set(), clipsReady = false;
+  try { previewsPaused = reduce || sessionStorage.getItem('beju-previews-paused') === 'true'; } catch (e) {}
+  function syncClip(v) {
+    if (!clipsReady || previewsPaused || d.hidden || (lb && lb.open) || !visibleClips.has(v) || v.closest('[hidden]')) { v.pause(); return; }
+    v.preload = 'auto'; seekStart(v); var play = v.play(); play && play.catch(function () {});
+  }
+  function syncPreviews() {
+    $$('video[data-inview]').forEach(syncClip);
+    $$('[data-preview-toggle]').forEach(function (b) {
+      b.hidden = false; b.setAttribute('aria-pressed', String(previewsPaused));
+      b.textContent = previewsPaused ? 'Play previews' : 'Pause previews';
+    });
+  }
+  // Article pages get a local control next to their media, using the same preference.
+  if (!$$('[data-preview-toggle]').length && $('video[data-inview]')) {
+    var media = $('.svc-media, .launch-meta');
+    if (media) { var control = d.createElement('button'); control.type = 'button'; control.className = 'preview-toggle'; control.setAttribute('data-preview-toggle', ''); media.after(control); }
+  }
+  $$('[data-preview-toggle]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      previewsPaused = !previewsPaused;
+      try { sessionStorage.setItem('beju-previews-paused', String(previewsPaused)); } catch (e) {}
+      syncPreviews();
+    });
+  });
+  syncPreviews();
+  d.addEventListener('visibilitychange', syncPreviews);
+
   // Starts only after the page has loaded and painted, so no clip download competes with
   // the first screen. Under reduced motion nothing autoplays: the stills stay.
   function startClips() {
-    if (!io || reduce) return;
+    if (!io) return;
+    clipsReady = true;
     var vObs = new IntersectionObserver(function (es) {
       es.forEach(function (e) {
         var v = e.target;
-        if (e.isIntersecting && !d.hidden) { v.preload = 'auto'; seekStart(v); var p = v.play(); p && p.catch(function () {}); }
-        else v.pause();
+        if (e.isIntersecting && e.intersectionRatio >= 0.5) visibleClips.add(v);
+        else visibleClips.delete(v);
+        syncClip(v);
       });
     }, { threshold: 0.5 });
     $$('video[data-inview]').forEach(function (v) {
@@ -215,7 +248,7 @@
     $('.lb-close', lb).addEventListener('click', closeLb);
     $('.lb-prev', lb).addEventListener('click', function () { stepLb(-1); });
     $('.lb-next', lb).addEventListener('click', function () { stepLb(1); });
-    lb.addEventListener('close', function () { lbVideo.pause(); lbVideo.removeAttribute('src'); lbVideo.load(); opener && opener.focus({ preventScroll: true }); });
+    lb.addEventListener('close', function () { lbVideo.pause(); lbVideo.removeAttribute('src'); lbVideo.load(); opener && opener.focus({ preventScroll: true }); syncPreviews(); });
     lb.addEventListener('click', function (e) { if (e.target === lb || e.target.classList.contains('lb-stage')) closeLb(); });
     lb.addEventListener('keydown', function (e) { if (e.key === 'ArrowLeft') stepLb(-1); if (e.key === 'ArrowRight') stepLb(1); });
     var sx = null;
@@ -242,7 +275,7 @@
       if (!lb) buildLb();
       opener = el;
       var g = el.getAttribute('data-lb');
-      lbItems = $$('[data-lb="' + g + '"]'); lbIndex = lbItems.indexOf(el);
+      lbItems = $$('[data-lb="' + g + '"]').filter(function (it) { return !it.hidden; }); lbIndex = lbItems.indexOf(el);
       if (typeof lb.showModal === 'function') lb.showModal(); else lb.setAttribute('open', '');
       $$('video[data-inview]').forEach(function (v) { v.pause(); });
       showLb();
@@ -252,14 +285,16 @@
   /* ── Rail: native scroll + snap for touch/trackpad; mouse drag with momentum ── */
   $$('[data-rail]').forEach(function (rail) {
     var prev = $('[data-rail-prev="' + rail.id + '"]'), next = $('[data-rail-next="' + rail.id + '"]');
-    var step = function () { var c = rail.firstElementChild; return c ? c.getBoundingClientRect().width + 16 : 320; };
+    var step = function () { var c = Array.prototype.find.call(rail.children, function (el) { return !el.hidden; }); return c ? c.getBoundingClientRect().width + 16 : 320; };
     prev && prev.addEventListener('click', function () { rail.scrollBy({ left: -step(), behavior: reduce ? 'auto' : 'smooth' }); });
     next && next.addEventListener('click', function () { rail.scrollBy({ left: step(), behavior: reduce ? 'auto' : 'smooth' }); });
     var sync = function () {
       var max = rail.scrollWidth - rail.clientWidth - 2;
       if (prev) prev.disabled = rail.scrollLeft <= 2; if (next) next.disabled = rail.scrollLeft >= max;
+      var progress = $('[data-rail-progress="' + rail.id + '"]');
+      if (progress) progress.style.setProperty('--rail-progress', max <= 0 ? 1 : Math.min(1, (rail.scrollLeft + rail.clientWidth) / rail.scrollWidth));
     };
-    rail.addEventListener('scroll', sync, { passive: true }); w.addEventListener('resize', sync); sync();
+    rail.addEventListener('scroll', sync, { passive: true }); rail.addEventListener('gallerychange', sync); w.addEventListener('resize', sync); sync();
     if (!finePointer) return;
     var down = false, x0 = 0, s0 = 0, lastX = 0, lastT = 0, vel = 0, moved = 0, raf = 0;
     rail.addEventListener('pointerdown', function (e) {
@@ -282,6 +317,41 @@
       })();
     });
   });
+
+  /* Selected-work filters keep the original film order and lightbox navigation. */
+  var workRail = $('#rail'), galleryTools = $('[data-gallery-tools]');
+  if (workRail && galleryTools) {
+    galleryTools.hidden = false;
+    var films = $$('.clip', workRail), filters = $$('[data-filter]', galleryTools);
+    filters.forEach(function (button) {
+      button.addEventListener('click', function () {
+        var category = button.dataset.filter, shown = 0;
+        filters.forEach(function (b) { b.setAttribute('aria-pressed', String(b === button)); });
+        films.forEach(function (film) {
+          var chip = $('.chip', film), matches = category === 'all' || (chip && chip.textContent.trim().toLowerCase() === category);
+          film.hidden = !matches;
+          if (matches) {
+            shown++;
+            if (!reduce && film.animate) film.animate([{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { duration: 400, delay: (shown - 1) * 35, easing: 'cubic-bezier(.16,1,.3,1)' });
+          } else { var v = $('video', film); if (v) { visibleClips.delete(v); v.pause(); } }
+        });
+        workRail.scrollLeft = 0; workRail.dispatchEvent(new Event('gallerychange'));
+        var status = $('[data-gallery-status]'); if (status) status.textContent = shown + ' selected film' + (shown === 1 ? '' : 's') + ' · Drag to explore';
+      });
+    });
+  }
+
+  /* The nav highlights the chapter currently being read. */
+  if (io && nav) {
+    var chapterLinks = $$('.nav-links a[href^="#"]'), chapters = chapterLinks.map(function (a) { return $(a.getAttribute('href')); }).filter(Boolean);
+    var chapterObs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        chapterLinks.forEach(function (a) { if (a.hash === '#' + entry.target.id) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current'); });
+      });
+    }, { rootMargin: '-15% 0px -65% 0px' });
+    chapters.forEach(function (section) { chapterObs.observe(section); });
+  }
 
   /* ── Primary CTA: subtle magnetic pull, desktop only, ≤ 6 px, no bounce ── */
   if (finePointer && !reduce) {
@@ -325,19 +395,40 @@
 
   /* ── Hero: video frame drifts and scales ≤ 1.05 as the hero scrolls out ── */
   var heroMedia = $('[data-parallax]'), parallax = null;
-  if (heroMedia && !reduce) {
+  if (heroMedia && !reduce && finePointer) {
     var hero = heroMedia.closest('section');
     parallax = function () {
+      if (w.innerWidth <= 900) { heroMedia.style.removeProperty('--hero-drift'); heroMedia.style.removeProperty('--hero-scale'); return; }
       var h = hero.offsetHeight, y = w.scrollY; if (y > h) return;
       var p = Math.max(0, Math.min(1, y / h));
-      heroMedia.style.transform = 'translate3d(0,' + (p * -48).toFixed(1) + 'px,0) scale(' + (1 + p * 0.05).toFixed(4) + ')';
+      heroMedia.style.setProperty('--hero-drift', (p * -32).toFixed(1) + 'px');
+      heroMedia.style.setProperty('--hero-scale', (1 + p * 0.035).toFixed(4));
+    };
+    var stage = heroMedia.closest('.hero-media');
+    stage.addEventListener('pointermove', function (e) {
+      if (w.innerWidth <= 900) return;
+      var r = stage.getBoundingClientRect();
+      heroMedia.style.setProperty('--tilt-x', ((0.5 - (e.clientY - r.top) / r.height) * 5).toFixed(2) + 'deg');
+      heroMedia.style.setProperty('--tilt-y', (((e.clientX - r.left) / r.width - 0.5) * 7).toFixed(2) + 'deg');
+    });
+    stage.addEventListener('pointerleave', function () { heroMedia.style.removeProperty('--tilt-x'); heroMedia.style.removeProperty('--tilt-y'); });
+  }
+  var cinemaMotion = null, cinema = $('[data-cinema]');
+  if (cinema && !reduce && finePointer) {
+    cinemaMotion = function () {
+      if (w.innerWidth <= 900) { cinema.style.removeProperty('--cinema-scale'); return; }
+      var r = cinema.getBoundingClientRect(); if (r.bottom < 0 || r.top > w.innerHeight) return;
+      var p = Math.max(0, Math.min(1, (w.innerHeight - r.top) / (w.innerHeight * .75)));
+      cinema.style.setProperty('--cinema-scale', (.94 + .06 * p).toFixed(4));
     };
   }
+  w.addEventListener('resize', onScroll, { passive: true });
 
   /* ── Pricing toggle: crossfade, no layout shift (panels share one grid cell) ── */
   $$('[data-toggle]').forEach(function (grp) {
     var tabs = $$('[role="tab"]', grp), panels = $$('[data-panel]', d.getElementById(grp.getAttribute('data-toggle')));
     var pick = function (i, focus) {
+      grp.style.setProperty('--selected-tab', i);
       tabs.forEach(function (t, j) { t.setAttribute('aria-selected', String(i === j)); t.tabIndex = i === j ? 0 : -1; });
       panels.forEach(function (p, j) { var on = i === j; p.classList.toggle('is-on', on); p.setAttribute('aria-hidden', String(!on)); if (on) p.removeAttribute('inert'); else p.setAttribute('inert', ''); });
       if (focus) tabs[i].focus();
