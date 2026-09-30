@@ -20,7 +20,10 @@ Lighthouse 95+ with one standout effect allowed.
   claims light up in turn and the matching reel lifts into focus and plays. Native scrolling (no
   scroll-jacking), one reel decoding at a time, paused by the preview preference, hidden tabs and
   the player. With reduced motion (or without JS) it is a still, already-open fan.
-- The gallery caption and arrows now sit under the showcase, above the filters (text unchanged).
+- The gallery caption and arrows now sit under the showcase, above the filters.
+- **Launch videos are in the gallery** (Benas's request): the three launch films close out
+  "All work" and get their own **Launches** filter. On phones the five filters stay on one
+  row (fits from 390 px; scrolls sideways with an edge fade on smaller phones).
 - The nav chapter highlight clears in sections that aren't nav chapters (it used to stay on the
   last chapter while reading e.g. Services).
 - This supersedes Astra's "no scroll pinning" rule for this one section only (owner's choice).
@@ -35,6 +38,10 @@ Lighthouse 95+ with one standout effect allowed.
 - New showcase lines: "Hooks that stop the scroll." · "Captions people actually read." ·
   "Cut for retention, not just views." (the last is the phrase from the original hero intro).
 - New on phones/tablets: a "Watch" label on the hero phone (the button's name is unchanged).
+- Gallery caption: "Podcast clips, personal brands and ads. Tap any clip to watch it full screen."
+  → "Podcast clips, personal brands, ads and launch videos. Tap any clip to watch it full screen."
+  New filter label "Launches"; the three clips reuse their existing titles with a "Launch" chip;
+  gallery count "9 selected films" → "12 selected films".
 - Hero pause control on phones is icon-only; its accessible name ("Pause previews"/"Play previews")
   is unchanged. Showcase cards reuse the existing clip titles and chips. Nothing else changed:
   prices, claims, guarantee, testimonials, client names, form mapping and SEO metadata are intact.

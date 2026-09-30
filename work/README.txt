@@ -19,7 +19,7 @@ ADD A CLIP (two steps)
      - style="--ar:W/H"   the clip's real width/height (e.g. 720/1280)
      - data-src / data-poster / <img src> / <source src>   → your files
        (the still is a lazy <img> under the video — don't add a poster= attribute)
-     - data-title, the chip (Podcast / Brand / Ad) and the caption
+     - data-title, the chip (Podcast / Brand / Ad / Launch — this is also its filter) and the caption
    The full-screen player plays every clip with its sound.
    Order in the HTML = order on the page.
 

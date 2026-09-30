@@ -296,8 +296,9 @@ white-to-silver sheen, like brushed metal, and stay above 12:1 contrast.
 - **Preview controls:** pause/play all inline clips, separate from lightbox playback.
   The preference persists for the browser session. Reduced motion starts paused; explicit
   play is still available. Hidden tabs, off-screen clips and open lightboxes pause previews.
-- **Selected work:** All work / Podcasts / Brands / Ads filters use the existing visible
-  clip categories. Filtering preserves source order, updates the result count and restricts
+- **Selected work:** All work / Podcasts / Brands / Ads / Launches filters use the visible
+  clip categories (the chip text: Podcast, Brand, Ad, Launch). On phones the filter row stays
+  one line and scrolls sideways, with a right-edge fade until the end is reached. Filtering preserves source order, updates the result count and restricts
   lightbox next/previous to the displayed set. Without JS the full gallery stays visible.
   Entry animations use opacity + 12px translation over 400ms, with a 35ms stagger.
 - **Rail progress:** a two-pixel track shows the viewed portion of the gallery using scaleX.

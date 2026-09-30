@@ -326,9 +326,18 @@
   if (workRail && galleryTools) {
     galleryTools.hidden = false;
     var films = $$('.clip', workRail), filters = $$('[data-filter]', galleryTools);
+    // phones: the filter row scrolls sideways; a fade on the right says there is more until the end
+    var fbar = $('.gallery-filters', galleryTools);
+    var fsync = function () {
+      var over = fbar.scrollWidth > fbar.clientWidth + 2;
+      fbar.classList.toggle('is-scrollable', over);
+      fbar.classList.toggle('at-end', !over || fbar.scrollLeft + fbar.clientWidth >= fbar.scrollWidth - 2);
+    };
+    fbar.addEventListener('scroll', fsync, { passive: true }); w.addEventListener('resize', fsync, { passive: true }); fsync();
     filters.forEach(function (button) {
       button.addEventListener('click', function () {
         var category = button.dataset.filter, shown = 0;
+        if (fbar.scrollWidth > fbar.clientWidth + 2) fbar.scrollTo({ left: button.offsetLeft - (fbar.clientWidth - button.offsetWidth) / 2, behavior: reduce ? 'auto' : 'smooth' });
         filters.forEach(function (b) { b.setAttribute('aria-pressed', String(b === button)); });
         films.forEach(function (film) {
           var chip = $('.chip', film), matches = category === 'all' || (chip && chip.textContent.trim().toLowerCase() === category);
