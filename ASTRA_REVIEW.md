@@ -1,7 +1,61 @@
 # Astra website refinement
 
 Branch: `polish/astra`, based on Claude's completed `polish/flagship` at `c3fb516`.
+Latest: `polish/bold` (round 3, below) is based on `polish/astra`.
 Preview: http://localhost:8767/
+
+## Round 3 — Claude: bold key moments (branch `polish/bold`, 2026-09-30)
+
+Based on `polish/astra` at `fdc90d7`; commit `b9e48da`. Benas's choices: bold key moments,
+keep the phone hero but make it premium, one signature moment (a scroll showcase), stay around
+Lighthouse 95+ with one standout effect allowed.
+
+**What changed**
+- **Premium hero phone:** side buttons, a warm rim catching the gold light, a gold floor glow and
+  one glare sweep across the glass after load. The permanent ↗ icon that sat on the footage (and
+  overlapped the screen on phones) is replaced by a play disc that appears on hover/focus. Phones:
+  the pause control is a 44px icon on the device corner, a small "Watch" label sits on the screen,
+  and the two hero buttons share the dock (no empty glass strip at tablet width).
+- **Scroll showcase** at the top of Our work: a deck of five reels fans out as you scroll; three
+  claims light up in turn and the matching reel lifts into focus and plays. Native scrolling (no
+  scroll-jacking), one reel decoding at a time, paused by the preview preference, hidden tabs and
+  the player. With reduced motion (or without JS) it is a still, already-open fan.
+- The gallery caption and arrows now sit under the showcase, above the filters (text unchanged).
+- The nav chapter highlight clears in sections that aren't nav chapters (it used to stay on the
+  last chapter while reading e.g. Services).
+- This supersedes Astra's "no scroll pinning" rule for this one section only (owner's choice).
+
+**Bugs caught and fixed while building it**
+- The showcase's scroll track sat over the gallery and swallowed clicks on the filters and arrows
+  (found because Astra's test hung). Only the copy and the reels take clicks now.
+- The fanned cards overlapped as click targets (Lighthouse accessibility 97). Only the reel in
+  focus is a target now; the others are inert and every clip is still in the gallery below.
+
+**Copy changes**
+- New showcase lines: "Hooks that stop the scroll." · "Captions people actually read." ·
+  "Cut for retention, not just views." (the last is the phrase from the original hero intro).
+- New on phones/tablets: a "Watch" label on the hero phone (the button's name is unchanged).
+- Hero pause control on phones is icon-only; its accessible name ("Pause previews"/"Play previews")
+  is unchanged. Showcase cards reuse the existing clip titles and chips. Nothing else changed:
+  prices, claims, guarantee, testimonials, client names, form mapping and SEO metadata are intact.
+
+**Verification (local lab, GitHub-Pages simulation)**
+- Lighthouse: all six indexable pages **100 / 100 / 100 / 100** on mobile and desktop; homepage
+  mobile LCP **1.73 s** (same as Astra's pass), **0** layout shift, **0 ms** blocking time.
+  Welcome and 404 stay lower on SEO only because they are `noindex` on purpose.
+- Full capture: 8 pages × 10 widths (320–2560) × Chrome + WebKit = **160 runs, 0 issues**
+  (overflow, headline widows and split words, console errors, 404s, touch targets, labels,
+  duplicate IDs, dead anchors, line length, row alignment, font weights).
+  Screenshots: `~/Desktop/BEJU redesign screenshots/bold/` (full-page shots show the showcase in its
+  still, open state; the pinned animation can only be seen live).
+- New showcase suite `showcase-check.cjs`: **99/99** in Chrome, WebKit and Firefox (desktop, phone,
+  reduced motion): opening, beats, one playing reel, player with sound, pause preference,
+  clickable gallery underneath, gap under the fan, inert targets, keyboard focus kept while scrolling.
+- Astra's suite `astra-check.cjs`: passes in all three engines. Functional suite: **129/129**.
+  `check-seo.mjs`, `node --check site.js` and `git diff --check` pass.
+
+**Still needs Benas**: visual approval (especially the showcase, live), a real-iPhone check,
+launch-film terms review, and explicit approval before anything is merged or published.
 
 ## Direction
 
