@@ -292,7 +292,8 @@ white-to-silver sheen, like brushed metal, and stay above 12:1 contrast.
 
 - **Performance offer (2026-10-01, local review):** keep “Get seen.” and place a compact
   glass-style guarantee panel directly below it. Use existing `--glass-bar` and edge
-  tokens with `--r-xl`; no extra live blur. The two-line text uses `--ink` / `--body`
+  tokens with `--r-xl` plus `--offer-glow` (22px, -5px spread, 14% gold opacity), a faint
+  static halo; no pulsing or extra live blur. The two-line text uses `--ink` / `--body`
   at 1.1–1.4rem, subordinate to the gold hero. Its 44px “How it works · terms apply”
   link uses `--muted`, brightening to `--ink` on hover/focus.
   No explanatory paragraph in the hero. The link opens a compact, olive-surface native
