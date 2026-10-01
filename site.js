@@ -55,6 +55,35 @@
     });
   }
 
+  /* ── Hero offer: native dialog; the link falls back to the rules without JS ── */
+  var offerLink = $('[data-offer-details]'), offerDialog = $('#offer-details');
+  if (offerLink && offerDialog && typeof offerDialog.showModal === 'function') {
+    offerLink.setAttribute('aria-haspopup', 'dialog');
+    offerLink.setAttribute('aria-controls', 'offer-details');
+    offerLink.addEventListener('click', function (e) {
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      offerDialog.showModal();
+      d.body.classList.add('offer-open');
+    });
+    $('.offer-close', offerDialog).addEventListener('click', function () { offerDialog.close(); });
+    offerDialog.addEventListener('keydown', function (e) {
+      if (e.key !== 'Tab') return;
+      e.preventDefault();
+      var items = $$('button,a[href]', offerDialog), i = items.indexOf(d.activeElement);
+      items[(i + (e.shiftKey ? -1 : 1) + items.length) % items.length].focus();
+    });
+    offerDialog.addEventListener('click', function (e) {
+      if (e.target !== offerDialog) return;
+      var r = offerDialog.getBoundingClientRect();
+      if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) offerDialog.close();
+    });
+    offerDialog.addEventListener('close', function () {
+      d.body.classList.remove('offer-open');
+      offerLink.focus({ preventScroll: true });
+    });
+  }
+
   /* ── In-page links: GSAP ScrollToPlugin drives the scroll. CSS scroll-behavior:smooth
        is banned here: it fought ScrollTrigger refreshes and nav links stalled. ── */
   d.addEventListener('click', function (e) {

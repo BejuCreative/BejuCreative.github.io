@@ -236,8 +236,19 @@
 .hero .lede{max-width:36ch;font-size:clamp(1rem,1.35vw,1.15rem);line-height:1.6;letter-spacing:-.015em}
 .hero-offer{max-width:37rem}
 .hero-offer strong{display:block;font-size:clamp(1.25rem,2vw,1.7rem);font-weight:600;line-height:1.25;letter-spacing:-.025em;color:var(--gold-solid);text-wrap:balance}
-.hero-offer .caption{margin-top:.8rem;max-width:49ch;color:var(--body)}
 .hero-offer .link{display:inline-flex;align-items:center;min-height:44px;font-size:.85rem}
+.offer-dialog{position:fixed;inset:0;margin:auto;width:min(32rem,calc(100% - 2rem));max-height:calc(100dvh - 2rem);padding:clamp(1.5rem,4vw,2rem);overflow:auto;overscroll-behavior:contain;border:1px solid var(--hairline-strong);border-radius:var(--r-xl);background:var(--surface);color:var(--body);box-shadow:var(--shadow-float)}
+.offer-dialog::backdrop{background:var(--sheet-fill);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.offer-dialog[open]{animation:offer-in var(--dur-1) var(--ease-out)}
+.offer-dialog header{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.75rem}
+.offer-dialog h2{font-size:1.5rem;font-weight:600;letter-spacing:-.025em;color:var(--ink)}
+.offer-dialog .offer-close{flex-shrink:0}
+.offer-dialog ol{display:grid;gap:1rem;margin:1.5rem 0;padding:0;list-style:none;font-size:.9rem;line-height:1.6}
+.offer-dialog li b{display:block;color:var(--ink);font-weight:600;margin-bottom:.2rem}
+.offer-dialog > .link{display:inline-flex;align-items:center;min-height:44px;font-size:.9rem}
+body.offer-open{overflow:hidden}
+@keyframes offer-in{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.offer-dialog[open]{animation:none}}
 .hero .btn-row{margin-top:1.8rem;display:inline-flex;padding:6px;gap:4px;border:1px solid var(--hairline-strong);border-radius:var(--r-xl);background:var(--glass-bar);box-shadow:var(--glass-bar-edge),var(--shadow-float);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);position:relative;isolation:isolate}
 .hero .btn-row::before{content:'';position:absolute;inset:0;pointer-events:none;border-radius:inherit;box-shadow:inset 0 1px 0 rgba(255,255,255,.22);opacity:0;transition:opacity var(--dur-2) var(--ease-out)}
 .hero .btn-row:hover::before,.hero .btn-row:focus-within::before{opacity:1}
@@ -549,8 +560,7 @@
         <h2 class="display hero-title" id="hero-title"><span class="hl">Get</span><br><span class="hl gold-text">seen.</span></h2>
         <div class="hero-offer">
           <strong>Double your average views.<br>Or your money back.</strong>
-          <p class="caption">On qualifying short-form packages. Your package must average 2× the baseline agreed before payment, measured over each clip’s first 30 days. Post within 14 days of delivery, or follow the larger-package schedule agreed before payment.</p>
-          <a class="link" href="#guarantee">How the performance guarantee works</a>
+          <a class="link" href="#guarantee" data-offer-details>How it works · terms apply <span aria-hidden="true">&nbsp;↗</span></a>
         </div>
         <div class="btn-row">
           <a class="btn-gold magnetic" href="#apply" data-need="Podcast clips">Get a free sample clip</a>
@@ -579,6 +589,20 @@
     </div>
     <div class="wrap hero-bottom"><a href="#work">Explore the work <span aria-hidden="true">↓</span></a></div>
   </section>
+
+  <dialog class="offer-dialog" id="offer-details" aria-labelledby="offer-details-title" aria-describedby="offer-details-intro">
+    <header>
+      <h2 id="offer-details-title">The 2× guarantee</h2>
+      <button class="lb-btn offer-close" type="button" aria-label="Close guarantee details" autofocus><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+    </header>
+    <p class="caption" id="offer-details-intro">For qualifying paid short-form packages. Long-form edits and launch films are excluded.</p>
+    <ol>
+      <li><b>01 · Agree your baseline</b>Before payment, we record the average first-30-day organic views of your previous 10 comparable clips—or five if fewer are available—on one account and platform.</li>
+      <li><b>02 · Post. Then measure.</b>Post within 14 days of delivery, or follow your agreed larger-package schedule. Keep clips public, unchanged and unboosted. We measure the package average over each clip’s first 30 days.</li>
+      <li><b>03 · Miss 2×? Your money back.</b>If the package average misses twice your baseline, claim the full package payment back with all clip analytics within seven days after the final clip’s 30-day window.</li>
+    </ol>
+    <a class="link" href="terms.html#guarantee">Read the full eligibility &amp; refund terms <span aria-hidden="true">&nbsp;↗</span></a>
+  </dialog>
 
   <!-- ══ WORK ══ -->
   <section class="sec" id="work" aria-labelledby="work-title">

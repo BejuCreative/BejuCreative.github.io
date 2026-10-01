@@ -3,6 +3,20 @@
 2026-10-01 · branch `offer/performance-guarantee`, based on `ddf8852`.
 Preview: http://localhost:8767/ . Not published; no changes to Stripe or Instantly.
 
+## Hero simplification — 2026-10-01
+
+Owner requested less visible explanation. Removed the hero paragraph; retained the
+short guarantee and “How it works · terms apply”. This opens a compact three-step
+dialog with eligibility, measurement, refund summary and a full-terms link. Detailed
+FAQ and terms remain unchanged. Without JS, the trigger links to the guarantee section.
+The panel supports close button, Escape, outside click, keyboard focus containment,
+focus return, mobile scrolling and reduced motion. No new libraries or assets.
+Regression script: `/Users/benas/Documents/beju-flagship-tools/offer-dialog-check.cjs`.
+Passed Chromium, WebKit and Firefox at 320/390/1440px: dialog opening, close button,
+Escape, backdrop dismiss, keyboard focus containment/return, full-terms navigation,
+no-JS fallback and reduced motion. Existing gallery/hero interaction checks also pass
+in all three engines; guarantee/schema, SEO, syntax and diff checks pass.
+
 ## Owner direction
 
 - Cover all qualifying paid short-form packages, not only the $75 five-clip package.

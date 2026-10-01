@@ -13,6 +13,10 @@ const structured = schema['@graph'].find(item => item['@type'] === 'FAQPage').ma
 assert.equal(visible.length, 12);
 assert.deepEqual(structured, visible, 'FAQ schema must match visible offer rules');
 assert.match(home, /class="hero-offer"/);
+const heroOffer = home.match(/<div class="hero-offer">([\s\S]*?)<\/div>/)[1];
+assert.doesNotMatch(heroOffer, /<p\b/, 'Hero keeps the explanation behind the details link');
+assert.match(heroOffer, /href="#guarantee" data-offer-details/, 'No-JS fallback stays usable');
+assert.match(home, /<dialog class="offer-dialog" id="offer-details" aria-labelledby="offer-details-title"/);
 assert.match(home, /All short-form packages qualify/);
 const prices = schema['@graph'].find(item => item['@id'].endsWith('#service')).hasOfferCatalog.itemListElement;
 assert.deepEqual(prices.map(item => item.price), ['27', '60', '75', '75', '180', '255']);

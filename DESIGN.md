@@ -291,8 +291,11 @@ white-to-silver sheen, like brushed metal, and stay above 12:1 contrast.
 ## Astra components and interaction details
 
 - **Performance offer (2026-10-01, local review):** keep “Get seen.” and place a solid-gold
-  two-line guarantee directly below it, followed by readable eligibility/window copy and
-  a 44px rules link. On mobile the offer spans both hero columns. The main gold-ring
+  two-line guarantee directly below it and a 44px “How it works · terms apply” link.
+  No explanatory paragraph in the hero. The link opens a compact, olive-surface native
+  dialog with three steps and the full terms link; without JS it jumps to the guarantee.
+  Close button, Escape and backdrop dismiss it and return focus. Reduced motion removes
+  the short entry transition. On mobile the offer spans both hero columns. The main gold-ring
   guarantee panel explains baseline → measurement → refund; complete rules remain in
   the FAQ and terms. No added libraries, motion effects or changes to brand tokens.
 - **Hero studio frame:** titanium phone within a graphite stage. The film is playable
