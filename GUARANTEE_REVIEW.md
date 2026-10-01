@@ -3,6 +3,11 @@
 2026-10-01 · branch `offer/performance-guarantee`, based on `ddf8852`.
 Preview: http://localhost:8767/ . Not published; no changes to Stripe or Instantly.
 
+Publication authorized by Benas on 2026-10-01 (“GO CRAZY ON SEO AND PUBLISH IT”).
+Earlier local-only instructions below are historical; the SEO release includes this
+approved offer and design. See `SEO_RELEASE.md` and the completion report for checks
+and deployment status. Stripe and Instantly remain unchanged.
+
 ## Hero simplification — 2026-10-01
 
 Latest visual refinement: owner requested a different text colour and glass bubble so

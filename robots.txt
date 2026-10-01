@@ -1,7 +1,7 @@
 User-agent: *
 Allow: /
 
-# No crawl traps here — single-page site plus media folders.
+# Public service pages, editing guides and media remain crawlable.
 Disallow: /hero/README.txt
 Disallow: /work/README.txt
 
