@@ -234,9 +234,11 @@
 .hero-title .hl + .hl{animation-delay:70ms}
 @keyframes settle{from{transform:translateY(.12em)}to{transform:none}}
 .hero .lede{max-width:36ch;font-size:clamp(1rem,1.35vw,1.15rem);line-height:1.6;letter-spacing:-.015em}
-.hero-offer{max-width:37rem}
-.hero-offer strong{display:block;font-size:clamp(1.25rem,2vw,1.7rem);font-weight:600;line-height:1.25;letter-spacing:-.025em;color:var(--gold-solid);text-wrap:balance}
-.hero-offer .link{display:inline-flex;align-items:center;min-height:44px;font-size:.85rem}
+.hero-offer{width:fit-content;max-width:100%;padding:1.1rem 1.3rem .65rem;border:1px solid var(--hairline-strong);border-radius:var(--r-xl);background:var(--glass-bar);box-shadow:var(--glass-bar-edge),var(--shadow-float)}
+.hero-offer strong{display:block;font-size:clamp(1.1rem,1.65vw,1.4rem);font-weight:600;line-height:1.35;letter-spacing:-.02em;color:var(--ink);text-wrap:balance}
+.hero-offer strong span{color:var(--body)}
+.hero-offer .link{display:inline-flex;align-items:center;min-height:44px;margin-top:.2rem;font-size:.8rem;color:var(--muted);text-decoration-color:var(--hairline-strong);transition:color var(--dur-1) var(--ease-out)}
+.hero-offer .link:hover,.hero-offer .link:focus-visible{color:var(--ink);text-decoration-color:currentColor}
 .offer-dialog{position:fixed;inset:0;margin:auto;width:min(32rem,calc(100% - 2rem));max-height:calc(100dvh - 2rem);padding:clamp(1.5rem,4vw,2rem);overflow:auto;overscroll-behavior:contain;border:1px solid var(--hairline-strong);border-radius:var(--r-xl);background:var(--surface);color:var(--body);box-shadow:var(--shadow-float)}
 .offer-dialog::backdrop{background:var(--sheet-fill);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 .offer-dialog[open]{animation:offer-in var(--dur-1) var(--ease-out)}
@@ -559,7 +561,7 @@ body.offer-open{overflow:hidden}
         <h1 class="kicker"><span><span class="nowrap">Short-form</span> video editing for podcasters, coaches &amp; founders</span></h1>
         <h2 class="display hero-title" id="hero-title"><span class="hl">Get</span><br><span class="hl gold-text">seen.</span></h2>
         <div class="hero-offer">
-          <strong>Double your average views.<br>Or your money back.</strong>
+          <strong>Double your average views.<br><span>Or your money back.</span></strong>
           <a class="link" href="#guarantee" data-offer-details>How it works · terms apply <span aria-hidden="true">&nbsp;↗</span></a>
         </div>
         <div class="btn-row">

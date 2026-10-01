@@ -5,6 +5,13 @@ Preview: http://localhost:8767/ . Not published; no changes to Stripe or Instant
 
 ## Hero simplification — 2026-10-01
 
+Latest visual refinement: owner requested a different text colour and glass bubble so
+the offer does not compete with “Get seen.”. Hero guarantee now uses smaller soft-white
+text, a muted secondary line/link and a content-sized glass-style panel with existing
+olive surface/edge tokens. Gold headline and CTA unchanged. No extra blur, assets or
+changes to the commercial rules. Layout checked at eight widths (320–1920px) in
+Chromium/WebKit, no overflow; dialog regression passes all three engines.
+
 Owner requested less visible explanation. Removed the hero paragraph; retained the
 short guarantee and “How it works · terms apply”. This opens a compact three-step
 dialog with eligibility, measurement, refund summary and a full-terms link. Detailed
