@@ -598,7 +598,7 @@
           var v = function (k) { return (form.elements.namedItem(k).value || '').trim(); };
           var body = 'Name: ' + v('name') + '\nNeed: ' + v('need') + '\nLink: ' + v('link') + '\n\n' + v('message');
           status.className = 'form-status bad'; status.hidden = false;
-          status.innerHTML = 'That didn’t send — your connection may have dropped. Your answers are still here. <a class="link" href="mailto:bejusipe@gmail.com?subject=' +
+          status.innerHTML = 'That didn’t send — your connection may have dropped. Your answers are still here. <a class="link" href="mailto:hello@bejucreative.digital?subject=' +
             encodeURIComponent('New project — ' + v('need')) + '&body=' + encodeURIComponent(body) + '">Send it by email instead</a>.';
         })
         .then(function () { btn.removeAttribute('aria-busy'); btn.disabled = false; status.focus && status.focus(); });
