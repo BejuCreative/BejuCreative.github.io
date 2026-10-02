@@ -1,5 +1,21 @@
 # Performance offer — local review
 
+## Current status — 2 October 2026 (supersedes historical draft below)
+
+The offer/design was published in `43e99ef`. Claude subsequently published `b22c24b`:
+baseline = current public view counts of the last 10 clips at least 30 days old on
+the agreed account, using all available if fewer than 10. At least three eligible
+clips are required; baseline is confirmed before payment. Delivered clips are still
+measured over each clip's first 30 days. The three-month baseline, 14-day standard
+posting deadline, agreed larger-package schedule and seven-day claim window remain.
+Standard long-form delivery is 48 hours; short-form remains 24 hours after payment,
+usable footage and brief confirmation, with exceptions agreed upfront.
+
+The old five-clip/historical-first-30-day baseline below is superseded. Current
+`terms.html` is the published reference. Client onboarding is at `/guide/` (noindex),
+not the public `/guides/` editorial hub. No automated analytics/refund system was
+implemented, and this website release does not alter Stripe or Instantly.
+
 2026-10-01 · branch `offer/performance-guarantee`, based on `ddf8852`.
 Preview: http://localhost:8767/ . Not published; no changes to Stripe or Instantly.
 

@@ -48,6 +48,7 @@
       "image": "https://bejucreative.digital/og-image.jpg",
       "description": "Short-form video editing for podcasters, coaches and founders, and launch videos for SaaS, apps and product launches.",
       "email": "bejusipe@gmail.com",
+      "contactPoint": { "@type": "ContactPoint", "contactType": "customer service", "email": "bejusipe@gmail.com", "url": "https://bejucreative.digital/#apply" },
       "sameAs": ["https://instagram.com/bejucreative"],
       "founder": [
         { "@type": "Person", "name": "Benas" },
@@ -69,6 +70,7 @@
       "@id": "https://bejucreative.digital/#website",
       "url": "https://bejucreative.digital/",
       "name": "BEJÚ Creative",
+      "alternateName": ["BEJU Creative", "BejuCreative"],
       "publisher": { "@id": "https://bejucreative.digital/#org" },
       "inLanguage": "en"
     },
@@ -83,14 +85,31 @@
         "@type": "ServiceChannel",
         "serviceUrl": "https://bejucreative.digital/#apply"
       },
-      "description": "Retention-focused editing for podcasters, coaches and founders. Hooks, pacing, captions and sound design, delivered in 24 hours.",
+      "url": "https://bejucreative.digital/short-form-video-editing/",
+      "description": "Short-form editing with hooks, pacing, captions and sound design. Standard delivery within 24 hours after payment, usable footage and brief confirmation; larger-order timing agreed upfront.",
       "hasOfferCatalog": {
         "@type": "OfferCatalog",
-        "name": "Editing packages",
+        "name": "Short-form guide prices",
         "itemListElement": [
           { "@type": "Offer", "name": "Short-form — 1 video",  "price": "27",  "priceCurrency": "USD" },
           { "@type": "Offer", "name": "Short-form — 3 videos", "price": "60",  "priceCurrency": "USD" },
-          { "@type": "Offer", "name": "Short-form — 5 videos", "price": "75",  "priceCurrency": "USD" },
+          { "@type": "Offer", "name": "Short-form — 5 videos", "price": "75",  "priceCurrency": "USD" }
+        ]
+      }
+    },
+    {
+      "@type": "Service",
+      "@id": "https://bejucreative.digital/#long-form",
+      "name": "Long-Form Video Editing",
+      "serviceType": "Long-form video editing",
+      "provider": { "@id": "https://bejucreative.digital/#org" },
+      "url": "https://bejucreative.digital/#pricing",
+      "areaServed": "Worldwide",
+      "description": "Long-form video editing, quoted by scope. Standard delivery within 48 hours after payment, usable footage and brief confirmation; larger-order timing agreed upfront.",
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "Long-form guide prices",
+        "itemListElement": [
           { "@type": "Offer", "name": "Long-form — 1 video",   "price": "75",  "priceCurrency": "USD" },
           { "@type": "Offer", "name": "Long-form — 3 videos",  "price": "180", "priceCurrency": "USD" },
           { "@type": "Offer", "name": "Long-form — 5 videos",  "price": "255", "priceCurrency": "USD" }
@@ -844,7 +863,7 @@ body.offer-open{overflow:hidden}
             <div class="tier panel"><div class="q">3 videos</div><div class="p">$180</div><div class="u">$60 / edit</div></div>
             <div class="tier panel"><div class="q">5 videos</div><div class="p">$255</div><div class="u">$51 / edit</div></div>
           </div>
-          <p class="pane-note">Long-form — priced per finished video. The short-form performance guarantee does not apply.</p>
+          <p class="pane-note">Long-form — priced per finished video. Standard delivery within 48 hours after payment, usable footage and brief confirmation; larger-order timing agreed upfront. The short-form performance guarantee does not apply.</p>
         </div>
       </div>
       <div class="g12 price-foot">

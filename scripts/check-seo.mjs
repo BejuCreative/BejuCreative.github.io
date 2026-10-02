@@ -6,12 +6,13 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const pages = ['index.html', 'podcast-video-editing/index.html', 'short-form-video-editing/index.html', 'video-editing-for-coaches/index.html', 'saas-launch-videos/index.html', 'guides/index.html', 'guides/turn-podcast-into-short-clips/index.html', 'guides/video-editing-pricing/index.html', 'terms.html'];
 const titles = new Set();
 const descriptions = new Set();
+const excludedPages = ['404.html', 'welcome/index.html', 'guide/index.html'];
 const sitemap = fs.readFileSync(path.join(root, 'sitemap.xml'), 'utf8');
 const sitemapUrls = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map(m => m[1]);
 assert.equal(sitemapUrls.length, new Set(sitemapUrls).size, 'No duplicate sitemap URLs');
 assert.equal(sitemapUrls.length, pages.length, 'Sitemap matches indexable page inventory');
 const links = new Map();
-for (const file of [...pages, '404.html', 'welcome/index.html']) {
+for (const file of [...pages, ...excludedPages]) {
   const html = fs.readFileSync(path.join(root, file), 'utf8');
   assert.equal((html.match(/<h1\b/g) || []).length, 1, `${file}: one H1`);
   const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]);
@@ -28,6 +29,14 @@ for (const file of [...pages, '404.html', 'welcome/index.html']) {
     assert(sitemap.includes(`<loc>${canonical}</loc>`), `${file}: sitemap entry`);
     for (const m of html.matchAll(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g)) {
       const data = JSON.parse(m[1]);
+      const entities = data['@graph'] || [data];
+      const entityIds = new Set(entities.map(entity => entity['@id']).filter(Boolean));
+      for (const entity of entities) {
+        for (const property of ['publisher', 'provider', 'isPartOf', 'author']) {
+          const id = entity[property]?.['@id'];
+          if (id) assert(entityIds.has(id), `${file}: ${property} resolves in local graph`);
+        }
+      }
       for (const entity of data['@graph'] || [data]) {
         if (entity['@type'] === 'BreadcrumbList') {
           assert(entity.itemListElement.length >= 2, `${file}: breadcrumb depth`);
@@ -41,7 +50,10 @@ for (const file of [...pages, '404.html', 'welcome/index.html']) {
         assert.notEqual(entity['@type'], 'AggregateRating', `${file}: no unverified ratings`);
       }
     }
-  } else assert(/<meta name="robots"[^>]*noindex/.test(html), `${file}: must not be indexed`);
+  } else {
+    assert(/<meta name="robots"[^>]*noindex/.test(html), `${file}: must not be indexed`);
+    assert(!sitemapUrls.includes('https://bejucreative.digital/' + file.replace('index.html', '')), `${file}: excluded from sitemap`);
+  }
   links.set(file, []);
   for (const m of html.matchAll(/(?:href|src|poster)="([^"]+)"/g)) {
     if (/^(https?:|mailto:|data:)/.test(m[1])) continue;

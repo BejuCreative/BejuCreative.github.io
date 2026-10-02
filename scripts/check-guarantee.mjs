@@ -18,8 +18,13 @@ assert.doesNotMatch(heroOffer, /<p\b/, 'Hero keeps the explanation behind the de
 assert.match(heroOffer, /href="#guarantee" data-offer-details/, 'No-JS fallback stays usable');
 assert.match(home, /<dialog class="offer-dialog" id="offer-details" aria-labelledby="offer-details-title"/);
 assert.match(home, /All short-form packages qualify/);
-const prices = schema['@graph'].find(item => item['@id'].endsWith('#service')).hasOfferCatalog.itemListElement;
+const prices = schema['@graph'].filter(item => ['https://bejucreative.digital/#service', 'https://bejucreative.digital/#long-form'].includes(item['@id']))
+  .flatMap(item => item.hasOfferCatalog.itemListElement);
 assert.deepEqual(prices.map(item => item.price), ['27', '60', '75', '75', '180', '255']);
+const baseline = visible.find(item => item.question.includes('calculate my baseline')).answer;
+assert.match(baseline, /public view counts/);
+assert.match(baseline, /fewer than three clips/);
+assert.match(baseline, /at least 30 days old/);
 
 for (const file of ['index.html', 'terms.html', 'welcome/index.html', 'short-form-video-editing/index.html', 'podcast-video-editing/index.html', 'video-editing-for-coaches/index.html']) {
   const text = readFileSync(file, 'utf8');
@@ -30,6 +35,7 @@ for (const file of ['index.html', 'terms.html', 'welcome/index.html', 'short-for
   assert.match(text, /baseline/i, `${file}: comparison baseline`);
   assert.match(text, /schedule agreed before payment|posting schedule agreed before payment|schedule agreed in writing before payment/, `${file}: larger-package posting schedule`);
   assert.match(text, /refund/i, `${file}: payment remedy`);
+  assert.doesNotMatch(text, /five comparable|previous 10 comparable|first-30-day organic views of your previous/, `${file}: no obsolete baseline rule`);
   console.log(`PASS ${file}: performance guarantee coverage`);
 }
 console.log('PASS 12 FAQ answers match schema; all six prices unchanged.');

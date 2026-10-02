@@ -1,5 +1,36 @@
 # SEO release — 1 October 2026
 
+## Follow-up audit — 2 October 2026
+
+Based on Claude's published `b22c24b`; original checkout/branch left untouched.
+Worktree: `/Users/benas/Desktop/BEJU-seo-release`, branch `seo/recheck-oct02`.
+
+- Split homepage structured offers into short-form and long-form Services so prices
+  are no longer grouped under the wrong service. All six prices remain unchanged.
+- Clarified delivery conditions in service metadata and the long-form pricing note,
+  preserving Claude's 24-hour short-form / 48-hour long-form terms and new baseline.
+- Connected Organization and WebSite entities inside all seven service/guide graphs;
+  article publisher/author references now resolve within the same page.
+- Completed guide sharing metadata and set the two article pages to `og:type=article`.
+- Updated sitemap modification dates only for the eight pages changed in this pass.
+- Extended SEO regression checks to the noindex client guide, explicit sitemap
+  exclusions and local entity references; extended offer checks to reject old rules.
+- Added `node scripts/check-live-seo.mjs`: read-only production check of exact deployed
+  HTML, sitemap, canonicals, noindex pages, robots, redirects and real 404 responses.
+- Static checks pass for nine public pages and three excluded pages; offer tests
+  preserve 12 FAQ/schema matches, all prices and Claude's baseline rules.
+- Browser layout audit: 66 layouts (11 pages × 3 widths × Chromium/WebKit) passed.
+- Offer dialog passes Chromium/WebKit/Firefox, keyboard and no-JS fallback tests.
+- Full interaction regression: 129/129 passed across Chromium, WebKit and Firefox,
+  including navigation, video lightboxes, pricing, menus and mocked form submissions.
+- Final local mobile Lighthouse: homepage 99 performance / 100 accessibility /
+  100 best practices / 100 SEO, LCP 1.7s and CLS 0. Pricing guide 100 in all four
+  categories, LCP 1.2s and CLS 0. Reports live in `beju-flagship-tools/seo-oct02-*.json`.
+  These lab scores are not Google ranking positions or field Core Web Vitals.
+
+The sections below document the first release (`43e99ef`), already confirmed live.
+No ranking improvement is claimed from technical tests or structured data.
+
 Owner explicitly requested SEO improvements and publication. This supersedes earlier
 local-only instructions for the approved offer/design. Release includes the stronger
 32%-opacity gold halo already requested by the owner; prices and offer rules unchanged.
