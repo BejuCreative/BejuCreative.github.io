@@ -171,7 +171,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-<link rel="preload" as="image" href="hero/hero-t6-poster.jpg" fetchpriority="high">
+<link rel="preload" as="image" href="hero/hero-poster.jpg" fetchpriority="high">
 <link rel="stylesheet" href="tokens.css">
 <link rel="stylesheet" href="site.css">
 <style>
@@ -420,15 +420,15 @@
       <div class="hero-media">
         <div class="phone" data-parallax>
           <div class="phone-screen">
-            <img src="hero/hero-t6-poster.jpg" alt="" width="540" height="960" fetchpriority="high">
-            <video autoplay muted loop playsinline preload="none" poster="hero/hero-t6-poster.jpg" data-src="hero/hero-t6.mp4" data-inview data-eager aria-label="A client's Short: My next Reel hit 18K"
+            <img src="hero/hero-poster.jpg" alt="" width="720" height="1280" fetchpriority="high">
+            <video autoplay muted loop playsinline preload="none" poster="hero/hero-poster.jpg" data-src="hero/hero.mp4" data-inview data-eager aria-label="BEJÚ Creative film: You just watched a pencil"
                    disablepictureinpicture disableremoteplayback></video>
             <div class="phone-pill"></div>
             <div class="phone-scrim"></div>
-            <button class="hero-play" type="button" data-lb="hero" data-src="results/testimonial-6.mp4" data-poster="results/testimonial-6-poster.jpg" data-title="A client's Short, in her words" aria-label="Watch the client's Short with sound"><span class="watch hero-watch"><span>Watch<span class="hw-more"> with sound</span></span></span></button>
+            <button class="hero-play" type="button" data-lb="hero" data-src="hero/hero.mp4" data-poster="hero/hero-poster.jpg" data-title="You just watched a pencil · BEJÚ Creative" aria-label="Watch You just watched a pencil with sound"><span class="watch hero-watch"><span>Watch<span class="hw-more"> with sound</span></span></span></button>
           </div>
         </div>
-        <div class="stage-footer"><p>“My next Reel hit 18K.”<span>A client's Short, in her words · tap for sound</span></p><button class="preview-toggle" type="button" data-preview-toggle aria-pressed="false" hidden>Pause previews</button></div>
+        <div class="stage-footer"><p>“You just watched a pencil.”<span>A BEJÚ Creative film · tap for sound</span></p><button class="preview-toggle" type="button" data-preview-toggle aria-pressed="false" hidden>Pause previews</button></div>
       </div>
       <div class="hero-act">
         <div class="hero-doors">
@@ -519,10 +519,10 @@
     <div class="wrap g12 head">
       <div>
         <p class="kicker rv">Our work</p>
-        <h2 class="display grad rv" id="work-title">Recent Shorts we've edited</h2>
+        <h2 class="display grad rv" id="work-title">Made to be watched.</h2>
       </div>
       <div class="rv">
-        <p class="caption">Coaches, experts, podcasts and brands. Tap any clip to watch it with sound.</p>
+        <p class="caption">Coaches, experts, podcasts, brands and SaaS launches. Tap any clip to watch it with sound.</p>
         <div class="rail-ctrl" style="margin-top:.75rem">
           <button class="glass" type="button" data-rail-prev="rail" aria-label="Previous clips"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
           <button class="glass" type="button" data-rail-next="rail" aria-label="Next clips"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button>
@@ -530,6 +530,9 @@
       </div>
     </div>
     <div class="rail" id="rail" data-rail>
+      <button class="clip frame playable" type="button" style="--ar:720/1280" data-lb="work" data-src="hero/hero.mp4" data-poster="hero/hero-poster.jpg" data-title="You just watched a pencil · BEJÚ Creative">
+        <img src="hero/hero-poster.jpg" alt="" loading="lazy" decoding="async"><video muted loop playsinline preload="none" data-inview aria-hidden="true"><source src="hero/hero.mp4" type="video/mp4"></video>
+        <span class="chip">Showreel</span><span class="cap">You just watched a pencil</span></button>
       <button class="clip frame playable" type="button" style="--ar:540/960" data-lb="work" data-src="work/samples/roap-climbing-coach-full.mp4" data-poster="work/samples/roap-climbing-coach.jpg" data-title="Coach clip: climbing technique">
         <img src="work/samples/roap-climbing-coach.jpg" alt="" loading="lazy" decoding="async"><video muted loop playsinline preload="none" data-inview aria-hidden="true"><source src="work/samples/roap-climbing-coach.mp4" type="video/mp4"></video>
         <span class="chip">Coach</span><span class="cap">Coach clip</span></button>
@@ -554,6 +557,15 @@
       <button class="clip frame playable" type="button" style="--ar:720/1280" data-lb="work" data-src="rail-08.mp4" data-poster="rail-08.jpg" data-title="Software Ad">
         <img src="rail-08.jpg" alt="" loading="lazy" decoding="async"><video muted loop playsinline preload="none" data-start="6" data-inview aria-hidden="true"><source src="rail-08.mp4" type="video/mp4"></video>
         <span class="chip">Ad</span><span class="cap">Software Ad</span></button>
+      <button class="clip frame playable" type="button" style="--ar:16/9" data-lb="work" data-src="launch/launch-01.mp4" data-poster="launch/launch-01.jpg" data-title="Mac app launch">
+        <img src="launch/launch-01.jpg" alt="" loading="lazy" decoding="async"><video muted loop playsinline preload="none" data-inview aria-hidden="true"><source src="launch/launch-01.mp4" type="video/mp4"></video>
+        <span class="chip">Launch</span><span class="cap">Mac app launch</span></button>
+      <button class="clip frame playable" type="button" style="--ar:16/9" data-lb="work" data-src="launch/launch-02.mp4" data-poster="launch/launch-02.jpg" data-title="AI marketing tool launch">
+        <img src="launch/launch-02.jpg" alt="" loading="lazy" decoding="async"><video muted loop playsinline preload="none" data-inview aria-hidden="true"><source src="launch/launch-02.mp4" type="video/mp4"></video>
+        <span class="chip">Launch</span><span class="cap">AI marketing tool launch</span></button>
+      <button class="clip frame playable" type="button" style="--ar:1/1" data-lb="work" data-src="launch/launch-03.mp4" data-poster="launch/launch-03.jpg" data-title="Course launch">
+        <img src="launch/launch-03.jpg" alt="" loading="lazy" decoding="async"><video muted loop playsinline preload="none" data-inview aria-hidden="true"><source src="launch/launch-03.mp4" type="video/mp4"></video>
+        <span class="chip">Launch</span><span class="cap">Course launch</span></button>
     </div>
     <div class="wrap proof-sub">
       <div>
