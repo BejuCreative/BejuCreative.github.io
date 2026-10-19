@@ -377,6 +377,60 @@
   .facts div{grid-template-columns:5.5rem minmax(0,1fr)}
 }
 @media(prefers-reduced-motion:reduce){.hero-media,.phone-screen::after{animation:none}.phone-screen::after{display:none}.pane,.phone,.hero-play::after,.seg::before{transition:none}.phone{transform:none}}
+
+/* ── work showcase: a deck of reels fans out as you scroll. site.js sets --o (how open,
+      0–1) and moves .is-focus; each slot's --i is its place in the fan, --d its distance
+      from the centre. Native scroll + position:sticky; nothing hijacks the wheel. ── */
+#work{padding-top:0}
+.showcase{position:relative}
+.sc-pin{display:flex;align-items:center;min-height:100svh;padding:clamp(5.5rem,11vh,7rem) 0 clamp(2rem,6vh,4rem);overflow:hidden}
+.showcase.is-live{height:calc(100svh + 150vh)}
+.showcase.is-live .sc-pin{position:sticky;top:0;height:100svh;min-height:0}
+/* the tall scroll track and the pin's empty band overlap the gallery below: only the
+   copy and the reels take clicks, so the filters and arrows under them stay reachable */
+.showcase.is-live,.showcase.is-live .sc-pin{pointer-events:none}
+.showcase.is-live .sc-copy,.showcase.is-live .sc-card{pointer-events:auto}
+/* the pinned screen is viewport-tall; site.js measures the empty band under its content and
+   the gallery slides up into it as the pin releases (no dead gap between the two) */
+.showcase.is-live{margin-bottom:calc(var(--sc-trim,0px) * -1)}
+.sc-grid{align-items:center;row-gap:clamp(1.25rem,4vh,2.5rem)}
+.sc-copy{grid-column:1 / span 5}
+.sc-beats{list-style:none;display:grid;gap:.6rem;margin-top:clamp(1.25rem,3vh,2rem)}
+.sc-beats li{position:relative;padding-left:1.1rem;font-size:clamp(1.2rem,1.9vw,1.65rem);font-weight:600;letter-spacing:-.025em;line-height:1.2;color:var(--ink);text-wrap:balance;transition:color var(--dur-2) var(--ease-out)}
+/* all three claims stay on screen (same height with or without JS: no layout shift);
+   the one being shown is lit and gets a gold bar */
+.sc-beats li::before{content:'';position:absolute;left:0;top:.15em;bottom:.15em;width:2px;border-radius:var(--r-pill);background:var(--gold-metal);transform:scaleY(0);transition:transform var(--dur-2) var(--ease-out)}
+.showcase.is-live .sc-beats li{color:var(--dim)}
+.showcase.is-live .sc-beats li.is-on{color:var(--ink)}
+.showcase.is-live .sc-beats li.is-on::before{transform:none}
+.sc-fan{--o:1;--sw:clamp(9.5rem,14.5vw,13.5rem);--spread:.74;grid-column:6 / -1;position:relative;height:calc(var(--sw) * 1.78 + 6rem);perspective:1400px}
+.sc-slot{--f:0;position:absolute;left:50%;top:50%;width:var(--sw);aspect-ratio:9/16;margin:calc(var(--sw) * -.889) 0 0 calc(var(--sw) / -2);z-index:calc(10 - var(--d));
+  transform:translate3d(calc(var(--i) * (var(--sw) * var(--spread) * var(--o) + .5rem * (1 - var(--o)))),calc(var(--d) * var(--d) * .9rem * var(--o) + (1 - var(--o)) * 2.5rem - var(--f) * 1.5rem),0)
+    rotateY(calc(var(--i) * -9deg * var(--o))) rotate(calc(var(--i) * (4.5deg * var(--o) + 2.2deg * (1 - var(--o)) + 1deg))) scale(calc(1 - var(--d) * .07 * var(--o) + var(--f) * .06));
+  transition:transform var(--dur-2) var(--ease-out)}
+.sc-fan::before{content:'';position:absolute;inset:-14% -10%;pointer-events:none;background:var(--fan-glow);opacity:var(--o)}
+.sc-slot.is-focus{--f:1;z-index:20}
+.showcase.is-live .sc-slot{will-change:transform}
+.sc-card{display:block;width:100%;height:100%}
+.sc-card img,.sc-card video{object-position:var(--pos,50% 50%)}
+/* cards out of focus sit a step back in the dark; the one in focus catches the gold light */
+.sc-card::before{content:'';position:absolute;inset:0;z-index:3;border-radius:inherit;background:var(--canvas);opacity:.45;pointer-events:none;transition:opacity var(--dur-2) var(--ease-out)}
+.sc-slot.is-focus .sc-card::before{opacity:0}
+.sc-slot.is-focus .sc-card{box-shadow:0 0 0 1px rgba(216,184,101,.55),0 40px 90px -35px rgba(199,162,75,.5),var(--shadow-float)}
+.sc-card .chip,.sc-card .watch{opacity:0;transition:opacity var(--dur-2) var(--ease-out)}
+.sc-slot.is-focus .chip,.sc-slot.is-focus .watch{opacity:1}
+.sc-card video{opacity:0;transition:opacity var(--dur-2) var(--ease-out)}
+.sc-card video.is-playing{opacity:1}
+@media(max-width:900px){
+  .showcase.is-live{height:calc(100svh + 120vh)}
+  .sc-pin{padding-top:4.5rem}
+  .sc-copy,.sc-fan{grid-column:1 / -1}
+  .sc-fan{--sw:clamp(7rem,33vw,11rem);--spread:.62;height:calc(var(--sw) * 1.78 + 3rem)}
+  .sc-beats li{font-size:1.15rem}
+  .sc-card .chip{top:8px;left:8px;padding:.3rem .55rem;font-size:.62rem}
+  .sc-card .watch{right:8px;bottom:8px;min-height:28px;padding:0 .6rem 0 .5rem;font-size:.62rem}
+}
+}
 </style>
 </head>
 <body>
@@ -516,10 +570,31 @@
 
   <!-- ══ PROOF ══ -->
   <section class="sec-s" id="work" aria-labelledby="work-title">
+    <div class="showcase" data-showcase>
+      <div class="sc-pin">
+        <div class="wrap g12 sc-grid">
+          <div class="sc-copy">
+            <p class="kicker rv">Our work</p>
+            <h2 class="display grad rv" id="work-title" data-lr>Made to be<br>watched.</h2>
+            <ol class="sc-beats">
+              <li class="is-on">Hooks that stop the scroll.</li>
+              <li>Captions people actually read.</li>
+              <li>Cut for retention, not just views.</li>
+            </ol>
+          </div>
+          <div class="sc-fan" data-fan>
+            <div class="sc-slot" style="--i:-2;--d:2" inert><button class="sc-card frame playable" type="button" style="--pos:24% 50%" data-lb="showcase" data-src="rail-05.mp4" data-poster="rail-05.jpg" data-title="Personal Brand Edit 2"><img src="rail-05.jpg" alt="" loading="lazy" decoding="async"><span class="chip">Brand</span><span class="sr-only">Personal Brand Edit 2, </span><span class="watch">Watch</span></button></div>
+            <div class="sc-slot" style="--i:-1;--d:1" inert><button class="sc-card frame playable" type="button" data-lb="showcase" data-src="work/01.mp4" data-poster="work/01.jpg" data-title="The Edit Effect · BEJÚ promo"><img src="work/01.jpg" alt="" loading="lazy" decoding="async"><video muted loop playsinline preload="none" data-sc aria-hidden="true"><source src="work/01.mp4" type="video/mp4"></video><span class="chip">Showreel</span><span class="sr-only">The Edit Effect · BEJÚ promo, </span><span class="watch">Watch</span></button></div>
+            <div class="sc-slot is-focus" style="--i:0;--d:0"><button class="sc-card frame playable" type="button" data-lb="showcase" data-src="hero/hero.mp4" data-poster="hero/hero-poster.jpg" data-title="You just watched a pencil · BEJÚ Creative"><img src="hero/hero-poster.jpg" alt="" loading="lazy" decoding="async"><video muted loop playsinline preload="none" data-sc aria-hidden="true"><source src="hero/hero.mp4" type="video/mp4"></video><span class="chip">Showreel</span><span class="sr-only">You just watched a pencil · BEJÚ Creative, </span><span class="watch">Watch</span></button></div>
+            <div class="sc-slot" style="--i:1;--d:1" inert><button class="sc-card frame playable" type="button" data-lb="showcase" data-src="work/02.mp4" data-poster="work/02.jpg" data-title="Audio podcast story · onefjef"><img src="work/02.jpg" alt="" loading="lazy" decoding="async"><video muted loop playsinline preload="none" data-sc aria-hidden="true"><source src="work/02.mp4" type="video/mp4"></video><span class="chip">Podcast</span><span class="sr-only">Audio podcast story · onefjef, </span><span class="watch">Watch</span></button></div>
+            <div class="sc-slot" style="--i:2;--d:2" inert><button class="sc-card frame playable" type="button" data-lb="showcase" data-src="rail-01.mp4" data-poster="rail-01.jpg" data-title="Podcast Clip Edit"><img src="rail-01.jpg" alt="" loading="lazy" decoding="async"><span class="chip">Podcast</span><span class="sr-only">Podcast Clip Edit, </span><span class="watch">Watch</span></button></div>
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="wrap g12 head">
       <div>
-        <p class="kicker rv">Our work</p>
-        <h2 class="display grad rv" id="work-title">Made to be watched.</h2>
+        <h3 class="display grad rv">More of our work</h3>
       </div>
       <div class="rv">
         <p class="caption">Coaches, experts, podcasts, brands and SaaS launches. Tap any clip to watch it with sound.</p>
