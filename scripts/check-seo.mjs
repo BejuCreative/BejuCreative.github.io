@@ -3,7 +3,7 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 import {fileURLToPath} from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const pages = ['index.html', 'podcast-video-editing/index.html', 'short-form-video-editing/index.html', 'video-editing-for-coaches/index.html', 'saas-launch-videos/index.html', 'guides/index.html', 'guides/turn-podcast-into-short-clips/index.html', 'guides/video-editing-pricing/index.html', 'terms.html'];
+const pages = ['index.html', 'faq/index.html', 'podcast-video-editing/index.html', 'short-form-video-editing/index.html', 'video-editing-for-coaches/index.html', 'saas-launch-videos/index.html', 'guides/index.html', 'guides/turn-podcast-into-short-clips/index.html', 'guides/video-editing-pricing/index.html', 'terms.html', 'privacy.html'];
 const titles = new Set();
 const descriptions = new Set();
 const excludedPages = ['404.html', 'welcome/index.html', 'guide/index.html'];

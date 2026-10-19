@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Welcome to BEJÚ Creative</title>
 <meta name="description" content="Your onboarding guide: how to send footage, what happens next, revisions, and how to reach us.">
-<!-- Client-only page: reached from Stripe after payment and from the welcome email.
-     Kept out of search results and out of sitemap.xml on purpose. -->
 <meta name="robots" content="noindex,nofollow">
 <link rel="icon" href="/favicon.ico">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
@@ -31,6 +29,10 @@
 .cards h3{margin:0 0 .45rem}
 .svc-sec .cards p{font-size:.95rem;line-height:1.6}
 .n{font-size:var(--t-label);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-solid);margin-bottom:1rem}
+/* website-store buyers (?from=site): shown by the inline script under it */
+.from-site{margin-bottom:var(--gutter)}
+.from-site .n{display:block;margin-bottom:.6rem}
+.svc-sec .from-site p{max-width:72ch;color:var(--ink)}
 .tag{margin-top:auto;padding-top:1.1rem;font-size:var(--t-caption);color:var(--muted)}
 .optional{display:inline-block;margin-left:.35rem;font-size:.7rem;font-weight:600;color:var(--muted);border:1px solid var(--hairline-strong);border-radius:var(--r-pill);padding:.1rem .5rem;vertical-align:.15em}
 .steps-foot{display:flex;flex-wrap:wrap;align-items:center;gap:1rem 2rem;margin-top:2rem}
@@ -71,7 +73,7 @@
 <body>
 <a class="skip" href="#main">Skip to content</a>
 <header class="nav" id="nav">
-  <a href="/" class="brand" aria-label="BEJÚ Creative — home"><img src="/beju-mark-sm.png" alt="BEJÚ Creative" width="180" height="107"></a>
+  <a href="/" class="brand" aria-label="BEJÚ Creative, home"><img src="/beju-mark-sm.png" alt="BEJÚ Creative" width="180" height="107"></a>
   <nav class="nav-links" aria-label="Your guide">
     <a href="#steps">Steps</a>
     <a href="#footage">Footage</a>
@@ -105,49 +107,55 @@
       <h1 class="display grad">You're in.<br>Let's get you&nbsp;<span class="gold-text">seen.</span></h1>
     </div>
     <div class="svc-intro">
-      <p class="lede">Thanks for trusting us with your content. This page is everything you need — how to send footage, what happens next, and how to reach us. Two minutes to read. For step-by-step help with Google Drive, changes and the guarantee, see the <a href="/guide/">client guide</a>.</p>
+      <p class="lede">Thanks for trusting us with your content. This page is everything you need: how to send footage, what happens next, and how to reach us. Two minutes to read. For step-by-step help with Google Drive, changes and the guarantee, see the <a href="/guide/">client guide</a>.</p>
     </div>
   </div>
 
   <!-- ── NEXT STEPS ──────────────────────────────────── -->
   <section class="svc-sec wide wrap g12" id="steps">
     <div class="svc-head"><p class="kicker">Your next steps</p><h2>Three steps.<br>That's it.</h2></div>
+    <div class="from-site card panel" id="from-site" hidden>
+      <span class="n">Ordered on our website</span>
+      <p>You've already told us what to edit at checkout, so there's nothing else to send. We email you within 12 hours, 7 days a week, to confirm your order. If you typed ‘upload’ or your files aren't online, your upload folder arrives by email, shared only with your email address. Your edits arrive in a Google Drive folder for your order within 24 hours (long-form 48), weekends and holidays included, and we email you when they're ready.</p>
+    </div>
+    <script>if (new URLSearchParams(location.search).get('from') === 'site') document.getElementById('from-site').hidden = false;</script>
     <div class="cards c3">
       <div class="card panel">
         <span class="n">Step 01</span>
-        <h3>Send your footage</h3>
-        <p>Upload it to the <strong>Footage uploads</strong> folder in your private Google Drive client folder — the link is in your welcome email. The full episode or session is perfect — finding the best moments is our job.</p>
-        <span class="tag">About 2 minutes</span>
+        <h3>Get us your footage</h3>
+        <p>Already online? The channel or video links you gave us are all we need, so there's nothing to upload. If your files aren't online, upload them to the <strong>Google Drive upload folder</strong> we email you, shared only with your email address. The full episode or session is perfect: finding the best moments is our job.</p>
+        <span class="tag">Only if your files aren't online</span>
       </div>
       <div class="card panel">
         <span class="n">Step 02</span>
         <h3>Tell us your <span class="nowrap">style <span class="optional">Optional</span></span></h3>
-        <p>Want your first edits to land perfectly? A short form covers your handles, style, and anything we should never show.</p>
+        <p>Want your first edits to land perfectly? A short form covers your handles, style, and anything we should never show. Already told us at checkout? You can skip it.</p>
         <span class="tag">About 1 minute</span>
       </div>
       <div class="card panel">
         <span class="n">Step 03</span>
         <h3>Watch your inbox</h3>
-        <p>Your finished videos arrive in your <strong>Google Drive client folder</strong>, and we message you when they're ready. Can't find our email from <strong>bejusipe@gmail.com</strong>? Check spam, or message us.</p>
+        <p>Your finished videos arrive in your <strong>Google Drive client folder</strong>, and we message you when they're ready. Can't find our emails from <strong>hello@bejucreative.digital</strong> or <strong>bejusipe@gmail.com</strong>? Check spam, or message us.</p>
         <span class="tag">We do this</span>
       </div>
     </div>
     <div class="steps-foot">
       <a class="btn-gold magnetic" href="https://docs.google.com/forms/d/e/1FAIpQLScAvi65xVF4LodUVE2Qq1ZVLu4WAXAmARcTEX_j4yfsdMtruQ/viewform" target="_blank" rel="noopener">Tell us your style →</a>
-      <p>Skip the form and we'll edit in our proven style — you can always give feedback on the first cut. <strong>Standard short-form packages arrive within 24 hours, and long-form packages within 48 hours, after payment, usable footage and the brief are confirmed.</strong> For the performance guarantee, your eligibility and baseline must already be agreed before payment.</p>
+      <p>Skip the form and we'll edit in our proven style. You can always give feedback on the first cut. <strong>Standard short-form packages arrive within 24 hours, and long-form packages within 48 hours, after payment, usable footage and the brief are confirmed. Weekends and holidays included.</strong> The performance guarantee covers your order only if your eligibility and baseline were agreed before payment. An order placed without an agreed baseline is a normal order without the guarantee.</p>
     </div>
   </section>
 
   <!-- ── SENDING FOOTAGE ─────────────────────────────── -->
   <section class="svc-sec wrap g12 rv" id="footage">
     <div class="svc-head"><p class="kicker">Sending footage</p><h2>Better footage,<br>better clips</h2></div>
-    <p>Upload your files to the <strong>Footage uploads</strong> folder inside your private Google Drive client folder — we share the link in your welcome email. No folder link yet, or prefer another way? Send a <strong>WeTransfer, Dropbox or Google Drive</strong> link by email or WhatsApp. Step-by-step upload help is in the <a href="/guide/#footage">client guide</a>.</p>
+    <p>If your footage is already online, the links you gave us are enough. If it isn't, upload your files to the <strong>Google Drive upload folder</strong> we email you. It's shared only with your email address. No Google account, no folder email yet, or prefer another way? Send a <strong>WeTransfer, Dropbox or Google Drive</strong> link by email or WhatsApp. Step-by-step upload help is in the <a href="/guide/#footage">client guide</a>. Packs expire 14 days after you pay, so send your footage before then (<a href="/terms.html#expiry">section 2.4 of our terms</a>).</p>
     <ul>
       <li><strong>Send the original file.</strong> Export straight from your camera, Riverside, Zoom or editing app. Files sent through WhatsApp, Instagram or a screen recording lose most of their quality.</li>
-      <li><strong>Longer is fine.</strong> Send the whole recording — one good episode can become a month of clips.</li>
+      <li><strong>Longer is fine.</strong> Send the whole recording: one good episode can become a month of clips.</li>
       <li><strong>Separate cameras or audio?</strong> Send every angle and audio track you have. More angles means more cutting options.</li>
       <li><strong>Got favourite moments?</strong> Send us the timestamps and we'll start there.</li>
-      <li><strong>Big files take a while.</strong> Keep the tab open until the upload says it's complete. The delivery clock (24 hours for short-form, 48 hours for long-form) starts once we have usable footage — if a file is corrupted or missing audio, we'll ask you to resend it.</li>
+      <li><strong>Keep your originals.</strong> We delete your raw footage once you've approved your edits.</li>
+      <li><strong>Big files take a while.</strong> Keep the tab open until the upload says it's complete. The delivery clock (24 hours for short-form, 48 hours for long-form) starts once we have usable footage. If a file is corrupted or missing audio, we'll ask you to resend it.</li>
     </ul>
   </section>
 
@@ -155,11 +163,11 @@
   <section class="svc-sec wrap g12 rv" id="process">
     <div class="svc-head"><p class="kicker">What happens next</p><h2>From footage<br>to posted</h2></div>
     <ol class="timeline">
-      <li><span class="when">Day 0</span><h3>You send footage</h3><p>We check the footage and pick the moments worth clipping.</p></li>
+      <li><span class="when">Day 0</span><h3>We get your footage</h3><p>From your links or your upload, we check the footage and pick the moments worth clipping.</p></li>
       <li><span class="when">Within 24 or 48 hours</span><h3>Your edits arrive</h3><p>Short-form within 24 hours, long-form within 48. Your finished videos go into your Google Drive client folder and we message you when they're ready.</p></li>
-      <li><span class="when">Your turn</span><h3>You review</h3><p>Watch them, then comment in Google Drive or send your changes in one message (tips below).</p></li>
-      <li><span class="when">Same day</span><h3>Revisions come back</h3><p>We make the fixes and put the updated videos in your client folder.</p></li>
-      <li><span class="when">Then</span><h3>You post</h3><p>The clips are yours — post them, reuse them, run them as ads.</p></li>
+      <li><span class="when">Your turn</span><h3>You review</h3><p>Watch them, then within 48 hours comment in Google Drive or send your changes in one message (tips below).</p></li>
+      <li><span class="when">Usually the same day</span><h3>Changes come back</h3><p>We make the fixes and put the updated videos in your client folder.</p></li>
+      <li><span class="when">Then</span><h3>You post</h3><p>The clips are yours: post them, reuse them, run them as ads.</p></li>
     </ol>
   </section>
 
@@ -167,9 +175,9 @@
   <section class="svc-sec wide wrap g12 rv" id="deliverables">
     <div class="svc-head"><p class="kicker">What you get</p><h2>Ready to post</h2></div>
     <div class="cards c4">
-      <div class="card panel fact"><b>Vertical 9:16</b><p>1080 × 1920, sized for Reels, TikTok, YouTube Shorts and LinkedIn.</p></div>
+      <div class="card panel fact"><b>Vertical 9:16</b><p>1080 × 1920, one file that works on YouTube Shorts, Instagram Reels and TikTok.</p></div>
       <div class="card panel fact"><b>Captions burned in</b><p>Styled captions already on the video, so there's nothing to add.</p></div>
-      <div class="card panel fact"><b>Links never expire</b><p>Everything stays in your Google Drive client folder. Download any time.</p></div>
+      <div class="card panel fact"><b>Links never expire</b><p>Your finished videos stay in your Google Drive client folder. Download any time.</p></div>
       <div class="card panel fact"><b>Yours to keep</b><p>Once your order is paid, you own the edits and can use them however you like.</p></div>
     </div>
   </section>
@@ -177,7 +185,7 @@
   <!-- ── FEEDBACK & REVISIONS ────────────────────────── -->
   <section class="svc-sec wrap g12 rv" id="revisions">
     <div class="svc-head"><p class="kicker">Feedback &amp; revisions</p><h2>One round.<br>Make it count.</h2></div>
-    <p>Every order includes <strong>one round of revisions</strong>, and changes come back the same day. To get exactly what you want in one go:</p>
+    <p>Every order includes <strong>one round of changes</strong>: one set of change requests for the whole order, sent together within 48 hours of delivery. Changes usually come back the same day. To get exactly what you want in one go:</p>
     <ul>
       <li><strong>Send all your changes together.</strong> Leave timestamped comments on the videos in Google Drive (in a desktop browser), or list every note for every clip in one message. <a href="/guide/#changes">How to comment in Drive</a>.</li>
       <li><strong>Use timestamps.</strong> "0:12" is faster and clearer than "near the start".</li>
@@ -185,9 +193,9 @@
     </ul>
     <div class="example panel">
       <p class="lbl">Example of great feedback</p>
-      <p>Clip 2 — 0:04 cut the pause<br>Clip 2 — 0:18 her name is spelled "Sara"<br>Clip 4 — use the other hook<br>Loved clip 3's captions — more like that</p>
+      <p>Clip 2, 0:04: cut the pause<br>Clip 2, 0:18: her name is spelled "Sara"<br>Clip 4: use the other hook<br>Loved clip 3's captions: more like that</p>
     </div>
-    <p class="small">Fixes and tweaks are covered by your revision round. A completely different edit from the original brief may be treated as a new order — see our <a href="/terms.html">terms</a>.</p>
+    <p class="small">Fixes and tweaks are covered by your round of changes. A completely different edit from the original brief may be treated as a new order. See <a href="/terms.html#changes">section 4 of our terms</a>.</p>
   </section>
 
   <!-- ── POSTING TIPS ────────────────────────────────── -->
@@ -199,16 +207,16 @@
       <li><strong>Write a caption with a hook.</strong> A short line that makes people want to watch, plus the words people would search for.</li>
       <li><strong>Reply to comments early.</strong> Engagement in the first hour helps the clip reach more people.</li>
       <li><strong>Don't delete slow starters.</strong> Some clips pick up days later.</li>
-      <li><strong>Screenshot your views.</strong> Handy for tracking what works — and you'll need them if you ever claim the guarantee.</li>
+      <li><strong>Screenshot your views.</strong> Handy for tracking what works, and you'll need them if you ever claim the guarantee.</li>
     </ul>
   </section>
 
   <!-- ── GUARANTEE ───────────────────────────────────── -->
   <section class="svc-sec wide wrap g12 rv" id="guarantee" aria-labelledby="g-title">
     <div class="guarantee card panel gold-ring">
-      <div><p class="kicker">The BEJÚ performance guarantee</p><h2 class="display grad" id="g-title">Double your average views.<br>Or your money back.</h2></div>
+      <div><p class="kicker">The BEJÚ performance guarantee</p><h2 class="display grad" id="g-title">Double your agreed baseline.<br>Or a full refund of that pack.</h2></div>
       <div>
-        <p>For a qualifying short-form order, your package’s average first-30-day organic views must reach <strong>2× the baseline agreed before payment</strong>, or we refund the full package payment. Long-form editing and launch films are not covered.</p>
+        <p><strong>Only for orders with a baseline agreed before payment.</strong> If you ordered without one, your order is a normal order without the guarantee. For a qualifying short-form order, your package’s average first-30-day organic views must reach <strong>2× the baseline agreed before payment</strong>, or we refund the full package payment. Long-form editing and launch films are not covered.</p>
         <ul>
           <li><strong>Check your baseline record.</strong> Before payment, we noted the public view counts, as shown on the platform, of your last 10 clips on one agreed account that were at least 30 days old. Their average is your baseline, which you confirmed before paying.</li>
           <li><strong>Follow your posting deadline.</strong> Post within 14 days of delivery, or follow the larger-package schedule agreed in writing before payment. Keep each public and unchanged, with no paid promotion, for its own first 30 days.</li>
@@ -216,7 +224,7 @@
           <li><strong>Claim within seven days</strong> after the final posted clip completes its 30-day window. Email your order details, all clip links, posting dates and first-30-day analytics to hello@bejucreative.digital.</li>
           <li><strong>Repeat orders:</strong> the baseline stays fixed for three months from agreement, then is reassessed before further orders. Each package is tested separately.</li>
         </ul>
-        <p class="small">One revision round is included. Style preferences alone do not trigger this performance refund. Read the <a href="/terms.html#guarantee">full guarantee rules</a>; the terms agreed for your existing order still apply.</p>
+        <p class="small">One round of changes is included. Style preferences alone do not trigger this performance refund. The guarantee is separate from your right to cancel (<a href="/terms.html#cancel">section 8 of our terms</a>). Read the <a href="/terms.html#guarantee">full guarantee rules</a>; the terms agreed for your existing order still apply.</p>
       </div>
     </div>
   </section>
@@ -230,13 +238,13 @@
       <a class="channel card panel" href="https://wa.me/37069575791" target="_blank" rel="noopener"><small>WhatsApp</small><span>+370 695 75791</span></a>
       <a class="channel card panel" href="https://instagram.com/bejucreative" target="_blank" rel="noopener"><small>Instagram DM</small><span>@bejucreative</span></a>
     </div>
-    <p class="note"><strong>We reply within 24 hours.</strong> We're based in Lithuania — about 7 hours ahead of New York — so a message sent in your evening is often answered by your morning.</p>
+    <p class="note"><strong>We reply within 24 hours.</strong> We're based in Lithuania, about 7 hours ahead of New York, so a message sent in your evening is often answered by your morning.</p>
   </section>
 
   <!-- ── REORDER ─────────────────────────────────────── -->
   <section class="svc-sec wrap g12 rv" id="more">
     <div class="svc-head"><p class="kicker">When you want more</p><h2>Keep the clips coming</h2></div>
-    <p>Ready for your next pack? Message us on any channel above, or pick a package — the more you order at once, the less each clip costs.</p>
+    <p>Ready for your next pack? Message us on any channel above, or pick a package. The more you order at once, the less each clip costs.</p>
     <div class="more-cta"><a class="btn-glass" href="/#pricing">See packages</a></div>
   </section>
 
@@ -271,7 +279,7 @@
         <a href="https://instagram.com/bejucreative" target="_blank" rel="noopener">Instagram</a>
       </div>
     </div>
-    <div class="foot-bot"><span>© 2026 BEJÚ Creative · Benas &amp; Simas</span><a href="/terms.html">Terms of service</a></div>
+    <div class="foot-bot"><span>© 2026 BEJÚ Creative · Benas &amp; Simas</span><span><a href="/terms.html">Terms of service</a> · <a href="/privacy.html">Privacy</a></span></div>
   </div>
 </footer>
 

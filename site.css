@@ -99,8 +99,11 @@ h3,.h3{font-size:var(--t-h3);font-weight:600;letter-spacing:-.015em;line-height:
 .sheet nav a{display:flex;align-items:center;min-height:56px;font-size:clamp(1.8rem,8vw,2.4rem);font-weight:700;letter-spacing:-.035em;color:var(--ink);border-bottom:1px solid var(--hairline)}
 .sheet nav a:hover{color:var(--gold-champagne)}
 .sheet .btn-gold{margin-top:32px;align-self:flex-start}
+.sheet .arrow-link{margin-top:12px;align-self:flex-start}
 .sheet .caption{margin-top:20px}
 @media(max-width:900px){.nav-links,.nav-end .btn-gold{display:none}.burger{display:block}.nav{height:58px;top:10px;width:calc(100% - 20px);padding-left:16px}}
+/* the Order button stays visible next to the burger on phones */
+@media(max-width:900px){.nav-end .btn-gold.nav-order{display:inline-flex;padding-inline:1rem}}
 body.menu-open{overflow:hidden}
 
 /* ── cards + media frames ───────────────────────────────────── */
@@ -145,20 +148,7 @@ img + video[data-inview].is-playing{opacity:1}
 .preview-toggle:hover{color:var(--ink);background:var(--surface-2)}
 .preview-toggle::before{content:'';width:9px;height:11px;border-inline:3px solid currentColor}
 .preview-toggle[aria-pressed="true"]::before{width:0;height:0;border:0;border-left:8px solid currentColor;border-block:5px solid transparent}
-.gallery-tools{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem}
-.gallery-tools[hidden]{display:flex!important;visibility:hidden}
-.gallery-tools .preview-toggle[hidden]{display:inline-flex!important;visibility:hidden}
-.gallery-filters{display:flex;gap:4px;flex-wrap:wrap;padding:4px;border:1px solid var(--hairline);border-radius:var(--r-pill);background:var(--canvas-2)}
-.gallery-filters button{border:0;background:transparent;color:var(--muted);min-height:44px;padding:.5rem 1rem;font-size:.85rem;border-radius:var(--r-pill);cursor:pointer;transition:background var(--dur-2) var(--ease-out),color var(--dur-2) var(--ease-out)}
-.gallery-filters button[aria-pressed="true"]{background:var(--surface-2);color:var(--ink);box-shadow:var(--glass-highlight)}
-.gallery-filters button:hover{color:var(--ink)}
-.gallery-status{font-size:.75rem;color:var(--muted);min-height:1.5em}
-.rail-progress{height:2px;background:var(--hairline);flex:1;max-width:10rem;overflow:hidden;border-radius:var(--r-pill)}
-.rail-progress span{display:block;height:100%;width:100%;transform:scaleX(var(--rail-progress,.08));transform-origin:left;background:var(--body);transition:transform var(--dur-2) var(--ease-out)}
-.gallery-foot{display:flex;justify-content:space-between;align-items:center;gap:1.5rem;margin-top:.5rem}
 .magnetic{transition:translate var(--dur-2) var(--ease-out)}
-/* phones: one row of filters that scrolls sideways like the gallery under it, never two rows */
-@media(max-width:560px){.gallery-filters{width:100%;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain}.gallery-filters::-webkit-scrollbar{display:none}.gallery-filters button{flex:1 0 auto;padding-inline:.5rem}.gallery-filters.is-scrollable:not(.at-end){-webkit-mask-image:linear-gradient(90deg,#000 78%,transparent);mask-image:linear-gradient(90deg,#000 78%,transparent)}.gallery-tools .preview-toggle{margin-left:auto}}
 
 /* ── FAQ accordion (details/summary, height animated by site.js) ── */
 .acc details{border-bottom:1px solid var(--hairline)}
@@ -253,7 +243,7 @@ img + video[data-inview].is-playing{opacity:1}
   .rv-wait{opacity:1;transform:none}
   .rv-in,.lr-in .lr-inner{transition:none}
   .lr-inner{transform:none}
-  .nav,.sheet,.playable,.playable img,.acc .ico,.burger span,.sheet nav a,.magnetic,.rail-progress span{transition:none}
+  .nav,.sheet,.playable,.playable img,.acc .ico,.burger span,.sheet nav a,.magnetic{transition:none}
   .sheet nav a{transform:none}
   .playable:hover,.playable:hover img{transform:none}
   .nav.is-hidden{transform:none}

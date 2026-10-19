@@ -2,33 +2,45 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://bejucreative.digital/</loc>
-    <lastmod>2026-10-02</lastmod>
+    <lastmod>2026-10-18</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://bejucreative.digital/faq/</loc>
+    <lastmod>2026-10-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://bejucreative.digital/terms.html</loc>
-    <lastmod>2026-10-01</lastmod>
+    <lastmod>2026-10-18</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  <url>
+    <loc>https://bejucreative.digital/privacy.html</loc>
+    <lastmod>2026-10-18</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.2</priority>
   </url>
   <url>
     <loc>https://bejucreative.digital/short-form-video-editing/</loc>
-    <lastmod>2026-10-02</lastmod>
+    <lastmod>2026-10-18</lastmod>
   </url>
   <url>
     <loc>https://bejucreative.digital/podcast-video-editing/</loc>
-    <lastmod>2026-10-02</lastmod>
+    <lastmod>2026-10-18</lastmod>
   </url>
   <url>
     <loc>https://bejucreative.digital/video-editing-for-coaches/</loc>
-    <lastmod>2026-10-02</lastmod>
+    <lastmod>2026-10-18</lastmod>
   </url>
   <url>
     <loc>https://bejucreative.digital/saas-launch-videos/</loc>
-    <lastmod>2026-10-02</lastmod>
+    <lastmod>2026-10-18</lastmod>
   </url>
-  <url><loc>https://bejucreative.digital/guides/</loc><lastmod>2026-10-02</lastmod></url>
-  <url><loc>https://bejucreative.digital/guides/turn-podcast-into-short-clips/</loc><lastmod>2026-10-02</lastmod></url>
-  <url><loc>https://bejucreative.digital/guides/video-editing-pricing/</loc><lastmod>2026-10-02</lastmod></url>
+  <url><loc>https://bejucreative.digital/guides/</loc><lastmod>2026-10-18</lastmod></url>
+  <url><loc>https://bejucreative.digital/guides/turn-podcast-into-short-clips/</loc><lastmod>2026-10-18</lastmod></url>
+  <url><loc>https://bejucreative.digital/guides/video-editing-pricing/</loc><lastmod>2026-10-18</lastmod></url>
 </urlset>

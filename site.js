@@ -24,8 +24,6 @@
       }
     }
     if (parallax) parallax();
-    if (cinemaMotion) cinemaMotion();
-    if (showcaseMotion) showcaseMotion();
     lastY = y; ticking = false;
   }
   w.addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(onScroll); } }, { passive: true });
@@ -55,35 +53,6 @@
     });
   }
 
-  /* ── Hero offer: native dialog; the link falls back to the rules without JS ── */
-  var offerLink = $('[data-offer-details]'), offerDialog = $('#offer-details');
-  if (offerLink && offerDialog && typeof offerDialog.showModal === 'function') {
-    offerLink.setAttribute('aria-haspopup', 'dialog');
-    offerLink.setAttribute('aria-controls', 'offer-details');
-    offerLink.addEventListener('click', function (e) {
-      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      e.preventDefault();
-      offerDialog.showModal();
-      d.body.classList.add('offer-open');
-    });
-    $('.offer-close', offerDialog).addEventListener('click', function () { offerDialog.close(); });
-    offerDialog.addEventListener('keydown', function (e) {
-      if (e.key !== 'Tab') return;
-      e.preventDefault();
-      var items = $$('button,a[href]', offerDialog), i = items.indexOf(d.activeElement);
-      items[(i + (e.shiftKey ? -1 : 1) + items.length) % items.length].focus();
-    });
-    offerDialog.addEventListener('click', function (e) {
-      if (e.target !== offerDialog) return;
-      var r = offerDialog.getBoundingClientRect();
-      if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) offerDialog.close();
-    });
-    offerDialog.addEventListener('close', function () {
-      d.body.classList.remove('offer-open');
-      offerLink.focus({ preventScroll: true });
-    });
-  }
-
   /* ── In-page links: GSAP ScrollToPlugin drives the scroll. CSS scroll-behavior:smooth
        is banned here: it fought ScrollTrigger refreshes and nav links stalled. ── */
   d.addEventListener('click', function (e) {
@@ -92,6 +61,7 @@
     var id = a.getAttribute('href'); if (id.length < 2) return;
     var t = d.getElementById(id.slice(1)); if (!t) return;
     e.preventDefault();
+    if (t.tagName === 'DETAILS') t.open = true;
     if (a.hasAttribute('data-need')) setNeed(a.getAttribute('data-need'));
     if (menuOpen) { menuOpen = false; sheet.classList.remove('is-open'); burger.setAttribute('aria-expanded', 'false'); d.body.classList.remove('menu-open'); }
     // layout position, not getBoundingClientRect: a section still waiting to reveal is
@@ -195,6 +165,18 @@
     });
   });
 
+  /* A link to a FAQ question (/#faq-guarantee, /faq/#faq-guarantee) opens it on arrival. */
+  function openFaqFromHash() {
+    var t = null;
+    try { t = w.location.hash.length > 1 && d.getElementById(decodeURIComponent(w.location.hash.slice(1))); } catch (e) {}
+    if (!t || t.tagName !== 'DETAILS') return;
+    t.open = true;
+    var go = function () { var y = 0; for (var el = t; el; el = el.offsetParent) y += el.offsetTop; w.scrollTo(0, Math.max(0, y - 96)); };
+    go(); if (d.readyState !== 'complete') w.addEventListener('load', go, { once: true });
+  }
+  openFaqFromHash();
+  w.addEventListener('hashchange', openFaqFromHash);
+
   /* ── Videos: autoplay muted only while in view; pause off-screen ── */
   function seekStart(v) {
     var s = parseFloat(v.getAttribute('data-start') || '0');
@@ -205,9 +187,20 @@
   }
   var previewsPaused = reduce, visibleClips = new Set(), clipsReady = false;
   try { previewsPaused = reduce || sessionStorage.getItem('beju-previews-paused') === 'true'; } catch (e) {}
+  // The first-screen Short (data-eager) plays muted straight away instead of waiting for the
+  // page to settle. It counts as on screen until the clip observer says otherwise.
+  $$('video[data-eager]').forEach(function (v) { visibleClips.add(v); });
+  // a clip fades in once it is playing past its start point, so no intro or seek frame flashes
+  $$('video[data-inview]').forEach(function (v) {
+    var s = parseFloat(v.getAttribute('data-start') || '0');
+    var show = function () { if (!v.paused && v.currentTime >= s - 0.3) v.classList.add('is-playing'); };
+    v.addEventListener('playing', show); v.addEventListener('timeupdate', show);
+  });
   function syncClip(v) {
-    if (!clipsReady || previewsPaused || d.hidden || (lb && lb.open) || !visibleClips.has(v) || v.closest('[hidden]')) { v.pause(); return; }
-    v.preload = 'auto'; seekStart(v); var play = v.play(); play && play.catch(function () {});
+    if ((!clipsReady && !v.hasAttribute('data-eager')) || previewsPaused || d.hidden || (lb && lb.open) || !visibleClips.has(v) || v.closest('[hidden]')) { v.pause(); return; }
+    v.preload = 'auto';
+    if (v.dataset.src && !v.getAttribute('src')) v.src = v.dataset.src;   // the hero loop downloads only when it may play
+    seekStart(v); var play = v.play(); play && play.catch(function () {});
   }
   function syncPreviews() {
     $$('video[data-inview]').forEach(syncClip);
@@ -215,7 +208,6 @@
       b.hidden = false; b.setAttribute('aria-pressed', String(previewsPaused));
       b.textContent = previewsPaused ? 'Play previews' : 'Pause previews';
     });
-    if (syncShowcase) syncShowcase();
   }
   // Article pages get a local control next to their media, using the same preference.
   if (!$$('[data-preview-toggle]').length && $('video[data-inview]')) {
@@ -247,7 +239,6 @@
     }, { threshold: 0.5 });
     $$('video[data-inview]').forEach(function (v) {
       v.addEventListener('timeupdate', function () { if (v.currentTime < 0.3 && v.dataset.seeked) { delete v.dataset.seeked; seekStart(v); } });
-      v.addEventListener('playing', function () { v.classList.add('is-playing'); });
       vObs.observe(v);
     });
   }
@@ -309,7 +300,6 @@
       lbItems = $$('[data-lb="' + g + '"]').filter(function (it) { return !it.hidden; }); lbIndex = lbItems.indexOf(el);
       if (typeof lb.showModal === 'function') lb.showModal(); else lb.setAttribute('open', '');
       $$('video[data-inview]').forEach(function (v) { v.pause(); });
-      if (syncShowcase) syncShowcase();
       showLb();
     });
   });
@@ -323,8 +313,6 @@
     var sync = function () {
       var max = rail.scrollWidth - rail.clientWidth - 2;
       if (prev) prev.disabled = rail.scrollLeft <= 2; if (next) next.disabled = rail.scrollLeft >= max;
-      var progress = $('[data-rail-progress="' + rail.id + '"]');
-      if (progress) progress.style.setProperty('--rail-progress', max <= 0 ? 1 : Math.min(1, (rail.scrollLeft + rail.clientWidth) / rail.scrollWidth));
     };
     rail.addEventListener('scroll', sync, { passive: true }); rail.addEventListener('gallerychange', sync); w.addEventListener('resize', sync); sync();
     if (!finePointer) return;
@@ -349,38 +337,6 @@
       })();
     });
   });
-
-  /* Selected-work filters keep the original film order and lightbox navigation. */
-  var workRail = $('#rail'), galleryTools = $('[data-gallery-tools]');
-  if (workRail && galleryTools) {
-    galleryTools.hidden = false;
-    var films = $$('.clip', workRail), filters = $$('[data-filter]', galleryTools);
-    // phones: the filter row scrolls sideways; a fade on the right says there is more until the end
-    var fbar = $('.gallery-filters', galleryTools);
-    var fsync = function () {
-      var over = fbar.scrollWidth > fbar.clientWidth + 2;
-      fbar.classList.toggle('is-scrollable', over);
-      fbar.classList.toggle('at-end', !over || fbar.scrollLeft + fbar.clientWidth >= fbar.scrollWidth - 2);
-    };
-    fbar.addEventListener('scroll', fsync, { passive: true }); w.addEventListener('resize', fsync, { passive: true }); fsync();
-    filters.forEach(function (button) {
-      button.addEventListener('click', function () {
-        var category = button.dataset.filter, shown = 0;
-        if (fbar.scrollWidth > fbar.clientWidth + 2) fbar.scrollTo({ left: button.offsetLeft - (fbar.clientWidth - button.offsetWidth) / 2, behavior: reduce ? 'auto' : 'smooth' });
-        filters.forEach(function (b) { b.setAttribute('aria-pressed', String(b === button)); });
-        films.forEach(function (film) {
-          var chip = $('.chip', film), matches = category === 'all' || (chip && chip.textContent.trim().toLowerCase() === category);
-          film.hidden = !matches;
-          if (matches) {
-            shown++;
-            if (!reduce && film.animate) film.animate([{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { duration: 400, delay: (shown - 1) * 35, easing: 'cubic-bezier(.16,1,.3,1)' });
-          } else { var v = $('video', film); if (v) { visibleClips.delete(v); v.pause(); } }
-        });
-        workRail.scrollLeft = 0; workRail.dispatchEvent(new Event('gallerychange'));
-        var status = $('[data-gallery-status]'); if (status) status.textContent = shown + ' selected film' + (shown === 1 ? '' : 's') + ' · Drag to explore';
-      });
-    });
-  }
 
   /* One glass highlight travels between links; transform-only, no moving hit targets. */
   var navLinks = $('.nav-links'), navMarker, markerLink = null, markerMotion = null;
@@ -487,69 +443,6 @@
     });
     stage.addEventListener('pointerleave', function () { heroMedia.style.removeProperty('--tilt-x'); heroMedia.style.removeProperty('--tilt-y'); });
   }
-  var cinemaMotion = null, cinema = $('[data-cinema]');
-  if (cinema && !reduce && finePointer) {
-    cinemaMotion = function () {
-      if (w.innerWidth <= 900) { cinema.style.removeProperty('--cinema-scale'); return; }
-      var r = cinema.getBoundingClientRect(); if (r.bottom < 0 || r.top > w.innerHeight) return;
-      var p = Math.max(0, Math.min(1, (w.innerHeight - r.top) / (w.innerHeight * .75)));
-      cinema.style.setProperty('--cinema-scale', (.94 + .06 * p).toFixed(4));
-    };
-  }
-
-  /* ── Work showcase: the deck fans out as you scroll and the reel in focus lifts and plays.
-       Native scroll + position:sticky, so nothing hijacks the wheel. Only the reel in focus
-       ever decodes. Reduced motion / no JS: a still, already-open fan (see index.html). ── */
-  var showcase = $('[data-showcase]'), showcaseMotion = null, syncShowcase = null;
-  if (showcase && !reduce) {
-    var fan = $('[data-fan]', showcase), slots = $$('.sc-slot', fan), beats = $$('.sc-beats li', showcase);
-    var FOCUS = [2, 3, 1], focus = -1, scInView = false;   // slot in focus per beat: centre, right, left
-    showcase.classList.add('is-live'); fan.style.setProperty('--o', 0);
-    syncShowcase = function () {
-      slots.forEach(function (s) {
-        var v = $('video', s); if (!v) return;
-        if (clipsReady && scInView && s.classList.contains('is-focus') && !previewsPaused && !d.hidden && !(lb && lb.open)) {
-          v.preload = 'auto'; seekStart(v); var pl = v.play(); pl && pl.catch(function () {});
-        } else v.pause();
-      });
-    };
-    // Only the reel in focus is a target: the others are inert (no click, tab stop or screen-reader
-    // entry), so overlapping cards never compete. A card that has keyboard focus keeps it until
-    // focus leaves; every clip is also in the full gallery below.
-    var applyInert = function () {
-      slots.forEach(function (s) { var on = s.classList.contains('is-focus'); if (on || s.contains(d.activeElement)) s.removeAttribute('inert'); else s.setAttribute('inert', ''); });
-    };
-    fan.addEventListener('focusout', function () { setTimeout(applyInert, 0); });
-    var setFocus = function (b) {
-      if (b === focus) return; focus = b;
-      slots.forEach(function (s, i) { s.classList.toggle('is-focus', i === FOCUS[b]); });
-      applyInert();
-      beats.forEach(function (li, i) { li.classList.toggle('is-on', i === b); });
-      syncShowcase();
-    };
-    // a reel fades in only once it has reached its start point, so no intro frame flashes
-    $$('video', fan).forEach(function (v) {
-      var s = parseFloat(v.getAttribute('data-start') || '0');
-      v.addEventListener('timeupdate', function () { if (!v.paused && v.currentTime >= s - 0.3) v.classList.add('is-playing'); });
-      v.addEventListener('pause', function () { v.classList.remove('is-playing'); });
-    });
-    showcaseMotion = function () {
-      var r = showcase.getBoundingClientRect(), vh = w.innerHeight;
-      if (r.bottom < 0 || r.top > vh) return;
-      var p = Math.max(0, Math.min(1, -r.top / Math.max(1, r.height - vh)));
-      var o = Math.min(1, p / 0.28); o = 1 - Math.pow(1 - o, 3);   // the deck opens over the first ~quarter
-      fan.style.setProperty('--o', o.toFixed(4));
-      setFocus(p < 0.28 ? 0 : Math.min(2, Math.floor((p - 0.28) / 0.72 * 3)));
-    };
-    var pin = $('.sc-pin', showcase), grid = $('.sc-grid', showcase);
-    var trim = function () {   // empty band under the pinned content, minus a normal section gap
-      var slack = pin.getBoundingClientRect().bottom - grid.getBoundingClientRect().bottom;
-      showcase.style.setProperty('--sc-trim', Math.max(0, Math.round(slack - parseFloat(getComputedStyle(root).fontSize) * (w.innerWidth <= 900 ? 3.75 : 2.5))) + 'px');   // phones: fanned cards overhang more
-    };
-    trim(); w.addEventListener('resize', trim, { passive: true });
-    if (io) new IntersectionObserver(function (es) { scInView = es[0].isIntersecting; syncShowcase(); }).observe(fan);
-    whenSettled(function () { syncShowcase(); });
-  }
   w.addEventListener('resize', onScroll, { passive: true });
 
   /* ── Pricing toggle: crossfade, no layout shift (panels share one grid cell) ── */
@@ -567,12 +460,15 @@
     });
   });
 
-  /* ── Start-a-project form → Google Form (no backend on GitHub Pages) ── */
+  /* ── Free-sample form → Google Form (no backend on GitHub Pages) ── */
   var form = $('#start-form');
   function setNeed(v) { var s = form && form.elements.namedItem('need'); if (s) s.value = v; }
   if (form) {
     var status = $('.form-status', form), btn = $('button[type="submit"]', form);
-    var fields = ['name', 'email', 'need'];
+    var fields = $$('[required]', form).map(function (el) { return el.name; });
+    var val = function (k) { var el = form.elements.namedItem(k); return el ? (el.value || '').trim() : ''; };
+    // The enquiries form has no subscriber field, so the count leads the message.
+    var message = function () { var n = val('subscribers'), m = val('message'); return n ? 'Subscribers: ' + n + (m ? '\n\n' + m : '') : m; };
     var check = function (name) {
       var el = form.elements.namedItem(name), f = el.closest('.field'), msg = '';
       if (!el.value.trim()) msg = 'Please fill this in.';
@@ -581,25 +477,28 @@
       $('.err', f).textContent = msg; return !msg;
     };
     fields.forEach(function (n) { form.elements.namedItem(n).addEventListener('blur', function () { if (this.value) check(n); }); });
+    // Under 10,000 or no channel: say so before they send (they still can).
+    var subs = form.elements.namedItem('subscribers'), subsNote = $('#subs-note');
+    var syncSubsNote = function () { if (subsNote) subsNote.hidden = !/^(Under 10,000|No channel yet)$/.test(val('subscribers')); };
+    subs && subs.addEventListener('change', syncSubsNote);
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       var ok = fields.map(check).every(Boolean);
       if (!ok) { var bad = $('.is-invalid input, .is-invalid select', form); bad && bad.focus(); return; }
       var data = new URLSearchParams(), map = JSON.parse(form.getAttribute('data-entries'));
-      Object.keys(map).forEach(function (k) { data.append(map[k], (form.elements.namedItem(k).value || '').trim()); });
+      Object.keys(map).forEach(function (k) { data.append(map[k], k === 'message' ? message() : val(k)); });
       btn.setAttribute('aria-busy', 'true'); btn.disabled = true; status.hidden = true;
       fetch(form.getAttribute('data-action'), { method: 'POST', mode: 'no-cors', body: data })
         .then(function () {
           status.className = 'form-status ok'; status.hidden = false;
-          status.textContent = 'Got it — we’ll reply within 24 hours (check spam if you don’t see us).';
-          form.reset();
+          status.textContent = 'Got it. We’ll reply within 24 hours (check spam if you don’t see us).';
+          form.reset(); setNeed('Free sample'); syncSubsNote();
         })
         .catch(function () {   // keep everything they typed; offer e-mail as a fallback
-          var v = function (k) { return (form.elements.namedItem(k).value || '').trim(); };
-          var body = 'Name: ' + v('name') + '\nNeed: ' + v('need') + '\nLink: ' + v('link') + '\n\n' + v('message');
+          var body = 'Name: ' + val('name') + '\nNeed: ' + val('need') + '\nLink: ' + val('link') + '\n\n' + message();
           status.className = 'form-status bad'; status.hidden = false;
-          status.innerHTML = 'That didn’t send — your connection may have dropped. Your answers are still here. <a class="link" href="mailto:hello@bejucreative.digital?subject=' +
-            encodeURIComponent('New project — ' + v('need')) + '&body=' + encodeURIComponent(body) + '">Send it by email instead</a>.';
+          status.innerHTML = 'That didn’t send. Your connection may have dropped, but your answers are still here. <a class="link" href="mailto:hello@bejucreative.digital?subject=' +
+            encodeURIComponent('New request: ' + val('need')) + '&body=' + encodeURIComponent(body) + '">Send it by email instead</a>.';
         })
         .then(function () { btn.removeAttribute('aria-busy'); btn.disabled = false; status.focus && status.focus(); });
     });
@@ -616,6 +515,42 @@
     });
   }
   whenSettled(loadGsap);
+
+  /* ── Partner links: /?ref=name adds client_reference_id to every Stripe checkout link, so
+       orders from a partner's post can be counted. Kept for this tab only (sessionStorage). ── */
+  (function () {
+    var ref = '';
+    try {
+      var raw = (new URLSearchParams(w.location.search).get('ref') || '').toLowerCase();
+      if (/^[a-z0-9_-]{1,40}$/.test(raw)) { ref = raw; sessionStorage.setItem('beju-ref', ref); }
+      else ref = sessionStorage.getItem('beju-ref') || '';
+    } catch (e) {}
+    if (!/^[a-z0-9_-]{1,40}$/.test(ref)) return;
+    $$('a[href^="https://buy.stripe.com/"]').forEach(function (a) {
+      try { var u = new URL(a.href); u.searchParams.set('client_reference_id', ref); a.href = u.toString(); } catch (e) {}
+    });
+  })();
+
+  /* ── Call form: Tally's popup script loads only on the first click. Each link opens the form
+       in a new tab on its own, so it still works without JS or if the popup can't load. ── */
+  var tallyState = 0;   // 0 not loaded · 1 loading · 2 loaded (Tally's own click handler takes over)
+  d.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[data-tally-open]');
+    if (!a || tallyState === 2 || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    if (tallyState === 1) return;
+    tallyState = 1;
+    var sc = d.createElement('script');
+    sc.src = 'https://tally.so/widgets/embed.js'; sc.async = true;
+    sc.onload = function () {
+      tallyState = 2;
+      var ds = a.dataset;
+      if (w.Tally && w.Tally.openPopup) w.Tally.openPopup(ds.tallyOpen, { layout: ds.tallyLayout, emoji: { text: ds.tallyEmojiText, animation: ds.tallyEmojiAnimation } });
+      else w.location.href = a.href;
+    };
+    sc.onerror = function () { tallyState = 0; sc.remove(); w.location.href = a.href; };
+    d.head.appendChild(sc);
+  });
 
   onScroll();
 })();
