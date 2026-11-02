@@ -30,7 +30,7 @@ Everything else you need is below. Do every step signed in as **bejusipe@gmail.c
 
 1. Use the Google Sheet that the phase-1 Google Form writes its responses to (owned by bejusipe@gmail.com; share it with that account as Editor if it lives elsewhere). If you start without the Form, create an empty Sheet instead.
 2. Copy the Sheet ID from its URL: `https://docs.google.com/spreadsheets/d/THIS_PART/edit`.
-3. The script writes to the first tab (or the tab named in the optional `RESPONSE_SHEET_TAB` property). If the tab is empty it creates the header row; if it already has one, values are placed by header name and any missing columns are added on the right.
+3. The script writes to the first tab (or the tab named in the optional `RESPONSE_SHEET_TAB` property). It never edits Google's columns: on every post it reads the header row and puts each value under its header by name, adding any missing header at the end. If the tab is empty it writes the header row itself.
 
 **3. Create the script**
 
@@ -64,7 +64,7 @@ const INTAKE_ENDPOINT = "REPLACE_ME";      // the /exec URL from step 5
 **7. Test before announcing it**
 
 1. Submit the form on the real site with your own email.
-2. Check: a row appears in the sheet (`confirmed` = FALSE, `status` = `unconfirmed`); the confirmation email arrives; its link shows "Confirmed. Our team gets to work." and the row flips to `confirmed` = TRUE.
+2. Check: a row appears in the sheet (`Confirmed` = FALSE, `Status` = `unconfirmed`); the confirmation email arrives; its link shows "Confirmed. Our team gets to work." and the row flips to `confirmed` = TRUE.
 3. Submit again with the same email: the form should say a request already exists (the 7 day limit).
 
 **Changing the code later:** edit, then **Deploy**, **Manage deployments**, edit the existing deployment, **New version**. A brand-new deployment gets a new URL.
@@ -73,9 +73,9 @@ const INTAKE_ENDPOINT = "REPLACE_ME";      // the /exec URL from step 5
 
 - **Quota:** a free Google account can send about 100 emails a day through MailApp, which is also the daily limit on confirmations. The script logs `mail_failed` in `status` when a send fails; the row is kept.
 - **Link scanners:** some mail providers open links to scan them, which can confirm a row before the person clicks. If that becomes a problem, switch the confirm link to a button that posts.
-- **Sheet columns (header row, in this order):** `Timestamp, email, name, video, timestamp, goal, captions, graphics, brand, reference, channel_url, cadence, sells, sells_note, look, energy, colours, font, logo_url, format, ref2, avoid, music, notes, src, confirmed, confirm_token, status`. `Timestamp` is when the row was written; `timestamp` is the moment in the video. `graphics` is 1 to 5. `src` is `website` or `email`. The last three are for the confirm flow.
-- **Two entry modes:** `src = website` (the /brief/ page with the four qualification questions) needs `channel_url`, `cadence`, `sells`. `src = email` (a link with `?src=email&email=...&name=...&video=...`) needs `video`; the page also makes the timestamp required in that mode, the server does not. A post with no `src` counts as `email` when it has no channel link.
+- **Sheet columns.** Google's: `Timestamp`, `The video we're clipping from` (the form's `video`, with ` @ 12:40` appended when a timestamp is given), `Your name`, `The email we wrote to you on`, `After watching, what should people do?`, `Captions`, `How much is happening on screen?` (1 to 5), `Colours, fonts, anything we should keep to` (the form's brand notes; colours, font and logo link from the new form are appended to it as `Colours: ... | Font: ... | Logo: ...`), `A Short you wish was yours`. Ours, to the right: `Channel or page`, `Posting frequency`, `What you sell`, `Sells note`, `Look`, `Energy`, `Format`, `Second reference`, `Avoid`, `Music`, `Notes`, `Source` (website or email), `Confirmed`, `Confirm token`, `Status`. Header text is matched ignoring case and apostrophe style. If the Form question texts are ever edited, edit the `H` table at the top of `Code.gs` to match.
+- **Two entry modes:** `src` = website (the /brief/ page with the four qualification questions) needs `channel_url`, `cadence`, `sells`. `src` = email (a link with `?src=email&email=...&name=...&video=...`) needs `video`; the page also makes the timestamp required in that mode, the server does not. A post with no `src` counts as `email` when it has no channel link.
 - **Formulas:** any cell that starts with `=`, `+`, `-` or `@` is stored as plain text.
-- **The channel-check script** on the Mac should read only rows where `confirmed` is TRUE.
+- **The channel-check script** on the Mac should read only rows where `Confirmed` is TRUE.
 - **Privacy:** the form uses Cloudflare Turnstile and this Google Sheet. `privacy.html` does not describe either yet; update it before launch.
 - Nothing in this folder is published to the site as a page, but the repository is public: never paste the Turnstile secret, the Sheet ID or sheet data into any file here. The `/exec` URL and the Turnstile **site** key are public by design.

@@ -22,14 +22,39 @@ const RATE_LIMIT_DAYS = 7;
 const REPLY_TO = 'hello@bejucreative.digital';
 const MAX_LEN = 2000;
 
-// Header row, in order. Shared with the phase-1 Google Form (Timestamp, email, name, video, timestamp, goal,
-// captions, graphics, brand, reference); both write the same response Sheet. If the sheet already has a header
-// row (for example one the Form created), values are placed by header name instead, so a different order is fine.
-const COLUMNS = [
-  'Timestamp', 'email', 'name', 'video', 'timestamp', 'goal', 'captions', 'graphics', 'brand', 'reference',
-  'channel_url', 'cadence', 'sells', 'sells_note', 'look', 'energy', 'colours', 'font', 'logo_url', 'format',
-  'ref2', 'avoid', 'music', 'notes', 'src', 'confirmed', 'confirm_token', 'status'
-];
+// The response Sheet is created by the phase-1 Google Form, so its first columns are Google's: "Timestamp" and the
+// question texts. We never move or rewrite those. Our extra fields live in columns to the right. On every append the
+// header row is read and each value goes under its header BY NAME (never by position); a missing header is added at
+// the end. If the sheet is empty, the header row is Timestamp + the Form questions + our extras, in this order.
+const H = {
+  time: 'Timestamp',
+  video: "The video we're clipping from",
+  name: 'Your name',
+  email: 'The email we wrote to you on',
+  goal: 'After watching, what should people do?',
+  captions: 'Captions',
+  graphics: 'How much is happening on screen?',
+  brand: 'Colours, fonts, anything we should keep to',
+  reference: 'A Short you wish was yours',
+  channel: 'Channel or page',
+  cadence: 'Posting frequency',
+  sells: 'What you sell',
+  sellsNote: 'Sells note',
+  look: 'Look',
+  energy: 'Energy',
+  format: 'Format',
+  ref2: 'Second reference',
+  avoid: 'Avoid',
+  music: 'Music',
+  notes: 'Notes',
+  source: 'Source',
+  confirmed: 'Confirmed',
+  token: 'Confirm token',
+  status: 'Status'
+};
+const HEADER_ROW = [H.time, H.video, H.name, H.email, H.goal, H.captions, H.graphics, H.brand, H.reference,
+  H.channel, H.cadence, H.sells, H.sellsNote, H.look, H.energy, H.format, H.ref2, H.avoid, H.music, H.notes,
+  H.source, H.confirmed, H.token, H.status];
 
 /* ───────────────────────── web app entry points ───────────────────────── */
 
@@ -61,17 +86,34 @@ function doPost(e) {
       const sheet = sheet_(), cols = headers_(sheet);
       if (recentSubmission_(sheet, cols, data.email)) return json_({ ok: false, error: 'rate_limited' });
       token = newToken_();
-      const row = [];
-      for (let i = 0; i < Math.max(sheet.getLastColumn(), COLUMNS.length); i++) row.push('');
-      Object.keys(cols).forEach(function (name) {
-        let v = '';
-        if (name === 'Timestamp') v = new Date();
-        else if (name === 'confirmed') v = 'FALSE';
-        else if (name === 'confirm_token') v = token;
-        else if (name === 'status') v = 'unconfirmed';
-        else if (data[name] !== undefined) v = safeCell_(data[name]);
-        row[cols[name] - 1] = v;
-      });
+      const values = {};
+      values[H.time] = new Date();
+      values[H.video] = safeCell_(data.video + (data.timestamp ? ' @ ' + data.timestamp : ''));
+      values[H.name] = safeCell_(data.name);
+      values[H.email] = safeCell_(data.email);
+      values[H.goal] = safeCell_(data.goal);
+      values[H.captions] = safeCell_(data.captions);
+      values[H.graphics] = safeCell_(data.graphics);
+      values[H.brand] = safeCell_(brandText_(data));
+      values[H.reference] = safeCell_(data.reference);
+      values[H.channel] = safeCell_(data.channel_url);
+      values[H.cadence] = safeCell_(data.cadence);
+      values[H.sells] = safeCell_(data.sells);
+      values[H.sellsNote] = safeCell_(data.sells_note);
+      values[H.look] = safeCell_(data.look);
+      values[H.energy] = safeCell_(data.energy);
+      values[H.format] = safeCell_(data.format);
+      values[H.ref2] = safeCell_(data.ref2);
+      values[H.avoid] = safeCell_(data.avoid);
+      values[H.music] = safeCell_(data.music);
+      values[H.notes] = safeCell_(data.notes);
+      values[H.source] = data.src;
+      values[H.confirmed] = 'FALSE';
+      values[H.token] = token;
+      values[H.status] = 'unconfirmed';
+      const width = sheet.getLastColumn(), row = [];
+      for (let i = 0; i < width; i++) row.push('');
+      Object.keys(values).forEach(function (h) { row[cols[norm_(h)] - 1] = values[h]; });
       sheet.appendRow(row);
     } finally {
       lock.releaseLock();
@@ -98,15 +140,15 @@ function doGet(e) {
   lock.waitLock(20000);
   try {
     const sheet = sheet_(), cols = headers_(sheet);
-    const col = cols.confirm_token;
+    const col = cols[norm_(H.token)];
     const last = sheet.getLastRow();
     if (last < 2) return page_('This link is not valid or has expired.', false);
     const tokens = sheet.getRange(2, col, last - 1, 1).getValues();
     for (let i = 0; i < tokens.length; i++) {
       if (String(tokens[i][0]) === String(token)) {
         const row = i + 2;
-        sheet.getRange(row, cols.confirmed).setValue('TRUE');
-        sheet.getRange(row, cols.status).setValue('confirmed');
+        sheet.getRange(row, cols[norm_(H.confirmed)]).setValue('TRUE');
+        sheet.getRange(row, cols[norm_(H.status)]).setValue('confirmed');
         return page_('Confirmed. Our team gets to work.', true);
       }
     }
@@ -224,23 +266,36 @@ function sheet_() {
   const ss = SpreadsheetApp.openById(id);
   const tab = props.getProperty('RESPONSE_SHEET_TAB');
   const sh = tab ? (ss.getSheetByName(tab) || ss.insertSheet(tab)) : ss.getSheets()[0];
-  // Header row only if the sheet is empty. If a header exists (the Form's), add any missing columns on the right.
+  // Header row only if the sheet is empty. If one exists (the Form's), keep it and add any missing header at the end.
   if (sh.getLastRow() === 0) {
-    sh.appendRow(COLUMNS);
+    sh.appendRow(HEADER_ROW);
     sh.setFrozenRows(1);
   } else {
-    const have = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
-    COLUMNS.forEach(function (c) {
-      if (have.indexOf(c) === -1) { sh.getRange(1, have.length + 1).setValue(c); have.push(c); }
+    const have = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(function (h) { return norm_(h); });
+    HEADER_ROW.forEach(function (h) {
+      if (have.indexOf(norm_(h)) === -1) { sh.getRange(1, have.length + 1).setValue(h); have.push(norm_(h)); }
     });
   }
   return sh;
 }
 
-/** header name -> 1-based column number */
+// Header text compared without case, spacing or apostrophe style (Google may store a curly apostrophe).
+function norm_(s) { return String(s).replace(/[\u2018\u2019]/g, "'").replace(/\s+/g, ' ').trim().toLowerCase(); }
+
+/** The Form has one brand column; our colours, font and logo link are folded into it. */
+function brandText_(d) {
+  const parts = [];
+  if (d.brand) parts.push(d.brand);
+  if (d.colours) parts.push('Colours: ' + d.colours);
+  if (d.font) parts.push('Font: ' + d.font);
+  if (d.logo_url) parts.push('Logo: ' + d.logo_url);
+  return parts.join(' | ');
+}
+
+/** normalised header text -> 1-based column number */
 function headers_(sheet) {
   const row = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0], out = {};
-  row.forEach(function (h, i) { if (h !== '' && out[String(h)] === undefined) out[String(h)] = i + 1; });
+  row.forEach(function (h, i) { const k = norm_(h); if (k && out[k] === undefined) out[k] = i + 1; });
   return out;
 }
 
@@ -248,8 +303,8 @@ function recentSubmission_(sheet, cols, email) {
   const last = sheet.getLastRow();
   if (last < 2) return false;
   const cutoff = Date.now() - RATE_LIMIT_DAYS * 24 * 3600 * 1000;
-  const when_ = sheet.getRange(2, cols.Timestamp, last - 1, 1).getValues();
-  const mail_ = sheet.getRange(2, cols.email, last - 1, 1).getValues();
+  const when_ = sheet.getRange(2, cols[norm_(H.time)], last - 1, 1).getValues();
+  const mail_ = sheet.getRange(2, cols[norm_(H.email)], last - 1, 1).getValues();
   for (let i = 0; i < mail_.length; i++) {
     if (String(mail_[i][0]).trim().toLowerCase() !== email) continue;
     const w = when_[i][0] instanceof Date ? when_[i][0].getTime() : Date.parse(when_[i][0]);
@@ -261,9 +316,9 @@ function recentSubmission_(sheet, cols, email) {
 function markStatus_(token, status) {
   const sheet = sheet_(), cols = headers_(sheet), last = sheet.getLastRow();
   if (last < 2) return;
-  const tokens = sheet.getRange(2, cols.confirm_token, last - 1, 1).getValues();
+  const tokens = sheet.getRange(2, cols[norm_(H.token)], last - 1, 1).getValues();
   for (let i = 0; i < tokens.length; i++) {
-    if (String(tokens[i][0]) === token) { sheet.getRange(i + 2, cols.status).setValue(status); return; }
+    if (String(tokens[i][0]) === token) { sheet.getRange(i + 2, cols[norm_(H.status)]).setValue(status); return; }
   }
 }
 
