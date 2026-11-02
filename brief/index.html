@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Get Your Free Sample | BEJÚ Creative</title>
+<meta name="description" content="Ask for a free sample: one Short made by our team from a video you already have. Four quick questions, no payment, no card.">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<link rel="canonical" href="https://bejucreative.digital/brief/">
+<link rel="icon" href="/favicon.ico">
+<meta name="theme-color" content="#090B07">
+<link rel="stylesheet" href="/tokens.css"><link rel="stylesheet" href="/site.css">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BEJÚ Creative">
+<meta property="og:title" content="Get Your Free Sample | BEJÚ Creative">
+<meta property="og:description" content="One Short, made by our team from a video you already have. Four quick questions, no payment, no card.">
+<meta property="og:url" content="https://bejucreative.digital/brief/">
+<meta property="og:image" content="https://bejucreative.digital/og-image.jpg">
+<meta property="og:image:alt" content="BEJÚ Creative. Shorts made from videos you already have. Start with a free sample.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Get Your Free Sample | BEJÚ Creative">
+<meta name="twitter:description" content="One Short, made by our team from a video you already have. Four quick questions, no payment, no card.">
+<meta name="twitter:image" content="https://bejucreative.digital/og-image.jpg">
+<style>
+/* Free-sample intake. Page-only layout; shared structure is /site.css, tokens /tokens.css. */
+.sample-page{padding:calc(78px + clamp(2rem,6vw,5rem)) 0 var(--sec-s)}
+.sample-wrap{width:min(100% - 32px,46rem);margin-inline:auto}   /* 16px side gutters on phones */
+.sample-page h1{font-size:clamp(2.4rem,6vw,4rem);line-height:1.04;letter-spacing:-.04em}
+.sample-page .lede{margin-top:1rem;max-width:46ch}
+.sample-page .kicker a{color:var(--muted);text-decoration:underline;text-decoration-color:rgba(255,255,255,.22);text-underline-offset:4px}
+.sample-form,.sample-done{margin-top:2rem;border-radius:var(--r-xl);padding:clamp(1.25rem,4vw,2.25rem)}
+.sample-form{gap:1.6rem}
+
+/* progress */
+.steps{display:grid;gap:.6rem}
+.steps-label{font-size:var(--t-label);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-solid)}
+.progress{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.progress i{height:3px;border-radius:var(--r-pill);background:var(--hairline-strong)}
+.progress i.on{background:var(--gold-metal)}
+
+/* steps */
+.step{display:grid;gap:1.5rem}
+.step:focus{outline:none}
+.step h2{font-size:clamp(1.4rem,3.2vw,1.8rem);font-weight:700;line-height:1.15;letter-spacing:-.03em;color:var(--ink);text-wrap:balance}
+.step h2:focus{outline:none}
+.step-intro{margin-top:-.7rem;font-size:var(--t-caption);line-height:1.55;color:var(--muted);max-width:56ch}
+.hint{font-size:var(--t-caption);line-height:1.5;color:var(--muted)}
+.field .hint{margin-top:-.3rem}
+
+/* single-choice groups as pills */
+.group{border:0;min-inline-size:0;display:grid;gap:.6rem}
+.group > legend{padding:0;margin-bottom:.15rem;font-size:.875rem;font-weight:600;color:var(--ink)}
+.group > legend span{font-weight:400;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:.5rem}
+.chip{position:relative;display:inline-flex}
+.chip input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.chip span{display:inline-flex;align-items:center;min-height:44px;padding:.5rem 1rem;border-radius:var(--r-pill);
+  border:1px solid var(--hairline-strong);background:rgba(255,255,255,.04);color:var(--ink);font-size:.95rem;line-height:1.25;
+  transition:border-color var(--dur-1) var(--ease-out),background var(--dur-1) var(--ease-out),box-shadow var(--dur-1) var(--ease-out)}
+.chip:hover span{border-color:rgba(255,255,255,.24)}
+.chip input:checked + span{background:rgba(199,162,75,.14);border-color:var(--gold-solid);box-shadow:var(--offer-glow)}
+.chip input:focus-visible + span{outline:2px solid var(--gold-champagne);outline-offset:3px}
+.group .err{font-size:.8rem;color:var(--error)}
+.group.is-invalid .chip span{border-color:var(--error)}
+.note-field{margin-top:.2rem}
+
+/* look previews */
+.looks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem}
+.look{position:relative;display:block;border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--hairline-strong);background:var(--surface);cursor:pointer;
+  transition:border-color var(--dur-1) var(--ease-out)}
+.look:hover{border-color:rgba(255,255,255,.24)}
+.look input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer;z-index:2}
+.look-media{position:relative;display:block;aspect-ratio:4 / 5;background:var(--media-black)}
+.look-media img,.look-media video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.look-name{display:block;padding:.6rem .75rem .7rem;font-size:.85rem;font-weight:600;line-height:1.3;color:var(--ink)}
+.look input:checked ~ .look-media{box-shadow:inset 0 0 0 2px var(--gold-solid)}
+.look input:checked ~ .look-name{color:var(--gold-solid)}
+.look:has(input:checked){border-color:var(--gold-solid)}
+.look input:focus-visible ~ .look-media{outline:2px solid var(--gold-champagne);outline-offset:-4px}
+
+/* energy slider */
+.range{display:grid;gap:.4rem}
+.range input[type=range]{width:100%;min-height:44px;accent-color:var(--gold);background:none;border:0;padding:0}
+.range-ends{display:flex;justify-content:space-between;gap:1rem;font-size:var(--t-caption);color:var(--muted)}
+.range-out{display:flex;align-items:center;gap:.75rem;font-size:var(--t-caption);color:var(--body)}
+.linkbtn{display:inline-flex;align-items:center;min-height:44px;padding:0 .25rem;border:0;background:none;font-weight:600;font-size:.9rem;color:var(--gold-solid);cursor:pointer;text-decoration:underline;text-decoration-color:rgba(216,184,101,.4);text-underline-offset:4px}
+.linkbtn:hover{color:var(--gold-champagne)}
+
+/* brand */
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.colour{display:grid;grid-template-columns:3.25rem minmax(0,1fr);gap:8px}
+.field .colour input[type=color]{padding:.25rem;cursor:pointer}
+
+/* honeypot: off-screen, never display:none (bots skip those) */
+.hp{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}
+
+/* spam check + actions */
+.ts{min-height:65px}
+.sample-form .btn-row{gap:.75rem 1rem}
+.sample-form .btn-row .fine{flex:1 1 14rem}
+.form-status a{color:var(--gold-solid);text-decoration:underline;text-underline-offset:4px}
+.sample-done{display:grid;gap:1rem;justify-items:start}
+.sample-done:focus{outline:none}
+.sample-done h2{font-size:clamp(1.6rem,4vw,2.3rem);font-weight:700;line-height:1.12;letter-spacing:-.03em;color:var(--ink);text-wrap:balance}
+.sample-done p{max-width:52ch}
+.sample-done strong{color:var(--ink);font-weight:600}
+.sample-small{margin-top:1.4rem;font-size:.95rem;color:var(--body)}
+.sample-small .link{display:inline-flex;align-items:center;min-height:44px}
+noscript .nojs{margin-top:1.5rem;padding:1rem;border:1px solid var(--hairline-strong);border-radius:var(--r-sm);color:var(--body)}
+
+@media(max-width:640px){
+  .looks{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .pair{grid-template-columns:1fr}
+  .sample-form .btn-row > button{flex:1 1 100%}
+}
+@media(prefers-reduced-motion:reduce){.chip span,.look{transition:none}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="nav" id="nav">
+  <a href="/" class="brand" aria-label="BEJÚ Creative, home"><img src="/beju-mark-sm.png" alt="BEJÚ Creative" width="180" height="107"></a>
+  <nav class="nav-links" aria-label="Main">
+    <a href="/#work">Work</a>
+    <a href="/#ordering">How it works</a>
+    <a href="/faq/">FAQ</a>
+  </nav>
+  <div class="nav-end">
+    <a class="btn-gold btn-sm magnetic nav-order" href="/brief/" aria-current="page">Free sample</a>
+    <button class="burger" type="button" aria-expanded="false" aria-controls="sheet" aria-label="Open menu"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<div class="sheet" id="sheet">
+  <nav aria-label="Menu">
+    <a href="/#work">Work</a>
+    <a href="/#ordering">How it works</a>
+    <a href="/faq/">FAQ</a>
+  </nav>
+  <a class="btn-gold" href="/brief/">Get your free sample</a>
+  <p class="caption">We reply within 24 hours · hello@bejucreative.digital</p>
+</div>
+
+<main id="main" class="sample-page">
+  <div class="sample-wrap">
+    <p class="kicker"><span><a href="/">Home</a> / Free sample</span></p>
+    <h1 class="display grad" id="page-title">Get your free sample</h1>
+    <p class="lede" id="page-lede">One Short, made by our team from a video you already have. Four quick questions to start. No payment, no card.</p>
+
+    <form class="sample-form panel form" id="sample-form" novalidate aria-labelledby="step1-title">
+      <div class="steps">
+        <p class="steps-label" id="steps-label">Step 1 of 2</p>
+        <div class="progress" aria-hidden="true"><i class="on" id="bar-1"></i><i id="bar-2"></i></div>
+      </div>
+
+      <!-- ── Page 1: the four required answers ── -->
+      <section class="step" id="step-1" aria-labelledby="step1-title" tabindex="-1">
+        <h2 id="step1-title">Tell us about your channel</h2>
+
+        <div class="field">
+          <label for="f-channel">Your channel or page</label>
+          <p class="hint" id="h-channel">A YouTube, Instagram, TikTok or podcast link.</p>
+          <input id="f-channel" name="channel_url" type="url" inputmode="url" autocomplete="url" placeholder="https://" aria-describedby="h-channel e-channel" required>
+          <span class="err" id="e-channel" aria-live="polite"></span>
+        </div>
+
+        <div class="field">
+          <label for="f-email">Email</label>
+          <p class="hint" id="h-email">We send one link to confirm it is you.</p>
+          <input id="f-email" name="email" type="email" inputmode="email" autocomplete="email" aria-describedby="h-email e-email" required>
+          <span class="err" id="e-email" aria-live="polite"></span>
+        </div>
+
+        <fieldset class="group" id="g-cadence" aria-describedby="e-cadence">
+          <legend>How often do you post?</legend>
+          <div class="chips">
+            <label class="chip"><input type="radio" name="cadence" value="every day" required><span>Every day</span></label>
+            <label class="chip"><input type="radio" name="cadence" value="3-5 a week"><span>3-5 a week</span></label>
+            <label class="chip"><input type="radio" name="cadence" value="1-2 a week"><span>1-2 a week</span></label>
+            <label class="chip"><input type="radio" name="cadence" value="less than weekly"><span>Less than weekly</span></label>
+          </div>
+          <span class="err" id="e-cadence" aria-live="polite"></span>
+        </fieldset>
+
+        <fieldset class="group" id="g-sells" aria-describedby="e-sells">
+          <legend>What do you sell?</legend>
+          <div class="chips">
+            <label class="chip"><input type="radio" name="sells" value="a course" required><span>A course</span></label>
+            <label class="chip"><input type="radio" name="sells" value="coaching or consulting"><span>Coaching or consulting</span></label>
+            <label class="chip"><input type="radio" name="sells" value="a product or store"><span>A product or store</span></label>
+            <label class="chip"><input type="radio" name="sells" value="sponsorships or ads"><span>Sponsorships or ads</span></label>
+            <label class="chip"><input type="radio" name="sells" value="nothing yet"><span>Nothing yet</span></label>
+            <label class="chip"><input type="radio" name="sells" value="other"><span>Other</span></label>
+          </div>
+          <span class="err" id="e-sells" aria-live="polite"></span>
+        </fieldset>
+        <div class="field note-field">
+          <label for="f-sells-note">In one line, if you like <span>(optional)</span></label>
+          <input id="f-sells-note" name="sells_note" maxlength="200" autocomplete="off">
+        </div>
+
+        <!-- honeypot: real visitors never see or fill this. Anything in it is dropped server-side. -->
+        <div class="hp" aria-hidden="true"><label>Website <input type="text" name="website" id="f-website" tabindex="-1" autocomplete="off"></label></div>
+
+        <div class="btn-row">
+          <button class="btn-gold" type="button" id="next">Continue</button>
+          <p class="fine">Next: an optional 30-second style step. You can skip it.</p>
+        </div>
+      </section>
+
+      <!-- ── Page 2: the optional style studio ── -->
+      <section class="step" id="step-2" aria-labelledby="step2-title" tabindex="-1" hidden>
+        <h2 id="step2-title">Make it look like yours (30 seconds, optional)</h2>
+        <p class="step-intro" id="step2-intro">Answer what you like and skip the rest. Skip it and we build it from how we see your brand.</p>
+
+        <!-- Email mode only (?src=email): the lead already said yes, so we ask who they are and what to cut. -->
+        <div class="pair" id="who" hidden>
+          <div class="field"><label for="f-name">Your name <span>(optional)</span></label><input id="f-name" name="name" autocomplete="name" maxlength="120"></div>
+          <div class="field"><label for="f-email2">Email</label><input id="f-email2" name="email2" type="email" inputmode="email" autocomplete="email" aria-describedby="e-email2" required><span class="err" id="e-email2" aria-live="polite"></span></div>
+        </div>
+
+        <fieldset class="group" id="g-source">
+          <legend id="source-legend">A video you'd like us to work from, and the moment <span id="source-opt">(optional)</span></legend>
+          <div class="field"><label for="f-source">Video link</label><input id="f-source" name="source_video" type="url" inputmode="url" autocomplete="off" placeholder="https://" aria-describedby="e-source"><span class="err" id="e-source" aria-live="polite"></span></div>
+          <div class="field"><label for="f-moment">The moment, if you have one</label><input id="f-moment" name="moment" maxlength="300" autocomplete="off" placeholder="e.g. 12:40 to 13:20, the story about your first client" aria-describedby="e-moment"><span class="err" id="e-moment" aria-live="polite"></span></div>
+        </fieldset>
+
+        <fieldset class="group">
+          <legend>Pick the look you want <span>(optional)</span></legend>
+          <!-- TODO(look-previews): these six tiles use existing site clips as PLACEHOLDERS (rail-*.mp4, hero/*).
+               Replace each data-src and poster with the real preview for that look before this page goes live.
+               Previews are all existing public site clips; never add a lead's media to this public repo. -->
+          <div class="looks" id="looks">
+            <label class="look" data-todo="placeholder-preview"><input type="radio" name="look" value="clean-talking-head"><span class="look-media"><img src="/rail-01.jpg" alt="" width="540" height="675" loading="lazy" decoding="async"><video muted loop playsinline preload="none" aria-hidden="true" disablepictureinpicture data-src="/rail-01-preview.mp4"></video></span><span class="look-name">Clean Talking-Head</span></label>
+            <label class="look" data-todo="placeholder-preview"><input type="radio" name="look" value="podcast-split"><span class="look-media"><img src="/work/02.jpg" alt="" width="540" height="675" loading="lazy" decoding="async"><video muted loop playsinline preload="none" aria-hidden="true" disablepictureinpicture data-src="/work/02-preview.mp4"></video></span><span class="look-name">Podcast Split</span></label>
+            <label class="look" data-todo="placeholder-preview"><input type="radio" name="look" value="kinetic-words"><span class="look-media"><img src="/hero/hero-t6-poster.jpg" alt="" width="540" height="675" loading="lazy" decoding="async"><video muted loop playsinline preload="none" aria-hidden="true" disablepictureinpicture data-src="/hero/hero-t6.mp4"></video></span><span class="look-name">Kinetic Words</span></label>
+            <label class="look" data-todo="placeholder-preview"><input type="radio" name="look" value="bold-captions"><span class="look-media"><img src="/rail-08.jpg" alt="" width="540" height="675" loading="lazy" decoding="async"><video muted loop playsinline preload="none" aria-hidden="true" disablepictureinpicture data-src="/rail-08.mp4"></video></span><span class="look-name">Bold Captions</span></label>
+            <label class="look" data-todo="placeholder-preview"><input type="radio" name="look" value="minimal-educational"><span class="look-media"><img src="/rail-05.jpg" alt="" width="540" height="675" loading="lazy" decoding="async"><video muted loop playsinline preload="none" aria-hidden="true" disablepictureinpicture data-src="/rail-05.mp4"></video></span><span class="look-name">Minimal Educational</span></label>
+            <label class="look" data-todo="placeholder-preview"><input type="radio" name="look" value="cinematic-b-roll"><span class="look-media"><img src="/hero/hero-poster.jpg" alt="" width="540" height="675" loading="lazy" decoding="async"><video muted loop playsinline preload="none" aria-hidden="true" disablepictureinpicture data-src="/hero/hero.mp4"></video></span><span class="look-name">Cinematic B-roll</span></label>
+          </div>
+        </fieldset>
+
+        <fieldset class="group">
+          <legend>Captions <span>(optional)</span></legend>
+          <div class="chips">
+            <label class="chip"><input type="radio" name="captions" value="minimal one line"><span>Minimal, one line</span></label>
+            <label class="chip"><input type="radio" name="captions" value="word highlights"><span>Word highlights</span></label>
+            <label class="chip"><input type="radio" name="captions" value="big and bold"><span>Big and bold</span></label>
+            <label class="chip"><input type="radio" name="captions" value="none"><span>None</span></label>
+          </div>
+        </fieldset>
+
+        <div class="field range">
+          <label for="f-energy">Energy <span>(optional)</span></label>
+          <input id="f-energy" name="energy" type="range" min="1" max="5" step="1" value="3" aria-describedby="energy-out">
+          <div class="range-ends" aria-hidden="true"><span>1 · Calm</span><span>5 · High energy</span></div>
+          <div class="range-out"><span id="energy-out">Not set. We match your niche.</span><button class="linkbtn" type="button" id="energy-clear" hidden>Clear</button></div>
+        </div>
+
+        <fieldset class="group">
+          <legend>Graphics level <span>(optional)</span></legend>
+          <div class="chips">
+            <label class="chip"><input type="radio" name="graphics" value="just me on screen"><span>Just me on screen</span></label>
+            <label class="chip"><input type="radio" name="graphics" value="light"><span>Light</span></label>
+            <label class="chip"><input type="radio" name="graphics" value="full motion graphics"><span>Full motion graphics</span></label>
+          </div>
+        </fieldset>
+
+        <fieldset class="group">
+          <legend>Your brand <span>(optional)</span></legend>
+          <div class="pair">
+            <div class="field"><label for="f-colour1">Colour 1</label>
+              <div class="colour"><input type="color" id="f-colour1-pick" value="#c7a24b" aria-label="Pick colour 1"><input id="f-colour1" name="colour1" maxlength="9" placeholder="#C7A24B" autocomplete="off" aria-describedby="e-colour"></div></div>
+            <div class="field"><label for="f-colour2">Colour 2</label>
+              <div class="colour"><input type="color" id="f-colour2-pick" value="#ffffff" aria-label="Pick colour 2"><input id="f-colour2" name="colour2" maxlength="9" placeholder="#FFFFFF" autocomplete="off" aria-describedby="e-colour"></div></div>
+          </div>
+          <span class="err" id="e-colour" aria-live="polite"></span>
+          <div class="pair">
+            <div class="field"><label for="f-font">Font name</label><input id="f-font" name="font" maxlength="80" autocomplete="off" placeholder="e.g. Montserrat"></div>
+            <div class="field"><label for="f-logo">Logo link <span>(png or svg)</span></label><input id="f-logo" name="logo_url" type="url" inputmode="url" autocomplete="off" placeholder="https://"><span class="err" id="e-logo" aria-live="polite"></span></div>
+          </div>
+          <div class="field"><label for="f-brandnotes">Brand notes <span>(optional)</span></label><textarea id="f-brandnotes" name="brand_notes" rows="2" maxlength="800" placeholder="Tone, words you use, anything that should feel like you"></textarea></div>
+        </fieldset>
+
+        <fieldset class="group">
+          <legend>Format and platform <span>(optional)</span></legend>
+          <div class="chips">
+            <label class="chip"><input type="radio" name="format" value="9:16"><span>9:16 · Reels, Shorts, TikTok</span></label>
+            <label class="chip"><input type="radio" name="format" value="4:5"><span>4:5 · LinkedIn, feed</span></label>
+            <label class="chip"><input type="radio" name="format" value="1:1"><span>1:1</span></label>
+          </div>
+        </fieldset>
+
+        <fieldset class="group">
+          <legend>Two Shorts you love, from any creator <span>(optional)</span></legend>
+          <div class="pair">
+            <div class="field"><label class="sr-only" for="f-ref1">Short you love, link 1</label><input id="f-ref1" name="ref1" type="url" inputmode="url" autocomplete="off" placeholder="https://"><span class="err" id="e-ref1" aria-live="polite"></span></div>
+            <div class="field"><label class="sr-only" for="f-ref2">Short you love, link 2</label><input id="f-ref2" name="ref2" type="url" inputmode="url" autocomplete="off" placeholder="https://"><span class="err" id="e-ref2" aria-live="polite"></span></div>
+          </div>
+        </fieldset>
+
+        <div class="field"><label for="f-cta">What should viewers do after watching? <span>(optional)</span></label><input id="f-cta" name="cta" maxlength="200" autocomplete="off" placeholder="e.g. follow, join the newsletter, book a call"></div>
+
+        <div class="field"><label for="f-avoid">One thing you hate in edits <span>(optional)</span></label><input id="f-avoid" name="avoid" maxlength="300" autocomplete="off"></div>
+
+        <fieldset class="group">
+          <legend>Music <span>(optional)</span></legend>
+          <div class="chips">
+            <label class="chip"><input type="radio" name="music" value="none"><span>None</span></label>
+            <label class="chip"><input type="radio" name="music" value="subtle bed"><span>Subtle bed</span></label>
+            <label class="chip"><input type="radio" name="music" value="upbeat"><span>Upbeat</span></label>
+          </div>
+        </fieldset>
+
+        <div class="field"><label for="f-notes">Anything else? <span>(optional)</span></label><textarea id="f-notes" name="notes" rows="3" maxlength="1500"></textarea></div>
+
+        <div class="ts" id="ts-box"></div>
+        <div class="form-status" id="form-status" role="status" tabindex="-1" hidden></div>
+
+        <div class="btn-row">
+          <button class="btn-gold" type="submit" id="send">Send my free sample request</button>
+          <button class="btn-glass" type="button" id="skip">Skip this and send</button>
+          <button class="linkbtn" type="button" id="back">Back</button>
+        </div>
+        <p class="fine">We only use your answers to make your sample and to reply. <a class="link" href="/privacy.html">Privacy</a></p>
+      </section>
+    </form>
+
+    <div class="sample-done panel" id="sample-done" role="status" tabindex="-1" hidden>
+      <p class="kicker">Request received</p>
+      <h2>Check your inbox to confirm, then our team gets to work</h2>
+      <p class="body">We sent a confirmation link to <strong id="done-email">your email</strong>. Press it once and we start. Nothing arrives within a few minutes? Check your spam folder, or email <a class="link" href="mailto:hello@bejucreative.digital">hello@bejucreative.digital</a>.</p>
+      <p class="body">Want to talk it through while you wait? <a class="link" href="https://cal.com/beju-creative/15min-call" target="_blank" rel="noopener">Book a 15-min call</a>.</p>
+      <a class="arrow-link" href="/">Back to the homepage</a>
+    </div>
+
+    <noscript><p class="nojs">This form needs JavaScript. Email your channel link to <a class="link" href="mailto:hello@bejucreative.digital?subject=Free%20sample">hello@bejucreative.digital</a> and we will take it from there.</p></noscript>
+
+    <p class="sample-small" id="call-line">Prefer to talk first? <a class="link" href="https://cal.com/beju-creative/15min-call" target="_blank" rel="noopener">Book a 15-min call</a></p>
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <img src="/beju-mark-sm.png" alt="BEJÚ Creative" width="180" height="107" loading="lazy">
+        <p>Short-form editing for podcasters, coaches and founders, and launch videos for SaaS and apps. Two editors, fast turnaround, work we'd put our name on.</p>
+      </div>
+      <div class="foot-col">
+        <p class="fhead">Services</p>
+        <a href="/podcast-video-editing/">Podcast video editing</a>
+        <a href="/short-form-video-editing/">Short-form video editing</a>
+        <a href="/video-editing-for-coaches/">Editing for coaches</a>
+        <a href="/saas-launch-videos/">SaaS &amp; app launch videos</a>
+      </div>
+      <div class="foot-col">
+        <p class="fhead">Studio</p>
+        <a href="/guides/">Editing guides</a>
+        <a href="/#work">Our work</a>
+        <a href="/faq/">FAQ</a>
+        <a href="/brief/">Free sample</a>
+      </div>
+      <div class="foot-col">
+        <p class="fhead">Contact</p>
+        <a href="mailto:hello@bejucreative.digital">Email</a>
+        <a href="https://wa.me/37069575791" target="_blank" rel="noopener">WhatsApp</a>
+        <a href="https://instagram.com/bejucreative" target="_blank" rel="noopener">Instagram</a>
+      </div>
+    </div>
+    <div class="foot-bot"><span>© 2026 BEJÚ Creative · Benas &amp; Simas</span><span><a href="/terms.html">Terms of service</a> · <a href="/privacy.html">Privacy</a></span></div>
+  </div>
+</footer>
+
+<script src="/site.js" defer></script>
+<script>
+/* Free-sample intake. Both values below are placeholders and must be replaced before launch:
+   TURNSTILE_SITE_KEY = the public site key of a Cloudflare Turnstile widget (backend/apps-script/README.md, step 1)
+   INTAKE_ENDPOINT    = the Apps Script web app /exec URL (backend/apps-script/README.md, step 5) */
+const TURNSTILE_SITE_KEY = "REPLACE_ME";
+const INTAKE_ENDPOINT = "REPLACE_ME";
+
+(function () {
+  'use strict';
+  var d = document, $ = function (s, c) { return (c || d).querySelector(s); }, $$ = function (s, c) { return Array.prototype.slice.call((c || d).querySelectorAll(s)); };
+  var form = $('#sample-form'), step1 = $('#step-1'), step2 = $('#step-2'), label = $('#steps-label'), bar2 = $('#bar-2');
+  var status = $('#form-status'), sendBtn = $('#send'), skipBtn = $('#skip'), done = $('#sample-done');
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var token = '', widgetId = null, tsState = 0;   // 0 not loaded · 1 loading · 2 ready · 3 failed
+  var energyTouched = false;
+  // Two entry modes. Website visitors get the qualification page first. A link from our emails
+  // (?src=email&email=...&name=...) goes straight to the editor section for a lead who already said yes.
+  var qs = new URLSearchParams(window.location.search), emailMode = qs.get('src') === 'email';
+
+  var val = function (n) { var e = form.elements.namedItem(n); return e && e.value ? e.value.trim() : ''; };
+  var emailOf = function () { return emailMode ? val('email2') : val('email'); };
+  var radio = function (n) { var e = $('input[name="' + n + '"]:checked', form); return e ? e.value : ''; };
+  var fieldOf = function (el) { return el.closest('.field') || el.closest('.group'); };
+  function setErr(id, el, msg) {
+    var box = fieldOf(el), out = $('#' + id);
+    box.classList.toggle('is-invalid', !!msg);
+    if (el.setAttribute && el.type !== 'radio') el.setAttribute('aria-invalid', String(!!msg));
+    if (out) out.textContent = msg || '';
+    return !msg;
+  }
+  function normUrl(v) {   // "youtube.com/@x" becomes "https://youtube.com/@x"
+    v = v.trim(); if (!v) return '';
+    if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(v)) v = 'https://' + v;
+    return v;
+  }
+  function goodUrl(v) { try { var u = new URL(v); return /^https?:$/.test(u.protocol) && u.hostname.indexOf('.') > 0; } catch (e) { return false; } }
+
+  /* ── page 1 validation: the four required answers ── */
+  function check1() {
+    var ch = $('#f-channel'), em = $('#f-email');
+    var ok = [];
+    var u = normUrl(ch.value); if (u) ch.value = u;
+    ok.push(setErr('e-channel', ch, !u ? 'Please paste a link to your channel or page.' : goodUrl(u) ? '' : 'That link doesn’t look right.'));
+    ok.push(setErr('e-email', em, !em.value.trim() ? 'Please enter your email.' : /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em.value.trim()) ? '' : 'That email doesn’t look right.'));
+    ok.push(setErr('e-cadence', $('input[name="cadence"]', form), radio('cadence') ? '' : 'Please choose one.'));
+    ok.push(setErr('e-sells', $('input[name="sells"]', form), radio('sells') ? '' : 'Please choose one.'));
+    return ok.every(Boolean);
+  }
+  /* ── page 2 validation: only what is filled in must make sense ── */
+  function hex(v) { return !v || /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v); }
+  function check2() {
+    var ok = [];
+    if (emailMode) {
+      var em = $('#f-email2'), mo = $('#f-moment'), so = $('#f-source');
+      ok.push(setErr('e-email2', em, !em.value.trim() ? 'Please enter your email.' : /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em.value.trim()) ? '' : 'That email doesn’t look right.'));
+      if (!so.value.trim()) ok.push(setErr('e-source', so, 'Please paste the video you want us to work from.'));
+      ok.push(setErr('e-moment', mo, mo.value.trim() ? '' : 'Please tell us the moment: a timestamp or a short line.'));
+    }
+    ok.push(setErr('e-colour', $('#f-colour1'), hex(val('colour1')) && hex(val('colour2')) ? '' : 'Use a hex colour like #C7A24B.'));
+    [['f-logo', 'e-logo'], ['f-source', 'e-source'], ['f-ref1', 'e-ref1'], ['f-ref2', 'e-ref2']].forEach(function (p) {
+      var el = $('#' + p[0]), u = normUrl(el.value); if (u) el.value = u;
+      if (emailMode && p[0] === 'f-source' && !u) return;
+      ok.push(setErr(p[1], el, !u || goodUrl(u) ? '' : 'That link doesn’t look right.'));
+    });
+    return ok.every(Boolean);
+  }
+  $$('#f-channel,#f-email').forEach(function (el) { el.addEventListener('blur', function () { if (el.value) check1(); }); });
+  $$('input[type=radio]', form).forEach(function (r) { r.addEventListener('change', function () { var g = r.closest('.group'); if (g) { g.classList.remove('is-invalid'); var e = $('.err', g); if (e) e.textContent = ''; } }); });
+
+  /* ── moving between the two pages ── */
+  function lockMode() {   // email mode: no qualification page, video + moment required, no skip
+    $('#who').hidden = false;
+    $('#f-email2').value = (qs.get('email') || '').slice(0, 200); $('#f-name').value = (qs.get('name') || '').slice(0, 120);
+    $('#page-title').textContent = 'Tell us what to make';
+    $('#page-lede').textContent = 'Send the video and the moment you want us to cut. Everything else is optional.';
+    $('#step2-title').textContent = 'Your brief';
+    $('#step2-intro').textContent = 'Answer what you like and skip the rest. Skip it and we build it from how we see your brand.';
+    $('#source-opt').textContent = '(required)';
+    $('#skip').hidden = true; $('#back').hidden = true; $('.progress').parentNode.hidden = true;
+    $('#sample-form').setAttribute('aria-labelledby', 'step2-title');
+    document.title = 'Your brief | BEJÚ Creative';
+  }
+  function show(n, focus) {
+    step1.hidden = n !== 1; step2.hidden = n !== 2;
+    label.textContent = 'Step ' + n + ' of 2'; bar2.classList.toggle('on', n === 2);
+    form.setAttribute('aria-labelledby', 'step' + n + '-title');
+    status.hidden = true;
+    if (n === 2) { playLooks(); loadTurnstile(); }
+    else pauseLooks();
+    if (focus) {
+      var s = n === 1 ? step1 : step2;
+      s.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
+      s.focus({ preventScroll: true });
+    }
+  }
+  $('#next').addEventListener('click', function () {
+    if (check1()) return show(2, true);
+    var bad = $('.is-invalid input', form); bad && bad.focus();
+  });
+  $('#back').addEventListener('click', function () { show(1, true); });
+  // Enter inside a page-1 text field means "continue", not "send"
+  step1.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); $('#next').click(); } });
+
+  /* ── look previews: play only what is on screen, never on reduced motion ── */
+  var looksIO = null, lookVids = $$('#looks video');
+  function playLooks() {
+    if (reduce || !('IntersectionObserver' in window)) return;
+    if (looksIO) return;
+    looksIO = new IntersectionObserver(function (es) {
+      es.forEach(function (x) {
+        var v = x.target;
+        if (x.isIntersecting) {
+          if (!v.getAttribute('src')) v.src = v.getAttribute('data-src');
+          var p = v.play(); p && p.catch && p.catch(function () {});
+        } else v.pause();
+      });
+    }, { rootMargin: '80px' });
+    lookVids.forEach(function (v) { looksIO.observe(v); });
+  }
+  function pauseLooks() { if (looksIO) { looksIO.disconnect(); looksIO = null; } lookVids.forEach(function (v) { v.pause(); }); }
+
+  /* ── energy slider: only counts once touched ── */
+  var energy = $('#f-energy'), energyOut = $('#energy-out'), energyClear = $('#energy-clear');
+  var names = ['', 'Calm', 'Easy', 'Balanced', 'Lively', 'High energy'];
+  function energySet() { energyTouched = true; energyOut.textContent = energy.value + ' · ' + names[energy.value]; energyClear.hidden = false; }
+  energy.addEventListener('input', energySet); energy.addEventListener('change', energySet);
+  energyClear.addEventListener('click', function () { energyTouched = false; energy.value = 3; energyOut.textContent = 'Not set. We match your niche.'; energyClear.hidden = true; energy.focus(); });
+
+  /* ── brand colours: picker and hex box stay in step ── */
+  [1, 2].forEach(function (i) {
+    var pick = $('#f-colour' + i + '-pick'), box = $('#f-colour' + i);
+    pick.addEventListener('input', function () { box.value = pick.value.toUpperCase(); });
+    box.addEventListener('input', function () { var v = box.value.trim(); if (/^#?[0-9a-f]{6}$/i.test(v)) pick.value = v[0] === '#' ? v : '#' + v; });
+  });
+
+  /* ── Cloudflare Turnstile: loaded when page 2 opens, so page 1 stays light ── */
+  function tsFail() {
+    tsState = 3;
+    say('bad', 'The spam check could not load. Try again in a moment, or email us your channel link at <a href="mailto:hello@bejucreative.digital?subject=Free%20sample">hello@bejucreative.digital</a>.');
+  }
+  function renderTs() {
+    if (widgetId !== null || !window.turnstile) return;
+    try {
+      widgetId = window.turnstile.render('#ts-box', {
+        sitekey: TURNSTILE_SITE_KEY, theme: 'dark',
+        callback: function (t) { token = t; },
+        'expired-callback': function () { token = ''; },
+        'error-callback': function () { token = ''; }
+      });
+      tsState = 2;
+    } catch (e) { tsFail(); }
+  }
+  function loadTurnstile() {
+    if (TURNSTILE_SITE_KEY === 'REPLACE_ME' || tsState === 1 || tsState === 2) return;
+    if (window.turnstile) return renderTs();
+    tsState = 1;
+    var s = d.createElement('script');
+    s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'; s.async = true;
+    s.onload = renderTs; s.onerror = tsFail;
+    d.head.appendChild(s);
+  }
+  function resetTs() { token = ''; if (widgetId !== null && window.turnstile) { try { window.turnstile.reset(widgetId); } catch (e) {} } }
+
+  /* ── sending ── */
+  function say(kind, html) {
+    status.className = 'form-status ' + (kind === 'ok' ? 'ok' : 'bad'); status.hidden = false; status.innerHTML = html;
+  }
+  function mailFallback(p) {
+    var body = (p.channel_url ? 'Channel: ' + p.channel_url + '\nPosts: ' + p.cadence + '\nSells: ' + p.sells + (p.sells_note ? ' (' + p.sells_note + ')' : '') + '\n' : 'Video: ' + val('source_video') + '\nMoment: ' + val('moment') + '\n') + 'Email: ' + p.email;
+    return 'mailto:hello@bejucreative.digital?subject=' + encodeURIComponent('Free sample request') + '&body=' + encodeURIComponent(body);
+  }
+  function payload(withStyle) {
+    var p = {
+      src: emailMode ? 'email' : 'website', name: val('name'), email: emailOf(), channel_url: emailMode ? '' : val('channel_url'), cadence: emailMode ? '' : radio('cadence'),
+      sells: emailMode ? '' : radio('sells'), sells_note: emailMode ? '' : val('sells_note'),
+      website: val('website'), turnstile_token: token
+    };
+    if (withStyle) {
+      var cols = [val('colour1'), val('colour2')].filter(Boolean).map(function (c) { return c[0] === '#' ? c : '#' + c; }).join(', ');
+      p.look = radio('look'); p.captions = radio('captions'); p.energy = energyTouched ? energy.value : ''; p.graphics = radio('graphics');
+      p.colours = cols; p.font = val('font'); p.logo_url = val('logo_url'); p.format = radio('format');
+      p.source_video = val('source_video'); p.moment = val('moment'); p.ref1 = val('ref1'); p.ref2 = val('ref2');
+      p.brand_notes = val('brand_notes'); p.cta = val('cta'); p.avoid = val('avoid'); p.music = radio('music'); p.notes = val('notes');
+    }
+    return p;
+  }
+  function finish(email) {
+    form.hidden = true; done.hidden = false; $('#call-line').hidden = true;
+    $('#done-email').textContent = email;
+    done.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
+    done.focus({ preventScroll: true });
+  }
+  function send(withStyle) {
+    if (!emailMode && !check1()) { show(1, true); var bad = $('.is-invalid input', form); bad && bad.focus(); return; }
+    if ((withStyle || emailMode) && !check2()) { var b2 = $('.is-invalid input', form); b2 && b2.focus(); return; }
+    var p = payload(withStyle || emailMode);
+    if (p.website) { return finish(p.email); }   // honeypot filled: look successful, send nothing
+    if (INTAKE_ENDPOINT === 'REPLACE_ME') {
+      return say('bad', 'This form is not connected yet. Your answers are still here: <a href="' + mailFallback(p) + '">send them by email instead</a>.');
+    }
+    if (!token) {
+      if (tsState === 3) return;
+      return say('bad', TURNSTILE_SITE_KEY === 'REPLACE_ME' ? 'The spam check is not set up yet.' : 'Please complete the spam check above, then press send again.');
+    }
+    [sendBtn, skipBtn].forEach(function (b) { b.disabled = true; }); sendBtn.setAttribute('aria-busy', 'true'); status.hidden = true;
+    var ctl = ('AbortController' in window) ? new AbortController() : null, timer = ctl && setTimeout(function () { ctl.abort(); }, 20000);
+    fetch(INTAKE_ENDPOINT, {
+      method: 'POST', redirect: 'follow', signal: ctl ? ctl.signal : undefined,
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },   // a "simple" request: Apps Script answers it without a preflight
+      body: JSON.stringify(p)
+    }).then(function (r) { return r.json(); }).then(function (j) {
+      if (j && j.ok) return finish(p.email);
+      var code = j && j.error;
+      resetTs();
+      if (code === 'rate_limited') say('bad', 'We already have a request from this email from the last 7 days. Check your inbox for our confirmation link, or email <a href="mailto:hello@bejucreative.digital">hello@bejucreative.digital</a>.');
+      else if (code === 'spam_check') say('bad', 'The spam check did not pass. Please try again.');
+      else if (code === 'invalid') say('bad', 'Something in the form looks off. Please check your answers and try again.');
+      else say('bad', 'We couldn’t send that. Your answers are still here. Try again, or <a href="' + mailFallback(p) + '">send them by email instead</a>.');
+    }).catch(function () {
+      resetTs();
+      say('bad', 'That didn’t send. Your connection may have dropped, but your answers are still here. Try again, or <a href="' + mailFallback(p) + '">send them by email instead</a>.');
+    }).then(function () {
+      if (timer) clearTimeout(timer);
+      [sendBtn, skipBtn].forEach(function (b) { b.disabled = false; }); sendBtn.removeAttribute('aria-busy');
+      if (!status.hidden) status.focus();
+    });
+  }
+  form.addEventListener('submit', function (e) { e.preventDefault(); send(true); });
+  if (emailMode) { lockMode(); show(2, false); }
+  skipBtn.addEventListener('click', function () { send(false); });
+})();
+</script>
+</body>
+</html>

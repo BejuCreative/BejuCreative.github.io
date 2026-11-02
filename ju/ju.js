@@ -3,8 +3,8 @@ var d = document, me = d.currentScript;
 if (!me || d.querySelector('.ju-launch')) return;
 var dir = me.src.replace(/[^\/]*$/, ''), SITE = me.getAttribute('data-site') || '/';
 var ACTS = {
-  pricing: ['Get your free sample', 'sample/'], order: ['Get your free sample', 'sample/'],
-  sample: ['Get your free sample', 'sample/'], launch: ['Ask for a quote', 'mailto:hello@bejucreative.digital?subject=SaaS%20%26%20App%20Launch%20Video%20inquiry'],
+  pricing: ['Get your free sample', 'brief/'], order: ['Get your free sample', 'brief/'],
+  sample: ['Get your free sample', 'brief/'], launch: ['Ask for a quote', 'mailto:hello@bejucreative.digital?subject=SaaS%20%26%20App%20Launch%20Video%20inquiry'],
   apply: ['Book a 15-min call', 'https://cal.com/beju-creative/15min-call'], email: ['Email', 'mailto:hello@bejucreative.digital'],
   wa: ['WhatsApp', 'https://wa.me/37069575791'], terms: ['See the full rules', 'terms.html#guarantee'],
   privacy: ['Privacy policy', 'privacy.html']
