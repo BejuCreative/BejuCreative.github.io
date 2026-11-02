@@ -6,7 +6,7 @@ and paste two values into `brief/index.html`.
 
 What it does on each form post:
 
-1. Drops honeypot hits silently (the hidden `website` field).
+1. Drops honeypot hits silently (the hidden `fax_extension` field).
 2. Verifies the Cloudflare Turnstile token against `https://challenges.cloudflare.com/turnstile/v0/siteverify`.
 3. Allows one submission per email per 7 days (`{"ok":false,"error":"rate_limited"}` after that).
 4. Appends a row to the response Sheet (the same Sheet the phase-1 Google Form writes to).

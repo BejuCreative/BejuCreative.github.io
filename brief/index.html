@@ -199,8 +199,8 @@ noscript .nojs{margin-top:1.5rem;padding:1rem;border:1px solid var(--hairline-st
           <input id="f-sells-note" name="sells_note" maxlength="200" autocomplete="off">
         </div>
 
-        <!-- honeypot: real visitors never see or fill this. Anything in it is dropped server-side. -->
-        <div class="hp" aria-hidden="true"><label>Website <input type="text" name="website" id="f-website" tabindex="-1" autocomplete="off"></label></div>
+        <!-- honeypot "fax_extension": a name browser autofill never matches. Real visitors never see or fill it; anything in it is dropped server-side. -->
+        <div class="hp" aria-hidden="true"><input type="text" name="fax_extension" id="f-fax-extension" tabindex="-1" autocomplete="off" aria-hidden="true"></div>
 
         <div class="btn-row">
           <button class="btn-gold" type="button" id="next">Continue</button>
@@ -551,7 +551,7 @@ const INTAKE_ENDPOINT = "REPLACE_ME";
     var p = {
       src: emailMode ? 'email' : 'website', name: val('name'), email: emailOf(), channel_url: emailMode ? '' : val('channel_url'), cadence: emailMode ? '' : radio('cadence'),
       sells: emailMode ? '' : radio('sells'), sells_note: emailMode ? '' : val('sells_note'),
-      website: val('website'), turnstile_token: token
+      fax_extension: val('fax_extension'), turnstile_token: token
     };
     if (withStyle) {
       var cols = [val('colour1'), val('colour2')].filter(Boolean).map(function (c) { return c[0] === '#' ? c : '#' + c; }).join(', ');
@@ -572,7 +572,7 @@ const INTAKE_ENDPOINT = "REPLACE_ME";
     if (!emailMode && !check1()) { show(1, true); var bad = $('.is-invalid input', form); bad && bad.focus(); return; }
     if ((withStyle || emailMode) && !check2()) { var b2 = $('.is-invalid input', form); b2 && b2.focus(); return; }
     var p = payload(withStyle || emailMode);
-    if (p.website) { return finish(p.email); }   // honeypot filled: look successful, send nothing
+    if (p.fax_extension) { return finish(p.email); }   // honeypot filled: look successful, send nothing
     if (INTAKE_ENDPOINT === 'REPLACE_ME') {
       return say('bad', 'This form is not connected yet. Your answers are still here: <a href=\'' + mailFallback(p) + '\'>send them by email instead</a>.');
     }

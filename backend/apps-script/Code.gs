@@ -63,8 +63,8 @@ function doPost(e) {
     const raw = parseBody_(e);
     if (!raw) return json_({ ok: false, error: 'invalid' });
 
-    // 1. Honeypot: bots fill the hidden "website" field. Pretend success, store nothing.
-    if (str_(raw.website)) return json_({ ok: true });
+    // 1. Honeypot: bots fill the hidden "fax_extension" field. Pretend success, store nothing.
+    if (str_(raw.fax_extension)) return json_({ ok: true });
 
     const data = normalise_(raw);
 
