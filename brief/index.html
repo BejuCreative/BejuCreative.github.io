@@ -52,16 +52,16 @@
 .group > legend{padding:0;margin-bottom:.15rem;font-size:.875rem;font-weight:600;color:var(--ink)}
 .group > legend span{font-weight:400;color:var(--muted)}
 .chips{display:flex;flex-wrap:wrap;gap:.5rem}
-.chip{position:relative;display:inline-flex}
-.chip input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
-.chip span{display:inline-flex;align-items:center;min-height:44px;padding:.5rem 1rem;border-radius:var(--r-pill);
+.pick{position:relative;display:inline-flex}
+.pick input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.pick span{display:inline-flex;align-items:center;min-height:44px;padding:.5rem 1rem;border-radius:var(--r-pill);
   border:1px solid var(--hairline-strong);background:rgba(255,255,255,.04);color:var(--ink);font-size:.95rem;line-height:1.25;
   transition:border-color var(--dur-1) var(--ease-out),background var(--dur-1) var(--ease-out),box-shadow var(--dur-1) var(--ease-out)}
-.chip:hover span{border-color:rgba(255,255,255,.24)}
-.chip input:checked + span{background:rgba(199,162,75,.14);border-color:var(--gold-solid);box-shadow:var(--offer-glow)}
-.chip input:focus-visible + span{outline:2px solid var(--gold-champagne);outline-offset:3px}
+.pick:hover span{border-color:rgba(255,255,255,.24)}
+.pick input:checked + span{background:rgba(199,162,75,.14);border-color:var(--gold-solid);box-shadow:var(--offer-glow)}
+.pick input:focus-visible + span{outline:2px solid var(--gold-champagne);outline-offset:3px}
 .group .err{font-size:.8rem;color:var(--error)}
-.group.is-invalid .chip span{border-color:var(--error)}
+.group.is-invalid .pick span{border-color:var(--error)}
 .note-field{margin-top:.2rem}
 
 /* look previews */
@@ -113,7 +113,7 @@ noscript .nojs{margin-top:1.5rem;padding:1rem;border:1px solid var(--hairline-st
   .pair{grid-template-columns:1fr}
   .sample-form .btn-row > button{flex:1 1 100%}
 }
-@media(prefers-reduced-motion:reduce){.chip span,.look{transition:none}}
+@media(prefers-reduced-motion:reduce){.pick span,.look{transition:none}}
 </style>
 </head>
 <body>
@@ -174,10 +174,10 @@ noscript .nojs{margin-top:1.5rem;padding:1rem;border:1px solid var(--hairline-st
         <fieldset class="group" id="g-cadence" aria-describedby="e-cadence">
           <legend>How often do you post?</legend>
           <div class="chips">
-            <label class="chip"><input type="radio" name="cadence" value="every day" required><span>Every day</span></label>
-            <label class="chip"><input type="radio" name="cadence" value="3-5 a week"><span>3-5 a week</span></label>
-            <label class="chip"><input type="radio" name="cadence" value="1-2 a week"><span>1-2 a week</span></label>
-            <label class="chip"><input type="radio" name="cadence" value="less than weekly"><span>Less than weekly</span></label>
+            <label class="pick"><input type="radio" name="cadence" value="every day" required><span>Every day</span></label>
+            <label class="pick"><input type="radio" name="cadence" value="3-5 a week"><span>3-5 a week</span></label>
+            <label class="pick"><input type="radio" name="cadence" value="1-2 a week"><span>1-2 a week</span></label>
+            <label class="pick"><input type="radio" name="cadence" value="less than weekly"><span>Less than weekly</span></label>
           </div>
           <span class="err" id="e-cadence" aria-live="polite"></span>
         </fieldset>
@@ -185,12 +185,12 @@ noscript .nojs{margin-top:1.5rem;padding:1rem;border:1px solid var(--hairline-st
         <fieldset class="group" id="g-sells" aria-describedby="e-sells">
           <legend>What do you sell?</legend>
           <div class="chips">
-            <label class="chip"><input type="radio" name="sells" value="a course" required><span>A course</span></label>
-            <label class="chip"><input type="radio" name="sells" value="coaching or consulting"><span>Coaching or consulting</span></label>
-            <label class="chip"><input type="radio" name="sells" value="a product or store"><span>A product or store</span></label>
-            <label class="chip"><input type="radio" name="sells" value="sponsorships or ads"><span>Sponsorships or ads</span></label>
-            <label class="chip"><input type="radio" name="sells" value="nothing yet"><span>Nothing yet</span></label>
-            <label class="chip"><input type="radio" name="sells" value="other"><span>Other</span></label>
+            <label class="pick"><input type="radio" name="sells" value="a course" required><span>A course</span></label>
+            <label class="pick"><input type="radio" name="sells" value="coaching or consulting"><span>Coaching or consulting</span></label>
+            <label class="pick"><input type="radio" name="sells" value="a product or store"><span>A product or store</span></label>
+            <label class="pick"><input type="radio" name="sells" value="sponsorships or ads"><span>Sponsorships or ads</span></label>
+            <label class="pick"><input type="radio" name="sells" value="nothing yet"><span>Nothing yet</span></label>
+            <label class="pick"><input type="radio" name="sells" value="other"><span>Other</span></label>
           </div>
           <span class="err" id="e-sells" aria-live="polite"></span>
         </fieldset>
@@ -243,10 +243,10 @@ noscript .nojs{margin-top:1.5rem;padding:1rem;border:1px solid var(--hairline-st
         <fieldset class="group">
           <legend>Captions <span>(optional)</span></legend>
           <div class="chips">
-            <label class="chip"><input type="radio" name="captions" value="bold word-by-word"><span>Bold, word by word</span></label>
-            <label class="chip"><input type="radio" name="captions" value="clean subtitles"><span>Clean subtitles</span></label>
-            <label class="chip"><input type="radio" name="captions" value="minimal"><span>Minimal</span></label>
-            <label class="chip"><input type="radio" name="captions" value="none"><span>No captions</span></label>
+            <label class="pick"><input type="radio" name="captions" value="bold word-by-word"><span>Bold, word by word</span></label>
+            <label class="pick"><input type="radio" name="captions" value="clean subtitles"><span>Clean subtitles</span></label>
+            <label class="pick"><input type="radio" name="captions" value="minimal"><span>Minimal</span></label>
+            <label class="pick"><input type="radio" name="captions" value="none"><span>No captions</span></label>
           </div>
         </fieldset>
 
@@ -260,11 +260,11 @@ noscript .nojs{margin-top:1.5rem;padding:1rem;border:1px solid var(--hairline-st
         <fieldset class="group">
           <legend>How much is happening on screen? <span>(optional)</span></legend>
           <div class="chips">
-            <label class="chip"><input type="radio" name="graphics" value="1"><span>1</span></label>
-            <label class="chip"><input type="radio" name="graphics" value="2"><span>2</span></label>
-            <label class="chip"><input type="radio" name="graphics" value="3"><span>3</span></label>
-            <label class="chip"><input type="radio" name="graphics" value="4"><span>4</span></label>
-            <label class="chip"><input type="radio" name="graphics" value="5"><span>5</span></label>
+            <label class="pick"><input type="radio" name="graphics" value="1"><span>1</span></label>
+            <label class="pick"><input type="radio" name="graphics" value="2"><span>2</span></label>
+            <label class="pick"><input type="radio" name="graphics" value="3"><span>3</span></label>
+            <label class="pick"><input type="radio" name="graphics" value="4"><span>4</span></label>
+            <label class="pick"><input type="radio" name="graphics" value="5"><span>5</span></label>
           </div>
           <div class="range-ends" aria-hidden="true"><span>1 · Just you, clean</span><span>5 · Full motion graphics</span></div>
         </fieldset>
@@ -288,9 +288,9 @@ noscript .nojs{margin-top:1.5rem;padding:1rem;border:1px solid var(--hairline-st
         <fieldset class="group">
           <legend>Format and platform <span>(optional)</span></legend>
           <div class="chips">
-            <label class="chip"><input type="radio" name="format" value="9:16"><span>9:16 · Reels, Shorts, TikTok</span></label>
-            <label class="chip"><input type="radio" name="format" value="4:5"><span>4:5 · LinkedIn, feed</span></label>
-            <label class="chip"><input type="radio" name="format" value="1:1"><span>1:1</span></label>
+            <label class="pick"><input type="radio" name="format" value="9:16"><span>9:16 · Reels, Shorts, TikTok</span></label>
+            <label class="pick"><input type="radio" name="format" value="4:5"><span>4:5 · LinkedIn, feed</span></label>
+            <label class="pick"><input type="radio" name="format" value="1:1"><span>1:1</span></label>
           </div>
         </fieldset>
 
@@ -309,9 +309,9 @@ noscript .nojs{margin-top:1.5rem;padding:1rem;border:1px solid var(--hairline-st
         <fieldset class="group">
           <legend>Music <span>(optional)</span></legend>
           <div class="chips">
-            <label class="chip"><input type="radio" name="music" value="none"><span>None</span></label>
-            <label class="chip"><input type="radio" name="music" value="subtle bed"><span>Subtle bed</span></label>
-            <label class="chip"><input type="radio" name="music" value="upbeat"><span>Upbeat</span></label>
+            <label class="pick"><input type="radio" name="music" value="none"><span>None</span></label>
+            <label class="pick"><input type="radio" name="music" value="subtle bed"><span>Subtle bed</span></label>
+            <label class="pick"><input type="radio" name="music" value="upbeat"><span>Upbeat</span></label>
           </div>
         </fieldset>
 
