@@ -11,23 +11,24 @@
  *
  * Nothing here renders or sends a sample: rows are only data for the channel-check script.
  * Setup steps are in README.md. Script Properties used:
- *   TURNSTILE_SECRET   (required)  Cloudflare Turnstile secret key
- *   SHEET_ID           (required)  ID of the Google Sheet that holds the "Website Samples" tab
- *   REQUIRE_TURNSTILE  (optional)  set to "false" only for testing; any other value keeps it on
+ *   TURNSTILE_SECRET    (required)  Cloudflare Turnstile secret key
+ *   RESPONSE_SHEET_ID   (required)  ID of the response Google Sheet (the same one the phase-1 Google Form writes to)
+ *   RESPONSE_SHEET_TAB  (optional)  tab name; default is the first tab
+ *   REQUIRE_TURNSTILE   (optional)  set to "false" only for testing; any other value keeps it on
  */
 
-const SHEET_NAME = 'Website Samples';
 const SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 const RATE_LIMIT_DAYS = 7;
 const REPLY_TO = 'hello@bejucreative.digital';
 const MAX_LEN = 2000;
 
-// Sheet columns, in order. The first block is the agreed layout; name/src/cta/brand_notes were added
-// for the merged brief form and sit before the confirmation columns.
+// Header row, in order. Shared with the phase-1 Google Form (Timestamp, email, name, video, timestamp, goal,
+// captions, graphics, brand, reference); both write the same response Sheet. If the sheet already has a header
+// row (for example one the Form created), values are placed by header name instead, so a different order is fine.
 const COLUMNS = [
-  'submitted_at', 'email', 'channel_url', 'cadence', 'sells', 'sells_note', 'look', 'captions', 'energy',
-  'graphics', 'colours', 'font', 'logo_url', 'format', 'source_video', 'moment', 'ref1', 'ref2', 'avoid',
-  'music', 'notes', 'name', 'src', 'cta', 'brand_notes', 'confirmed', 'confirm_token', 'status'
+  'Timestamp', 'email', 'name', 'video', 'timestamp', 'goal', 'captions', 'graphics', 'brand', 'reference',
+  'channel_url', 'cadence', 'sells', 'sells_note', 'look', 'energy', 'colours', 'font', 'logo_url', 'format',
+  'ref2', 'avoid', 'music', 'notes', 'src', 'confirmed', 'confirm_token', 'status'
 ];
 
 /* ───────────────────────── web app entry points ───────────────────────── */
@@ -57,16 +58,21 @@ function doPost(e) {
     lock.waitLock(20000);
     let token;
     try {
-      const sheet = sheet_();
-      if (recentSubmission_(sheet, data.email)) return json_({ ok: false, error: 'rate_limited' });
+      const sheet = sheet_(), cols = headers_(sheet);
+      if (recentSubmission_(sheet, cols, data.email)) return json_({ ok: false, error: 'rate_limited' });
       token = newToken_();
-      sheet.appendRow(COLUMNS.map(function (c) {
-        if (c === 'submitted_at') return new Date();
-        if (c === 'confirmed') return 'FALSE';
-        if (c === 'confirm_token') return token;
-        if (c === 'status') return 'unconfirmed';
-        return safeCell_(data[c]);
-      }));
+      const row = [];
+      for (let i = 0; i < Math.max(sheet.getLastColumn(), COLUMNS.length); i++) row.push('');
+      Object.keys(cols).forEach(function (name) {
+        let v = '';
+        if (name === 'Timestamp') v = new Date();
+        else if (name === 'confirmed') v = 'FALSE';
+        else if (name === 'confirm_token') v = token;
+        else if (name === 'status') v = 'unconfirmed';
+        else if (data[name] !== undefined) v = safeCell_(data[name]);
+        row[cols[name] - 1] = v;
+      });
+      sheet.appendRow(row);
     } finally {
       lock.releaseLock();
     }
@@ -91,16 +97,16 @@ function doGet(e) {
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
-    const sheet = sheet_();
-    const col = COLUMNS.indexOf('confirm_token') + 1;
+    const sheet = sheet_(), cols = headers_(sheet);
+    const col = cols.confirm_token;
     const last = sheet.getLastRow();
     if (last < 2) return page_('This link is not valid or has expired.', false);
     const tokens = sheet.getRange(2, col, last - 1, 1).getValues();
     for (let i = 0; i < tokens.length; i++) {
       if (String(tokens[i][0]) === String(token)) {
         const row = i + 2;
-        sheet.getRange(row, COLUMNS.indexOf('confirmed') + 1).setValue('TRUE');
-        sheet.getRange(row, COLUMNS.indexOf('status') + 1).setValue('confirmed');
+        sheet.getRange(row, cols.confirmed).setValue('TRUE');
+        sheet.getRange(row, cols.status).setValue('confirmed');
         return page_('Confirmed. Our team gets to work.', true);
       }
     }
@@ -125,8 +131,8 @@ function parseBody_(e) {
 }
 
 /**
- * Accepts this site's field names and the plain JSON of the earlier intake form
- * (name, email, video, timestamp, cta, captions, graphics, brand_notes, reference).
+ * Accepts the shared field names (email, name, video, timestamp, goal, captions, graphics, brand, reference ...)
+ * and older aliases (source_video, moment, cta, brand_notes, ref1).
  */
 function normalise_(r) {
   const pick = function () {
@@ -136,37 +142,33 @@ function normalise_(r) {
     }
     return '';
   };
-  const refs = [];
-  ['ref1', 'ref2'].forEach(function (k) { if (str_(r[k])) refs.push(str_(r[k])); });
-  const alt = r.reference !== undefined ? r.reference : r.references;
-  if (Array.isArray(alt)) alt.forEach(function (v) { if (str_(v)) refs.push(str_(v)); });
-  else if (str_(alt)) refs.push(str_(alt));
-
   const d = {
     email: pick('email').toLowerCase(),
     name: pick('name'),
+    video: pick('video', 'source_video'),
+    timestamp: pick('timestamp', 'moment'),
+    goal: pick('goal', 'cta'),
+    captions: pick('captions'),
+    graphics: pick('graphics'),
+    brand: pick('brand', 'brand_notes'),
+    reference: pick('reference', 'ref1'),
     channel_url: pick('channel_url', 'channel'),
     cadence: pick('cadence'),
     sells: pick('sells'),
     sells_note: pick('sells_note'),
     look: pick('look'),
-    captions: pick('captions'),
     energy: pick('energy'),
-    graphics: pick('graphics'),
     colours: pick('colours', 'colors', 'colour'),
     font: pick('font'),
     logo_url: pick('logo_url', 'logo'),
     format: pick('format'),
-    source_video: pick('source_video', 'video'),
-    moment: pick('moment', 'timestamp'),
-    ref1: refs[0] || '',
-    ref2: refs[1] || '',
+    ref2: pick('ref2'),
     avoid: pick('avoid'),
     music: pick('music'),
-    notes: pick('notes'),
-    cta: pick('cta'),
-    brand_notes: pick('brand_notes', 'brand')
+    notes: pick('notes')
   };
+  // A list sent as "reference" (array) becomes reference + ref2.
+  if (Array.isArray(r.reference)) { d.reference = str_(r.reference[0]); d.ref2 = d.ref2 || str_(r.reference[1]); }
   // src: 'website' (qualification page) or 'email' (lead who already said yes). Plain JSON with no
   // channel and a video counts as an email-mode brief.
   const src = pick('src').toLowerCase();
@@ -181,10 +183,9 @@ function validate_(d) {
     if (!d.cadence) return 'cadence';
     if (!d.sells) return 'sells';
   } else {
-    if (!isUrl_(d.source_video)) return 'source_video';
-    if (!d.moment) return 'moment';
+    if (!isUrl_(d.video)) return 'video';
   }
-  const urls = [['logo_url', d.logo_url], ['source_video', d.source_video], ['ref1', d.ref1], ['ref2', d.ref2]];
+  const urls = [['logo_url', d.logo_url], ['video', d.video], ['reference', d.reference], ['ref2', d.ref2]];
   for (let i = 0; i < urls.length; i++) if (urls[i][1] && !isUrl_(urls[i][1])) return urls[i][0];
   return '';
 }
@@ -217,37 +218,52 @@ function verifyTurnstile_(token) {
 /* ───────────────────────── sheet ───────────────────────── */
 
 function sheet_() {
-  const id = PropertiesService.getScriptProperties().getProperty('SHEET_ID');
-  if (!id) throw new Error('SHEET_ID is not set in Script Properties');
+  const props = PropertiesService.getScriptProperties();
+  const id = props.getProperty('RESPONSE_SHEET_ID');
+  if (!id) throw new Error('RESPONSE_SHEET_ID is not set in Script Properties');
   const ss = SpreadsheetApp.openById(id);
-  let sh = ss.getSheetByName(SHEET_NAME);
-  if (!sh) sh = ss.insertSheet(SHEET_NAME);
+  const tab = props.getProperty('RESPONSE_SHEET_TAB');
+  const sh = tab ? (ss.getSheetByName(tab) || ss.insertSheet(tab)) : ss.getSheets()[0];
+  // Header row only if the sheet is empty. If a header exists (the Form's), add any missing columns on the right.
   if (sh.getLastRow() === 0) {
     sh.appendRow(COLUMNS);
     sh.setFrozenRows(1);
+  } else {
+    const have = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
+    COLUMNS.forEach(function (c) {
+      if (have.indexOf(c) === -1) { sh.getRange(1, have.length + 1).setValue(c); have.push(c); }
+    });
   }
   return sh;
 }
 
-function recentSubmission_(sheet, email) {
+/** header name -> 1-based column number */
+function headers_(sheet) {
+  const row = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0], out = {};
+  row.forEach(function (h, i) { if (h !== '' && out[String(h)] === undefined) out[String(h)] = i + 1; });
+  return out;
+}
+
+function recentSubmission_(sheet, cols, email) {
   const last = sheet.getLastRow();
   if (last < 2) return false;
   const cutoff = Date.now() - RATE_LIMIT_DAYS * 24 * 3600 * 1000;
-  const vals = sheet.getRange(2, 1, last - 1, 2).getValues();   // submitted_at, email
-  for (let i = 0; i < vals.length; i++) {
-    const when = vals[i][0] instanceof Date ? vals[i][0].getTime() : Date.parse(vals[i][0]);
-    if (String(vals[i][1]).toLowerCase() === email && (isNaN(when) || when >= cutoff)) return true;
+  const when_ = sheet.getRange(2, cols.Timestamp, last - 1, 1).getValues();
+  const mail_ = sheet.getRange(2, cols.email, last - 1, 1).getValues();
+  for (let i = 0; i < mail_.length; i++) {
+    if (String(mail_[i][0]).trim().toLowerCase() !== email) continue;
+    const w = when_[i][0] instanceof Date ? when_[i][0].getTime() : Date.parse(when_[i][0]);
+    if (isNaN(w) || w >= cutoff) return true;
   }
   return false;
 }
 
 function markStatus_(token, status) {
-  const sheet = sheet_();
-  const col = COLUMNS.indexOf('confirm_token') + 1, last = sheet.getLastRow();
+  const sheet = sheet_(), cols = headers_(sheet), last = sheet.getLastRow();
   if (last < 2) return;
-  const tokens = sheet.getRange(2, col, last - 1, 1).getValues();
+  const tokens = sheet.getRange(2, cols.confirm_token, last - 1, 1).getValues();
   for (let i = 0; i < tokens.length; i++) {
-    if (String(tokens[i][0]) === token) { sheet.getRange(i + 2, COLUMNS.indexOf('status') + 1).setValue(status); return; }
+    if (String(tokens[i][0]) === token) { sheet.getRange(i + 2, cols.status).setValue(status); return; }
   }
 }
 
@@ -297,5 +313,5 @@ function setup() {
   const sh = sheet_();
   MailApp.getRemainingDailyQuota();
   UrlFetchApp.fetch('https://challenges.cloudflare.com/turnstile/v0/api.js', { muteHttpExceptions: true });
-  Logger.log('OK. Sheet "' + SHEET_NAME + '" ready with ' + sh.getLastColumn() + ' columns. Mail quota left today: ' + MailApp.getRemainingDailyQuota());
+  Logger.log('OK. Response sheet ready with ' + sh.getLastColumn() + ' columns. Mail quota left today: ' + MailApp.getRemainingDailyQuota());
 }

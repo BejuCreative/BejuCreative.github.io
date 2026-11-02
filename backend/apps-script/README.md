@@ -9,11 +9,11 @@ What it does on each form post:
 1. Drops honeypot hits silently (the hidden `website` field).
 2. Verifies the Cloudflare Turnstile token against `https://challenges.cloudflare.com/turnstile/v0/siteverify`.
 3. Allows one submission per email per 7 days (`{"ok":false,"error":"rate_limited"}` after that).
-4. Appends a row to the **Website Samples** sheet.
+4. Appends a row to the response Sheet (the same Sheet the phase-1 Google Form writes to).
 5. Emails the person a one-click confirm link from the account that deploys the script (bejusipe@gmail.com). Opening the link sets `confirmed` to TRUE and `status` to `confirmed`.
 
-It accepts this site's field names and the plain JSON of the earlier intake form
-(`name`, `email`, `video`, `timestamp`, `cta`, `captions`, `graphics`, `brand_notes`, `reference`).
+It uses the same field names as the Google Form: `email, name, video, timestamp, goal, captions, graphics, brand, reference`.
+Older aliases (`source_video`, `moment`, `cta`, `brand_notes`, `ref1`) are mapped to those names.
 Everything else you need is below. Do every step signed in as **bejusipe@gmail.com**.
 
 ## Deploy steps
@@ -26,11 +26,11 @@ Everything else you need is below. Do every step signed in as **bejusipe@gmail.c
 4. Widget mode: **Managed**. Create.
 5. Copy the **Site key** (public) and the **Secret key** (private). Keep the secret out of the repo.
 
-**2. Create the Sheet**
+**2. Get the response Sheet's ID**
 
-1. In Google Drive (bejusipe@gmail.com) create a new Google Sheet. Name the file anything, for example `Website Samples`.
-2. Rename the first tab to `Website Samples` (the script creates it if it is missing, and writes the header row).
-3. Copy the Sheet ID from its URL: `https://docs.google.com/spreadsheets/d/THIS_PART/edit`.
+1. Use the Google Sheet that the phase-1 Google Form writes its responses to (owned by bejusipe@gmail.com; share it with that account as Editor if it lives elsewhere). If you start without the Form, create an empty Sheet instead.
+2. Copy the Sheet ID from its URL: `https://docs.google.com/spreadsheets/d/THIS_PART/edit`.
+3. The script writes to the first tab (or the tab named in the optional `RESPONSE_SHEET_TAB` property). If the tab is empty it creates the header row; if it already has one, values are placed by header name and any missing columns are added on the right.
 
 **3. Create the script**
 
@@ -42,7 +42,7 @@ Everything else you need is below. Do every step signed in as **bejusipe@gmail.c
 
 1. Project Settings (gear icon), scroll to **Script Properties**, **Add script property**:
    - `TURNSTILE_SECRET` = the Turnstile **secret key** from step 1
-   - `SHEET_ID` = the Sheet ID from step 2
+   - `RESPONSE_SHEET_ID` = the Sheet ID from step 2 (placeholder; never commit the real one)
 2. Save script properties. Do not add `REQUIRE_TURNSTILE` (only set it to `false` for a quick test, then delete it).
 
 **5. Authorise and deploy as a web app**
@@ -73,8 +73,8 @@ const INTAKE_ENDPOINT = "REPLACE_ME";      // the /exec URL from step 5
 
 - **Quota:** a free Google account can send about 100 emails a day through MailApp, which is also the daily limit on confirmations. The script logs `mail_failed` in `status` when a send fails; the row is kept.
 - **Link scanners:** some mail providers open links to scan them, which can confirm a row before the person clicks. If that becomes a problem, switch the confirm link to a button that posts.
-- **Sheet columns:** `submitted_at, email, channel_url, cadence, sells, sells_note, look, captions, energy, graphics, colours, font, logo_url, format, source_video, moment, ref1, ref2, avoid, music, notes, name, src, cta, brand_notes, confirmed, confirm_token, status`. The last three are for the confirm flow; `name`, `src`, `cta` and `brand_notes` were added for the merged brief form. `src` is `website` or `email`.
-- **Two entry modes:** `src = website` needs `channel_url`, `cadence`, `sells`. `src = email` (a link with `?src=email&email=...&name=...`) needs `source_video` and `moment`. A post with no `src` is treated as `email` mode when it has no channel link.
+- **Sheet columns (header row, in this order):** `Timestamp, email, name, video, timestamp, goal, captions, graphics, brand, reference, channel_url, cadence, sells, sells_note, look, energy, colours, font, logo_url, format, ref2, avoid, music, notes, src, confirmed, confirm_token, status`. `Timestamp` is when the row was written; `timestamp` is the moment in the video. `graphics` is 1 to 5. `src` is `website` or `email`. The last three are for the confirm flow.
+- **Two entry modes:** `src = website` (the /brief/ page with the four qualification questions) needs `channel_url`, `cadence`, `sells`. `src = email` (a link with `?src=email&email=...&name=...&video=...`) needs `video`; the page also makes the timestamp required in that mode, the server does not. A post with no `src` counts as `email` when it has no channel link.
 - **Formulas:** any cell that starts with `=`, `+`, `-` or `@` is stored as plain text.
 - **The channel-check script** on the Mac should read only rows where `confirmed` is TRUE.
 - **Privacy:** the form uses Cloudflare Turnstile and this Google Sheet. `privacy.html` does not describe either yet; update it before launch.

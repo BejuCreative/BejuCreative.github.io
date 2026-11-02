@@ -221,8 +221,8 @@ noscript .nojs{margin-top:1.5rem;padding:1rem;border:1px solid var(--hairline-st
 
         <fieldset class="group" id="g-source">
           <legend id="source-legend">A video you'd like us to work from, and the moment <span id="source-opt">(optional)</span></legend>
-          <div class="field"><label for="f-source">Video link</label><input id="f-source" name="source_video" type="url" inputmode="url" autocomplete="off" placeholder="https://" aria-describedby="e-source"><span class="err" id="e-source" aria-live="polite"></span></div>
-          <div class="field"><label for="f-moment">The moment, if you have one</label><input id="f-moment" name="moment" maxlength="300" autocomplete="off" placeholder="e.g. 12:40 to 13:20, the story about your first client" aria-describedby="e-moment"><span class="err" id="e-moment" aria-live="polite"></span></div>
+          <div class="field"><label for="f-source">Video link</label><input id="f-source" name="video" type="url" inputmode="url" autocomplete="off" placeholder="https://" aria-describedby="e-source"><span class="err" id="e-source" aria-live="polite"></span></div>
+          <div class="field"><label for="f-moment">Timestamp or moment</label><input id="f-moment" name="timestamp" maxlength="300" autocomplete="off" placeholder="e.g. 12:40 to 13:20, the story about your first client" aria-describedby="e-moment"><span class="err" id="e-moment" aria-live="polite"></span></div>
         </fieldset>
 
         <fieldset class="group">
@@ -243,10 +243,10 @@ noscript .nojs{margin-top:1.5rem;padding:1rem;border:1px solid var(--hairline-st
         <fieldset class="group">
           <legend>Captions <span>(optional)</span></legend>
           <div class="chips">
-            <label class="chip"><input type="radio" name="captions" value="minimal one line"><span>Minimal, one line</span></label>
-            <label class="chip"><input type="radio" name="captions" value="word highlights"><span>Word highlights</span></label>
-            <label class="chip"><input type="radio" name="captions" value="big and bold"><span>Big and bold</span></label>
-            <label class="chip"><input type="radio" name="captions" value="none"><span>None</span></label>
+            <label class="chip"><input type="radio" name="captions" value="bold word-by-word"><span>Bold, word by word</span></label>
+            <label class="chip"><input type="radio" name="captions" value="clean subtitles"><span>Clean subtitles</span></label>
+            <label class="chip"><input type="radio" name="captions" value="minimal"><span>Minimal</span></label>
+            <label class="chip"><input type="radio" name="captions" value="none"><span>No captions</span></label>
           </div>
         </fieldset>
 
@@ -258,12 +258,15 @@ noscript .nojs{margin-top:1.5rem;padding:1rem;border:1px solid var(--hairline-st
         </div>
 
         <fieldset class="group">
-          <legend>Graphics level <span>(optional)</span></legend>
+          <legend>How much is happening on screen? <span>(optional)</span></legend>
           <div class="chips">
-            <label class="chip"><input type="radio" name="graphics" value="just me on screen"><span>Just me on screen</span></label>
-            <label class="chip"><input type="radio" name="graphics" value="light"><span>Light</span></label>
-            <label class="chip"><input type="radio" name="graphics" value="full motion graphics"><span>Full motion graphics</span></label>
+            <label class="chip"><input type="radio" name="graphics" value="1"><span>1</span></label>
+            <label class="chip"><input type="radio" name="graphics" value="2"><span>2</span></label>
+            <label class="chip"><input type="radio" name="graphics" value="3"><span>3</span></label>
+            <label class="chip"><input type="radio" name="graphics" value="4"><span>4</span></label>
+            <label class="chip"><input type="radio" name="graphics" value="5"><span>5</span></label>
           </div>
+          <div class="range-ends" aria-hidden="true"><span>1 · Just you, clean</span><span>5 · Full motion graphics</span></div>
         </fieldset>
 
         <fieldset class="group">
@@ -279,7 +282,7 @@ noscript .nojs{margin-top:1.5rem;padding:1rem;border:1px solid var(--hairline-st
             <div class="field"><label for="f-font">Font name</label><input id="f-font" name="font" maxlength="80" autocomplete="off" placeholder="e.g. Montserrat"></div>
             <div class="field"><label for="f-logo">Logo link <span>(png or svg)</span></label><input id="f-logo" name="logo_url" type="url" inputmode="url" autocomplete="off" placeholder="https://"><span class="err" id="e-logo" aria-live="polite"></span></div>
           </div>
-          <div class="field"><label for="f-brandnotes">Brand notes <span>(optional)</span></label><textarea id="f-brandnotes" name="brand_notes" rows="2" maxlength="800" placeholder="Tone, words you use, anything that should feel like you"></textarea></div>
+          <div class="field"><label for="f-brandnotes">Brand notes <span>(optional)</span></label><textarea id="f-brandnotes" name="brand" rows="2" maxlength="800" placeholder="Tone, words you use, anything that should feel like you"></textarea></div>
         </fieldset>
 
         <fieldset class="group">
@@ -292,14 +295,14 @@ noscript .nojs{margin-top:1.5rem;padding:1rem;border:1px solid var(--hairline-st
         </fieldset>
 
         <fieldset class="group">
-          <legend>Two Shorts you love, from any creator <span>(optional)</span></legend>
+          <legend>A Short you wish was yours, or two <span>(optional)</span></legend>
           <div class="pair">
-            <div class="field"><label class="sr-only" for="f-ref1">Short you love, link 1</label><input id="f-ref1" name="ref1" type="url" inputmode="url" autocomplete="off" placeholder="https://"><span class="err" id="e-ref1" aria-live="polite"></span></div>
+            <div class="field"><label class="sr-only" for="f-ref1">Short you love, link 1</label><input id="f-ref1" name="reference" type="url" inputmode="url" autocomplete="off" placeholder="https://"><span class="err" id="e-ref1" aria-live="polite"></span></div>
             <div class="field"><label class="sr-only" for="f-ref2">Short you love, link 2</label><input id="f-ref2" name="ref2" type="url" inputmode="url" autocomplete="off" placeholder="https://"><span class="err" id="e-ref2" aria-live="polite"></span></div>
           </div>
         </fieldset>
 
-        <div class="field"><label for="f-cta">What should viewers do after watching? <span>(optional)</span></label><input id="f-cta" name="cta" maxlength="200" autocomplete="off" placeholder="e.g. follow, join the newsletter, book a call"></div>
+        <div class="field"><label for="f-cta">What should viewers do after watching? <span>(optional)</span></label><input id="f-cta" name="goal" maxlength="200" autocomplete="off" placeholder="e.g. follow, join the newsletter, book a call"></div>
 
         <div class="field"><label for="f-avoid">One thing you hate in edits <span>(optional)</span></label><input id="f-avoid" name="avoid" maxlength="300" autocomplete="off"></div>
 
@@ -445,7 +448,7 @@ const INTAKE_ENDPOINT = "REPLACE_ME";
   /* ── moving between the two pages ── */
   function lockMode() {   // email mode: no qualification page, video + moment required, no skip
     $('#who').hidden = false;
-    $('#f-email2').value = (qs.get('email') || '').slice(0, 200); $('#f-name').value = (qs.get('name') || '').slice(0, 120);
+    $('#f-email2').value = (qs.get('email') || '').slice(0, 200); $('#f-name').value = (qs.get('name') || '').slice(0, 120); $('#f-source').value = (qs.get('video') || '').slice(0, 500);
     $('#page-title').textContent = 'Tell us what to make';
     $('#page-lede').textContent = 'Send the video and the moment you want us to cut. Everything else is optional.';
     $('#step2-title').textContent = 'Your brief';
@@ -541,7 +544,7 @@ const INTAKE_ENDPOINT = "REPLACE_ME";
     status.className = 'form-status ' + (kind === 'ok' ? 'ok' : 'bad'); status.hidden = false; status.innerHTML = html;
   }
   function mailFallback(p) {
-    var body = (p.channel_url ? 'Channel: ' + p.channel_url + '\nPosts: ' + p.cadence + '\nSells: ' + p.sells + (p.sells_note ? ' (' + p.sells_note + ')' : '') + '\n' : 'Video: ' + val('source_video') + '\nMoment: ' + val('moment') + '\n') + 'Email: ' + p.email;
+    var body = (p.channel_url ? 'Channel: ' + p.channel_url + '\nPosts: ' + p.cadence + '\nSells: ' + p.sells + (p.sells_note ? ' (' + p.sells_note + ')' : '') + '\n' : 'Video: ' + val('video') + '\nMoment: ' + val('timestamp') + '\n') + 'Email: ' + p.email;
     return 'mailto:hello@bejucreative.digital?subject=' + encodeURIComponent('Free sample request') + '&body=' + encodeURIComponent(body);
   }
   function payload(withStyle) {
@@ -554,8 +557,8 @@ const INTAKE_ENDPOINT = "REPLACE_ME";
       var cols = [val('colour1'), val('colour2')].filter(Boolean).map(function (c) { return c[0] === '#' ? c : '#' + c; }).join(', ');
       p.look = radio('look'); p.captions = radio('captions'); p.energy = energyTouched ? energy.value : ''; p.graphics = radio('graphics');
       p.colours = cols; p.font = val('font'); p.logo_url = val('logo_url'); p.format = radio('format');
-      p.source_video = val('source_video'); p.moment = val('moment'); p.ref1 = val('ref1'); p.ref2 = val('ref2');
-      p.brand_notes = val('brand_notes'); p.cta = val('cta'); p.avoid = val('avoid'); p.music = radio('music'); p.notes = val('notes');
+      p.video = val('video'); p.timestamp = val('timestamp'); p.reference = val('reference'); p.ref2 = val('ref2');
+      p.brand = val('brand'); p.goal = val('goal'); p.avoid = val('avoid'); p.music = radio('music'); p.notes = val('notes');
     }
     return p;
   }
@@ -571,7 +574,7 @@ const INTAKE_ENDPOINT = "REPLACE_ME";
     var p = payload(withStyle || emailMode);
     if (p.website) { return finish(p.email); }   // honeypot filled: look successful, send nothing
     if (INTAKE_ENDPOINT === 'REPLACE_ME') {
-      return say('bad', 'This form is not connected yet. Your answers are still here: <a href="' + mailFallback(p) + '">send them by email instead</a>.');
+      return say('bad', 'This form is not connected yet. Your answers are still here: <a href=\'' + mailFallback(p) + '\'>send them by email instead</a>.');
     }
     if (!token) {
       if (tsState === 3) return;
@@ -590,10 +593,10 @@ const INTAKE_ENDPOINT = "REPLACE_ME";
       if (code === 'rate_limited') say('bad', 'We already have a request from this email from the last 7 days. Check your inbox for our confirmation link, or email <a href="mailto:hello@bejucreative.digital">hello@bejucreative.digital</a>.');
       else if (code === 'spam_check') say('bad', 'The spam check did not pass. Please try again.');
       else if (code === 'invalid') say('bad', 'Something in the form looks off. Please check your answers and try again.');
-      else say('bad', 'We couldn’t send that. Your answers are still here. Try again, or <a href="' + mailFallback(p) + '">send them by email instead</a>.');
+      else say('bad', 'We couldn’t send that. Your answers are still here. Try again, or <a href=\'' + mailFallback(p) + '\'>send them by email instead</a>.');
     }).catch(function () {
       resetTs();
-      say('bad', 'That didn’t send. Your connection may have dropped, but your answers are still here. Try again, or <a href="' + mailFallback(p) + '">send them by email instead</a>.');
+      say('bad', 'That didn’t send. Your connection may have dropped, but your answers are still here. Try again, or <a href=\'' + mailFallback(p) + '\'>send them by email instead</a>.');
     }).then(function () {
       if (timer) clearTimeout(timer);
       [sendBtn, skipBtn].forEach(function (b) { b.disabled = false; }); sendBtn.removeAttribute('aria-busy');
