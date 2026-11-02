@@ -3,14 +3,14 @@ var d = document, me = d.currentScript;
 if (!me || d.querySelector('.ju-launch')) return;
 var dir = me.src.replace(/[^\/]*$/, ''), SITE = me.getAttribute('data-site') || '/';
 var ACTS = {
-  pricing: ['See prices', '#pricing'], order: ['See packages', '#pricing'],
-  sample: ['Get a free sample', '#apply', 'Free sample'], launch: ['Ask for a quote', '#apply', 'Launch video'],
-  apply: ['Send a message', '#apply'], email: ['Email', 'mailto:hello@bejucreative.digital'],
+  pricing: ['Get your free sample', 'sample/'], order: ['Get your free sample', 'sample/'],
+  sample: ['Get your free sample', 'sample/'], launch: ['Ask for a quote', 'mailto:hello@bejucreative.digital?subject=SaaS%20%26%20App%20Launch%20Video%20inquiry'],
+  apply: ['Book a 15-min call', 'https://cal.com/beju-creative/15min-call'], email: ['Email', 'mailto:hello@bejucreative.digital'],
   wa: ['WhatsApp', 'https://wa.me/37069575791'], terms: ['See the full rules', 'terms.html#guarantee'],
   privacy: ['Privacy policy', 'privacy.html']
 };
 var NAME = "BEJÚ's assistant (automated)";
-var HELLO = "Hi, I'm Ju, " + NAME + ". Pick a topic or type a question about our editing, prices or orders.";
+var HELLO = "Hi, I'm Ju, " + NAME + ". Pick a topic or type a question about our editing or the free sample.";
 var MISS = "I'm not sure about that one. A person will answer:";
 var DOWN = "My answers didn't load. A person will answer:";
 var HUMAN = ['email', 'wa', 'apply'];
@@ -165,7 +165,7 @@ css.onload = function () {
 };
 function dodge() {
   if (!('IntersectionObserver' in window)) return;
-  var SEL = '#pricing .price-card a,#pricing a[href*="buy.stripe.com"],a[href*="buy.stripe.com"],form,.apply-form,input,textarea,select',
+  var SEL = 'form,input,textarea,select',
     live = new Set(), io, band = 120;
   function sync() { launcher.classList.toggle('ju-away', live.size > 0); }
   function watch() {

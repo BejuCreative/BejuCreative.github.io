@@ -63,7 +63,6 @@
     var t = d.getElementById(id.slice(1)); if (!t) return;
     e.preventDefault();
     if (t.tagName === 'DETAILS') t.open = true;
-    if (a.hasAttribute('data-need')) setNeed(a.getAttribute('data-need'));
     if (menuOpen) { menuOpen = false; sheet.classList.remove('is-open'); burger.setAttribute('aria-expanded', 'false'); d.body.classList.remove('menu-open'); }
     // layout position, not getBoundingClientRect: a section still waiting to reveal is
     // translated 16 px, and measuring that made the scroll land 16 px short
@@ -500,66 +499,6 @@
   }
   w.addEventListener('resize', onScroll, { passive: true });
 
-  /* ── Pricing toggle: crossfade, no layout shift (panels share one grid cell) ── */
-  $$('[data-toggle]').forEach(function (grp) {
-    var tabs = $$('[role="tab"]', grp), panels = $$('[data-panel]', d.getElementById(grp.getAttribute('data-toggle')));
-    var pick = function (i, focus) {
-      grp.style.setProperty('--selected-tab', i);
-      tabs.forEach(function (t, j) { t.setAttribute('aria-selected', String(i === j)); t.tabIndex = i === j ? 0 : -1; });
-      panels.forEach(function (p, j) { var on = i === j; p.classList.toggle('is-on', on); p.setAttribute('aria-hidden', String(!on)); if (on) p.removeAttribute('inert'); else p.setAttribute('inert', ''); });
-      if (focus) tabs[i].focus();
-    };
-    tabs.forEach(function (t, i) {
-      t.addEventListener('click', function () { pick(i); });
-      t.addEventListener('keydown', function (e) { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); pick((i + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length, true); } });
-    });
-  });
-
-  /* ── Free-sample form → Google Form (no backend on GitHub Pages) ── */
-  var form = $('#start-form');
-  function setNeed(v) { var s = form && form.elements.namedItem('need'); if (s) s.value = v; }
-  if (form) {
-    var status = $('.form-status', form), btn = $('button[type="submit"]', form);
-    var fields = $$('[required]', form).map(function (el) { return el.name; });
-    var val = function (k) { var el = form.elements.namedItem(k); return el ? (el.value || '').trim() : ''; };
-    // The enquiries form has no subscriber field, so the count leads the message.
-    var message = function () { var n = val('subscribers'), m = val('message'); return n ? 'Subscribers: ' + n + (m ? '\n\n' + m : '') : m; };
-    var check = function (name) {
-      var el = form.elements.namedItem(name), f = el.closest('.field'), msg = '';
-      if (!el.value.trim()) msg = 'Please fill this in.';
-      else if (name === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(el.value.trim())) msg = 'That email doesn’t look right.';
-      f.classList.toggle('is-invalid', !!msg); el.setAttribute('aria-invalid', String(!!msg));
-      $('.err', f).textContent = msg; return !msg;
-    };
-    fields.forEach(function (n) { form.elements.namedItem(n).addEventListener('blur', function () { if (this.value) check(n); }); });
-    // Under 10,000 or no channel: say so before they send (they still can).
-    var subs = form.elements.namedItem('subscribers'), subsNote = $('#subs-note');
-    var syncSubsNote = function () { if (subsNote) subsNote.hidden = !/^(Under 10,000|No channel yet)$/.test(val('subscribers')); };
-    subs && subs.addEventListener('change', syncSubsNote);
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      var ok = fields.map(check).every(Boolean);
-      if (!ok) { var bad = $('.is-invalid input, .is-invalid select', form); bad && bad.focus(); return; }
-      var data = new URLSearchParams(), map = JSON.parse(form.getAttribute('data-entries'));
-      Object.keys(map).forEach(function (k) { data.append(map[k], k === 'message' ? message() : val(k)); });
-      btn.setAttribute('aria-busy', 'true'); btn.disabled = true; status.hidden = true;
-      fetch(form.getAttribute('data-action'), { method: 'POST', mode: 'no-cors', body: data })
-        .then(function () {
-          status.className = 'form-status ok'; status.hidden = false;
-          status.textContent = 'Got it. We’ll reply within 24 hours (check spam if you don’t see us).';
-          form.reset(); setNeed('Free sample'); syncSubsNote();
-        })
-        .catch(function () {   // keep everything they typed; offer e-mail as a fallback
-          var body = 'Name: ' + val('name') + '\nNeed: ' + val('need') + '\nLink: ' + val('link') + '\n\n' + message();
-          status.className = 'form-status bad'; status.hidden = false;
-          status.innerHTML = 'That didn’t send. Your connection may have dropped, but your answers are still here. <a class="link" href="mailto:hello@bejucreative.digital?subject=' +
-            encodeURIComponent('New request: ' + val('need')) + '&body=' + encodeURIComponent(body) + '">Send it by email instead</a>.';
-        })
-        .then(function () { btn.removeAttribute('aria-busy'); btn.disabled = false; status.focus && status.focus(); });
-    });
-  }
-  $$('a[data-need]').forEach(function (a) { a.addEventListener('click', function () { setNeed(a.getAttribute('data-need')); }); });
-
   /* GSAP only drives anchor scrolling, so it loads after the page has: until it arrives
      (or if it never does) anchors jump instantly. */
   function loadGsap() {
@@ -570,21 +509,6 @@
     });
   }
   whenSettled(loadGsap);
-
-  /* ── Partner links: /?ref=name adds client_reference_id to every Stripe checkout link, so
-       orders from a partner's post can be counted. Kept for this tab only (sessionStorage). ── */
-  (function () {
-    var ref = '';
-    try {
-      var raw = (new URLSearchParams(w.location.search).get('ref') || '').toLowerCase();
-      if (/^[a-z0-9_-]{1,40}$/.test(raw)) { ref = raw; sessionStorage.setItem('beju-ref', ref); }
-      else ref = sessionStorage.getItem('beju-ref') || '';
-    } catch (e) {}
-    if (!/^[a-z0-9_-]{1,40}$/.test(ref)) return;
-    $$('a[href^="https://buy.stripe.com/"]').forEach(function (a) {
-      try { var u = new URL(a.href); u.searchParams.set('client_reference_id', ref); a.href = u.toString(); } catch (e) {}
-    });
-  })();
 
   /* ── Call form: Tally's popup script loads only on the first click. Each link opens the form
        in a new tab on its own, so it still works without JS or if the popup can't load. ── */
