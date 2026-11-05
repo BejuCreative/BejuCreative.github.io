@@ -62,6 +62,9 @@
 .pick input:focus-visible + span{outline:2px solid var(--gold-champagne);outline-offset:3px}
 .group .err{font-size:.8rem;color:var(--error)}
 .group.is-invalid .pick span{border-color:var(--error)}
+.optin{display:flex;align-items:flex-start;gap:.7rem;margin:1.25rem 0 .25rem;cursor:pointer;color:var(--body);font-size:var(--t-caption,.95rem);line-height:1.45}
+.optin input{flex:none;width:20px;height:20px;margin:.1rem 0 0;accent-color:var(--gold-solid);cursor:pointer}
+.optin input:focus-visible{outline:2px solid var(--gold-champagne);outline-offset:3px}
 .note-field{margin-top:.2rem}
 
 /* look previews */
@@ -320,6 +323,8 @@ noscript .nojs{margin-top:1.5rem;padding:1rem;border:1px solid var(--hairline-st
         <div class="ts" id="ts-box"></div>
         <div class="form-status" id="form-status" role="status" tabindex="-1" hidden></div>
 
+        <label class="optin" for="f-updates"><input type="checkbox" id="f-updates" name="updates" value="yes"><span>Yes, email me BEJÚ tips and updates. Unsubscribe any time.</span></label>
+
         <div class="btn-row">
           <button class="btn-gold" type="submit" id="send">Send my free sample request</button>
           <button class="btn-glass" type="button" id="skip">Skip this and send</button>
@@ -551,7 +556,8 @@ const INTAKE_ENDPOINT = "https://script.google.com/macros/s/AKfycbx6gArRF9fwJTKb
     var p = {
       src: emailMode ? 'email' : 'website', name: val('name'), email: emailOf(), channel_url: emailMode ? '' : val('channel_url'), cadence: emailMode ? '' : radio('cadence'),
       sells: emailMode ? '' : radio('sells'), sells_note: emailMode ? '' : val('sells_note'),
-      fax_extension: val('fax_extension'), turnstile_token: token
+      fax_extension: val('fax_extension'), turnstile_token: token,
+      updates: $('#f-updates').checked ? 'yes' : ''
     };
     if (withStyle) {
       var cols = [val('colour1'), val('colour2')].filter(Boolean).map(function (c) { return c[0] === '#' ? c : '#' + c; }).join(', ');

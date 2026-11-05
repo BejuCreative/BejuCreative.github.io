@@ -36,6 +36,7 @@ const H = {
   graphics: 'How much is happening on screen?',
   brand: 'Colours, fonts, anything we should keep to',
   reference: 'A Short you wish was yours',
+  updates: 'Yes, email me BEJÚ tips and updates',
   channel: 'Channel or page',
   cadence: 'Posting frequency',
   sells: 'What you sell',
@@ -52,7 +53,7 @@ const H = {
   token: 'Confirm token',
   status: 'Status'
 };
-const HEADER_ROW = [H.time, H.video, H.name, H.email, H.goal, H.captions, H.graphics, H.brand, H.reference,
+const HEADER_ROW = [H.time, H.video, H.name, H.email, H.updates, H.goal, H.captions, H.graphics, H.brand, H.reference,
   H.channel, H.cadence, H.sells, H.sellsNote, H.look, H.energy, H.format, H.ref2, H.avoid, H.music, H.notes,
   H.source, H.confirmed, H.token, H.status];
 
@@ -96,6 +97,7 @@ function doPost(e) {
       values[H.graphics] = safeCell_(data.graphics);
       values[H.brand] = safeCell_(brandText_(data));
       values[H.reference] = safeCell_(data.reference);
+      values[H.updates] = data.updates ? 'Yes, email me BEJÚ tips and updates' : '';
       values[H.channel] = safeCell_(data.channel_url);
       values[H.cadence] = safeCell_(data.cadence);
       values[H.sells] = safeCell_(data.sells);
@@ -207,7 +209,9 @@ function normalise_(r) {
     ref2: pick('ref2'),
     avoid: pick('avoid'),
     music: pick('music'),
-    notes: pick('notes')
+    notes: pick('notes'),
+    // Opt-in to our email list: only an explicit tick counts (unticked by default on the page).
+    updates: /^(yes|true|on|1)$/i.test(pick('updates')) ? 'yes' : ''
   };
   // A list sent as "reference" (array) becomes reference + ref2.
   if (Array.isArray(r.reference)) { d.reference = str_(r.reference[0]); d.ref2 = d.ref2 || str_(r.reference[1]); }
