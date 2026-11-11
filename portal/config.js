@@ -6,7 +6,7 @@ window.BEJU_PORTAL = {
   supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpmbnB2Y3JudWp4bHljbXF1a3FzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzMjMyNzgsImV4cCI6MjEwNzg5OTI3OH0.1MT1RtPT_REhVtekoLRga_BRvlxZnWSzwUF-Z_S314Y",
 
   google: false,      // true = show "Continue with Google" (turn on only after the Google provider is set up in Supabase Auth)
-  showPrices: true,   // false = packs show "Book a call to get pricing" instead of prices and buy buttons
+  showPrices: false,   // false = packs show "Book a call to get pricing" instead of prices and buy buttons
   callUrl: "https://cal.com/beju-creative/15min-call",
   crmUrl: "https://juceviciussimas-max.github.io/beju-v2/app/",   // shown on Account only when profiles.is_admin = true
 

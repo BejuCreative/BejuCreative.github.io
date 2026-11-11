@@ -273,7 +273,7 @@ const AUTH_COPY = {
 };
 function authShell(inner) {
   return `<section class="auth"><div class="auth-in">
-    <a class="brand" href="../"><img src="../beju-mark-sm.png" alt="" width="40" height="24"><span>Beju Creative</span></a>
+    <a class="brand" href="/"><img src="/beju-mark-sm.png" alt="" width="40" height="24"><span>Beju Creative</span></a>
     ${inner}
   </div></section>`;
 }
