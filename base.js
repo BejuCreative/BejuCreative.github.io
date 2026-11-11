@@ -117,6 +117,8 @@ void main(){
     const sheet = document.createElement('div'); sheet.className = 'menu'; sheet.id = 'menu'; btn.setAttribute('aria-controls', 'menu');
     const items = links.map(a => [a.textContent.trim(), a.getAttribute('href')]);
     if (!items.some(([, h]) => h === '/guides/')) items.push(['Guides', '/guides/']);
+    const li = items.findIndex(([, h]) => h.startsWith('/portal/'));
+    if (li >= 0) items.splice(li + 1, 0, ['Sign up', '/portal/#/signup']);
     sheet.innerHTML = '<nav aria-label="Menu">' + items.map(([t, h], k) => `<a href="${h}" style="--k:${k}">${t}</a>`).join('') + '</nav>' +
       '<div class="row"><a class="btn primary" href="/apply/">Apply for a free sample</a><a class="btn glass" href="https://cal.com/beju-creative/15min-call">Book a call</a></div>';
     document.body.append(sheet);

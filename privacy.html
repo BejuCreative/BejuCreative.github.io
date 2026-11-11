@@ -57,7 +57,7 @@
 
 <nav class="nav" aria-label="Main">
   <a class="brand" href="/"><img data-mark src="/assets/beju-mark-640.png" alt="Beju Creative" width="40" height="24"></a>
-  <a class="l" href="/work/">Work</a><a class="l" href="/#services">Services</a><a class="l" href="/#results">Results</a><a class="l" href="/faq/">FAQ</a>
+  <a class="l" href="/work/">Work</a><a class="l" href="/#services">Services</a><a class="l" href="/#results">Results</a><a class="l" href="/faq/">FAQ</a><a class="l" href="/portal/#/login">Log in</a>
   <a class="btn primary sm" href="/apply/" data-magnet>Free sample</a>
 </nav>
 
@@ -104,6 +104,7 @@
   <li><strong>Your name and email.</strong> From our application form (/apply) or when you email or message us. Stripe also gives us your name and email when you pay.</li>
   <li><strong>Your order details.</strong> What you ordered, and the links and notes you give us in our application form and in emails: your channel or the exact videos to edit, a link to your footage, and anything we should know about style, must-use moments or deadlines.</li>
   <li><strong>Form answers.</strong> What you type into our application form (/apply): your channel link, your email, how often you post, what you sell, the video and the moment to work from, what viewers should do after watching, what you need most, your caption and graphics preferences, brand colours and fonts, a reference clip, your name and your phone number. If you apply to refer someone, we receive your name, your email and the details you give us about them. Our optional style form on the welcome page collects similar details (handles, reference clips, style notes and anything we should never show).</li>
+  <li><strong>Your client portal account.</strong> If you create an account in our client portal (/portal), we store your name, email, a securely hashed password (we never see the password itself), the answers you give about your channel, and what you do there: your sample request, the packs you buy, the footage links you send, the Shorts we deliver and your change requests.</li>
   <li><strong>Public channel details.</strong> For the channel you give us, we look at public information, such as the subscriber count, how often you post and your recent videos, to check the request and to prepare your sample.</li>
   <li><strong>Request records.</strong> The date of your request and its status.</li>
   <li><strong>Your footage.</strong> The files you upload or link to, and what's in them, such as faces, voices and names.</li>
@@ -141,7 +142,9 @@
 <ul>
   <li><strong>Stripe</strong> for payments made through our payment links.</li>
   <li><strong>Google</strong> for email (Gmail), files (Google Drive), our application form and our welcome-page form (Google Forms), and Google Sheets, which stores your form answers.</li>
-  <li><strong>jsDelivr</strong> for one code library on our homepage, described in section 11.</li>
+  <li><strong>jsDelivr</strong> for one code library on our homepage and one in the client portal, described in section 11.</li>
+  <li><strong>Supabase</strong>, which runs our client portal: your account, login and portal data are stored there.</li>
+  <li><strong>Resend</strong>, which sends the portal's account emails (confirmations and password resets).</li>
   <li><strong>WhatsApp and Instagram</strong>, if you choose to message us there.</li>
   <li><strong>GitHub Pages</strong>, which hosts this website (see section 11).</li>
   <li><strong>cal.com</strong>, if you book a call. It opens only when you click.</li>
@@ -149,7 +152,7 @@
 </ul>
 <p>Several of these services are based in, or store data in, the United States. We rely on the EU-US Data Privacy Framework where the company is certified, and on the standard contractual clauses approved by the European Commission where it is not.</p>
 <h2 id="sec-7">7. Our website forms</h2>
-<p>When you send our application form (/apply), your answers go to a Google Form in our Google account and are saved as a row in a Google Sheet we own. Google sees your IP address when your answers reach it. The form also has a hidden field that real visitors never see; if it is filled in, we treat the request as a bot and drop it. The referral form opens your own email app, so that message reaches us as an ordinary email.</p>
+<p>When you send our application form (/apply), your answers go to a Google Form in our Google account and are saved as a row in a Google Sheet we own. Google sees your IP address when your answers reach it. The form also has a hidden field that real visitors never see; if it is filled in, we treat the request as a bot and drop it. The referral form opens your own email app, so that message reaches us as an ordinary email. Our client portal (/portal) keeps you signed in with a small piece of browser storage set by Supabase, used only for that login. Payments in the portal open on Stripe, as described in section 5.</p>
 <p>The optional style form on our welcome page is a Google Form. Its answers are stored in our Google account too. Only our team can see the Sheet and the form answers. Google handles them under its own <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">privacy policy</a>.</p>
 <h2 id="sec-8">8. How long we keep it</h2>
 <ul>
@@ -164,7 +167,7 @@
 <h2 id="sec-10">10. We don't sell your data</h2>
 <p>We don't sell, rent or trade your personal data. We share it only with the services listed in section 6 that help us run the business, or when the law requires it.</p>
 <h2 id="sec-11">11. Cookies and analytics</h2>
-<p>Our own pages don't set any cookies. They have no analytics, no ad pixels and no tracking scripts. Two outside services are involved when a page loads, described below.</p>
+<p>Our own pages don't set any cookies. The client portal stores one login token in your browser while you are signed in. They have no analytics, no ad pixels and no tracking scripts. Two outside services are involved when a page loads, described below. The client portal also talks to Supabase, which runs it.</p>
 <ul>
   <li><strong>One code library.</strong> Our homepage loads a 3D graphics script (three.js) from jsDelivr, a free code library service. jsDelivr sees your IP address when it sends the file.</li>
   <li><strong>Hosting.</strong> GitHub Pages hosts this website. GitHub logs visitors' IP addresses for security. We can't see those logs.</li>
