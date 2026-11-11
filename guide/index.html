@@ -2,201 +2,135 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Client guide · BEJÚ Creative</title>
-<meta name="description" content="How working with BEJÚ works: sending footage, getting your videos in Google Drive, asking for changes, and the 2× views guarantee.">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Client guide | Beju Creative</title>
+<meta name="description" content="How working with Beju Creative works: sending footage, getting your videos in Google Drive, and asking for changes.">
 <meta name="robots" content="noindex,nofollow">
-<link rel="icon" href="/favicon.ico">
+<link rel="canonical" href="https://bejucreative.digital/guide/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Beju Creative">
+<meta property="og:url" content="https://bejucreative.digital/guide/">
+<meta property="og:title" content="Client guide">
+<meta property="og:description" content="How working with Beju Creative works: sending footage, getting your videos in Google Drive, and asking for changes.">
+<meta property="og:image" content="https://bejucreative.digital/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#070805">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<meta name="theme-color" content="#090B07">
-<link rel="stylesheet" href="/tokens.css"><link rel="stylesheet" href="/site.css"><link rel="stylesheet" href="/services.css">
-<style>
-/* Guide-only pieces. Layout, nav, footer, sections: /site.css + /services.css. */
-.svc-head h2{text-wrap:balance}
-.cards{display:grid;gap:var(--gutter)}
-.cards.c2{grid-template-columns:repeat(2,minmax(0,1fr))}
-@media(max-width:900px){.cards.c2{grid-template-columns:1fr}}
-.cards .card{display:flex;flex-direction:column}
-.cards h3{margin:0 0 .6rem}
-.svc-sec .cards p,.svc-sec .cards li{font-size:.95rem;line-height:1.6}
-.svc-sec .cards ol,.svc-sec .cards ul{margin:.2rem 0 0;padding-left:1.15rem}
-.svc-sec .cards li+li{margin-top:.35rem}
-.n{font-size:var(--t-label);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-solid);margin-bottom:.8rem}
-.svc-sec .steps{counter-reset:s;list-style:none;margin:0;padding:0;display:grid;gap:.9rem}
-.svc-sec .steps li{counter-increment:s;position:relative;padding-left:2.6rem;max-width:66ch}
-.svc-sec .steps li::before{content:counter(s,decimal-leading-zero);position:absolute;left:0;top:.05rem;font-size:var(--t-label);font-weight:600;letter-spacing:.12em;color:var(--gold-solid)}
-.example{margin-top:1.5rem;border-radius:var(--r-lg);padding:1.2rem 1.4rem}
-.example .lbl{font-size:var(--t-label);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-solid);margin-bottom:.6rem}
-.svc-sec .example p{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88rem;line-height:1.8;color:var(--ink)}
-.svc-sec .small{margin-top:1.25rem;font-size:var(--t-caption);color:var(--muted)}
-.svc-sec .note{margin-top:1.5rem}
-.channel{text-decoration:none}
-.channel small{display:block;font-size:var(--t-label);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-solid);margin-bottom:.35rem}
-.channel span{color:var(--ink);font-weight:600;overflow-wrap:anywhere}
-.cards.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
-@media(max-width:1023px){.cards.c3{grid-template-columns:1fr}}
-.channels{margin-top:1.5rem}
-</style>
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="preload" href="/fonts/newsreader-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/base.css">
+<link rel="stylesheet" href="/pages.css">
+<noscript><style>.rv{opacity:1!important;transform:none!important}.split .w>span{opacity:1!important;transform:none!important}</style></noscript>
 </head>
 <body>
-<a class="skip" href="#main">Skip to content</a>
-<header class="nav" id="nav">
-  <a href="/" class="brand" aria-label="BEJÚ Creative, home"><img src="/beju-mark-sm.png" alt="BEJÚ Creative" width="180" height="107"></a>
-  <nav class="nav-links" aria-label="Client guide">
-    <a href="#footage">Footage</a>
-    <a href="#delivery">Delivery</a>
-    <a href="#changes">Changes</a>
-    <a href="#guarantee">Guarantee</a>
-  </nav>
-  <div class="nav-end">
-    <a class="btn-glass btn-sm" href="#contact">Need help?</a>
-    <button class="burger" type="button" aria-expanded="false" aria-controls="sheet" aria-label="Open menu"><span></span><span></span><span></span></button>
+<canvas id="bg" aria-hidden="true"></canvas><div class="grain"></div>
+<div id="tl" aria-hidden="true"><i id="ph"></i><span id="tc">00:00:00:00</span></div>
+
+<nav class="nav" aria-label="Main">
+  <a class="brand" href="/"><img data-mark src="/assets/beju-mark-640.png" alt="Beju Creative" width="40" height="24"></a>
+  <a class="l" href="/work/">Work</a><a class="l" href="/#services">Services</a><a class="l" href="/#results">Results</a><a class="l" href="/faq/">FAQ</a>
+  <a class="btn primary sm" href="/apply/" data-magnet>Free sample</a>
+</nav>
+
+<main>
+<header class="phero slim">
+  <div class="wrap">
+    <ol class="crumbs rv" aria-label="Breadcrumb"><li><a href="/">Home</a></li><li aria-current="page">Client guide</li></ol>
+    <h1 class="split">From footage to <em>posted.</em></h1>
+    <p class="lede rv" style="--i:3">How working with us works, step by step. You're working directly with <strong>Benas and Simas</strong>, the two editors cutting your videos. Three minutes to read.</p>
   </div>
 </header>
 
-<div class="sheet" id="sheet">
-  <nav aria-label="Menu">
-    <a href="#footage">Footage</a>
-    <a href="#delivery">Delivery</a>
-    <a href="#changes">Changes</a>
-    <a href="#guarantee">Guarantee</a>
-  </nav>
-  <a class="btn-gold" href="#contact">Need help?</a>
-  <p class="caption">We reply within 24 hours · hello@bejucreative.digital</p>
-</div>
+<section style="padding-top:clamp(24px,3vw,40px)"><div class="wrap reading">
+  <nav class="toc" aria-label="On this page"><a href="#how">How it works</a><a href="#footage">Sending your footage</a><a href="#delivery">Getting your videos</a><a href="#changes">Asking for changes</a><a href="#contact">We're right here</a></nav>
+  <article class="prose">
 
-<main id="main">
-
-  <div class="svc-hero wrap g12">
-    <div class="svc-title">
-      <p class="kicker">Client guide</p>
-      <h1 class="display grad">From footage<br>to&nbsp;<span class="gold-text">posted.</span></h1>
-    </div>
-    <div class="svc-intro">
-      <p class="lede">How working with us works, step by step. You're working directly with <strong>Benas and Simas</strong>, the two editors cutting your videos. Three minutes to read.</p>
-    </div>
-  </div>
-
-  <!-- ── HOW IT WORKS ───────────────────────────────── -->
-  <section class="svc-sec wrap g12" id="how">
-    <div class="svc-head"><p class="kicker">How it works</p><h2>Six steps, start to finish</h2></div>
-    <ol class="steps">
+    <h2 id="how" style="margin-top:0">Six steps, start to finish</h2>
+    <ol>
       <li><strong>You tell us what to edit at checkout.</strong> Your channel or video links are all we need. We email you within 12 hours, 7 days a week, to confirm your order.</li>
       <li><strong>Files not online?</strong> Upload them to the <strong>upload folder</strong> we email you. It's shared only with your email address.</li>
       <li><strong>You tell us your style</strong> (optional). Skip it and we'll edit in our proven style.</li>
       <li><strong>We edit</strong> and put your finished videos in a Google Drive folder for your order.</li>
-      <li><strong>You check them</strong> and send any changes within 48 hours. One round of changes is included.</li>
+      <li><strong>You check them</strong> and send any changes within 48 hours. Revisions are unlimited. We keep editing until you're happy.</li>
       <li><strong>You post.</strong> The clips are yours to post, reuse or run as ads.</li>
     </ol>
-  </section>
 
-  <!-- ── FOOTAGE ─────────────────────────────────────── -->
-  <section class="svc-sec wrap g12 rv" id="footage">
-    <div class="svc-head"><p class="kicker">Step 1</p><h2>Sending your footage</h2></div>
-    <div class="cards c2">
-      <div class="card panel">
-        <span class="n">How to send it</span>
-        <ul>
-          <li>Already online? The links you gave us at checkout are enough. There's nothing to upload.</li>
-          <li>Files not online? Open the <strong>upload folder</strong> we email you and drag your files in. It's shared only with your email address, so open it signed in to that Google account.</li>
-          <li>No Google account, no folder email yet, or prefer another way? Send a <strong>WeTransfer, Dropbox or Google Drive</strong> link by email or WhatsApp.</li>
-          <li>Big files take a while. Keep the tab open until the upload says it's complete.</li>
-        </ul>
-      </div>
-      <div class="card panel">
-        <span class="n">What to send</span>
-        <ul>
-          <li><strong>The original video file</strong>, straight from your camera, Riverside, Zoom or editing app. Files sent through WhatsApp, Instagram or a screen recording lose quality.</li>
-          <li><strong>The whole recording.</strong> Finding the best moments is our job.</li>
-          <li><strong>Notes</strong>: favourite moments with times (like "12:30"), names to spell right, anything we should never show or say.</li>
-        </ul>
-      </div>
-    </div>
+    <h2 id="footage">Sending your footage</h2>
+    <h3>How to send it</h3>
+    <ul>
+      <li>Already online? The links you gave us at checkout are enough. There's nothing to upload.</li>
+      <li>Files not online? Open the <strong>upload folder</strong> we email you and drag your files in. It's shared only with your email address, so open it signed in to that Google account.</li>
+      <li>No Google account, no folder email yet, or prefer another way? Send a <strong>WeTransfer, Dropbox or Google Drive</strong> link by email or WhatsApp.</li>
+      <li>Big files take a while. Keep the tab open until the upload says it's complete.</li>
+    </ul>
+    <h3>What to send</h3>
+    <ul>
+      <li><strong>The original video file</strong>, straight from your camera, Riverside, Zoom or editing app. Files sent through WhatsApp, Instagram or a screen recording lose quality.</li>
+      <li><strong>The whole recording.</strong> Finding the best moments is our job.</li>
+      <li><strong>Notes</strong>: favourite moments with times (like "12:30"), names to spell right, anything we should never show or say.</li>
+    </ul>
     <p class="note">Want your first edits to land perfectly? Our <a href="https://docs.google.com/forms/d/e/1FAIpQLScAvi65xVF4LodUVE2Qq1ZVLu4WAXAmARcTEX_j4yfsdMtruQ/viewform" target="_blank" rel="noopener">one-minute style form</a> asks for all of this in one place.</p>
     <p class="note">Packs expire 14 days after you pay, so send your footage before then (<a href="/terms.html#expiry">section 2.4 of our terms</a>).</p>
-  </section>
 
-  <!-- ── DELIVERY ────────────────────────────────────── -->
-  <section class="svc-sec wrap g12 rv" id="delivery">
-    <div class="svc-head"><p class="kicker">Steps 4–5</p><h2>Getting your videos</h2></div>
-    <p>Short-form packages arrive within <strong>24 hours</strong>, long-form packages within <strong>48 hours</strong>, after payment, usable footage and the brief are confirmed. Weekends and holidays included. If a file is broken or has no sound, we'll ask you to send it again before the clock starts.</p>
-    <div class="cards c2" style="margin-top:1.5rem">
-      <div class="card panel">
-        <span class="n">On a computer</span>
-        <ul>
-          <li>Open your Drive folder. Each order has its own folder, like <strong>5 Shorts · Order 1 · 2026-10-02</strong>.</li>
-          <li>Click a video to play it in your browser. Just uploaded? Big videos can take a few minutes before they play.</li>
-          <li>To download: right-click a video, then <strong>Download</strong>. Select several with Ctrl (Windows) or Command (Mac).</li>
-        </ul>
-      </div>
-      <div class="card panel">
-        <span class="n">On your phone</span>
-        <ul>
-          <li>Install the free <strong>Google Drive</strong> app, then open your folder link.</li>
-          <li><strong>iPhone:</strong> tap ⋮ next to the video, then <strong>Send a copy</strong>, then <strong>Save video</strong>.</li>
-          <li><strong>Android:</strong> tap ⋮ next to the video, then <strong>Download</strong>.</li>
-        </ul>
-      </div>
-    </div>
-    <p class="note"><strong>Links never expire.</strong> Your finished videos stay in your folder. When you post, upload the video file to each app; don't share the Drive link. We delete your raw footage once you've approved your edits, so keep your own copy of the originals.</p>
-  </section>
-
-  <!-- ── CHANGES ─────────────────────────────────────── -->
-  <section class="svc-sec wrap g12 rv" id="changes">
-    <div class="svc-head"><p class="kicker">Step 5</p><h2>Asking for changes</h2></div>
-    <p>Each order includes <strong>one round of revisions</strong>. Send all your changes for the order together, within <strong>48 hours</strong> of delivery, and we'll fix them. A substantially different edit from the original brief may be treated as a new order.</p>
-    <div class="cards c2" style="margin-top:1.5rem">
-      <div class="card panel">
-        <span class="n">Option A · comment in Google Drive</span>
-        <ol>
-          <li>On a computer, open the video in your Drive folder, signed in to your Google account.</li>
-          <li>Pause at the exact moment, click <strong>Comment</strong>, type your note, click <strong>Comment</strong>.</li>
-          <li>Repeat for each change, then message us: "Comments are in."</li>
-        </ol>
-        <p class="small">Timed comments work in a desktop browser only. On your phone, use Option B.</p>
-      </div>
-      <div class="card panel">
-        <span class="n">Option B · one message</span>
-        <p>Email, WhatsApp or Instagram. Give the clip number and the time:</p>
-        <div class="example panel"><div class="lbl">Example</div><p>Clip 2, 0:04: cut the pause<br>Clip 2, 0:18: her name is "Sara"<br>Clip 4: use the other hook</p></div>
-      </div>
-    </div>
-    <p class="note">We put the updated videos in your client folder.</p>
-  </section>
-
-  <!-- ── GUARANTEE ───────────────────────────────────── -->
-  <section class="svc-sec wrap g12 rv" id="guarantee">
-    <div class="svc-head"><p class="kicker">Short-form packages</p><h2>The 2× views guarantee</h2></div>
-    <p><strong>Double your agreed baseline average views, or receive a full refund of the qualifying short-form package payment.</strong> It covers your first paid short-form package only. Long-form editing and launch films are not covered.</p>
-    <ul style="margin-top:1rem">
-      <li><strong>Your baseline is set before you pay.</strong> We note the public view counts of your last 10 clips on one account that are at least 30 days old, and you confirm their average. With fewer than three such clips, the guarantee doesn't apply, and we tell you before you pay.</li>
-      <li><strong>Post on time.</strong> Publish each delivered clip within 14 days on the agreed account, and keep it public and unchanged, with no paid promotion, for its first 30 days.</li>
-      <li><strong>We measure the package average.</strong> Each clip's views in its first 30 days after posting, divided by the number of clips. Individual clips don't each have to double.</li>
-      <li><strong>Claim within seven days</strong> after the last clip's 30-day window ends: email your order details, the links and posting dates of every clip, and platform analytics showing each clip's first-30-day organic views to hello@bejucreative.digital.</li>
+    <h2 id="delivery">Getting your videos</h2>
+    <p>We deliver everything within <strong>24 hours</strong>, and usually faster, after payment, usable footage and the brief are confirmed. Weekends and holidays included. If a file is broken or has no sound, we'll ask you to send it again before the clock starts.</p>
+    <h3>On a computer</h3>
+    <ul>
+      <li>Open your Drive folder. Each order has its own folder, like <strong>5 Shorts · Order 1 · 2026-10-02</strong>.</li>
+      <li>Click a video to play it in your browser. Just uploaded? Big videos can take a few minutes before they play.</li>
+      <li>To download: right-click a video, then <strong>Download</strong>. Select several with Ctrl (Windows) or Command (Mac).</li>
     </ul>
-    <p class="small">Tip: screenshot your views as you go. Read the <a href="/terms.html#guarantee">full guarantee rules</a>; the terms agreed for your order apply.</p>
-  </section>
+    <h3>On your phone</h3>
+    <ul>
+      <li>Install the free <strong>Google Drive</strong> app, then open your folder link.</li>
+      <li><strong>iPhone:</strong> tap ⋮ next to the video, then <strong>Send a copy</strong>, then <strong>Save video</strong>.</li>
+      <li><strong>Android:</strong> tap ⋮ next to the video, then <strong>Download</strong>.</li>
+    </ul>
+    <p class="note"><strong>Links never expire.</strong> Your finished videos stay in your folder. When you post, upload the video file to each app; don't share the Drive link. We delete your raw footage once you've approved your edits, so keep your own copy of the originals.</p>
 
-  <!-- ── CONTACT ─────────────────────────────────────── -->
-  <section class="svc-sec wrap g12 rv" id="contact">
-    <div class="svc-head"><p class="kicker">Talk to us</p><h2>We're right here</h2></div>
-    <div class="cards c3 channels">
-      <a class="channel card panel" href="mailto:hello@bejucreative.digital"><small>Email</small><span>hello@bejucreative.digital</span></a>
-      <a class="channel card panel" href="https://wa.me/37069575791" target="_blank" rel="noopener"><small>WhatsApp</small><span>+370 695 75791</span></a>
-      <a class="channel card panel" href="https://instagram.com/bejucreative" target="_blank" rel="noopener"><small>Instagram DM</small><span>@bejucreative</span></a>
-    </div>
-    <p class="note"><strong>We reply within 24 hours.</strong> We're in Lithuania, about 7 hours ahead of New York, so a message sent in your evening is often answered by your morning.</p>
-  </section>
+    <h2 id="changes">Asking for changes</h2>
+    <p><strong>Revisions are unlimited.</strong> We keep editing until you're happy. Send all your changes for the order together, within <strong>48 hours</strong> of delivery, and we'll fix them. A substantially different edit from the original brief may be treated as a new order.</p>
+    <h3>Option A · comment in Google Drive</h3>
+    <ol>
+      <li>On a computer, open the video in your Drive folder, signed in to your Google account.</li>
+      <li>Pause at the exact moment, click <strong>Comment</strong>, type your note, click <strong>Comment</strong>.</li>
+      <li>Repeat for each change, then message us: "Comments are in."</li>
+    </ol>
+    <p>Timed comments work in a desktop browser only. On your phone, use Option B.</p>
+    <h3>Option B · one message</h3>
+    <p>Email, WhatsApp or Instagram. Give the clip number and the time:</p>
+    <p class="note"><strong>Example</strong><br>Clip 2, 0:04: cut the pause<br>Clip 2, 0:18: her name is "Sara"<br>Clip 4: use the other hook</p>
+    <p class="note">We put the updated videos in your client folder.</p>
 
+  </article>
+</div></section>
+
+<section id="contact"><div class="wrap">
+  <div class="head"><h2 class="split">We're right here</h2></div>
+  <div class="list small">
+    <a class="item rv" href="mailto:hello@bejucreative.digital"><h3>hello@bejucreative.digital</h3><p>Email</p><span class="go"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12 12 4M6 4h6v6"/></svg></span></a>
+    <a class="item rv" href="https://wa.me/37069575791" target="_blank" rel="noopener"><h3>+370 695 75791</h3><p>WhatsApp</p><span class="go"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12 12 4M6 4h6v6"/></svg></span></a>
+    <a class="item rv" href="https://instagram.com/bejucreative" target="_blank" rel="noopener"><h3>@bejucreative</h3><p>Instagram DM</p><span class="go"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12 12 4M6 4h6v6"/></svg></span></a>
+  </div>
+  <p class="lede rv" style="margin-top:34px"><strong>We reply within 24 hours.</strong> We're in Lithuania, about 7 hours ahead of New York, so a message sent in your evening is often answered by your morning.</p>
+</div></section>
 </main>
 
-<footer class="foot">
-  <div class="wrap">
-    <div class="foot-bot"><span>© 2026 BEJÚ Creative · Benas &amp; Simas</span><a href="/welcome/">Welcome page</a><a href="/terms.html">Terms of service</a></div>
-  </div>
-</footer>
 
-<script src="/site.js" defer></script>
+<footer><div class="wrap">
+  <div class="refer"><span>Know a creator or a brand who needs this? Introduce them. We reward referrals generously.</span><a class="btn glass sm" href="/apply/#refer" data-magnet>Apply to refer</a></div>
+  <nav class="sitemap" aria-label="Services and guides">
+    <a href="/short-form-video-editing/">Short-form video editing</a><a href="/podcast-video-editing/">Podcast clip editing</a><a href="/video-editing-for-coaches/">Editing for coaches</a><a href="/video-editing-for-course-creators/">Editing for course creators</a><a href="/saas-launch-videos/">SaaS launch films</a><a href="/content-engine/">The Content Engine</a><a href="/work/">Work</a><a href="/guides/">Guides</a>
+  </nav>
+  <div class="foot"><img data-mark src="/assets/beju-mark-640.png" alt="Beju Creative" width="37" height="22"><span class="row" style="gap:6px 26px"><a href="/faq/">FAQ</a><a href="/terms.html">Terms</a><a href="/privacy.html">Privacy</a><a href="mailto:hello@bejucreative.digital">hello@bejucreative.digital</a></span></div>
+</div></footer>
+
+<script src="/logo-data.js"></script>
+<script src="/base.js"></script>
+<script src="/pages.js"></script>
 </body>
 </html>

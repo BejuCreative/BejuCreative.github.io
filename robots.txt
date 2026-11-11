@@ -1,9 +1,11 @@
+# Search engines and AI answer engines (GPTBot, OAI-SearchBot, ChatGPT-User, ClaudeBot, Claude-SearchBot,
+# PerplexityBot, Google-Extended and others) are all welcome. A plain-text summary of the studio is at /llms.txt
 User-agent: *
 Allow: /
-
-# Public service pages, editing guides and media remain crawlable.
+Disallow: /backend/
+Disallow: /welcome/
+Disallow: /guide/
 Disallow: /hero/README.txt
 Disallow: /work/README.txt
-Disallow: /backend/
 
 Sitemap: https://bejucreative.digital/sitemap.xml
