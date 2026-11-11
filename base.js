@@ -107,6 +107,27 @@ void main(){
     (function f() { gx += (x - gx) * .08; gy += (y - gy) * .08; g.style.transform = `translate3d(${gx - 260}px,${gy - 260}px,0)`; requestAnimationFrame(f); })();
   }
 
+
+  // ---- phone menu: built from the header's own links, so every page gets the same menu
+  const nav = document.querySelector('.nav'), links = nav ? [...nav.querySelectorAll('a.l')] : [];
+  if (nav && links.length) {
+    const btn = document.createElement('button');
+    btn.className = 'menu-btn'; btn.type = 'button'; btn.setAttribute('aria-label', 'Open the menu'); btn.setAttribute('aria-expanded', 'false'); btn.innerHTML = '<i></i>';
+    const cta = nav.querySelector('.btn'); cta ? nav.insertBefore(btn, cta) : nav.append(btn);
+    const sheet = document.createElement('div'); sheet.className = 'menu'; sheet.id = 'menu'; btn.setAttribute('aria-controls', 'menu');
+    const items = links.map(a => [a.textContent.trim(), a.getAttribute('href')]);
+    if (!items.some(([, h]) => h === '/guides/')) items.push(['Guides', '/guides/']);
+    sheet.innerHTML = '<nav aria-label="Menu">' + items.map(([t, h], k) => `<a href="${h}" style="--k:${k}">${t}</a>`).join('') + '</nav>' +
+      '<div class="row"><a class="btn primary" href="/apply/">Apply for a free sample</a><a class="btn glass" href="https://cal.com/beju-creative/15min-call">Book a call</a></div>';
+    document.body.append(sheet);
+    const root = document.documentElement;
+    const set = open => { root.classList.toggle('menu-open', open); btn.setAttribute('aria-expanded', String(open)); btn.setAttribute('aria-label', open ? 'Close the menu' : 'Open the menu'); };
+    btn.addEventListener('click', () => set(!root.classList.contains('menu-open')));
+    sheet.addEventListener('click', e => { if (e.target.closest('a')) set(false); });
+    addEventListener('keydown', e => { if (e.key === 'Escape') set(false); });
+    matchMedia('(min-width:821px)').addEventListener('change', e => e.matches && set(false));
+  }
+
   // ---- numbers that count up when seen
   const co = new IntersectionObserver(es => es.forEach(e => {
     if (!e.isIntersecting) return; co.unobserve(e.target);
