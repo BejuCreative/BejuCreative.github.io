@@ -178,7 +178,7 @@ document.getElementById('mark').src = window.BEJU_LOGO;
 const FORM = 'https://docs.google.com/forms/d/e/1FAIpQLSc-K_EOzSqUhp1LTLyuppUm-vBA6iLhGjQW8FS0xcktRXr1Gw/formResponse';
 const ENTRY = { video: 'entry.2069245241', timestamp: 'entry.1215761112', name: 'entry.1199884014', email: 'entry.650170257', updates: 'entry.1480759237',
   goal: 'entry.420780976', captions: 'entry.1387353753', graphics: 'entry.1246142521', brand: 'entry.426765624', reference: 'entry.1622671538',
-  phone: 'entry.1810977715', channel_url: 'entry.571129894', sells: 'entry.354942050', cadence: 'entry.684852766', need: 'entry.330572004' };
+  phone: 'entry.1810977715', channel_url: 'entry.571129894', sells: 'entry.354942050', cadence: 'entry.684852766', need: 'entry.330572004', source: 'entry.312196233' };
 const MAIL = 'hello@bejucreative.digital';
 const REFER = 'https://docs.google.com/forms/d/e/1FAIpQLSe2L0fH0JCwVRn_ZoQvVM5eDLU_bzRkYToGI0Z9sVSNOfsA6w/formResponse';
 const form = document.getElementById('f'), steps = [...document.querySelectorAll('.step')], bar = document.getElementById('bar'), where = document.getElementById('where'),
@@ -213,6 +213,7 @@ const send = async () => {
   }
   const a = { video: url(val('video')), timestamp: val('timestamp'), name: val('name'), email: val('email'), goal: val('goal'), captions: picked('captions')[0] || '', graphics: val('graphics'),
     brand: val('brand'), reference: url(val('reference')), phone: val('phone'), channel_url: url(val('channel_url')), sells: picked('sells').join(', '), cadence: picked('cadence')[0] || '', need: picked('need')[0] || '' };
+  a.source = 'Website';
   const body = new URLSearchParams(); Object.keys(a).forEach(k => a[k] && body.append(ENTRY[k], a[k])); if (form.elements.updates.checked) body.append(ENTRY.updates, 'Yes');
   next.setAttribute('aria-busy', 'true'); next.textContent = 'Sending…';
   try { await fetch(FORM, { method: 'POST', mode: 'no-cors', body }); show(last + 1); }
