@@ -180,10 +180,11 @@ const ENTRY = { video: 'entry.2069245241', timestamp: 'entry.1215761112', name: 
   goal: 'entry.420780976', captions: 'entry.1387353753', graphics: 'entry.1246142521', brand: 'entry.426765624', reference: 'entry.1622671538',
   phone: 'entry.1810977715', channel_url: 'entry.571129894', sells: 'entry.354942050', cadence: 'entry.684852766', need: 'entry.330572004' };
 const MAIL = 'hello@bejucreative.digital';
+const REFER = 'https://docs.google.com/forms/d/e/1FAIpQLSe2L0fH0JCwVRn_ZoQvVM5eDLU_bzRkYToGI0Z9sVSNOfsA6w/formResponse';
 const form = document.getElementById('f'), steps = [...document.querySelectorAll('.step')], bar = document.getElementById('bar'), where = document.getElementById('where'),
   back = document.getElementById('back'), next = document.getElementById('next'), actions = document.getElementById('actions'), status = document.getElementById('status');
 const refer = location.hash === '#refer', rstep = document.getElementById('refer-step');
-if (refer) { steps.forEach(s => s !== rstep && !s.classList.contains('done') && s.remove()); document.querySelector('.step.done').before(rstep); { const h2 = rstep.querySelector('h2'), top = document.createElement('h1'); top.innerHTML = h2.innerHTML; h2.replaceWith(top); } document.title = 'Refer a Creator or a Brand | Beju Creative'; } else rstep.remove();
+if (refer) { steps.forEach(s => s !== rstep && !s.classList.contains('done') && s.remove()); document.querySelector('.step.done').before(rstep); { const h2 = rstep.querySelector('h2'), top = document.createElement('h1'); top.innerHTML = h2.innerHTML; h2.replaceWith(top); } document.title = 'Refer a Creator or a Brand | Beju Creative'; const d = document.querySelector('.step.done'); d.querySelector('h2').textContent = 'Thank you for the introduction.'; d.querySelector('.lede').textContent = "We'll take it from there and keep you posted."; } else rstep.remove();
 const live = [...document.querySelectorAll('.step')];
 let i = 0; const last = live.length - 2, t0 = Date.now();
 const val = n => { const el = form.elements[n]; return el && typeof el.value === 'string' ? el.value.trim() : ''; };
@@ -201,9 +202,14 @@ const valid = () => {
 const mailto = lines => `mailto:${MAIL}?subject=${encodeURIComponent(refer ? 'Referral' : 'Free sample application')}&body=${encodeURIComponent(lines.join('\n'))}`;
 const send = async () => {
   if (val('website_url') || Date.now() - t0 < 4000) return show(last + 1);   // bots: look successful, send nothing
-  if (refer) {   // referrals go by email until they have their own sheet
-    location.href = mailto(['Referral from: ' + val('ref_name') + ' <' + val('ref_email') + '>', 'Referring: ' + val('ref_who'), 'Notes: ' + val('ref_note')]);
-    return show(last + 1);
+  if (refer) {   // referrals post into the studio's "Referral" form
+    const r = new URLSearchParams({ 'entry.403792346': val('ref_name'), 'entry.625583341': val('ref_email'), 'entry.223110442': val('ref_who') });
+    if (val('ref_note')) r.append('entry.1577155939', val('ref_note'));
+    next.setAttribute('aria-busy', 'true'); next.textContent = 'Sending…';
+    try { await fetch(REFER, { method: 'POST', mode: 'no-cors', body: r }); show(last + 1); }
+    catch (e) { next.textContent = 'Send my referral';
+      say(`That didn't send. Your answers are still here. Try again, or <a href="${mailto(['Referral from: ' + val('ref_name') + ' <' + val('ref_email') + '>', 'Referring: ' + val('ref_who'), 'Notes: ' + val('ref_note')])}">send it by email instead</a>.`); }
+    next.removeAttribute('aria-busy'); return;
   }
   const a = { video: url(val('video')), timestamp: val('timestamp'), name: val('name'), email: val('email'), goal: val('goal'), captions: picked('captions')[0] || '', graphics: val('graphics'),
     brand: val('brand'), reference: url(val('reference')), phone: val('phone'), channel_url: url(val('channel_url')), sells: picked('sells').join(', '), cadence: picked('cadence')[0] || '', need: picked('need')[0] || '' };
