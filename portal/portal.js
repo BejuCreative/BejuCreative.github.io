@@ -19,12 +19,23 @@ const ic = id => `<svg class="ic" aria-hidden="true"><use href="#i-${id}"/></svg
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
-const fmtDate = t => {
-  if (!t) return "";
-  const d = new Date(t), o = { month: "long", day: "numeric" };
-  if (d.getFullYear() !== new Date().getFullYear()) o.year = "numeric";
-  return d.toLocaleDateString("en-US", o);
+// Dates in the client's own locale and time zone: "Tue 11 Nov, 20:44" (order follows their locale), 24 h, no seconds.
+const DTF = {
+  full: new Intl.DateTimeFormat(undefined, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }),
+  day: new Intl.DateTimeFormat(undefined, { weekday: "short", day: "numeric", month: "short" }),
+  wkTime: new Intl.DateTimeFormat(undefined, { weekday: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }),
+  wk: new Intl.DateTimeFormat(undefined, { weekday: "short" }),
 };
+const fmt = (t, kind) => { const d = t ? new Date(t) : null; return d && !isNaN(d) ? DTF[kind].format(d) : ""; };
+const fmtDate = t => fmt(t, "day");           // Tue 11 Nov
+const when = t => fmt(t, "full");             // Tue 11 Nov, 20:44
+const near = t => t && Math.abs(Date.parse(t) - Date.now()) < 6 * 864e5;
+const whenShort = t => near(t) ? fmt(t, "wkTime") : when(t);   // Wed 20:44 within a week, else the full date
+const dayShort = t => near(t) ? fmt(t, "wk") : fmtDate(t);      // Thu within a week
+const isPast = t => t && Date.parse(t) < Date.now();
+// "Expected by Wed 12 Nov, 20:44", or a calm "Due now" once that time has passed
+const expected = (t, label = "Expected by", short = false) => !t ? "" : isPast(t)
+  ? "Due now. Thanks for your patience." : `${label} ${short ? whenShort(t) : when(t)}`;
 const fmtTime = s => {
   s = Math.max(0, Math.round(Number(s) || 0));
   const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), ss = String(s % 60).padStart(2, "0");
@@ -172,7 +183,7 @@ function wallet(purchases, videos) {
   const open = live.filter(p => p.left > 0);
   return {
     left: open.reduce((s, p) => s + p.left, 0), total: live.reduce((s, p) => s + p.videos, 0),
-    next: open[0] || null, expires: open.length ? open[0].exp : null, count: purchases.length,
+    next: open[0] || null, expires: open.length ? open[0].exp : null, count: purchases.length, open,
   };
 }
 
@@ -180,9 +191,9 @@ async function loadAll() {
   const uid = ME.id;
   const [ps, vs, sample] = await Promise.all([
     must(sb.from("purchases").select("id,pack_id,videos,created_at,expires_at").eq("user_id", uid)),
-    must(sb.from("videos").select("id,purchase_id,title,notes,footage,status,result_url,delivered_at,created_at")
+    must(sb.from("videos").select("id,purchase_id,title,notes,footage,status,result_url,delivered_at,created_at,due_at,version")
       .eq("user_id", uid).order("created_at", { ascending: false })),
-    must(sb.from("sample_requests").select("id,video_url,moment,style,goal,status,preview_url,note,created_at,delivered_at")
+    must(sb.from("sample_requests").select("id,video_url,moment,style,goal,status,preview_url,note,created_at,delivered_at,due_at")
       .eq("user_id", uid).limit(1)).then(r => r[0] || null),
   ]);
   return { videos: vs, sample, w: wallet(ps, vs) };
@@ -284,6 +295,10 @@ function authView(mode) {
   const google = CFG.google === true && mode !== "forgot";
   view.innerHTML = authShell(`
     <div class="card auth-card">
+      <nav class="authtabs" aria-label="Account">
+        <a href="#/signup"${mode === "signup" ? ` aria-current="page"` : ""}>Sign up</a>
+        <a href="#/login"${mode === "login" ? ` aria-current="page"` : ""}>Log in</a>
+      </nav>
       <div class="head tight"><h1>${title}</h1><p class="lede">${sub}</p></div>
       ${notice ? `<p class="notice" role="status">${esc(notice)}</p>` : ""}
       ${google ? `<button class="btn glass block" type="button" id="google">Continue with Google</button><p class="or"><span>or</span></p>` : ""}
@@ -293,7 +308,7 @@ function authView(mode) {
         ${mode !== "forgot" ? `<div class="field"><label for="a-pass">Password</label>
           <input class="input" id="a-pass" type="password" minlength="8" maxlength="72" required autocomplete="${mode === "signup" ? "new-password" : "current-password"}">
           ${mode === "signup" ? `<p class="hint">At least 8 characters.</p>` : `<p class="hint"><a class="link" href="#/forgot">Forgot password?</a></p>`}</div>` : ""}
-        <button class="btn primary block" type="submit">${mode === "signup" ? "Create my account" : mode === "login" ? "Log in" : "Send reset link"}</button>
+        <button class="btn primary block" type="submit">${mode === "signup" ? "Sign up" : mode === "login" ? "Log in" : "Send reset link"}</button>
         <p class="err" role="alert"></p>
       </form>
       <p class="switch">${mode === "signup" ? `Already have an account? <a class="link" href="#/login">Log in</a>`
@@ -411,6 +426,11 @@ function onboarding() {
 }
 
 /* ---------------- home ---------------- */
+function sampleDate(s) {
+  if (s.status === "ready") return s.delivered_at ? `Delivered ${when(s.delivered_at)}` : "";
+  if ((s.status === "accepted" || s.status === "building") && s.due_at) return expected(s.due_at);
+  return s.status === "declined" ? "" : `Requested ${when(s.created_at)}`;
+}
 function sampleCard(s, w) {
   if (!s && w.count) return "";   // paying clients aren't nudged towards a free sample
   const btn = (href, label, primary) => `<a class="btn ${primary ? "primary" : "glass"} block" href="${href}">${label}</a>`;
@@ -420,20 +440,31 @@ function sampleCard(s, w) {
   else if (s.status === "accepted" || s.status === "building") body = `<p>Your sample is being made. We deliver everything within 24 hours, usually faster.</p>${btn("#/sample", "See your request")}`;
   else if (s.status === "ready") body = `<p>Your sample is ready to watch.</p>${btn("#/sample", "Watch your sample", true)}`;
   else body = `<p>We left you a note about your sample.</p>${btn("#/sample", "Read the note")}`;
-  return `<section class="card" aria-labelledby="h-sample"><div class="card-h"><h2 id="h-sample">Free sample</h2>${s ? chip(s.status, SAMPLE_STATUS) : ""}</div>${body}</section>`;
+  const date = s ? sampleDate(s) : "";
+  return `<section class="card" aria-labelledby="h-sample"><div class="card-h"><h2 id="h-sample">Free sample</h2>${s ? chip(s.status, SAMPLE_STATUS) : ""}</div>${date ? `<p class="when">${esc(date)}</p>` : ""}${body}</section>`;
 }
+const packName = id => (CFG.packs.find(p => p.id === id) || {}).name || "your pack";
 function creditsCard(w) {
   const body = !w.total
     ? `<p class="big">0</p><p>No credits yet. Pick a pack and send us your first video.</p><a class="btn glass block" href="#/packs">See packs</a>`
     : `<p class="big">${w.left}<span> / ${w.total}</span></p>
        <p>${w.left ? `${plural(w.left, "Short")} left.${w.expires ? ` Next credits expire on ${esc(fmtDate(w.expires))}.` : ""}` : "All credits used. Get more any time."}</p>
+       ${w.open.length > 1 ? `<ul class="expiries">${w.open.map(p => `<li>Credits from ${esc(packName(p.pack_id))} expire ${esc(fmtDate(p.exp))} <span>(${p.left} left)</span></li>`).join("")}</ul>` : ""}
        ${w.left ? `<a class="btn primary block" href="#/new">Start a new Short</a>` : `<a class="btn glass block" href="#/packs">Get more Shorts</a>`}`;
   return `<section class="card" aria-labelledby="h-credits"><div class="card-h"><h2 id="h-credits">Credits</h2></div>${body}</section>`;
+}
+function rowDate(v) {
+  const vn = `v${Math.max(1, v.version || 1)}`;
+  if (v.status === "received" || v.status === "editing") return expected(v.due_at, "Expected by", true) || `Requested ${whenShort(v.created_at)}`;
+  if (v.status === "revision") return expected(v.due_at, "Changes due", true) || "Changes in progress";
+  if (v.status === "ready") return v.delivered_at ? `${vn} delivered ${whenShort(v.delivered_at)}` : `${vn} delivered`;
+  if (v.status === "approved") return v.delivered_at ? `Approved · ${vn} from ${dayShort(v.delivered_at)}` : "Approved";
+  return "";
 }
 function shortsCard(videos, w) {
   const list = videos.length
     ? `<ul class="vlist">${videos.map(v => `<li><a href="#/v/${esc(v.id)}"><span class="vt"><b>${esc(v.title)}</b>
-        <small>${v.delivered_at ? `Delivered ${esc(fmtDate(v.delivered_at))}` : `Sent ${esc(fmtDate(v.created_at))}`}</small></span>${chip(v.status)}</a></li>`).join("")}</ul>`
+        <small>${esc(rowDate(v))}</small></span>${chip(v.status)}</a></li>`).join("")}</ul>`
     : `<div class="empty"><p>No Shorts yet. When you send us footage, your Shorts show up here.</p>
         ${w.left ? `<a class="btn glass" href="#/new">Send your first video</a>` : ""}</div>`;
   return `<section class="card wide" aria-labelledby="h-shorts"><div class="card-h"><h2 id="h-shorts">Your Shorts</h2>
@@ -479,14 +510,17 @@ function samplePage(D) {
   }
   view.innerHTML = `<a class="back" href="#/">${ic("back")}Home</a>` + head("Your free sample") + `
     <div class="stack narrow">
-      <section class="card" aria-label="Status"><div class="card-h"><h2>Status</h2>${chip(s.status, SAMPLE_STATUS)}</div>${state}</section>
+      <section class="card" aria-label="Status"><div class="card-h"><h2>Status</h2>${chip(s.status, SAMPLE_STATUS)}</div>
+        <ul class="dates"><li>Requested ${esc(when(s.created_at))}</li>
+          ${(s.status === "accepted" || s.status === "building") && s.due_at ? `<li class="due">${esc(expected(s.due_at))}</li>` : ""}
+          ${s.status === "ready" && s.delivered_at ? `<li>Delivered ${esc(when(s.delivered_at))}</li>` : ""}</ul>
+        ${state}</section>
       <section class="card" aria-labelledby="h-sent"><h2 id="h-sent">What you sent</h2>
         <dl class="facts">
           <dt>Video</dt><dd>${extLink(s.video_url)}</dd>
           ${s.moment ? `<dt>The part you like</dt><dd>${esc(s.moment)}</dd>` : ""}
           ${s.style ? `<dt>Style</dt><dd>${esc(s.style)}</dd>` : ""}
           ${s.goal ? `<dt>After watching</dt><dd>${esc(s.goal)}</dd>` : ""}
-          <dt>Sent</dt><dd>${esc(fmtDate(s.created_at))}</dd>
         </dl></section>
     </div>`;
 }
@@ -619,14 +653,21 @@ function parseTime(s) {
   if (!m || Number(m[3]) > 59 || (m[1] && Number(m[2]) > 59)) return null;
   return Number(m[1] || 0) * 3600 + Number(m[2]) * 60 + Number(m[3]);
 }
-function timeline(status) {
-  const steps = [["received", "Received"], ["editing", "In edit"], ["ready", "Ready"]];
-  if (status === "revision") steps.push(["revision", "Changes requested"]);
-  steps.push(["approved", "Approved"]);
-  const cur = steps.findIndex(s => s[0] === status);
-  return `<ol class="timeline" aria-label="Progress">${steps.map(([k, label], i) =>
-    `<li class="${i < cur || status === "approved" ? "done" : i === cur ? "now" : ""}${k === "revision" ? " rev" : ""}"${i === cur ? ` aria-current="step"` : ""}>
-      <span class="dot" aria-hidden="true">${i < cur || status === "approved" ? ic("check") : ""}</span><span>${label}</span></li>`).join("")}</ol>`;
+// Dated history, oldest first: requested → v1 delivered → changes asked on v1 → v2 delivered → … → expected by / approved.
+function timeline(v, versions, rounds) {
+  const ev = [{ label: "Requested", at: v.created_at }];
+  const asked = r => rounds.find(g => g.round === r);
+  for (const ver of [...versions].reverse()) {
+    const prev = asked(ver.version - 1);
+    if (prev) ev.push({ label: `Changes asked on v${prev.round}`, at: prev.first });
+    ev.push({ label: `v${ver.version} delivered`, at: ver.created_at });
+  }
+  const last = versions.length ? versions[0].version : 0, open = asked(last);
+  if (open && last && v.status === "revision") ev.push({ label: `Changes asked on v${last}`, at: open.first });
+  if (["received", "editing", "revision"].includes(v.status) && v.due_at) ev.push({ label: expected(v.due_at), due: true });
+  if (v.status === "approved") ev.push({ label: "Approved" });
+  return `<ol class="timeline" aria-label="History">${ev.map((e, i) => `<li class="${e.due ? "due" : ""}${i === ev.length - 1 ? " now" : ""}"${i === ev.length - 1 ? ` aria-current="step"` : ""}>
+    <span class="dot" aria-hidden="true"></span><span>${esc(e.label)}${e.at ? ` <time>${esc(when(e.at))}</time>` : ""}</span></li>`).join("")}</ol>`;
 }
 const changeRow = i => `<div class="crow">
   <div class="field t"><label for="c-at-${i}">Time <span class="opt">(optional)</span></label>
@@ -634,16 +675,20 @@ const changeRow = i => `<div class="crow">
   <div class="field"><label for="c-text-${i}">What should change?</label>
     <textarea class="input" id="c-text-${i}" name="text" maxlength="1000" placeholder="For example: cut this pause, make the captions bigger"></textarea></div>
 </div>`;
-function videoPage(v, notes, url) {
-  const m = media(url);
+function videoPage(v, notes, versions) {
+  const cur = versions[0] || null, curM = cur ? media(cur.src) : null;
   const footage = String(v.footage || "").split(/\s+/).filter(Boolean);
+  // change requests grouped by the version they were about (newest round first)
+  const rounds = [...new Set(notes.map(n => n.round || 1))].sort((a, b) => b - a)
+    .map(r => { const ns = notes.filter(n => (n.round || 1) === r).sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at));
+      return { round: r, notes: ns, first: ns[0].created_at }; });
+
   let side = "";
   if (v.status === "ready") side = `
     <section class="card" aria-labelledby="h-happy">
-      <h2 id="h-happy">Happy with it?</h2>
+      <h2 id="h-happy">Happy with v${cur ? cur.version : 1}?</h2>
       <p>Approve it, or tell us what to change. Unlimited changes until you're happy.</p>
-      <div class="row"><button class="btn primary" type="button" id="approve">Approve</button>
-        ${m ? extLink(m.href, "Open / download", "btn glass") : ""}</div>
+      <div class="row"><button class="btn primary" type="button" id="approve">Approve</button></div>
     </section>
     <form class="card form" id="cf" novalidate aria-labelledby="h-change">
       <h2 id="h-change">Request changes</h2>
@@ -653,35 +698,57 @@ function videoPage(v, notes, url) {
       <p class="err" role="alert"></p>
     </form>`;
   else if (v.status === "revision") side = `<section class="card"><h2>We're on your changes</h2>
+    ${v.due_at ? `<p class="when">${esc(expected(v.due_at))}</p>` : ""}
     <p>We deliver everything within 24 hours, usually faster. The new version shows up right here.</p></section>`;
-  else if (v.status === "approved") side = `<section class="card"><h2>Approved</h2><p>Thank you. This Short is done.</p>
-    ${m ? `<div class="row">${extLink(m.href, "Open / download", "btn glass")}</div>` : ""}</section>`;
+  else if (v.status === "approved") side = `<section class="card"><h2>Approved</h2><p>Thank you. This Short is done.</p></section>`;
+  else side = `<section class="card"><h2>${v.status === "received" ? "We have your footage" : "We're editing your Short"}</h2>
+    ${v.due_at ? `<p class="when">${esc(expected(v.due_at))}</p>` : ""}
+    <p>We deliver everything within 24 hours, usually faster.</p></section>`;
 
   const placeholder = `<div class="screen wait"><p>${v.status === "received" ? "We have your footage." : "We're editing your Short."}<br>It plays here when it's ready.</p></div>`;
-  const player = !m ? placeholder : m.kind === "link"
-    ? `<div class="screen wait"><p>Your Short is ready.</p>${extLink(m.href, "Open your Short", "btn primary")}</div>` : playerHTML(m, v.title);
+  const playerFor = (m, label) => !m ? placeholder : m.kind === "link"
+    ? `<div class="screen wait"><p>${esc(label)} is ready.</p>${extLink(m.href, "Open it", "btn primary")}</div>` : playerHTML(m, `${v.title} (${label})`);
+
+  const versionList = versions.length ? `
+    <section class="card" aria-labelledby="h-versions"><h2 id="h-versions">Versions</h2>
+      <ul class="versions">${versions.map((x, i) => { const m = media(x.src);
+        return `<li class="${i === 0 ? "current" : ""}${i === 0 ? " on" : ""}" data-vrow="${x.version}">
+          <p><b>v${x.version}</b>${i === 0 ? ` <span class="st s-ready">Latest</span>` : ""}</p>
+          <p class="hint">${esc(when(x.created_at))}${x.note ? ` · Fixed: ${esc(x.note)}` : x.version === 1 ? " · First version" : ""}</p>
+          <div class="row">${m && m.kind !== "link" ? `<button class="btn glass sm" type="button" data-play="${x.version}" aria-pressed="${i === 0}">Play</button>` : ""}
+            ${m ? extLink(m.href, "Open / download", "btn glass sm") : ""}</div></li>`; }).join("")}</ul>
+    </section>` : "";
 
   view.innerHTML = `<a class="back" href="#/">${ic("back")}Home</a>
-    <div class="head"><p>${chip(v.status)}</p><h1 class="title">${esc(v.title)}</h1>
-      <p class="lede small">Sent ${esc(fmtDate(v.created_at))}${v.delivered_at ? ` · Delivered ${esc(fmtDate(v.delivered_at))}` : ""}</p></div>
-    ${timeline(v.status)}
+    <div class="head"><p>${chip(v.status)}</p><h1 class="title">${esc(v.title)}</h1></div>
+    ${timeline(v, versions, rounds)}
     <div class="vgrid">
-      <div class="vmedia">${player}</div>
+      <div class="vmedia" id="player">${playerFor(curM, cur ? `v${cur.version}` : "")}</div>
       <div class="stack">
         ${side}
+        ${versionList}
+        <section class="card" aria-labelledby="h-notes"><h2 id="h-notes">Changes you asked for</h2>
+          ${rounds.length ? rounds.map(g => `<div class="round"><h3>Changes on v${g.round}</h3><ul class="notes">${g.notes.map(n => `<li>
+              <span class="ts">${Number(n.at) > 0 ? esc(fmtTime(n.at)) : "General"}</span>
+              <p class="pre">${esc(n.text)}</p>
+              <p class="nstate">${n.done_at ? `<span class="done">${ic("check")}Done ${esc(when(n.done_at))}</span>` : `<span class="prog">In progress</span>`} · asked ${esc(when(n.created_at))}</p></li>`).join("")}</ul></div>`).join("")
+            : `<p class="hint">No changes asked for yet.</p>`}
+        </section>
         <section class="card" aria-labelledby="h-brief"><h2 id="h-brief">Your brief</h2>
           <dl class="facts">
             <dt>Footage</dt><dd>${footage.length ? `<ul class="links">${footage.map(f => `<li>${extLink(f)}</li>`).join("")}</ul>` : "—"}</dd>
             ${v.notes ? `<dt>Notes</dt><dd class="pre">${esc(v.notes)}</dd>` : ""}
           </dl></section>
-        <section class="card" aria-labelledby="h-notes"><h2 id="h-notes">Changes you asked for</h2>
-          ${notes.length ? `<ul class="notes">${notes.map(n => `<li><span class="ts">${Number(n.at) > 0 ? esc(fmtTime(n.at)) : "General"}</span>
-              <p class="pre">${esc(n.text)}</p><time>${esc(fmtDate(n.created_at))}</time></li>`).join("")}</ul>`
-            : `<p class="hint">No changes asked for yet.</p>`}
-        </section>
       </div>
     </div>`;
 
+  $$("[data-play]").forEach(b => b.onclick = () => {
+    const x = versions.find(y => String(y.version) === b.dataset.play);
+    $("#player").innerHTML = playerFor(media(x.src), `v${x.version}`);
+    $$("[data-play]").forEach(o => o.setAttribute("aria-pressed", String(o === b)));
+    $$("[data-vrow]").forEach(r => r.classList.toggle("on", r.dataset.vrow === b.dataset.play));
+    if (window.matchMedia && matchMedia("(max-width: 899px)").matches) $("#player").scrollIntoView({ block: "start" });
+  });
   const approve = $("#approve");
   if (approve) approve.onclick = async () => {
     if (!confirm("Approve this Short? It will be marked as done.")) return;
@@ -706,7 +773,7 @@ function videoPage(v, notes, url) {
       if (!text) return formErr(form, "Tell us what should change at that time.", xIn);
       const at = parseTime(tIn.value);
       if (at === null) return formErr(form, "Write the time like 0:45 or 1:02:30.", tIn);
-      out.push({ video_id: v.id, user_id: ME.id, at, text });
+      out.push({ video_id: v.id, user_id: ME.id, at, text });   // the database sets the round (= this version)
     }
     if (!out.length) return formErr(form, "Tell us what you'd like changed.", $("[name=text]", form));
     const btn = $("button[type=submit]", form);
@@ -797,12 +864,15 @@ async function render() {
       if (!UUID.test(arg)) return notFound();
       const v = D.videos.find(x => x.id === arg);
       if (!v) return notFound();
-      const [notes, url] = await Promise.all([
-        must(sb.from("video_notes").select("id,at,text,created_at").eq("video_id", v.id).order("created_at", { ascending: false })),
-        resolveUrl(v.result_url),
+      const [notes, vers] = await Promise.all([
+        must(sb.from("video_notes").select("id,at,text,created_at,round,done_at").eq("video_id", v.id).order("created_at")),
+        must(sb.from("video_versions").select("id,version,url,note,created_at").eq("video_id", v.id).order("version", { ascending: false })),
       ]);
+      // older deliveries may have no version rows: show the current file as the latest version
+      if (!vers.length && v.result_url) vers.push({ version: Math.max(1, v.version || 1), url: v.result_url, note: null, created_at: v.delivered_at });
+      await Promise.all(vers.map(async x => { x.src = await resolveUrl(x.url); }));
       if (stale()) return;
-      return videoPage(v, notes, url);
+      return videoPage(v, notes, vers);
     }
     if (route === "sample") {
       if (D.sample && D.sample.status === "ready") D.sample.preview_url = await resolveUrl(D.sample.preview_url);
