@@ -1213,13 +1213,13 @@ async function mfaManage() {
 const show = id => { ["boot", "gate", "wait", "mfa", "app"].forEach(x => { $("#" + x).hidden = x !== id; }); $("#tabs").hidden = id !== "app"; };
 let MODE = "in", JUST_UP = false;
 function setMode(m) {
-  MODE = m; $("#tab-in").classList.toggle("on", m === "in"); $("#tab-up").classList.toggle("on", m === "up");
-  $("#tab-in").setAttribute("aria-selected", m === "in"); $("#tab-up").setAttribute("aria-selected", m === "up");
+  MODE = m; $("#tab-in")?.classList.toggle("on", m === "in"); $("#tab-up")?.classList.toggle("on", m === "up");
+  $("#tab-in")?.setAttribute("aria-selected", m === "in"); $("#tab-up")?.setAttribute("aria-selected", m === "up");
   $("#fld-name").hidden = m !== "up"; $("#g-pass").autocomplete = m === "up" ? "new-password" : "current-password";
   $("#gate-go-t").textContent = m === "up" ? "Create login" : "Log in"; msg("");
 }
 function msg(t, ok) { const el = $("#gate-msg"); el.hidden = !t; el.textContent = t || ""; el.classList.toggle("ok", !!ok); }
-$("#tab-in").addEventListener("click", () => setMode("in")); $("#tab-up").addEventListener("click", () => setMode("up"));
+$("#tab-in")?.addEventListener("click", () => setMode("in")); $("#tab-up")?.addEventListener("click", () => setMode("up"));   // sign-up tab removed 11-12 (Benas): the page is log in only
 $("#gate-form").addEventListener("submit", async ev => {
   ev.preventDefault();
   const email = $("#g-email").value.trim().toLowerCase(), pass = $("#g-pass").value, name = $("#g-name").value.trim(), go = $("#gate-go");

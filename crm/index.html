@@ -50,20 +50,16 @@
   <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
 </svg>
 
-<!-- sign in / create founder login -->
+<!-- founder log in (sign-up removed 11-12, Benas: both founder logins exist) -->
 <main id="gate" class="gate" hidden>
   <form id="gate-form" class="gate-card" novalidate>
     <div class="brandrow"><span class="logo"><img src="../beju-mark-sm.png" alt="" width="34" height="20"></span><div><b>Beju Creative</b><small>Founder <em class="sf">CRM</em></small></div></div>
-    <div class="seg" role="tablist" aria-label="Sign in or create login">
-      <button type="button" role="tab" class="on" id="tab-in" aria-selected="true">Log in</button>
-      <button type="button" role="tab" id="tab-up" aria-selected="false">Create founder login</button>
-    </div>
     <label class="fld" id="fld-name" hidden><span>Your name</span><input id="g-name" type="text" autocomplete="name" maxlength="60"></label>
     <label class="fld"><span>Email</span><input id="g-email" type="email" inputmode="email" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required></label>
     <label class="fld"><span>Password</span><input id="g-pass" type="password" autocomplete="current-password" minlength="8" required></label>
     <p class="gate-msg" id="gate-msg" role="alert" hidden></p>
     <button class="btn-go mag" id="gate-go" type="submit"><span id="gate-go-t">Log in</span></button>
-    <p class="gate-foot">Founders only. A new login sees nothing until a founder approves it. The same login works in the client portal.</p>
+    <p class="gate-foot">Founders only. The same login works in the client portal.</p>
   </form>
 </main>
 
@@ -152,6 +148,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="config.js?v=20261112p3"></script>
-<script src="crm.js?v=20261112p4"></script>
+<script src="crm.js?v=20261112p5"></script>
 </body>
 </html>
