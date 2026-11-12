@@ -8,6 +8,7 @@ window.BEJU_PORTAL = {
   google: false,      // true = show "Continue with Google" (turn on only after the Google provider is set up in Supabase Auth)
   showPrices: false,   // false = packs show "Book a call to get pricing" instead of prices and buy buttons
   callUrl: "https://cal.com/beju-creative/15min-call",
+  crmUrl: "/crm/",    // founders (profiles.is_admin) are sent here right after Log in; clients never see it
 
   // Buy = this Stripe Payment Link + ?prefilled_email=<email>&client_reference_id=<user id>.
   // The id must match the link's metadata.package so the stripe-webhook function adds the right credits.

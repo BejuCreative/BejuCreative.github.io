@@ -50,6 +50,11 @@ const store = {
 };
 
 // The only way a URL reaches an href or src: must parse as http(s), else "".
+// The founder CRM address from config: absolute or site-relative ("/crm/"); "" when unset or not http(s).
+function crmHref() {
+  try { const x = new URL(String(CFG.crmUrl || ""), location.href); return CFG.crmUrl && (x.protocol === "https:" || x.protocol === "http:") ? x.href : ""; }
+  catch { return ""; }
+}
 function safeUrl(u) {
   try { const x = new URL(String(u ?? "").trim()); return x.protocol === "https:" || x.protocol === "http:" ? x.href : ""; }
   catch { return ""; }
@@ -789,7 +794,7 @@ function videoPage(v, notes, versions) {
 
 /* ---------------- account ---------------- */
 function account() {
-  const crm = ME.is_admin === true ? safeUrl(CFG.crmUrl) : "";
+  const crm = ME.is_admin === true ? crmHref() : "";
   view.innerHTML = head("Account") + `
     <form id="acc" class="card form narrow" novalidate>
       <div class="field"><span class="label">Email</span><p class="static">${esc(ME.email)}</p></div>
@@ -850,6 +855,9 @@ async function render() {
       }
       if (stale()) return;
     }
+    // One Log in for everyone (SIMAS 11-12): a founder lands on the founder CRM, a client stays in the portal.
+    // "?view=portal" lets a founder open the portal itself (the CRM links here with it).
+    if (ME.is_admin === true && crmHref() && new URLSearchParams(location.search).get("view") !== "portal") { location.replace(crmHref()); return; }
     if (route === "login" || route === "signup" || route === "forgot") { history.replaceState(null, "", location.pathname + "#/"); return render(); }
     chromeOn(route);
     if (!ME.channel) return onboarding();
