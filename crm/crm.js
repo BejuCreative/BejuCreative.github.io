@@ -190,8 +190,12 @@ function derive() {
   /* 11-16 (Simas: "hot leads all of them"): also thinking and replied after their sample; parked / none and blocklisted leave the list */
   const blk = new Set(R.replies.filter(r => r.blocklisted).map(r => lc(r.lead_email)));
   const warmP = p => !isBuyer(p) && !/^LOST$/i.test(p.status || "") && !!(intr[lc(p.email)] || p.fu_stage === "thinking" || (p.delivered_at && p.last_reply_at && new Date(p.last_reply_at) > new Date(p.delivered_at)));
-  const cand = pipe.filter(p => (hotP(p) || warmP(p)) && !/^(parked|none)$/.test(p.fu_stage || "") && !blk.has(lc(p.email)) && !gone.has(lc(p.email)));
-  Object.values(intr).forEach(x => { if (pipeAll[lc(x.email)] || blk.has(lc(x.email)) || gone.has(lc(x.email))) return;
+  /* 11-17 (Simas: "in hot leads we don't need paid clients"): anyone who has paid lives in Paid clients, never in Hot leads. */
+  const paidSet = new Set([...R.payments.filter(x => !x.refunded).map(x => lc(x.email || "")), ...R.pipeline.filter(x => x.paid).map(x => lc(x.email || ""))].filter(Boolean));
+  const payCids = new Set(R.payments.filter(x => !x.refunded && x.client_id).map(x => String(x.client_id)));
+  R.clients.filter(c => payCids.has(String(c.id))).forEach(c => (c.emails || []).forEach(e => paidSet.add(lc(e))));
+  const cand = pipe.filter(p => (hotP(p) || warmP(p)) && !/^(parked|none)$/.test(p.fu_stage || "") && !blk.has(lc(p.email)) && !gone.has(lc(p.email)) && !paidSet.has(lc(p.email)) && !isBuyer(p));
+  Object.values(intr).forEach(x => { if (pipeAll[lc(x.email)] || blk.has(lc(x.email)) || gone.has(lc(x.email)) || paidSet.has(lc(x.email))) return;
     const p = { email: x.email, name: x.first_name || x.company || "", show: [x.company, x.campaign].filter(Boolean).join(" · "), owner: ownerOfInbox(x.inbox), inbox: x.inbox, status: "INTERESTED", last_reply_at: x.last_reply_at, interested: true };
     if (own(p)) cand.push(p); });
   d.hot = cand.map(p => {
