@@ -85,7 +85,7 @@ async function all(table, cols = "*", mod) {   // REST caps at 1,000 rows per ca
 }
 async function fetchAll() {
   const t = today(), since60 = new Date(Date.now() - 60 * 864e5).toISOString();
-  const [pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers] = await Promise.all([
+  const [pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls] = await Promise.all([
     all("pipeline", "*", q => q.order("email")),
     all("payments", "id,client_id,email,payer_name,amount,currency,package,refunded,paid_at", q => q.order("paid_at", { ascending: false })),
     all("campaign_daily", "campaign_id,day,sent,new_leads,replies,replies_auto,opportunities", q => q.gte("day", addDays(t, -75)).order("day").order("campaign_id")),
@@ -106,8 +106,9 @@ async function fetchAll() {
     all("client_notes", "lead_email,kind,note,noted_at,created_at").catch(() => []),   // 11-16: docs/clients/*.md notes (Paid clients + Hot leads pages)
     all("founder_tasks", "*", q => q.is("done_at", null).order("due_at", { ascending: true })).catch(() => []),   // 11-16: only what a founder must do (Do next)
     all("retainers", "*").catch(() => []),   // 11-17: Stripe subscriptions = retainer clients (crm_sync.py)
+    all("calls", "*", q => q.gte("start_at", new Date(Date.now() - 30 * 864e5).toISOString()).order("start_at")).catch(() => []),   // 11-17: cal.com bookings = the only calls
   ]);
-  return { pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers };
+  return { pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls };
 }
 
 /* ---------------- derive ---------------- */
@@ -224,7 +225,11 @@ function derive() {
   if (!STATE.day || STATE.day < t || STATE.day > addDays(t, 6)) STATE.day = t;
   /* today */
   const ord = { call: 0, payment_failed: 1, action: 2, partner: 3 };
-  d.todayItems = R.todayItems.filter(x => !gone.has(lc(x.lead_email || ""))).sort((a, b) => (ord[a.kind] ?? 9) - (ord[b.kind] ?? 9) || String(a.at || "").localeCompare(String(b.at || "")));
+  /* 11-17 (Simas: "you need to track it through cal.com"): a call = a cal.com booking (public.calls), never a "call" note. */
+  d.calls = (R.calls || []).filter(x => x.status === "booked");
+  d.callsUp = d.calls.filter(x => +new Date(x.end_at || x.start_at) >= Date.now() - 15 * 6e4 && +new Date(x.start_at) <= Date.now() + 7 * 864e5);
+  const calToday = d.calls.filter(x => dayOf(x.start_at) === t).map(x => ({ id: "cal-" + x.uid, kind: "call", title: x.name || x.email || "Call", detail: "Booked on cal.com", at: x.start_at, lead_email: x.email || "" }));
+  d.todayItems = R.todayItems.filter(x => x.kind !== "call" && !gone.has(lc(x.lead_email || ""))).concat(calToday).sort((a, b) => (ord[a.kind] ?? 9) - (ord[b.kind] ?? 9) || String(a.at || "").localeCompare(String(b.at || "")));
   /* 11-16 (Simas: "how many leads are we sending out today"): today's live numbers for the Today card */
   d.td = { rep: d.series[59].rep, opp: d.series[59].opp, money: sum(pays.filter(p => p.day === t), p => p.amount), vids: R.deliveries.filter(x => String(x.delivered_at || "").slice(0, 10) === t).length,
     samples: R.pipeline.filter(p => p.delivered_at && dayOf(p.delivered_at) === t).length, calls: d.todayItems.filter(x => x.kind === "call").length, stuck: d.todayItems.filter(x => x.kind === "payment_failed").length };
@@ -369,7 +374,7 @@ function derive() {
      promises are Claude's queue: one line under the card, open it to watch. ---- */
   const nx = [], cq = [], seenN = new Set(), push = (L, x) => { const k = (x.email || x.k || x.task) + "|" + x.title; if (!seenN.has(k)) { seenN.add(k); L.push(x); } };
   (R.ftasks || []).filter(x => STATE.owner === "All" || !x.who || x.who === STATE.owner).forEach(x => { const du = dueIn(x.due_at); push(nx, { w: du && du.late ? 100 : 96, icon: "flag", c: "c-red", title: x.title, sub: [x.who || "Either of you", du ? du.txt : "", x.detail || ""].filter(Boolean).join(" · "), task: x.id, email: x.lead_email || "" }); });
-  d.todayItems.filter(x => x.kind === "call").forEach(x => push(nx, { w: 98, icon: "phone", c: "c-blue", title: `Call ${x.title}`, sub: `${x.at ? timeOf(x.at) + " · " : ""}${x.detail || ""}`, email: x.lead_email || "" }));
+  d.callsUp.forEach(x => push(nx, { w: 98, icon: "phone", c: "c-blue", title: `Call ${x.name || x.email}`, sub: `${dayOf(x.start_at) === t ? "Today" : dLabel(dayOf(x.start_at))} ${timeOf(x.start_at)} · booked on cal.com`, email: x.email || "" }));
   d.pSamples.filter(s => s.status === "requested").forEach(s => push(nx, { w: 80, icon: "film", c: "c-purple", title: `Answer ${s.who.name}'s sample request`, sub: "Accept or decline it in the portal queue", k: "psamples", a: "" }));
   d.nextAll = nx.sort((x, y) => y.w - x.w); d.next = d.nextAll.slice(0, 5); d.nextN = nx.length;
   (att.paid_waiting || []).filter(x => !gone.has(lc(x.email))).forEach(x => push(cq, { q: "deliver", w: 100, icon: "cash", c: "c-green", title: `Deliver to ${x.name}`, sub: x.detail || "Paid and still waiting for the videos", email: x.email }));
