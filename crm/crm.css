@@ -1002,3 +1002,6 @@ html[data-motion="calm"] .ticker-t{animation:none;white-space:normal;flex-wrap:w
 .dlg .fld{min-width:0}
 .dlg .fld input{width:100%;min-width:0;box-sizing:border-box}
 .dlg .fld input[type=file]{padding:9px 10px;font-size:14px}
+
+/* 11-16 Paid clients + Hot leads pages: on a phone the search box takes its own row above the owner switch */
+@media (max-width:600px){.cv-tools .pg-s{flex-basis:100%}}
