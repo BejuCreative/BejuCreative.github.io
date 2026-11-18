@@ -5,297 +5,251 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Auticate Scope · BEJÚ Creative</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<meta name="theme-color" content="#070805">
+<link rel="preload" href="/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
 <style>
-/* Scope of work for Chris & Debby (Auticate LLC). Simas 11-18: "go all out on the design ... no crazy fonts, readable,
-   informative, professional". One sans (Inter), a light document body for easy reading and clean printing, the BEJÚ
-   olive + gold only in the header and the action panel. Private link, noindex, not linked anywhere on the site. */
+/* Scope for Chris & Debby (Auticate LLC), v4, 11-18.
+   Benas: look like the live site, minimal, much less text, no gimmicks; to start we need only mobile + invoice/card + who signs off.
+   Simas: readable, informative, professional, "no crazy fonts" → the site's own Geist only (no serif italics, no gradient text),
+   no badge row, no per-Short price, paying = accepting. Web = the site's dark olive look; PDF prints as a clean white document.
+   Private link, noindex, not linked anywhere. */
+@font-face{font-family:'Geist';font-style:normal;font-weight:300 600;font-display:swap;src:url(/fonts/geist-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Geist';font-style:normal;font-weight:300 600;font-display:swap;src:url(/fonts/geist-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
 :root{
-  --paper:#FBFAF6; --card:#FFFFFF; --ink:#12160F; --text:#363D31; --muted:#646C5C; --line:#E4E1D5; --line-2:#D6D2C3;
-  --gold:#C9A24A; --gold-text:#7A5C17; --gold-soft:#F6EFDC;
-  --olive:#0C110B; --olive-2:#18210F; --on-dark:#F4F2EA; --on-dark-muted:#B9C0B0; --gold-on-dark:#DDBA62;
-  --font:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  color-scheme:light;
+  --bg:#070805; --ink:#F7F5EC; --body:#D3DAD1; --muted:#A9B4AB; --dim:#7D887F;
+  --gold:#D9B45A; --hair:rgba(255,255,255,.09); --hair-2:rgba(255,255,255,.16);
+  --card-bg:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.015) 55%),rgba(14,20,18,.72);
+  --card-edge:inset 0 1px 0 rgba(255,255,255,.16),inset 0 0 0 1px rgba(255,255,255,.08);
+  --sans:"Geist",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  color-scheme:dark;
 }
 *{box-sizing:border-box}
-html{background:var(--paper);-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--paper);color:var(--text);font:400 17px/1.65 var(--font);
-  padding:0 max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px))}
-.wrap{max-width:820px;margin:0 auto}
-h1,h2,h3{color:var(--ink);margin:0;text-wrap:balance;letter-spacing:-.015em}
-h1{font-size:clamp(1.9rem,4.6vw,2.6rem);line-height:1.15;font-weight:700;color:var(--on-dark)}
-h2{font-size:1.35rem;line-height:1.3;font-weight:650}
-h3{font-size:1.02rem;line-height:1.35;font-weight:600}
+html{background:var(--bg);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--body);font-size:18px;line-height:1.6;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(1100px 760px at 50% 110%,rgba(126,154,54,.24),transparent 62%),radial-gradient(900px 600px at 10% -12%,rgba(18,58,42,.5),transparent 60%)}
+.wrap{position:relative;z-index:1;width:min(960px,calc(100% - 32px));margin-inline:auto}
+section{position:relative;z-index:1;padding:clamp(48px,7vw,88px) 0}
+h1,h2,h3{color:var(--ink);margin:0;text-wrap:balance;font-weight:600}
+h1{font-size:clamp(38px,6.2vw,64px);line-height:1.05;letter-spacing:-.035em}
+h2{font-size:clamp(28px,3.6vw,40px);line-height:1.12;letter-spacing:-.025em}
+h3{font-size:19px;line-height:1.3;letter-spacing:-.01em}
 p{margin:0}
-b,strong{color:var(--ink);font-weight:600}
-a{color:var(--gold-text)}
-.num{font-variant-numeric:tabular-nums}
+.gold{color:var(--gold)}
+.eyebrow{font-size:13px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
+.lede{font-size:clamp(18px,1.6vw,20px);line-height:1.6;max-width:34em;margin-top:18px;color:var(--body)}
+.small{font-size:15px;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;justify-content:center;height:52px;padding:0 26px;border-radius:999px;font:500 16px var(--sans);text-decoration:none;white-space:nowrap}
+.btn.primary{background:#FBFAF4;color:#0C130F}
+.btn.primary:hover{background:#fff}
+.btn.ghost{color:var(--ink);background:rgba(255,255,255,.06);box-shadow:var(--card-edge)}
+.btn.ghost:hover{background:rgba(255,255,255,.1)}
+.btn.sm{height:42px;padding:0 18px;font-size:15px}
+.btn:focus-visible,summary:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.btns{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px}
+.card{border-radius:22px;padding:24px 26px;background:var(--card-bg);box-shadow:var(--card-edge)}
 
-/* Header */
-.hero{margin:24px 0 0;border-radius:20px;padding:28px 32px 26px;color:var(--on-dark);
-  background:radial-gradient(48rem 26rem at 0% 0%,rgba(110,138,50,.38),transparent 62%),linear-gradient(160deg,var(--olive-2),var(--olive) 70%)}
-.hero-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding-bottom:22px;border-bottom:1px solid rgba(255,255,255,.12)}
-.mark{font-weight:700;font-size:1.05rem;letter-spacing:.01em;color:var(--on-dark);display:flex;align-items:center;gap:10px}
-.mark::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--gold-on-dark)}
-.doc-type{font-size:.78rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-on-dark)}
-.hero h1{margin-top:24px}
-.hero .for{margin-top:10px;color:var(--on-dark-muted);font-size:1.02rem}
-.hero .for b{color:var(--on-dark)}
-.meta{margin-top:24px;display:grid;grid-template-columns:repeat(4,1fr);border:1px solid rgba(255,255,255,.12);border-radius:14px;overflow:hidden}
-.meta div{padding:12px 16px;border-left:1px solid rgba(255,255,255,.12);font-size:.78rem;color:var(--on-dark-muted);letter-spacing:.02em}
-.meta div:first-child{border-left:0}
-.meta b{display:block;margin-top:2px;color:var(--on-dark);font-size:.98rem;font-weight:600;letter-spacing:0}
-.pdf-link{color:var(--gold-on-dark);font-size:.9rem;font-weight:600;text-decoration:none;border-bottom:1px solid rgba(221,186,98,.5)}
+/* top bar */
+.nav{position:relative;z-index:2;padding-top:18px}
+.nav .wrap{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand{font-weight:600;font-size:17px;color:var(--ink);text-decoration:none;letter-spacing:-.01em}
+.nav .for{font-size:14px;color:var(--muted)}
 
-/* Body */
-main{display:grid;gap:44px;padding:40px 0 24px}
-.intro{font-size:1.1rem;color:var(--text);max-width:62ch}
-section{display:grid;gap:16px}
-.label{display:flex;align-items:center;gap:12px;font-size:.78rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-text)}
-.label span{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--gold-soft);color:var(--gold-text);font-size:.8rem;letter-spacing:0}
-.sec-head{display:grid;gap:6px}
+/* hero */
+.hero{padding-top:clamp(56px,10vw,120px);padding-bottom:clamp(36px,5vw,56px)}
+.meta{margin-top:34px;display:flex;gap:10px 28px;flex-wrap:wrap;font-size:14px;color:var(--muted)}
+.meta b{color:var(--ink);font-weight:500}
 
-/* At a glance */
-.glance{margin:0;background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
-.glance-row{display:grid;grid-template-columns:200px 1fr;gap:16px;padding:14px 22px;border-top:1px solid var(--line)}
-.glance-row:first-child{border-top:0}
-.glance-row dt{color:var(--muted);font-size:.92rem;font-weight:500}
-.glance-row dd{margin:0;color:var(--ink);font-weight:500}
-.glance-row.price dd{font-size:1.25rem;font-weight:700}
-.glance-row.price dd small{font-size:.95rem;font-weight:500;color:var(--muted)}
+/* facts */
+.facts{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--hair);border-bottom:1px solid var(--hair)}
+.facts div{padding:24px 0;display:grid;gap:4px}
+.facts div+div{padding-left:26px;border-left:1px solid var(--hair)}
+.facts b{font-size:clamp(24px,2.6vw,30px);font-weight:600;color:var(--ink);letter-spacing:-.02em;line-height:1.15}
+.facts span{font-size:15px;color:var(--muted)}
 
-/* Goal */
-.quotes{display:grid;gap:12px}
-blockquote{margin:0;padding:16px 20px;background:var(--card);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:12px;
-  color:var(--ink);font-size:1.12rem;line-height:1.5;font-weight:500}
-.attrib{color:var(--muted);font-size:.95rem}
-.today{display:flex;gap:12px;align-items:flex-start;padding:14px 18px;border-radius:12px;background:var(--gold-soft);color:var(--ink);font-size:.98rem}
-.today i{flex:none;width:22px;height:22px;margin-top:1px;border-radius:50%;background:var(--gold);color:#fff;display:grid;place-items:center;font-style:normal;font-weight:700;font-size:.78rem}
+/* goal */
+.quotes{display:grid;gap:14px;margin-top:22px}
+.quote{margin:0;padding:4px 0 4px 22px;border-left:2px solid var(--gold);font-size:clamp(20px,2.2vw,25px);line-height:1.4;font-weight:500;color:var(--ink);max-width:36em}
+.by{margin-top:18px;font-size:15px;color:var(--muted);max-width:44em}
+.sofar{margin-top:22px;display:flex;gap:12px;align-items:flex-start;font-size:16px;color:var(--body)}
+.sofar i{flex:none;width:22px;height:22px;margin-top:2px;border-radius:50%;background:var(--gold);color:#191205;display:grid;place-items:center;font-style:normal;font-weight:600;font-size:13px}
 
-/* Lists */
-ul.checks{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
-ul.checks li{display:grid;grid-template-columns:24px 1fr;gap:14px;padding:14px 22px;border-top:1px solid var(--line)}
-ul.checks li:first-child{border-top:0}
-ul.checks li::before{content:"✓";width:22px;height:22px;margin-top:2px;border-radius:50%;background:var(--gold-soft);color:var(--gold-text);display:grid;place-items:center;font-weight:700;font-size:.78rem}
-ol.steps{list-style:none;margin:0;padding:0;counter-reset:s}
-ol.steps li{counter-increment:s;position:relative;display:grid;grid-template-columns:36px 1fr;gap:16px;padding:0 0 22px}
-ol.steps li::before{content:counter(s);width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--ink);color:#fff;font-weight:600;font-size:.88rem;position:relative;z-index:1}
-ol.steps li::after{content:"";position:absolute;left:15.5px;top:34px;bottom:2px;width:1px;background:var(--line-2)}
-ol.steps li:last-child{padding-bottom:0}
-ol.steps li:last-child::after{display:none}
-ol.steps h3{margin-top:4px}
-ol.steps p{margin-top:2px}
+/* list */
+.list{margin-top:30px;border-top:1px solid var(--hair)}
+.item{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.3fr);gap:24px;padding:22px 0;border-bottom:1px solid var(--hair);align-items:baseline}
 
-/* Cards */
-.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;display:grid;gap:10px;align-content:start}
-.card ul{margin:0;padding-left:1.1rem;display:grid;gap:6px}
-.card .tag{justify-self:start;font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-text);background:var(--gold-soft);padding:3px 10px;border-radius:999px}
-.price-box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px}
-.price-box .amount{font-size:2rem;font-weight:700;color:var(--ink);letter-spacing:-.02em;line-height:1.1}
-.price-box .amount small{font-size:1rem;font-weight:500;color:var(--muted);letter-spacing:0}
-.price-box .what{margin-top:4px;color:var(--muted);font-size:.95rem}
-.btn{display:inline-block;justify-self:start;padding:12px 20px;border-radius:10px;background:var(--ink);color:#fff;font-weight:600;font-size:.98rem;text-decoration:none}
-.btn:hover{background:#2A3322}
-.btn:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
-.fine{font-size:.92rem;color:var(--muted)}
-.terms p{font-size:.98rem}
+/* steps + need */
+.grid3{margin-top:30px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.step,.need{display:grid;gap:8px;align-content:start}
+.num{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;border:1px solid var(--hair-2);color:var(--gold);font-weight:600;font-size:14px}
 
-/* Next step */
-.next{border-radius:20px;padding:28px 32px;color:var(--on-dark);display:grid;gap:14px;
-  background:radial-gradient(40rem 22rem at 100% 0%,rgba(110,138,50,.32),transparent 62%),linear-gradient(160deg,var(--olive-2),var(--olive) 70%)}
-.next h2{color:var(--on-dark)}
-.next p{color:var(--on-dark-muted)}
-.next b{color:var(--on-dark)}
-.next ol{margin:0;padding-left:1.2rem;display:grid;gap:6px;color:var(--on-dark)}
-.next .accept{border-top:1px solid rgba(255,255,255,.14);padding-top:14px}
-footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:20px 0 40px;margin-top:8px;border-top:1px solid var(--line);font-size:.85rem;color:var(--muted)}
-.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+/* faq */
+.cols{display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);gap:clamp(24px,5vw,72px);align-items:start}
+details{border-bottom:1px solid var(--hair);padding:18px 0}
+details:first-of-type{border-top:1px solid var(--hair)}
+summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;gap:16px;color:var(--ink);font-weight:500;font-size:18px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";color:var(--muted);font-weight:300;font-size:22px;line-height:1}
+details[open] summary::after{content:"–"}
+details p{margin-top:8px;color:var(--body);max-width:36em}
 
-@media (max-width:640px){
-  body{font-size:16px}
-  .hero{padding:22px 20px;border-radius:16px;margin-top:16px}
-  .meta{grid-template-columns:1fr 1fr}
-  .meta div:nth-child(3){border-left:0}
-  .meta div:nth-child(n+3){border-top:1px solid rgba(255,255,255,.12)}
-  .glance-row{grid-template-columns:1fr;gap:2px;padding:12px 18px}
-  ul.checks li{padding:12px 16px}
-  .two{grid-template-columns:1fr}
-  .next{padding:22px 20px;border-radius:16px}
-  main{gap:36px;padding-top:28px}
+/* close */
+.close{text-align:center;padding-bottom:clamp(64px,10vw,120px)}
+.close .lede{margin-inline:auto}
+.close .btns{justify-content:center}
+.terms{margin:24px auto 0;max-width:42em;font-size:14px;color:var(--muted)}
+.terms a{color:var(--muted)}
+footer{position:relative;z-index:1;border-top:1px solid var(--hair);padding:24px 0 40px}
+footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:14px;color:var(--dim)}
+
+@media (max-width:760px){
+  body{font-size:17px}
+  .facts{grid-template-columns:1fr}
+  .facts div+div{padding-left:0;border-left:0;border-top:1px solid var(--hair)}
+  .item{grid-template-columns:1fr;gap:4px}
+  .grid3{grid-template-columns:1fr}
+  .cols{grid-template-columns:1fr}
+  .nav .for{display:none}
 }
+
+/* PDF / print: a clean white document */
 @media print{
+  @page{size:A4;margin:16mm 14mm}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  @page{size:A4;margin:14mm 12mm}
+  :root{--ink:#12160F;--body:#363D31;--muted:#5F675A;--dim:#6A7262;--gold:#8A6A1F;--hair:#E2DFD4;--hair-2:#D3CFC1}
   html,body{background:#fff}
-  body{padding:0;font-size:12pt}
+  body{font-size:11.5pt}
+  body::before{display:none}
+  .wrap{width:100%}
   .noprint{display:none!important}
-  .hero{margin-top:0}
-  main{gap:26px;padding-top:24px}
-  .glance,.card,.price-box,blockquote,ol.steps li,ul.checks li,.next,.today{break-inside:avoid}
-  .sec-head{break-after:avoid;break-inside:avoid}
-  .pb{break-before:page}
-  .meta div{padding:10px 12px}
-  .meta b{font-size:.86rem;white-space:nowrap}
+  section{padding:16px 0}
+  .hero{padding:28px 0 10px}
+  h1{font-size:30pt} h2{font-size:18pt} h3{font-size:12.5pt}
+  .card{background:#fff;box-shadow:none;border:1px solid var(--hair-2);border-radius:12px;padding:14px 16px}
+  .facts div{padding:14px 0}
+  details{padding:10px 0}
+  summary::after{content:""}
+  .close{text-align:left;padding-bottom:10px}
+  .close .lede{margin-inline:0}
+  .item,.card,.facts,.quote,details{break-inside:avoid}
+  h2{break-after:avoid}
 }
 </style>
 </head>
 <body>
-<div class="wrap">
 
-  <header class="hero">
-    <div class="hero-top">
-      <div class="mark">BEJÚ Creative</div>
-      <div class="doc-type">Scope of work</div>
+<nav class="nav" aria-label="Scope">
+  <div class="wrap">
+    <a class="brand" href="https://bejucreative.digital/">BEJÚ Creative</a>
+    <span class="for">Scope for Chris &amp; Debby</span>
+    <a class="btn primary sm noprint" href="#start">Start the plan</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Scope of work</p>
+    <h1 style="margin-top:14px">60 Shorts a month for <span class="gold">Auticate</span></h1>
+    <p class="lede">Built around one goal: your median views going up, month after month.</p>
+    <div class="btns noprint">
+      <a class="btn primary" href="#start">Start the plan</a>
+      <a class="btn ghost" href="Auticate-Scope-BEJU-Creative.pdf" download>Download PDF</a>
     </div>
-    <h1>60 Shorts a month for Auticate, edited from your long videos</h1>
-    <p class="for">Prepared for <b>Chris &amp; Debby</b>, Auticate LLC</p>
-    <div class="meta num">
-      <div>Scope no.<b>BEJ-2026-0118</b></div>
-      <div>Issued<b>18 Nov 2026</b></div>
-      <div>Valid until<b>2 Dec 2026</b></div>
-      <div>Prepared by<b>Simas, Co-founder</b></div>
+    <div class="meta">
+      <span>Prepared for <b>Chris &amp; Debby, Auticate LLC</b></span>
+      <span>Scope <b>BEJ-2026-0118</b></span>
+      <span>Issued <b>18 Nov 2026</b></span>
+      <span>Valid until <b>2 Dec 2026</b></span>
+      <span>Your contact <b>Simas, Co-founder</b></span>
     </div>
-    <p class="noprint" style="margin-top:16px"><a class="pdf-link" href="Auticate-Scope-BEJU-Creative.pdf" download>Download this scope as a PDF</a></p>
-  </header>
+  </div>
+</header>
 
-  <main>
+<section style="padding-top:0" aria-label="The plan at a glance">
+  <div class="wrap facts">
+    <div><b>$840 a month</b><span>60 Shorts from your long videos</span></div>
+    <div><b>8 hours</b><span>to your first Shorts, then new ones daily</span></div>
+    <div><b>Month-to-month</b><span>Unlimited revisions. You own every video.</span></div>
+  </div>
+</section>
 
-    <p class="intro">Chris and Debby, this page sets out exactly what we make, how we work with your team, and how you can start.</p>
+<section aria-labelledby="goal">
+  <div class="wrap">
+    <h2 id="goal">Your goal, in your words</h2>
+    <div class="quotes">
+      <p class="quote">“We'd like to see our median view count consistently increase.”</p>
+      <p class="quote">“We're looking for a team that can help us grow, not simply produce more content.”</p>
+    </div>
+    <p class="by">Chris, 16 Nov. You're judging us over the next three months, maybe moving to 80 or 100 Shorts a month after. Everything below is built around that.</p>
+    <p class="sofar"><i>✓</i><span>So far: your first 10 Shorts are approved and filed in your Drive, one folder per long video.</span></p>
+  </div>
+</section>
 
-    <section aria-labelledby="glance">
-      <div class="sec-head"><div class="label" id="glance">At a glance</div></div>
-      <dl class="glance">
-        <div class="glance-row"><dt>Plan</dt><dd>60 Shorts a month, made from your long videos</dd></div>
-        <div class="glance-row price"><dt>Price</dt><dd class="num">$840 <small>per month</small></dd></div>
-        <div class="glance-row"><dt>Included in month one</dt><dd>1 long video, edited on us</dd></div>
-        <div class="glance-row"><dt>Delivery</dt><dd>First Shorts within 8 hours of getting your videos, then daily</dd></div>
-        <div class="glance-row"><dt>Changes</dt><dd>Unlimited, until you're happy</dd></div>
-        <div class="glance-row"><dt>Commitment</dt><dd>Month-to-month. Cancel any time before your next billing date.</dd></div>
-        <div class="glance-row"><dt>Your contact</dt><dd>Simas, Co-founder</dd></div>
-      </dl>
-    </section>
+<section aria-labelledby="get">
+  <div class="wrap">
+    <h2 id="get">What you get</h2>
+    <div class="list">
+      <div class="item"><h3>60 Shorts a month</h3><p>The strongest parts of your long videos, with hooks and captions built for YouTube Shorts.</p></div>
+      <div class="item"><h3>Views we act on</h3><p>We track every Short on your channel. What works shapes the next picks, hooks and edits.</p></div>
+      <div class="item"><h3>A monthly views note</h3><p>Around day 28, Simas sends a short note: what worked, and what we make more of next.</p></div>
+      <div class="item"><h3>A folder per long video</h3><p>Every Short is filed next to the video it came from, ready to link back.</p></div>
+      <div class="item"><h3>A long video on us</h3><p>One full edit in your first month, so you can judge our long-form work too.</p></div>
+    </div>
+  </div>
+</section>
 
-    <section class="pb" aria-labelledby="goal">
-      <div class="sec-head">
-        <div class="label"><span>1</span>Your goal</div>
-        <h2 id="goal">What you told us matters most</h2>
-      </div>
-      <div class="quotes">
-        <blockquote>“We'd like to see our median view count consistently increase.”</blockquote>
-        <blockquote>“We're looking for a team that can help us grow, not simply produce more content.”</blockquote>
-      </div>
-      <p class="attrib">Chris, 16 Nov. You're judging us over the next three months, and maybe moving to 80 or 100 Shorts a month after that. Everything below is built around that.</p>
-      <p class="today"><i>✓</i><span><b>Where we are today:</b> your first 10 Shorts are approved and filed in your Drive folder, one folder per long video.</span></p>
-    </section>
+<section aria-labelledby="steps">
+  <div class="wrap">
+    <h2 id="steps">Three steps, then it runs</h2>
+    <div class="grid3">
+      <div class="card step"><span class="num">1</span><h3>Pay the first month</h3><p class="small">By card, or by invoice to Auticate LLC. Paying is your yes. No signature needed.</p></div>
+      <div class="card step"><span class="num">2</span><h3>A 15-minute kickoff</h3><p class="small">Your style, your channels, and who signs off on the Shorts.</p></div>
+      <div class="card step"><span class="num">3</span><h3>Shorts within 8 hours</h3><p class="small">From the moment your videos arrive. Then new ones every day.</p></div>
+    </div>
+  </div>
+</section>
 
-    <section aria-labelledby="get">
-      <div class="sec-head">
-        <div class="label"><span>2</span>What you get</div>
-        <h2 id="get">Every month on this plan</h2>
-      </div>
-      <ul class="checks">
-        <li><span><b>60 new Shorts a month</b>, made from the strongest parts of your long videos, with hooks and captions built for YouTube Shorts.</span></li>
-        <li><span><b>A folder for each long video</b>, so every Short links straight back to the video it came from.</span></li>
-        <li><span><b>View tracking.</b> We follow how each Short performs on your channel, and what works shapes the next picks, hooks and edits.</span></li>
-        <li><span><b>A views note every month.</b> Around day 28, Simas sends a short written note: how the month's Shorts did, what worked, and what we make more of next.</span></li>
-        <li><span><b>One long video edited on us in your first month.</b> Pick any video, and judge how we handle the full version too.</span></li>
-        <li><span><b>You own every finished video</b> once the month is paid, to post and use as you like.</span></li>
-      </ul>
-    </section>
+<section aria-labelledby="need">
+  <div class="wrap">
+    <h2 id="need">To start, we need three things</h2>
+    <div class="grid3">
+      <div class="card need"><h3>Your mobile number</h3><p class="small">For the kickoff call and anything urgent.</p></div>
+      <div class="card need"><h3>Invoice or card</h3><p class="small">Tell us which. Invoices go to Auticate LLC, with a copy to hello@auticate.com.</p></div>
+      <div class="card need"><h3>Who signs off</h3><p class="small">Chris, Debby, or both. One name keeps things fast.</p></div>
+    </div>
+  </div>
+</section>
 
-    <section class="pb" aria-labelledby="how">
-      <div class="sec-head">
-        <div class="label"><span>3</span>How we work together</div>
-        <h2 id="how">From your long video to a finished Short</h2>
-      </div>
-      <ol class="steps">
-        <li><div><h3>A short kickoff call (15 minutes, optional)</h3><p>We confirm your style, the channels, and who approves the Shorts on your side.</p></div></li>
-        <li><div><h3>You share your long videos</h3><p>Drop the original files into a shared folder. You keep filming as you do now.</p></div></li>
-        <li><div><h3>We pick, edit and polish</h3><p>Your first Shorts arrive within 8 hours of getting your videos. Then they keep coming every day.</p></div></li>
-        <li><div><h3>You leave notes in Frame.io</h3><p>The same review project you already use with us. Leave a note on any Short, and we change it until it's right.</p></div></li>
-        <li><div><h3>Approved Shorts go straight into your folder</h3><p>Ready to post, sorted by long video.</p></div></li>
-        <li><div><h3>Every month, a views note</h3><p>What worked, what didn't, and what we make more of next month.</p></div></li>
-      </ol>
-    </section>
+<section aria-labelledby="faq">
+  <div class="wrap cols">
+    <h2 id="faq">Questions</h2>
+    <div>
+      <details open><summary>How do we send our videos?</summary><p>Share the original files in a Drive or Dropbox folder whenever you're ready. Original files give the sharpest Shorts.</p></details>
+      <details><summary>What if we don't like a Short?</summary><p>Leave a note in Frame.io, as you do now, and we change it until it's right. Revisions are unlimited.</p></details>
+      <details><summary>Do you promise views?</summary><p>No one honestly can. We promise the quality of the work, and we track every Short so the next ones get better.</p></details>
+      <details><summary>Who owns the videos?</summary><p>You do. Your footage stays yours, and every finished Short is yours once the month is paid.</p></details>
+      <details><summary>Can we cancel?</summary><p>Yes. It's month-to-month. Email us before your next billing date. You keep everything delivered. No refunds on delivered work.</p></details>
+    </div>
+  </div>
+</section>
 
-    <section aria-labelledby="need">
-      <div class="sec-head">
-        <div class="label"><span>4</span>Working together</div>
-        <h2 id="need">What we need, and who you work with</h2>
-      </div>
-      <div class="two">
-        <div class="card">
-          <h3>What we need from you</h3>
-          <ul>
-            <li>Your long videos as original files, in a shared Drive or Dropbox folder. Original files give the sharpest Shorts.</li>
-            <li>Your notes in Frame.io, as you give them now.</li>
-            <li>A mobile number for the kickoff call and anything urgent.</li>
-          </ul>
-        </div>
-        <div class="card">
-          <h3>Your team at BEJÚ</h3>
-          <p><b>Simas, Co-founder</b>, is your single point of contact for everything on this plan.</p>
-          <p class="fine">Our editors work 7 days a week, so the Shorts keep coming on weekends too.</p>
-        </div>
-      </div>
-    </section>
+<section class="close" id="start" aria-labelledby="ready">
+  <div class="wrap">
+    <h2 id="ready">Ready when you are</h2>
+    <p class="lede">Pay the first month, and we start. Your first Shorts arrive within 8 hours of getting your videos.</p>
+    <div class="btns noprint">
+      <a class="btn primary" href="https://buy.stripe.com/fZudR9czg4os5Lg7YC5EY15" target="_blank" rel="noopener">Pay by card · $840</a>
+      <a class="btn ghost" href="mailto:simon@getbejucreative.com?cc=hello%40auticate.com&amp;subject=Invoice%20for%20Auticate%20LLC%20(BEJ-2026-0118)">Request an invoice</a>
+    </div>
+    <p class="terms">Month-to-month. Cancel any time before your next billing date by email. You keep everything delivered. No refunds on delivered work. Payments are processed by Stripe. <a href="https://bejucreative.digital/terms.html">Full terms</a></p>
+  </div>
+</section>
 
-    <section class="pb" aria-labelledby="pay">
-      <div class="sec-head">
-        <div class="label"><span>5</span>Price and payment</div>
-        <h2 id="pay">Pay the way that suits your team</h2>
-      </div>
-      <div class="price-box">
-        <div class="amount num">$840 <small>per month</small></div>
-        <div class="what">60 Shorts a month · your first month includes 1 long video on us</div>
-      </div>
-      <div class="two">
-        <div class="card">
-          <span class="tag">Invoice</span>
-          <h3>Stripe invoice to Auticate LLC</h3>
-          <p>We send an invoice addressed to Auticate LLC, with a copy to hello@auticate.com. Pay it online when it suits your team.</p>
-        </div>
-        <div class="card">
-          <span class="tag">Fastest</span>
-          <h3>Pay by card</h3>
-          <p>Start the plan in one step with a secure Stripe link.</p>
-          <a class="btn" href="https://buy.stripe.com/fZudR9czg4os5Lg7YC5EY15">Start the 60 Shorts plan</a>
-        </div>
-      </div>
-      <p class="fine">Month-to-month. Cancel any time before your next billing date by email. You keep everything delivered. No refunds on delivered work. Payments are processed by Stripe; we never see your full card details.</p>
-    </section>
-
-    <section aria-labelledby="terms" class="terms">
-      <div class="sec-head">
-        <div class="label"><span>6</span>Terms</div>
-        <h2 id="terms">The short version</h2>
-      </div>
-      <p><b>Quality.</b> We don't promise a number of views; no one honestly can. We promise the quality of the work, and we keep changing any edit until you're happy with it.</p>
-      <p><b>Ownership.</b> Your raw footage stays yours. Once a month is paid, you own the edited Shorts. We may show finished work in our portfolio unless you tell us not to.</p>
-      <p><b>Full terms.</b> <a href="https://bejucreative.digital/terms.html">bejucreative.digital/terms.html</a></p>
-    </section>
-
-    <section class="next" aria-labelledby="nextstep">
-      <h2 id="nextstep">Next step</h2>
-      <ol>
-        <li>Reply with how you'd like to pay: <b>invoice</b> or <b>link</b>.</li>
-        <li>Add a good number for the kickoff call.</li>
-        <li>Once the first month is paid, we start. Your first Shorts arrive within 8 hours of getting your videos.</li>
-      </ol>
-      <p class="accept"><b>Accepting this scope:</b> paying the first month, by invoice or by link, means you accept it. No signature needed.</p>
-      <p>Questions first? Reply to the email and Simas will answer the same day.</p>
-    </section>
-
-  </main>
-
-  <footer>
-    <span>BEJÚ Creative · bejucreative.digital</span>
-    <span>Scope BEJ-2026-0118 · Prepared for Chris &amp; Debby, Auticate LLC</span>
-  </footer>
-
-</div>
+<footer><div class="wrap"><span>BEJÚ Creative · bejucreative.digital</span><span>Questions? Reply to Simas's email.</span></div></footer>
+<script>
+const openAll = () => document.querySelectorAll("details").forEach(d => d.open = true);
+if (location.search.includes("print")) openAll();
+addEventListener("beforeprint", openAll);
+</script>
 </body>
 </html>
