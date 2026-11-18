@@ -1005,3 +1005,13 @@ html[data-motion="calm"] .ticker-t{animation:none;white-space:normal;flex-wrap:w
 
 /* 11-16 Paid clients + Hot leads pages: on a phone the search box takes its own row above the owner switch */
 @media (max-width:600px){.cv-tools .pg-s{flex-basis:100%}}
+
+/* 11-18 Price calculator card: slider + typed number + quick picks; the custom-price tag may wrap */
+#c-price .calc-plan{margin-top:10px} #c-price .calc-plan .chip{white-space:normal;border-radius:10px}
+#c-price .calc-in{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;font-size:13px;color:var(--mute)}
+#c-price .calc-in input{width:76px;background:var(--tile);border:1px solid var(--line);border-radius:10px;padding:6px 9px;font-family:var(--mono);font-size:15px;color:var(--ink);text-align:right;outline:none;transition:border-color .2s,box-shadow .2s}
+#c-price .calc-in input:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
+#c-price input[type=range]{display:block;width:100%;margin:10px 0;accent-color:var(--blue);cursor:pointer}
+#c-price .rng{display:grid;grid-auto-flow:column;grid-auto-columns:1fr}
+#c-price .calc-fn{margin-top:12px}
+@media (max-width:600px){#c-price input[type=range]{height:44px;margin:4px 0} #c-price .calc-in input{font-size:16px;min-height:44px;width:84px}}

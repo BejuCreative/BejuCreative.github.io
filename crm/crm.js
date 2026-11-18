@@ -478,6 +478,12 @@ const nextRow = (x, i, long) => { const inner = `<span class="it ${x.c}"><svg><u
   if (x.task) return `<div class="tile row">${inner}<span class="row-end"><button type="button" class="act go" data-act="ftdone" data-id="${esc(x.task)}" aria-label="Mark “${esc(cut(x.title, 60))}” done">Done</button></span></div>`;
   const end = `<span class="row-end"><small>#${i + 1}</small></span>`; return x.email ? leadBtn(x.email, inner + end) : dB(x.k, x.a, inner + end, "tile row"); };
 
+/* price calculator (11-18, Simas): our quoted prices, Shorts a month -> USD a month. Straight lines between the points, +$10 a Short above 80, rounded to $5.
+   PRICE_STD = the counts we already sell with a Stripe link. */
+const PRICE_PTS = [[1, 30], [5, 150], [15, 300], [30, 500], [40, 600], [60, 840], [80, 1040]], PRICE_STD = [15, 30, 60];
+const priceFor = n => { const P = PRICE_PTS, L = P[P.length - 1]; let v; if (n >= L[0]) v = L[1] + (n - L[0]) * 10; else { let i = 1; while (P[i][0] < n) i++; const [a, x] = P[i - 1], [b, y] = P[i]; v = x + (y - x) * (n - a) / (b - a); } return Math.round(v / 5) * 5; };
+const nf1 = new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 });
+
 /* ---------------- cards ---------------- */
 const CARDS = [
 { id: "brand", cls: "brand", title: "Status", mount(el) {
@@ -652,6 +658,27 @@ const CARDS = [
 { id: "sync", title: "Sync status", render: d => `<div class="stack">${d.sync.map(s => dB("sync", s.name, `<span class="it ${s.ok ? "c-ink" : "c-red"}"><svg><use href="#i-${s.ok ? "check" : "alert"}"/></svg></span><span class="row-main"><b>${esc({ instantly: "Sending", replies: "Replies", sheet: "Samples" }[s.name] || s.name)}</b><small>${esc(cut(/^\{/.test(s.detail || "") ? "synced" : s.detail, 40))}</small></span><span class="row-end"><small>${ago(s.ran_at)}</small></span>`, "tile row")).join("") || empty("No sync info.")}</div>` },
 { id: "export", title: "Export", mount(el) { el.innerHTML = `<button type="button" class="export mag" id="export" data-act="export"><i></i><span id="export-t"><svg><use href="#i-down"/></svg>Export leads CSV</span></button>`; }, update() {} },
 { id: "moneypage", title: "Money page", mount(el) { el.innerHTML = `${head("💰 Money", `<span class="chip">founders only</span>`)}<p class="sub">Bills due in the next 45 days, the Stripe balance, payouts per founder, transfers and the 50/50 position.</p><div class="acts sp"><a class="act go" href="money.html">${ic("cash")}Open the Money page</a></div>`; }, update() {} },
+{ id: "price", title: "Price calculator", mount(el) {   // 11-18 (Simas): drag to N Shorts a month, see the monthly retainer. Reads and writes nothing.
+    el.innerHTML = `${head("Price calculator")}<div class="big" id="calc-p"></div><p class="sub" id="calc-per"></p><p class="sub" id="calc-cnt"></p><p class="calc-plan" id="calc-plan"></p>
+      <div class="calc-in"><label for="calc-r">Shorts a month</label><input id="calc-n" type="number" min="1" max="120" step="1" inputmode="numeric" aria-label="Shorts a month, type a number" aria-describedby="calc-p calc-per"></div>
+      <input id="calc-r" type="range" min="1" max="120" step="1">
+      <div class="rng" role="group" aria-label="Quick picks">${[5, 10, 15, 30, 60].map(v => `<button type="button" data-s="${v}" aria-pressed="false">${v}</button>`).join("")}</div>
+      <p class="sub calc-fn">Budget offer (only when they say they have no budget, once): 30 Shorts a month for $300.</p>`;
+    const r = $("#calc-r", el), n = $("#calc-n", el);
+    const set = (v, from) => { const p = priceFor(v), per = nf1.format(p / v);
+      if (from !== r) r.value = v; if (from !== n) n.value = v;
+      r.setAttribute("aria-valuetext", `${v} Short${v === 1 ? "" : "s"} a month: ${usd(p)} a month, $${per} per Short`);
+      $("#calc-p", el).innerHTML = `${usd(p)}<small> / month</small>`;
+      $("#calc-per", el).textContent = `$${per} per Short`;
+      $("#calc-cnt", el).textContent = `${v} Short${v === 1 ? "" : "s"} a month (~${nf1.format(v * 12 / 52)} a week)`;
+      $("#calc-plan", el).innerHTML = PRICE_STD.includes(v) ? `<span class="chip g">standard plan</span>` : `<span class="chip">custom: send an invoice or create a link</span>`;
+      $$(".rng button", el).forEach(b => { const on = +b.dataset.s === v; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); }); };
+    r.addEventListener("input", () => set(+r.value, r));
+    n.addEventListener("input", () => { const v = +n.value; if (n.value !== "" && Number.isInteger(v) && v >= 1 && v <= 120) set(v, n); });
+    n.addEventListener("change", () => set(clamp(Math.round(+n.value) || +r.value, 1, 120)));
+    $(".rng", el).addEventListener("click", ev => { const b = ev.target.closest("button[data-s]"); if (b) set(+b.dataset.s); });
+    set(15);
+  } },
 /* ---- client portal zone (second grid) ---- */
 { id: "psamples", grid: 2, title: "Portal: sample requests", focus: ["psamples", ""], render: d => `${head("Free sample requests", dB("psamples", "", d.pSamples.length, `chip ${d.pSamples.some(s => s.status === "requested") ? "o" : ""}`, "Open every sample request"), true)}<div class="stack">${d.pSamples.slice(0, 3).map(sampleTile).join("") || empty("No sample request yet. New ones land here the moment a client asks.")}</div>${d.pSamples.length > 3 ? dB("psamples", "", `Show all ${d.pSamples.length}`, "more") : ""}` },
 { id: "pvideos", grid: 2, cls: "w2", title: "Portal: video requests", focus: ["pvideos", ""], render: d => `${head("Video requests", dB("pvideos", "", d.pVideos.length, `chip ${d.pVideos.some(v => /^(received|revision)$/.test(v.status)) ? "o" : ""}`, "Open every video request"), true)}<div class="stack two">${d.pVideos.slice(0, 4).map(videoTile).join("") || empty("No video request yet. Paid clients send footage links from their portal and they show up here.")}</div>${d.pVideos.length > 4 ? dB("pvideos", "", `Show all ${d.pVideos.length}`, "more") : ""}` },
@@ -660,7 +687,7 @@ const CARDS = [
 ];
 const byId = id => CARDS.find(c => c.id === id);
 /* phone: five tabs, each shows only its cards (the desktop keeps the whole bento) */
-const TABS = { home: ["next", "today", "paidc", "retainers", "hot", "activity", "followups"], money: ["money", "close", "revchart", "buyers", "topc", "alltime", "moneypage"], leads: ["attention", "moods", "samples", "turn", "speed", "clock", "score", "away", "funnel", "search", "export"],
+const TABS = { home: ["next", "today", "paidc", "retainers", "hot", "activity", "followups"], money: ["money", "close", "revchart", "buyers", "topc", "alltime", "moneypage", "price"], leads: ["attention", "moods", "samples", "turn", "speed", "clock", "score", "away", "funnel", "search", "export"],
   outreach: ["outreach", "newleads", "total", "week", "heat", "rate", "camps", "deliv", "inboxes", "sync"], clients: ["portal", "psamples", "pvideos", "pnotes", "pclients", "videos"], none: ["brand", "owner", "theme"] };
 const TABOF = {}; Object.entries(TABS).forEach(([t, ids]) => ids.forEach(id => { TABOF[id] = t; }));
 
