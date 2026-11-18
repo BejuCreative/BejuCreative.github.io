@@ -124,6 +124,28 @@ details p{margin-top:8px;color:var(--body);max-width:36em}
 .brand{display:inline-flex;align-items:center;gap:10px}
 .brand img{height:26px;width:auto;filter:brightness(0);display:block}
 .foot-mark{height:18px;width:auto;filter:brightness(0);vertical-align:-3px;margin-right:8px;opacity:.85}
+/* polish (Benas 11-19 ~00:45): no sideways drift, readable small text on phones, proof a bit smaller, TikTok links, comms grid */
+html,body{overflow-x:hidden;max-width:100%}
+img{max-width:100%}
+.proof-logos img{height:40px}
+.proof-wordmark{font-size:36px}
+.proof-nums b{font-size:clamp(36px,4.6vw,46px)}
+.proof-item{display:flex;flex-direction:column;align-items:center;gap:8px;text-decoration:none}
+.tt{font-size:13px;font-weight:500;color:var(--muted);letter-spacing:.02em}
+.proof-item:hover .tt{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+.comm{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-top:26px}
+.comm .card{display:grid;gap:6px;align-content:start}
+.accept{margin-top:16px;font-size:15px;color:var(--muted)}
+.accept a{color:var(--ink)}
+@media (max-width:560px){
+  .meta{font-size:15px;flex-direction:column;align-items:center;gap:4px}
+  .small,.card p{font-size:16px}
+  .tag,.eyebrow{font-size:13px}
+  .facts span{font-size:15px}
+  .proof-logos img{height:34px}
+  .proof-wordmark{font-size:32px}
+  .item p,.bar-legend{font-size:15px}
+}
 footer{border-top:1px solid var(--hair);padding:24px 0 40px}
 footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:14px;color:var(--dim)}
 
@@ -164,7 +186,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
 
 <nav class="nav" aria-label="Scope">
   <div class="wrap">
-    <a class="brand" href="https://bejucreative.digital/"><img src="/assets/beju-mark-640.png" alt="" width="44" height="26">BEJÚ Creative</a>
+    <a class="brand" href="https://bejucreative.digital/" aria-label="BEJÚ Creative"><img src="/assets/beju-mark-640.png" alt="BEJÚ Creative" width="44" height="26"></a>
     <a class="btn ghost sm site-btn noprint" href="https://bejucreative.digital/">Visit our website</a>
     <a class="btn primary sm noprint" href="https://buy.stripe.com/fZudR9czg4os5Lg7YC5EY15?client_reference_id=scope-auticate&amp;prefilled_email=hello%40auticate.com" target="_blank" rel="noopener">Start the plan</a>
   </div>
@@ -266,12 +288,25 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
   </div>
 </section>
 
+<section aria-labelledby="comm">
+  <div class="wrap">
+    <div class="head"><p class="eyebrow">Working together</p><h2 id="comm">Communication and approvals</h2></div>
+    <div class="comm">
+      <div class="card"><h3>One point of contact</h3><p class="small">Simas, Co-founder, from start to finish.</p></div>
+      <div class="card"><h3>Replies within one hour</h3><p class="small">Questions get an answer fast, every day of the week.</p></div>
+      <div class="card"><h3>Approvals</h3><p class="small">Your first Shorts come to you for approval in Frame.io. The rest follow in the same style.</p></div>
+      <div class="card"><h3>Revisions</h3><p class="small">Unlimited. Leave your notes, and we send a new version.</p></div>
+      <div class="card"><h3>Your files</h3><p class="small">Everything lands in your own Drive folder, one folder per long video.</p></div>
+    </div>
+  </div>
+</section>
+
 <section class="proof" aria-label="Trusted by">
   <div class="wrap"><div class="proof-card">
     <p class="eyebrow">Trusted by</p>
     <div class="proof-logos">
-      <a href="https://www.tiktok.com/@based" target="_blank" rel="noopener" aria-label="BASED on TikTok"><img src="/assets/based-wordmark.svg" alt="BASED" width="211" height="48"></a>
-      <a class="proof-wordmark" href="https://www.tiktok.com/@samm.zia" target="_blank" rel="noopener">Sam Zia</a>
+      <a class="proof-item" href="https://www.tiktok.com/@based" target="_blank" rel="noopener"><img src="/assets/based-wordmark.svg" alt="BASED" width="211" height="48"><span class="tt">View on TikTok ↗</span></a>
+      <a class="proof-item" href="https://www.tiktok.com/@samm.zia" target="_blank" rel="noopener"><span class="proof-wordmark">Sam Zia</span><span class="tt">View on TikTok ↗</span></a>
     </div>
     <div class="proof-nums">
       <div><b>50+</b><span>creators, coaches and podcasters</span></div>
@@ -294,6 +329,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
         <p>Rather talk it through first?</p>
         <a class="btn ghost" href="https://cal.com/beju-creative/15min-call" target="_blank" rel="noopener">Book a 15-minute call</a>
       </div>
+      <p class="accept">Paying the first month, by card or invoice, accepts this scope and our <a href="https://bejucreative.digital/terms.html">terms</a>.</p>
       <p class="terms">Month-to-month. Cancel any time before your next billing date by email. You keep everything delivered. No refunds on delivered work. Payments are processed by Stripe. <a href="https://bejucreative.digital/terms.html">Full terms</a></p>
     </div>
   </div>
