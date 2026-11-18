@@ -146,6 +146,20 @@ img{max-width:100%}
   .proof-wordmark{font-size:32px}
   .item p,.bar-legend{font-size:15px}
 }
+/* Benas fixes 11-19 01:0x: 50/50 as two equal cards, readable text everywhere */
+.split2{margin-top:28px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.split2 .half{display:grid;gap:8px;align-content:start;padding:28px 26px}
+.split2 .big{font-size:clamp(40px,5vw,52px);font-weight:700;letter-spacing:-.03em;line-height:1;color:var(--green-head,#11A85A)}
+.split2 h3{font-size:22px}
+.split2 p{font-size:17px;color:var(--ink);line-height:1.5}
+.small,.card p{font-size:16px;color:var(--body)}
+.meta{font-size:15px;color:var(--body)}
+.facts span{font-size:16px;color:var(--body)}
+.terms{font-size:15px;color:var(--body)}
+.accept{color:var(--body)}
+.tag{font-size:13px}
+.proof-nums span{font-size:16px;color:var(--body)}
+@media (max-width:640px){.split2{grid-template-columns:1fr}}
 footer{border-top:1px solid var(--hair);padding:24px 0 40px}
 footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:14px;color:var(--dim)}
 
@@ -236,9 +250,9 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
       <h2 id="engine">50% editing. <span class="gold">50% content engine.</span></h2>
       <p class="lede">We're not just video editors. Half of our work is deciding what gets made, how it opens, and why your audience will stay.</p>
     </div>
-    <div class="split" aria-hidden="true">
-      <div class="bar"><span></span><span></span></div>
-      <div class="bar-legend"><span><b>50%</b> hooks, picks, structure, graphics, testing</span><span><b>50%</b> editing</span></div>
+    <div class="split2">
+      <div class="card half"><b class="big">50%</b><h3>Content engine</h3><p>Hooks, picks, structure, graphics and testing.</p></div>
+      <div class="card half"><b class="big">50%</b><h3>Editing</h3><p>Cuts, captions, sound and motion.</p></div>
     </div>
     <div class="grid4">
       <div class="card"><span class="tag">Hooks</span><h3>Written, then tested</h3><p class="small">We write different openings for your Shorts, track how each one does, and keep what your audience stops for.</p></div>
@@ -292,7 +306,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
   <div class="wrap">
     <div class="head"><p class="eyebrow">Working together</p><h2 id="comm">Communication and approvals</h2></div>
     <div class="comm">
-      <div class="card"><h3>One point of contact</h3><p class="small">Simas, Co-founder, from start to finish.</p></div>
+      <div class="card"><h3>One point of contact</h3><p class="small">Simas, Co-founder, backed by our whole editing team.</p></div>
       <div class="card"><h3>Replies within one hour</h3><p class="small">Questions get an answer fast, every day of the week.</p></div>
       <div class="card"><h3>Approvals</h3><p class="small">Your first Shorts come to you for approval in Frame.io. The rest follow in the same style.</p></div>
       <div class="card"><h3>Revisions</h3><p class="small">Unlimited. Leave your notes, and we send a new version.</p></div>
@@ -309,7 +323,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
       <a class="proof-item" href="https://www.tiktok.com/@samm.zia" target="_blank" rel="noopener"><span class="proof-wordmark">Sam Zia</span><span class="tt">View on TikTok ↗</span></a>
     </div>
     <div class="proof-nums">
-      <div><b>50+</b><span>creators, coaches and podcasters</span></div>
+      <div><b>50+</b><span>clients</span></div>
       <div><b>97%</b><span>stay after the first month</span></div>
     </div>
   </div></div>
