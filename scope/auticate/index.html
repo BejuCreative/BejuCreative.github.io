@@ -109,15 +109,21 @@ details p{margin-top:8px;color:var(--body);max-width:36em}
 .terms a{color:var(--muted)}
 .site-btn{border:1px solid var(--hair-2)}
 @media (max-width:760px){.nav .site-btn{display:inline-flex}}
-/* proof (Benas 11-19): Trusted by BASED + Sam Zia, 50+ creators, 97% stay */
-.proof{padding:26px 0}
-.proof-row{display:flex;align-items:center;justify-content:center;gap:14px 28px;flex-wrap:wrap;padding:20px 22px;border:1px solid var(--hair);border-radius:18px;background:var(--soft,#F7F6F1)}
-.proof-row .eyebrow{margin:0}
-.proof-row a{display:inline-flex;align-items:center;color:var(--ink);font-weight:600;font-size:17px;text-decoration:none}
-.proof-row a:hover{text-decoration:underline;text-underline-offset:3px}
-.proof-row img{height:20px;width:auto;filter:brightness(0)}
-.proof-stat{font-size:15px;color:var(--muted)}
-.proof-stat b{color:var(--ink);font-size:17px}
+/* proof v2 (Benas 11-19 ~00:28): bigger, its own section, logos at wordmark size, big numbers */
+.proof{padding:clamp(36px,5vw,64px) 0}
+.proof-card{display:grid;justify-items:center;gap:26px;text-align:center;padding:clamp(30px,4vw,48px) 24px;border:1px solid var(--hair);border-radius:24px;background:var(--soft,#F7F6F1)}
+.proof-logos{display:flex;align-items:center;justify-content:center;gap:28px 56px;flex-wrap:wrap}
+.proof-logos img{height:48px;width:auto;filter:brightness(0);display:block}
+.proof-wordmark{font-size:44px;font-weight:700;letter-spacing:-.035em;line-height:1;color:var(--ink);text-decoration:none}
+.proof-logos a:hover{opacity:.75}
+.proof-nums{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 56px;border-top:1px solid var(--hair);padding-top:24px;width:min(640px,100%)}
+.proof-nums b{display:block;font-size:clamp(44px,5.6vw,56px);font-weight:700;letter-spacing:-.03em;line-height:1;color:var(--ink)}
+.proof-nums span{display:block;margin-top:6px;font-size:15px;color:var(--muted)}
+@media (max-width:560px){.proof-nums{grid-template-columns:1fr}.proof-logos{flex-direction:column}}
+/* BEJÚ mark (dark on the white pages) */
+.brand{display:inline-flex;align-items:center;gap:10px}
+.brand img{height:26px;width:auto;filter:brightness(0);display:block}
+.foot-mark{height:18px;width:auto;filter:brightness(0);vertical-align:-3px;margin-right:8px;opacity:.85}
 footer{border-top:1px solid var(--hair);padding:24px 0 40px}
 footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:14px;color:var(--dim)}
 
@@ -158,7 +164,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
 
 <nav class="nav" aria-label="Scope">
   <div class="wrap">
-    <a class="brand" href="https://bejucreative.digital/">BEJÚ Creative</a>
+    <a class="brand" href="https://bejucreative.digital/"><img src="/assets/beju-mark-640.png" alt="" width="44" height="26">BEJÚ Creative</a>
     <a class="btn ghost sm site-btn noprint" href="https://bejucreative.digital/">Visit our website</a>
     <a class="btn primary sm noprint" href="https://buy.stripe.com/fZudR9czg4os5Lg7YC5EY15?client_reference_id=scope-auticate&amp;prefilled_email=hello%40auticate.com" target="_blank" rel="noopener">Start the plan</a>
   </div>
@@ -261,12 +267,16 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
 </section>
 
 <section class="proof" aria-label="Trusted by">
-  <div class="wrap"><div class="proof-row">
-    <span class="eyebrow">Trusted by</span>
-    <a href="https://www.tiktok.com/@based" target="_blank" rel="noopener" aria-label="BASED on TikTok"><img src="/assets/based-wordmark.svg" alt="BASED" width="132" height="30"></a>
-    <a href="https://www.tiktok.com/@samm.zia" target="_blank" rel="noopener">Sam Zia</a>
-    <span class="proof-stat"><b>50+</b> creators</span>
-    <span class="proof-stat"><b>97%</b> stay after the first month</span>
+  <div class="wrap"><div class="proof-card">
+    <p class="eyebrow">Trusted by</p>
+    <div class="proof-logos">
+      <a href="https://www.tiktok.com/@based" target="_blank" rel="noopener" aria-label="BASED on TikTok"><img src="/assets/based-wordmark.svg" alt="BASED" width="211" height="48"></a>
+      <a class="proof-wordmark" href="https://www.tiktok.com/@samm.zia" target="_blank" rel="noopener">Sam Zia</a>
+    </div>
+    <div class="proof-nums">
+      <div><b>50+</b><span>creators, coaches and podcasters</span></div>
+      <div><b>97%</b><span>stay after the first month</span></div>
+    </div>
   </div></div>
 </section>
 
@@ -289,7 +299,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
   </div>
 </section>
 
-<footer><div class="wrap"><span>BEJÚ Creative · bejucreative.digital</span><span>Questions? Reply to Simas's email.</span></div></footer>
+<footer><div class="wrap"><span><img class="foot-mark" src="/assets/beju-mark-640.png" alt="">BEJÚ Creative · bejucreative.digital</span><span>Questions? Reply to Simas's email.</span></div></footer>
 <script>
 const openAll = () => document.querySelectorAll("details").forEach(d => d.open = true);
 if (location.search.includes("print")) openAll();
