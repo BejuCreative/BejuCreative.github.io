@@ -7,5 +7,6 @@ Disallow: /welcome/
 Disallow: /guide/
 Disallow: /hero/README.txt
 Disallow: /work/README.txt
+Disallow: /scope/
 
 Sitemap: https://bejucreative.digital/sitemap.xml
