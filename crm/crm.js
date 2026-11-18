@@ -480,7 +480,7 @@ const nextRow = (x, i, long) => { const inner = `<span class="it ${x.c}"><svg><u
 
 /* price calculator (11-18, Simas): our quoted prices, Shorts a month -> USD a month. Straight lines between the points, +$10 a Short above 80, rounded to $5.
    PRICE_STD = the counts we already sell with a Stripe link. */
-const PRICE_PTS = [[1, 30], [5, 150], [15, 300], [30, 500], [40, 600], [60, 840], [80, 1040]], PRICE_STD = [15, 30, 60];
+const PRICE_PTS = [[1, 50], [5, 150], [15, 300], [30, 500], [40, 600], [60, 840], [80, 1040]], PRICE_STD = [15, 30, 60];
 const priceFor = n => { const P = PRICE_PTS, L = P[P.length - 1]; let v; if (n >= L[0]) v = L[1] + (n - L[0]) * 10; else { let i = 1; while (P[i][0] < n) i++; const [a, x] = P[i - 1], [b, y] = P[i]; v = x + (y - x) * (n - a) / (b - a); } return Math.round(v / 5) * 5; };
 const nf1 = new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 });
 
