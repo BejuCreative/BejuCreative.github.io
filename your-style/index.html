@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Your Short's style · BEJÚ Creative</title>
+<meta name="theme-color" content="#0C110B">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Short style brief for leads who already said yes to a sample (Simas 11-18: "5 of the spaces are already filled ... just
+   take them out"). Name, email, video and timestamp ride in the link (?n=&e=&v=&t=) and are posted in the background into
+   the same Google Form as before (1FAIpQLSc-K_…, read by scripts/forms_responses.py). Without ?e= the name + email fields show. */
+:root{
+  --paper:#FBFAF6; --card:#FFFFFF; --ink:#12160F; --text:#363D31; --muted:#646C5C; --line:#E4E1D5; --line-2:#D6D2C3;
+  --gold:#C9A24A; --gold-text:#7A5C17; --gold-soft:#F6EFDC; --olive:#0C110B; --olive-2:#18210F; --on-dark:#F4F2EA; --on-dark-muted:#B9C0B0; --gold-on-dark:#DDBA62;
+  --font:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; color-scheme:light;
+}
+*{box-sizing:border-box}
+html{background:var(--paper);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--text);font:400 17px/1.6 var(--font);
+  padding:0 max(16px,env(safe-area-inset-right,0px)) 40px max(16px,env(safe-area-inset-left,0px))}
+.wrap{max-width:680px;margin:0 auto}
+h1,h2{color:var(--ink);margin:0;letter-spacing:-.015em;text-wrap:balance}
+p{margin:0}
+.hero{margin-top:20px;border-radius:20px;padding:24px 26px;color:var(--on-dark);
+  background:radial-gradient(40rem 22rem at 0% 0%,rgba(110,138,50,.38),transparent 62%),linear-gradient(160deg,var(--olive-2),var(--olive) 70%)}
+.mark{font-weight:700;font-size:1rem;display:flex;align-items:center;gap:10px;color:var(--on-dark)}
+.mark::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--gold-on-dark)}
+.hero h1{margin-top:18px;font-size:clamp(1.6rem,4.4vw,2.1rem);line-height:1.2;color:var(--on-dark);font-weight:700}
+.hero p{margin-top:8px;color:var(--on-dark-muted)}
+.source{margin-top:16px;padding:12px 14px;border:1px solid rgba(255,255,255,.14);border-radius:12px;font-size:.92rem;color:var(--on-dark-muted);overflow-wrap:anywhere}
+.source b{color:var(--on-dark);font-weight:600}
+form{margin-top:24px;display:grid;gap:16px}
+.q{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 20px;display:grid;gap:10px}
+.q > label,.q legend{color:var(--ink);font-weight:600;font-size:1rem;padding:0}
+fieldset.q{margin:0;min-width:0;display:block}
+fieldset.q legend{float:left;width:100%;margin-bottom:10px}
+fieldset.q legend + *{clear:both}
+fieldset.q .ends{margin-top:8px}
+.hint{color:var(--muted);font-size:.9rem;font-weight:400}
+input[type=text],input[type=email],input[type=tel],input[type=url]{width:100%;font:inherit;font-size:16px;color:var(--ink);background:#fff;border:1px solid var(--line-2);border-radius:10px;padding:11px 13px}
+input:focus-visible{outline:3px solid rgba(201,162,74,.45);outline-offset:1px;border-color:var(--gold)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips label{position:relative}
+.chips input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.chips span{display:inline-block;padding:9px 14px;border:1px solid var(--line-2);border-radius:999px;font-size:.95rem;color:var(--text);background:#fff;cursor:pointer;user-select:none}
+.chips input:checked + span{background:var(--ink);border-color:var(--ink);color:#fff}
+.chips input:focus-visible + span{outline:3px solid rgba(201,162,74,.45);outline-offset:2px}
+.scale{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.scale label{position:relative}
+.scale input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.scale span{display:grid;place-items:center;height:44px;border:1px solid var(--line-2);border-radius:10px;background:#fff;font-weight:600;color:var(--ink);cursor:pointer}
+.scale input:checked + span{background:var(--ink);border-color:var(--ink);color:#fff}
+.scale input:focus-visible + span{outline:3px solid rgba(201,162,74,.45);outline-offset:2px}
+.ends{display:flex;justify-content:space-between;font-size:.85rem;color:var(--muted)}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:.95rem;color:var(--text)}
+.check input{margin-top:4px;width:18px;height:18px;accent-color:var(--ink)}
+.btn{font:inherit;font-weight:600;font-size:1rem;padding:14px 22px;border:0;border-radius:12px;background:var(--ink);color:#fff;cursor:pointer;justify-self:start}
+.btn:hover{background:#2A3322}
+.btn:disabled{opacity:.6;cursor:default}
+.btn:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.status{color:#9B2C1F;font-size:.95rem}
+.done{margin-top:24px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px 22px;display:grid;gap:8px}
+.done h2{font-size:1.35rem}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+footer{margin-top:28px;font-size:.85rem;color:var(--muted)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="mark">BEJÚ Creative</div>
+    <h1 id="hello">A few quick questions about your Short</h1>
+    <p>Two minutes. Your answers help us match your style, so your sample feels like you.</p>
+    <p class="source" id="source" hidden></p>
+  </header>
+
+  <form id="f" novalidate>
+    <div class="q" id="who" hidden>
+      <label for="name">Your name</label>
+      <input type="text" id="name" name="name" autocomplete="name">
+      <label for="email">The email we wrote to you on</label>
+      <input type="email" id="email" name="email" autocomplete="email">
+    </div>
+
+    <div class="q">
+      <label for="goal">After watching, what should people do? <span class="hint">(e.g. book a call, visit your site)</span></label>
+      <input type="text" id="goal" name="goal">
+    </div>
+
+    <fieldset class="q">
+      <legend>Captions</legend>
+      <div class="chips">
+        <label><input type="radio" name="captions" value="Bold, word by word"><span>Bold, word by word</span></label>
+        <label><input type="radio" name="captions" value="Clean subtitles"><span>Clean subtitles</span></label>
+        <label><input type="radio" name="captions" value="Minimal"><span>Minimal</span></label>
+        <label><input type="radio" name="captions" value="No captions"><span>No captions</span></label>
+      </div>
+    </fieldset>
+
+    <fieldset class="q">
+      <legend>How much is happening on screen?</legend>
+      <div class="scale">
+        <label><input type="radio" name="graphics" value="1"><span>1</span></label>
+        <label><input type="radio" name="graphics" value="2"><span>2</span></label>
+        <label><input type="radio" name="graphics" value="3"><span>3</span></label>
+        <label><input type="radio" name="graphics" value="4"><span>4</span></label>
+        <label><input type="radio" name="graphics" value="5"><span>5</span></label>
+      </div>
+      <div class="ends"><span>Just me</span><span>Full motion graphics</span></div>
+    </fieldset>
+
+    <div class="q">
+      <label for="brand">Colours, fonts, anything we should keep to <span class="hint">(optional)</span></label>
+      <input type="text" id="brand" name="brand">
+    </div>
+
+    <div class="q">
+      <label for="reference">A Short you wish was yours <span class="hint">(a link, optional)</span></label>
+      <input type="url" id="reference" name="reference" inputmode="url">
+    </div>
+
+    <fieldset class="q">
+      <legend>What do you sell?</legend>
+      <div class="chips">
+        <label><input type="radio" name="sells" value="A course"><span>A course</span></label>
+        <label><input type="radio" name="sells" value="Coaching or consulting"><span>Coaching or consulting</span></label>
+        <label><input type="radio" name="sells" value="A product or store"><span>A product or store</span></label>
+        <label><input type="radio" name="sells" value="Software"><span>Software</span></label>
+        <label><input type="radio" name="sells" value="Sponsorships or ads"><span>Sponsorships or ads</span></label>
+        <label><input type="radio" name="sells" value="Nothing yet"><span>Nothing yet</span></label>
+      </div>
+    </fieldset>
+
+    <fieldset class="q">
+      <legend>How often do you post?</legend>
+      <div class="chips">
+        <label><input type="radio" name="cadence" value="Every day"><span>Every day</span></label>
+        <label><input type="radio" name="cadence" value="3–5 a week"><span>3–5 a week</span></label>
+        <label><input type="radio" name="cadence" value="1–2 a week"><span>1–2 a week</span></label>
+        <label><input type="radio" name="cadence" value="Less than weekly"><span>Less than weekly</span></label>
+      </div>
+    </fieldset>
+
+    <fieldset class="q">
+      <legend>What do you need most?</legend>
+      <div class="chips">
+        <label><input type="radio" name="need" value="Shorts and Reels"><span>Shorts and Reels</span></label>
+        <label><input type="radio" name="need" value="Long-video edits"><span>Long-video edits</span></label>
+        <label><input type="radio" name="need" value="A launch film"><span>A launch film</span></label>
+        <label><input type="radio" name="need" value="Ad creatives"><span>Ad creatives</span></label>
+      </div>
+    </fieldset>
+
+    <div class="q">
+      <label for="phone">Phone <span class="hint">(for a quick call about your sample)</span></label>
+      <input type="tel" id="phone" name="phone" autocomplete="tel" inputmode="tel">
+      <label class="check"><input type="checkbox" name="updates"> Email me BEJÚ Creative tips and updates.</label>
+    </div>
+
+    <div class="hp" aria-hidden="true"><label>Leave this empty<input type="text" name="website_url" tabindex="-1" autocomplete="off"></label></div>
+    <p class="status" id="status" role="alert" hidden></p>
+    <button class="btn" type="submit" id="send">Send my answers</button>
+  </form>
+
+  <div class="done" id="done" hidden>
+    <h2 id="thanks">Thank you!</h2>
+    <p>We've got your answers, and we'll match your Short to them. You can close this page.</p>
+  </div>
+
+  <footer>BEJÚ Creative · bejucreative.digital · We only use your answers to make your video.</footer>
+</div>
+
+<script>
+const FORM = 'https://docs.google.com/forms/d/e/1FAIpQLSc-K_EOzSqUhp1LTLyuppUm-vBA6iLhGjQW8FS0xcktRXr1Gw/formResponse';
+const ENTRY = { video: 'entry.2069245241', timestamp: 'entry.1215761112', name: 'entry.1199884014', email: 'entry.650170257', updates: 'entry.1480759237',
+  goal: 'entry.420780976', captions: 'entry.1387353753', graphics: 'entry.1246142521', brand: 'entry.426765624', reference: 'entry.1622671538',
+  phone: 'entry.1810977715', channel_url: 'entry.571129894', sells: 'entry.354942050', cadence: 'entry.684852766', need: 'entry.330572004', source: 'entry.312196233' };
+const q = new URLSearchParams(location.search);
+const known = { name: (q.get('n') || '').trim(), email: (q.get('e') || '').trim(), video: (q.get('v') || '').trim(),
+  timestamp: (q.get('t') || '').trim(), channel_url: (q.get('c') || '').trim() };
+const form = document.getElementById('f'), status = document.getElementById('status'), send = document.getElementById('send');
+const say = t => { status.textContent = t; status.hidden = !t; };
+if (known.name) {
+  document.getElementById('hello').textContent = 'Hi ' + known.name + ', a few quick questions about your Short';
+  document.getElementById('thanks').textContent = 'Thank you, ' + known.name + '!';
+}
+if (known.video) {
+  const s = document.getElementById('source'); s.hidden = false;
+  s.innerHTML = '<b>We\'re working from:</b> ';
+  s.append(known.video + (known.timestamp ? ' · the part at ' + known.timestamp : ''));
+}
+if (!known.email) document.getElementById('who').hidden = false;
+const val = n => { const el = form.elements[n]; return el ? (el.value || '').trim() : ''; };
+form.addEventListener('submit', async e => {
+  e.preventDefault();
+  if (val('website_url')) return;                                   // bot trap
+  const a = { ...known, goal: val('goal'), captions: val('captions'), graphics: val('graphics'), brand: val('brand'),
+    reference: val('reference'), sells: val('sells'), cadence: val('cadence'), need: val('need'), phone: val('phone'),
+    source: 'Email from BEJÚ' };
+  if (!known.email) { a.name = val('name'); a.email = val('email'); }
+  if (!a.email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(a.email)) { say('Please add the email we wrote to you on.'); document.getElementById('email').focus(); return; }
+  if (!a.goal && !a.captions && !a.graphics) { say('Please answer at least the first three questions.'); return; }
+  const body = new URLSearchParams();
+  Object.keys(a).forEach(k => a[k] && ENTRY[k] && body.append(ENTRY[k], a[k]));
+  if (form.elements.updates.checked) body.append(ENTRY.updates, 'Yes');
+  send.disabled = true; send.textContent = 'Sending…';
+  try {
+    await fetch(FORM, { method: 'POST', mode: 'no-cors', body });
+    form.hidden = true; document.getElementById('done').hidden = false; window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (err) {
+    send.disabled = false; send.textContent = 'Send my answers';
+    say('That didn\'t go through. Please check your connection and try again.');
+  }
+});
+form.addEventListener('input', () => { if (!status.hidden) say(''); });
+</script>
+</body>
+</html>
