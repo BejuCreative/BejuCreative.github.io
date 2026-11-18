@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Beju Creative | Video Editing Studio for Creators and Brands</title>
-<meta name="description" content="Beju Creative edits Shorts, Reels and long videos, makes launch films and runs content systems for creators, coaches and SaaS teams. Start with a free sample.">
+<title>Video Editing Studio for Creators and Brands | Beju Creative</title>
+<meta name="description" content="Video editing for creators, coaches and podcasters: Shorts, Reels and long videos, launch films and content systems. Start with a free sample.">
 <meta name="robots" content="index,follow,max-image-preview:large,max-video-preview:-1">
 <link rel="canonical" href="https://bejucreative.digital/">
 <meta property="og:type" content="website">
@@ -65,7 +65,19 @@
     "Launch films for SaaS and apps",
     "Content systems for creators",
     "Ad creatives for e-commerce brands"
-   ]
+   ],
+   "hasOfferCatalog": {
+    "@type": "OfferCatalog",
+    "name": "Video editing services",
+    "itemListElement": [
+     {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Short-form video editing", "url": "https://bejucreative.digital/short-form-video-editing/"}},
+     {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Podcast clip editing", "url": "https://bejucreative.digital/podcast-video-editing/"}},
+     {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Video editing for coaches", "url": "https://bejucreative.digital/video-editing-for-coaches/"}},
+     {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Video editing for course creators", "url": "https://bejucreative.digital/video-editing-for-course-creators/"}},
+     {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "SaaS launch videos", "url": "https://bejucreative.digital/saas-launch-videos/"}},
+     {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "The Content Engine", "url": "https://bejucreative.digital/content-engine/"}}
+    ]
+   }
   },
   {
    "@type": "WebSite",
@@ -190,6 +202,8 @@
 .hero h1{max-width:7.4em;font-size:clamp(46px,8.6vw,128px)}
 @media(max-width:600px){.hero h1{font-size:clamp(46px,13.2vw,64px);line-height:.96}}
 .hero .lede{max-width:25em}
+/* small line above the headline that names the service; class "w" keeps the word animation off it */
+.hero h1 .kick{display:block;overflow:visible;padding:0;margin:0 0 18px;font:400 clamp(15px,1.3vw,18px)/1.4 var(--sans);letter-spacing:.01em;color:var(--muted)}
 .hero .row{margin-top:10px}
 /* the orb is fixed: big in the hero, then it docks as a small glass bead and stays with you */
 #orb{position:fixed;right:max(0px,calc(50vw - 660px));top:11vh;width:min(36vw,470px);height:min(36vw,470px);z-index:19;pointer-events:none;transform-origin:50% 50%;will-change:transform}
@@ -355,8 +369,8 @@
 <main>
 <header class="hero" id="top">
   <div class="wrap">
-    <h1 class="split">Your content, run like a <em>studio.</em></h1>
-    <p class="lede rv" style="--i:4">Short-form edits, launch films and content systems. You record. We send back finished videos.</p>
+    <h1 class="split"><span class="w kick">Video editing for creators and brands</span> Your content, run like a <em>studio.</em></h1>
+    <p class="lede rv" style="--i:4">Short-form edits, launch films and content systems for creators, coaches and podcasters. You record. We send back finished videos.</p>
     <div class="row rv" style="--i:5">
       <a class="btn primary" href="/apply/" data-magnet>Apply for a free sample</a>
       <a class="btn glass" href="https://cal.com/beju-creative/15min-call" data-magnet>Book a call</a>
@@ -374,20 +388,20 @@
 <section id="work" class="act">
   <div class="wrap"><div class="head center"><h2 class="split">Recent work.</h2><p class="lede rv">Made for YouTube Shorts, Instagram Reels, TikTok and LinkedIn.</p></div></div>
   <div class="stage rv" id="stage"><div class="ring" id="ring">
-    <figure style="--n:0" data-v="/assets/sam-zia-preview.mp4" data-full="/assets/sam-zia.mp4" data-t="Sam Zia · hair tutorial"><img width="320" height="569" loading="lazy" decoding="async" src="/assets/sam-zia.jpg" alt="Short edited for creator Sam Zia"></figure>
-    <figure style="--n:1" data-v="/assets/based-preview.mp4" data-full="/assets/based.mp4" data-t="BASED · product ad"><img width="320" height="569" loading="lazy" decoding="async" src="/assets/based.jpg" alt="Product ad edited for BASED"></figure>
-    <figure style="--n:2" data-v="/work/02-preview.mp4" data-full="/work/02.mp4" data-t="Podcast story"><img width="320" height="569" loading="lazy" decoding="async" src="/work/02.jpg" alt="Podcast story cut into a Short"></figure>
-    <figure style="--n:3" data-v="/rail-06.mp4" data-t="Talking-head Short"><img width="320" height="569" loading="lazy" decoding="async" src="/rail-06.jpg" alt="Talking-head Short with captions"></figure>
-    <figure style="--n:4" data-v="/hero/hero.mp4" data-t="Motion piece"><img width="320" height="569" loading="lazy" decoding="async" src="/hero/hero-poster.jpg" alt="Motion design film about a pencil"></figure>
-    <figure style="--n:5" data-v="/rail-05.mp4" data-t="Podcast Short"><img width="320" height="569" loading="lazy" decoding="async" src="/rail-05.jpg" alt="Podcast clip with captions"></figure>
-    <figure style="--n:6" data-v="/rail-08.mp4" data-t="Motion graphics Short"><img width="320" height="569" loading="lazy" decoding="async" src="/rail-08.jpg" alt="Motion graphics Short"></figure>
-    <figure style="--n:7" data-v="/rail-01-preview.mp4" data-full="/rail-01.mp4" data-t="Creator Short"><img width="320" height="569" loading="lazy" decoding="async" src="/rail-01.jpg" alt="Short made for a business creator"></figure>
+    <figure style="--n:0" data-v="/assets/sam-zia-preview.mp4" data-full="/assets/sam-zia.mp4" data-t="Sam Zia · hair tutorial"><img width="320" height="569" loading="lazy" decoding="async" src="/assets/sam-zia.jpg" alt="Hair tutorial Short for creator Sam Zia, showing the finished hairstyle"></figure>
+    <figure style="--n:1" data-v="/assets/based-preview.mp4" data-full="/assets/based.mp4" data-t="BASED · product ad"><img width="320" height="569" loading="lazy" decoding="async" src="/assets/based.jpg" alt="BASED product ad: a creator talks to camera with BASED hair products on screen"></figure>
+    <figure style="--n:2" data-v="/work/02-preview.mp4" data-full="/work/02.mp4" data-t="Podcast story"><img width="320" height="569" loading="lazy" decoding="async" src="/work/02.jpg" alt="Podcast story Short with a collage title: We paid a hacker to break into our bank"></figure>
+    <figure style="--n:3" data-v="/rail-06.mp4" data-t="Talking-head Short"><img width="320" height="569" loading="lazy" decoding="async" src="/rail-06.jpg" alt="Talking-head Short with word-by-word captions"></figure>
+    <figure style="--n:4" data-v="/hero/hero.mp4" data-t="Motion piece"><img width="320" height="569" loading="lazy" decoding="async" src="/hero/hero-poster.jpg" alt="Motion design piece: a hand holds a pencil above a syringe on a black background"></figure>
+    <figure style="--n:5" data-v="/rail-05.mp4" data-t="Podcast Short"><img width="320" height="569" loading="lazy" decoding="async" src="/rail-05.jpg" alt="Podcast Short: a guest laughs at the microphone, with bold captions"></figure>
+    <figure style="--n:6" data-v="/rail-08.mp4" data-t="Motion graphics Short"><img width="320" height="569" loading="lazy" decoding="async" src="/rail-08.jpg" alt="Motion graphics Short: animated review cards on a white background"></figure>
+    <figure style="--n:7" data-v="/rail-01-preview.mp4" data-full="/rail-01.mp4" data-t="Creator Short"><img width="320" height="569" loading="lazy" decoding="async" src="/rail-01.jpg" alt="Business podcast Short titled 7 Figure Entrepreneurs vs. 8 Figure Entrepreneurs"></figure>
   </div></div>
   <p class="cap"><span id="cap" aria-live="polite"></span><button type="button" class="link" id="watch">Watch with sound</button></p>
   <div class="wrap"><div class="films">
-    <figure class="film rv" data-play><video muted loop playsinline preload="none" poster="/launch/launch-01.jpg" src="/launch/launch-01.mp4"></video><figcaption>Mac app launch</figcaption></figure>
-    <figure class="film rv" style="--i:1" data-play><video muted loop playsinline preload="none" poster="/launch/launch-02.jpg" src="/launch/launch-02.mp4"></video><figcaption>SaaS launch</figcaption></figure>
-    <figure class="film rv" style="--i:2" data-play><video muted loop playsinline preload="none" poster="/launch/launch-03.jpg" src="/launch/launch-03.mp4"></video><figcaption>Course launch</figcaption></figure>
+    <figure class="film rv" data-play><video muted loop playsinline preload="none" poster="/launch/launch-01.jpg" src="/launch/launch-01.mp4" aria-label="Mac app launch film: Everything. Right in the notch."></video><figcaption>Mac app launch</figcaption></figure>
+    <figure class="film rv" style="--i:1" data-play><video muted loop playsinline preload="none" poster="/launch/launch-02.jpg" src="/launch/launch-02.mp4" aria-label="SaaS launch film: phone screens show four short-video formats"></video><figcaption>SaaS launch</figcaption></figure>
+    <figure class="film rv" style="--i:2" data-play><video muted loop playsinline preload="none" poster="/launch/launch-03.jpg" src="/launch/launch-03.mp4" aria-label="Course launch film"></video><figcaption>Course launch</figcaption></figure>
   </div>
   <div class="row rv" style="justify-content:center;margin-top:36px"><a class="link" href="/work/">See all work</a></div></div>
 </section>
@@ -401,10 +415,10 @@
   <div class="said">
     <blockquote class="rv">“We got like 500 new followers just from those 5 videos.”<cite>From a client's message after their first pack</cite></blockquote>
     <div class="shots rv" style="--i:1">
-      <figure class="shot" data-play><video muted loop playsinline preload="none" poster="/results/testimonial-6-poster.jpg" src="/results/testimonial-6.mp4"></video></figure>
+      <figure class="shot" data-play><video muted loop playsinline preload="none" poster="/results/testimonial-6-poster.jpg" src="/results/testimonial-6.mp4" aria-label="Video testimonial: a client talks to camera about her results with Beju Creative"></video></figure>
       <figure class="shot"><img width="460" height="716" src="/results/testimonial-4.png" alt="Client message: the video got about 30k views and three sales" loading="lazy"></figure>
       <figure class="shot"><img width="460" height="716" src="/results/testimonial-3.jpeg" alt="Client message: 500 new followers from five videos" loading="lazy"></figure>
-      <figure class="shot" data-play><video muted loop playsinline preload="none" poster="/results/testimonial-1-poster.jpg" src="/results/testimonial-1.mp4"></video></figure>
+      <figure class="shot" data-play><video muted loop playsinline preload="none" poster="/results/testimonial-1-poster.jpg" src="/results/testimonial-1.mp4" aria-label="Video testimonial: a client talks to camera about working with Beju Creative"></video></figure>
       <figure class="shot"><img width="460" height="716" src="/results/testimonial-2.jpeg" alt="Client message: one video pushed a lot of viewers to the main channel" loading="lazy"></figure>
     </div>
   </div>
@@ -418,11 +432,12 @@
     <a class="item rv" href="/content-engine/"><h3>The Content Engine</h3><p>A content system we build and run for you. One recording goes in, and finished Reels come out all week.</p><span class="go"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12 12 4M6 4h6v6"/></svg></span></a>
     <a class="item rv" href="/apply/"><h3>Ad creatives</h3><p>Ads for e-commerce brands, made from your real reviews and footage.</p><span class="go"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12 12 4M6 4h6v6"/></svg></span></a>
   </div>
+  <div class="row rv" style="margin-top:28px;gap:10px 28px"><a class="link" href="/podcast-video-editing/">Podcast clip editing</a><a class="link" href="/video-editing-for-coaches/">Video editing for coaches</a><a class="link" href="/video-editing-for-course-creators/">Video editing for course creators</a></div>
 </div></section>
 
 <section id="engine"><div class="wrap engine">
   <div class="head" style="margin:0"><h2 class="split">One recording in. Reels out, all week.</h2><p class="lede rv">The Content Engine is a system we build and run for you. You talk to the camera. We handle the ideas, the edits and the captions.</p><div class="row rv"><a class="link" href="/apply/">Apply for the Engine</a><a class="link" href="/content-engine/">How it runs</a></div></div>
-  <div class="screen rv" id="screen"><video id="film" playsinline preload="none" poster="/engine/reels-engine.jpg" src="/engine/reels-engine.mp4"></video><button class="play" id="play" aria-label="Play the Content Engine film"><svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg></button></div>
+  <div class="screen rv" id="screen"><video id="film" playsinline preload="none" poster="/engine/reels-engine.jpg" src="/engine/reels-engine.mp4" aria-label="The Content Engine film: one recording turned into a week of Reels"></video><button class="play" id="play" aria-label="Play the Content Engine film"><svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg></button></div>
 </div></section>
 
 <section id="how" class="act"><div class="wrap">

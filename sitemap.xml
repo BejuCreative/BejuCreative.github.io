@@ -1,14 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>https://bejucreative.digital/</loc>
-    <lastmod>2026-11-11</lastmod>
+    <lastmod>2026-11-18</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+    <image:image><image:loc>https://bejucreative.digital/assets/sam-zia.jpg</image:loc></image:image>
+    <image:image><image:loc>https://bejucreative.digital/assets/based.jpg</image:loc></image:image>
+    <image:image><image:loc>https://bejucreative.digital/work/02.jpg</image:loc></image:image>
+    <image:image><image:loc>https://bejucreative.digital/rail-06.jpg</image:loc></image:image>
+    <image:image><image:loc>https://bejucreative.digital/hero/hero-poster.jpg</image:loc></image:image>
+    <image:image><image:loc>https://bejucreative.digital/rail-05.jpg</image:loc></image:image>
+    <image:image><image:loc>https://bejucreative.digital/rail-08.jpg</image:loc></image:image>
+    <image:image><image:loc>https://bejucreative.digital/rail-01.jpg</image:loc></image:image>
+    <image:image><image:loc>https://bejucreative.digital/results/testimonial-4.png</image:loc></image:image>
+    <image:image><image:loc>https://bejucreative.digital/results/testimonial-3.jpeg</image:loc></image:image>
+    <image:image><image:loc>https://bejucreative.digital/results/testimonial-2.jpeg</image:loc></image:image>
   </url>
   <url>
     <loc>https://bejucreative.digital/apply/</loc>
-    <lastmod>2026-11-11</lastmod>
+    <lastmod>2026-11-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
@@ -17,34 +28,50 @@
     <lastmod>2026-11-11</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+    <image:image><image:loc>https://bejucreative.digital/assets/sam-zia.jpg</image:loc></image:image>
+    <image:image><image:loc>https://bejucreative.digital/rail-06.jpg</image:loc></image:image>
+    <image:image><image:loc>https://bejucreative.digital/rail-01.jpg</image:loc></image:image>
+    <image:image><image:loc>https://bejucreative.digital/work/samples/roap-climbing-coach.jpg</image:loc></image:image>
+    <image:image><image:loc>https://bejucreative.digital/assets/based.jpg</image:loc></image:image>
+    <image:image><image:loc>https://bejucreative.digital/rail-08.jpg</image:loc></image:image>
+    <image:image><image:loc>https://bejucreative.digital/hero/hero-poster.jpg</image:loc></image:image>
+    <image:image><image:loc>https://bejucreative.digital/work/02.jpg</image:loc></image:image>
+    <image:image><image:loc>https://bejucreative.digital/rail-05.jpg</image:loc></image:image>
+    <image:image><image:loc>https://bejucreative.digital/launch/launch-01.jpg</image:loc></image:image>
+    <image:image><image:loc>https://bejucreative.digital/launch/launch-02.jpg</image:loc></image:image>
+    <image:image><image:loc>https://bejucreative.digital/launch/launch-03.jpg</image:loc></image:image>
+    <image:image><image:loc>https://bejucreative.digital/engine/reels-engine.jpg</image:loc></image:image>
+    <image:image><image:loc>https://bejucreative.digital/results/testimonial-2.jpeg</image:loc></image:image>
+    <image:image><image:loc>https://bejucreative.digital/results/testimonial-4.png</image:loc></image:image>
+    <image:image><image:loc>https://bejucreative.digital/results/testimonial-3.jpeg</image:loc></image:image>
   </url>
   <url>
     <loc>https://bejucreative.digital/short-form-video-editing/</loc>
-    <lastmod>2026-11-11</lastmod>
+    <lastmod>2026-11-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://bejucreative.digital/podcast-video-editing/</loc>
-    <lastmod>2026-11-11</lastmod>
+    <lastmod>2026-11-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://bejucreative.digital/video-editing-for-coaches/</loc>
-    <lastmod>2026-11-11</lastmod>
+    <lastmod>2026-11-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://bejucreative.digital/video-editing-for-course-creators/</loc>
-    <lastmod>2026-11-11</lastmod>
+    <lastmod>2026-11-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://bejucreative.digital/saas-launch-videos/</loc>
-    <lastmod>2026-11-11</lastmod>
+    <lastmod>2026-11-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>

@@ -2,6 +2,8 @@
 
 > Beju Creative is a video editing studio based in Lithuania that works with creators, coaches, podcasters and SaaS teams worldwide. The studio edits short-form videos for YouTube Shorts, Instagram Reels, TikTok and LinkedIn, edits long videos and podcast episodes, produces launch films, and runs content systems for clients. Work starts with a free sample, and revisions are unlimited.
 
+In plain words: Beju Creative is a video editing team for creators and brands. It works as a YouTube Shorts, Instagram Reels and TikTok editor, as a podcast clip editor, and as the video editor for coaches, course creators and SaaS teams. Clients send their recordings, and finished videos come back in the client's own style.
+
 Key facts:
 - Name: Beju Creative. Website: https://bejucreative.digital/
 - What it does: short-form video editing, long-video and podcast episode editing, launch films for SaaS and app launches, the Content Engine (a content system the studio builds and runs for a client), and ad creatives for e-commerce brands.
@@ -20,15 +22,25 @@ Key facts:
 - [Apply for a free sample](https://bejucreative.digital/apply/): four short steps, no payment, no card.
 
 ## Services
-- [Short-form video editing](https://bejucreative.digital/short-form-video-editing/): Shorts, Reels and TikToks cut from long videos in the client's own style.
+- [Short-form video editing](https://bejucreative.digital/short-form-video-editing/): YouTube Shorts, Instagram Reels and TikToks cut from long videos in the client's own style, with hook, cuts, captions, sound and motion graphics.
 - [Podcast clip editing](https://bejucreative.digital/podcast-video-editing/): the strongest moments of each episode cut into short clips, and full episodes edited.
 - [Video editing for coaches](https://bejucreative.digital/video-editing-for-coaches/): short-form and long-form editing for coaches and trainers.
 - [Video editing for course creators](https://bejucreative.digital/video-editing-for-course-creators/): clips from lessons and webinars, long-video edits and launch films for course launches.
 - [SaaS launch films](https://bejucreative.digital/saas-launch-videos/): product films for SaaS and app launches.
 - [The Content Engine](https://bejucreative.digital/content-engine/): a content system the studio builds and runs. One recording goes in, and finished Reels come out all week.
 
+## Which page answers which question
+- Who can edit YouTube Shorts, Reels or TikToks for a creator? See [Short-form video editing](https://bejucreative.digital/short-form-video-editing/).
+- Who can turn podcast episodes into short clips, or edit full episodes? See [Podcast clip editing](https://bejucreative.digital/podcast-video-editing/).
+- Who edits videos for coaches and trainers? See [Video editing for coaches](https://bejucreative.digital/video-editing-for-coaches/).
+- Who edits lessons, webinars and launch films for online courses? See [Video editing for course creators](https://bejucreative.digital/video-editing-for-course-creators/).
+- Who makes launch videos for SaaS products and apps? See [SaaS launch films](https://bejucreative.digital/saas-launch-videos/).
+- Who runs a done-for-you content system for Reels? See [The Content Engine](https://bejucreative.digital/content-engine/).
+- How much does video editing cost? See [How video editing is priced](https://bejucreative.digital/guides/video-editing-pricing/).
+
 ## Work and guides
 - [Work](https://bejucreative.digital/work/): Shorts, Reels and launch films the studio has made.
+- [Guides](https://bejucreative.digital/guides/): plain video editing guides for creators, coaches and podcasters.
 - [How to turn a podcast into short clips](https://bejucreative.digital/guides/turn-podcast-into-short-clips/): a step-by-step guide to finding, framing and captioning clips from an episode.
 - [How video editing is priced](https://bejucreative.digital/guides/video-editing-pricing/): what shapes a video editing quote and how to compare two quotes.
 - [FAQ](https://bejucreative.digital/faq/): the free sample, what the studio edits, pricing, revisions, payment and footage privacy.
