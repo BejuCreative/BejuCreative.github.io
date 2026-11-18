@@ -164,19 +164,18 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
 <nav class="nav" aria-label="Plans">
   <div class="wrap">
     <a class="brand" href="https://bejucreative.digital/">BEJÚ Creative</a>
-    <span class="for" id="navfor">Plans</span>
+    <span class="for">Plans and prices</span>
     <a class="btn primary sm noprint" href="#plans">See the plans</a>
   </div>
 </nav>
 
 <header class="hero">
   <div class="wrap">
-    <p class="eyebrow">Plans and prices</p>
-    <h1 style="margin-top:14px" id="title">Plans for <span class="gold" id="who">your channel</span></h1>
+    <p class="eyebrow">For creators, coaches and podcasters</p>
+    <h1 style="margin-top:14px">Plans and <span class="gold">prices</span></h1>
     <p class="lede">Pick the plan that fits how often you post. Every plan is built to grow your audience, not just add more content.</p>
     <div class="btns noprint">
       <a class="btn primary" href="#plans">See the plans</a>
-      <a class="btn ghost" id="sample" href="#" target="_blank" rel="noopener" hidden>Watch your sample</a>
     </div>
   </div>
 </header>
@@ -194,7 +193,6 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
     <div class="head"><p class="eyebrow">Choose your plan</p><h2 id="plans-h">Four ways to work with us</h2></div>
     <div class="plans">
       <div class="card plan" data-plan="engine">
-        <span class="pick-tag">Our pick for you</span>
         <span class="tag">Content Engine</span>
         <h3>Done-for-you content</h3>
         <p class="price">From $1,000 <small>/ month</small></p>
@@ -202,7 +200,6 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
         <a class="btn ghost" href="https://cal.com/beju-creative/15min-call" target="_blank" rel="noopener">Book a call</a>
       </div>
       <div class="card plan" data-plan="daily">
-        <span class="pick-tag">Our pick for you</span>
         <span class="tag">Daily</span>
         <h3>30 Shorts a month</h3>
         <p class="price">$500 <small>/ month</small></p>
@@ -210,7 +207,6 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
         <a class="btn primary" href="https://buy.stripe.com/6oU7sL56O2gk2z4en05EY0U" target="_blank" rel="noopener">Start Daily</a>
       </div>
       <div class="card plan" data-plan="growth">
-        <span class="pick-tag">Our pick for you</span>
         <span class="tag">Growth</span>
         <h3>15 Shorts a month</h3>
         <p class="price">$300 <small>/ month</small></p>
@@ -218,7 +214,6 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
         <a class="btn primary" href="https://buy.stripe.com/6oU3cv9n48EI6Pka6K5EY0T" target="_blank" rel="noopener">Start Growth</a>
       </div>
       <div class="card plan" data-plan="starter">
-        <span class="pick-tag">Our pick for you</span>
         <span class="tag">Starter</span>
         <h3>5 Shorts</h3>
         <p class="price">$150 <small>one-off</small></p>
@@ -294,15 +289,6 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
 
 <footer><div class="wrap"><span>BEJÚ Creative · bejucreative.digital</span><span>Questions? Just reply to our email.</span></div></footer>
 <script>
-/* Personal by link, readable words only (Simas: no codes in links): ?for=Shannon&pick=engine|daily|growth|starter. Text only, never HTML. */
-const q = new URLSearchParams(location.search);
-const name = (q.get("for") || "").trim().replace(/[^\p{L} .'-]/gu, "").slice(0, 40);
-if (name) { document.getElementById("who").textContent = name; document.getElementById("navfor").textContent = "Plans for " + name; document.title = "Plans for " + name + " · BEJÚ Creative"; }
-const rec = (q.get("pick") || "").trim().toLowerCase();
-const card = rec && document.querySelector('.plan[data-plan="' + rec.replace(/[^a-z0-9]/gi, "") + '"]');
-if (card) card.classList.add("pick");
-const s = (q.get("sample") || "").trim();
-if (/^[A-Za-z0-9_-]{20,}$/.test(s)) { const a = document.getElementById("sample"); a.href = "https://drive.google.com/file/d/" + s + "/view"; a.hidden = false; }
 const openAll = () => document.querySelectorAll("details").forEach(d => d.open = true);
 if (location.search.includes("print")) openAll();
 addEventListener("beforeprint", openAll);
