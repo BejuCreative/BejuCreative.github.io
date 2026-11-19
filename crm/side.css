@@ -281,3 +281,6 @@ html.fx-lite .sd-col{-webkit-backdrop-filter:none;backdrop-filter:none;backgroun
 /* the ticker's second copy exists only for the marquee loop: when the marquee is off (Calm / reduced motion) it showed every item twice */
 html[data-motion="calm"] .ticker-t [aria-hidden="true"]{display:none}
 @media (prefers-reduced-motion:reduce){.ticker-t [aria-hidden="true"]{display:none}}
+/* Today grid: "$1,140"-size money must never clip in the narrow card */
+.tgrid .tc{padding:10px 4px 10px 8px}
+.tgrid b{font-size:15.5px;letter-spacing:-.05em;overflow:visible;text-overflow:clip}
