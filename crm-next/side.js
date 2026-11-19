@@ -155,7 +155,7 @@ function srcOf(p, d) {
 }
 function header(p, d) {
   const [h, sub] = HEAD[p], s = srcOf(p, d), old = s && s[1] && Date.now() - new Date(s[1]) > 3 * 36e5;
-  return `<header class="sp-h"><div><h1>${h}</h1><p>${esc(sub)}</p></div>${s ? `<span class="sp-src${old ? " old" : ""}"><i></i>${esc(s[0])}${s[1] ? ` · synced ${esc(ago(s[1]))}` : " · live"}</span>` : ""}</header>`;
+  return `<header class="sp-h"><div><h1>${h}</h1><p>${esc(sub)}</p></div>${s ? `<span class="sp-src${old ? " old" : ""}"${old ? ' title="Older than 3 hours: the numbers may be out of date"' : ""}><i></i>${esc(s[0])}${s[1] ? ` · synced ${esc(ago(s[1]))}${old ? " · may be out of date" : ""}` : " · live"}</span>` : ""}</header>`;
 }
 async function renderPage(quiet) {
   const p = PAGE; if (p === "dashboard" || !sb()) return;
@@ -445,17 +445,21 @@ async function loadClients() {
     let plan = null;
     if (r) { const pl = plans[r.id] || {}, start = dayOf(new Date(Math.max(+new Date(r.started_at), +new Date(r.current_period_end) - 31 * 864e5)).toISOString());
       plan = { shorts: pl.shorts || null, text: [pl.shorts ? `${pl.shorts} Shorts/mo` : (pl.product || "Monthly plan"), cadence(pl.shorts), `${usd(r.amount)}/${(r.interval || "month").slice(0, 2)}`].filter(Boolean).join(" · "), done: uniq(vs.filter(v => v.delivered_at >= start)), start, renews: dayOf(r.current_period_end) }; }
-    const cat = gone ? "past" : r ? "retainer" : (lastAct && lastAct < addDays(t, -60)) ? "past" : "pack";
+    const cat = gone ? "past" : r ? "retainer" : (lastAct && lastAct < addDays(t, -45)) ? "past" : "pack";
     const doms = es.map(e => e.split("@")[1]).filter(x => x && !/^(gmail|yahoo|hotmail|outlook|icloud|aol|proton)\./.test(x)), mine = q => es.includes(lc(q.email)) || doms.includes(lc(q.email).split("@")[1]);
     const waitRow = pipe.find(q => mine(q) && /wait|their ok|on ok\b|approv|footage|awaiting|\bsends\b|next episode|check-?in sent|only if .{0,20}write|until (he|she|they)/i.test(q.next_action || "")), waiting = waitRow ? String(waitRow.next_action).slice(0, 120) : "";
     const isRet = q => /month/i.test(q.package || "") || (r && Math.round(+q.amount) === Math.round(+r.amount) && +new Date(q.paid_at) >= +new Date(r.started_at) - 864e5);
     const pp = (payL[c.id] || []).filter(q => !isRet(q)).sort((a, b) => String(a.paid_at).localeCompare(String(b.paid_at))), ords = {};
     vs.forEach(v => { const mm = /^(\d+)[\s-]*(shorts?|short form|videos?|long)/i.exec(v.order_name || ""); if (!mm) return; (ords[v.order_name] = ords[v.order_name] || { name: v.order_name, bought: +mm[1], vs: [] }).vs.push(v); });
-    const packs = Object.values(ords).map(o => ({ name: o.name, bought: o.bought, done: uniq(o.vs), last: o.vs.reduce((x, v) => v.delivered_at > x ? v.delivered_at : x, ""), first: o.vs.reduce((x, v) => !x || v.delivered_at < x ? v.delivered_at : x, "") }))
+    const packs = Object.values(ords).map(o => ({ name: o.name, bought: o.bought, files: o.vs.length, done: uniq(o.vs), last: o.vs.reduce((x, v) => v.delivered_at > x ? v.delivered_at : x, ""), first: o.vs.reduce((x, v) => !x || v.delivered_at < x ? v.delivered_at : x, "") }))
       .filter(o => !(plan && plan.shorts && o.bought === plan.shorts && o.last >= plan.start)).sort((a, b) => a.first.localeCompare(b.first));
     pp.slice(packs.length).forEach(q => { const recent = Date.now() - new Date(q.paid_at) < 14 * 864e5, n = sizeOf(q); if (recent) packs.push({ name: `Paid ${dLabel(dayOf(q.paid_at))} · ${usd(q.amount)}`, bought: n, done: 0, last: "", first: "", paidAt: q.paid_at, unpaired: true }); });
-    packs.forEach(o => { o.st = o.bought == null ? "unknown" : o.done >= o.bought ? "finished" : waiting ? "waiting" : o.done === 0 ? "notstarted" : "progress"; });
-    const worst = ["notstarted", "progress", "waiting", "unknown", "finished"].find(k => packs.some(o => o.st === k)) || "", state = r ? "retainer" : worst;
+    /* 11-19 late (Simas): old-style folders or far more files than the folder's number = a custom deal, not an n/m pack; a past
+       client's open pack is not "in progress"; a next action that says "parked" is Parked, not waiting on the client. */
+    const parked = pipe.some(q => mine(q) && /\bparked\b/i.test(q.next_action || ""));
+    packs.forEach(o => { const std = o.unpaired || /^\d+\s+Shorts?\s+·/i.test(o.name), fin = o.bought != null && o.done >= o.bought, custom = !std || (!fin && o.bought != null && o.files > o.bought * 2 + 2);
+      o.st = std && fin ? "finished" : cat === "past" && o.bought != null ? (fin ? "finished" : "past") : custom ? "custom" : o.bought == null ? "unknown" : parked ? "parked" : waiting ? "waiting" : o.done === 0 ? "notstarted" : "progress"; });
+    const worst = ["notstarted", "progress", "waiting", "parked", "unknown", "past", "finished", "custom"].find(k => packs.some(o => o.st === k)) || "", state = r ? "retainer" : worst;
     const pr = proms.filter(q => es.includes(lc(q.lead_email))).sort((a, b) => String(a.due_at).localeCompare(String(b.due_at))), sc = scs.find(q => q.email && es.includes(lc(q.email))) || null, att = [];
     if (plan) { plan.daysLeft = Math.ceil((new Date(r.current_period_end) - Date.now()) / 864e5); const len = Math.max(1, (new Date(r.current_period_end) - new Date(plan.start + "T00:00:00Z")) / 864e5), frac = Math.min(1, Math.max(0, 1 - plan.daysLeft / len));
       plan.expected = plan.shorts ? Math.round(plan.shorts * frac) : null;
@@ -488,16 +492,18 @@ function clientDetail(c, t) {
     ${keys.map(k => `<div class="cl-ord${k === t ? " today" : ""}">${k === t ? "Today · " : ""}${esc(dLabel(k))} · ${days[k].length}</div><div class="vid-grid">${days[k].map(v => `<a class="vid${k === t ? " today" : ""}" href="${esc(v.link)}" target="_blank" rel="noopener noreferrer" title="Open in Drive"><span class="pl">${ic("play")}${k === t ? `<em class="vt">Today</em>` : ""}</span><b>${esc(v.title || "Video")}</b><small>${esc(fdur(v.duration_s))}${v.duration_s ? " · " : ""}<span class="vo">${esc(v.order_name || "")}</span></small></a>`).join("")}</div>`).join("") || empty("No videos for this client in the delivery index yet.")}`;
 }
 let CL_TODAY = false, CLF = "";
-const PCH = { notstarted: ["Not started", ""], progress: ["In progress", "o"], waiting: ["Waiting on client", "b"], finished: ["Finished", "g"], unknown: ["Size unknown", ""] };
+const PCH = { notstarted: ["Not started", ""], progress: ["In progress", "o"], waiting: ["Waiting on client", "b"], finished: ["Finished", "g"], unknown: ["Size unknown", ""], past: ["Past client", ""], parked: ["Parked", ""], custom: ["Custom deal", ""] };
 function stChip(c) {
   if (c.ret) return `<span class="chip acc">Ongoing</span>`;
   const o = c.packs.find(x => x.st === c.worst); if (!o) return "";
+  if (o.st === "custom") return `<span class="chip">Custom deal</span>`;
+  if (o.st === "past") return `<span class="chip">Past client · ${o.done} of ${o.bought} delivered</span>`;
   return `<span class="chip ${PCH[o.st][1]}">${o.st === "finished" ? "✓ Finished" : `${PCH[o.st][0]}${o.bought != null && o.st !== "waiting" ? ` · ${o.done} / ${o.bought}` : ""}`}</span>`;
 }
-const packLines = c => c.packs.length ? `<div class="cl-plan"><b class="cl-ph">Packs</b>${c.packs.map(o => `<div class="cl-pk"><span class="ring ${PCH[o.st][1]}" data-v="p:${o.bought ? Math.min(100, Math.round(100 * o.done / o.bought)) : 0}"></span><span class="grow">${esc(o.name)}${o.st === "waiting" && c.waiting ? `<small class="mut"> · ${esc(c.waiting)}</small>` : ""}</span><b class="mono">${o.bought == null ? "? " : `${o.done} / ${o.bought}`}</b><span class="chip ${PCH[o.st][1]}">${o.st === "finished" ? "✓ Finished" : PCH[o.st][0]}</span></div>`).join("")}</div>` : "";
+const packLines = c => c.packs.length ? `<div class="cl-plan"><b class="cl-ph">Packs</b>${c.packs.map(o => `<div class="cl-pk"><span class="ring ${PCH[o.st][1]}" data-v="p:${o.bought ? Math.min(100, Math.round(100 * o.done / o.bought)) : 0}"></span><span class="grow">${esc(o.name)}${o.st === "waiting" && c.waiting ? `<small class="mut"> · ${esc(c.waiting)}</small>` : ""}</span><b class="mono">${o.st === "custom" ? `${o.files} files` : o.bought == null ? "? " : `${o.done} / ${o.bought}`}</b><span class="chip ${PCH[o.st][1]}">${o.st === "finished" ? "✓ Finished" : PCH[o.st][0]}</span></div>`).join("")}</div>` : "";
 function clientRow(c, sel) {
-  const sub = c.plan ? `${c.plan.text}${c.plan.shorts ? ` · ${c.plan.done} / ${c.plan.shorts} this month` : ""}` : c.last ? `last video ${dLabel(c.last)}${c.nPay > 1 ? ` · ${c.nPay} payments` : ""}` : c.paid ? `${usd(c.paid)} paid` : "";
-  return `<a class="cl-item" href="?p=clients&amp;c=${esc(c.id)}" data-cl="${esc(c.id)}" data-st="${esc([c.ret ? "retainer" : "", ...new Set(c.packs.map(o => o.st))].join(" "))}" data-today="${c.today}" data-q="${esc(lc([c.name, c.show, ...(c.emails || [])].join(" ")))}"${sel && c.id === sel.id ? ' aria-current="true"' : ""}><span class="av">${esc(initials(c.name))}</span><span class="grow"><span class="t">${esc(c.name || "Client")}</span><span class="s">${esc(sub)}</span></span>${c.today ? `<span class="chip g">${c.today} today</span>` : ""}${stChip(c)}<span class="n">${int(c.vids.length)}</span></a>`;
+  const sub = c.plan ? c.plan.text : c.last ? `last video ${dLabel(c.last)}${c.nPay > 1 ? ` · ${c.nPay} payments` : ""}` : c.paid ? `${usd(c.paid)} paid` : "";
+  return `<a class="cl-item" href="?p=clients&amp;c=${esc(c.id)}" data-cl="${esc(c.id)}" data-st="${esc([c.ret ? "retainer" : "", ...new Set(c.packs.map(o => o.st))].join(" "))}" data-today="${c.today}" data-q="${esc(lc([c.name, c.show, ...(c.emails || [])].join(" ")))}"${sel && c.id === sel.id ? ' aria-current="true"' : ""}><span class="av">${esc(initials(c.name))}</span><span class="grow"><span class="t">${esc(c.name || "Client")}</span><span class="s">${esc(sub)}</span></span><span class="n">${int(c.vids.length)}</span><span class="cl-ch">${stChip(c)}${c.plan && c.plan.shorts ? `<span class="chip">${c.plan.done} / ${c.plan.shorts} this month</span>` : ""}${c.today ? `<span class="chip g">${c.today} today</span>` : ""}</span></a>`;
 }
 function viewClients(d) {
   if (!d.list.length) return empty("No clients with videos or payments yet.");

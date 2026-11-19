@@ -487,3 +487,11 @@ html.fx-lite .cl-fb{-webkit-backdrop-filter:none;backdrop-filter:none;background
 .ring{width:22px;height:22px;border-radius:50%;flex:none;background:conic-gradient(var(--c,var(--faint)) calc(var(--p,0)*1%),var(--line) 0);-webkit-mask:radial-gradient(circle,transparent 6px,#000 6.5px);mask:radial-gradient(circle,transparent 6px,#000 6.5px)}
 .ring.g{--c:var(--green)} .ring.o{--c:var(--orange)} .ring.b{--c:var(--blue)}
 @media (max-width:600px){.cl-filt{grid-template-columns:repeat(2,minmax(0,1fr))} .cl-pk{flex-wrap:wrap}}
+
+/* round 7: client rows get the full width for the name + plan; chips sit on their own line */
+.cl-item{flex-wrap:wrap;row-gap:6px}
+.cl-item .grow{flex:1 1 0;min-width:0}
+.cl-item .s{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cl-ch{flex:0 0 100%;display:flex;gap:6px;flex-wrap:wrap;padding-left:44px} .cl-ch:empty{display:none}
+.cl-ch .chip{font-size:11px;padding:2px 8px}
+.sp-src.old{border-color:var(--orange);color:var(--orange)}
