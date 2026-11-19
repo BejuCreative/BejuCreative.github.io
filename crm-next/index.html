@@ -21,7 +21,7 @@
 <link rel="preload" href="fonts/geist-mono.woff2" as="font" type="font/woff2" crossorigin>
 <script src="theme.js?v=20261112p3"></script>
 <link rel="stylesheet" href="crm.css?v=20261118p1">
-<link rel="stylesheet" href="side.css?v=20261119s1">
+<link rel="stylesheet" href="side.css?v=20261119n2">
 </head>
 <body>
 <svg width="0" height="0" class="sprite" aria-hidden="true" focusable="false">
@@ -54,6 +54,7 @@
   <symbol id="i-board" viewBox="0 0 24 24"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="9.5" y="4" width="5" height="10" rx="1.5"/><rect x="16" y="4" width="5" height="13" rx="1.5"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
   <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
 </svg>
 
@@ -87,6 +88,7 @@
 <!-- dashboard -->
 <div id="app" class="app" hidden>
   <header class="top" id="top">
+    <button type="button" class="icon-btn sn-menu" id="sn-menu" aria-label="Open the menu" aria-controls="snav" aria-expanded="false"><svg aria-hidden="true"><use href="#i-menu"/></svg></button>
     <a class="top-brand" id="nav-site" href="https://bejucreative.digital/" title="Beju Creative website"><span class="logo"><img src="../beju-mark-sm.png" alt="" width="34" height="20"></span><span>Beju Creative</span></a>
     <nav class="top-nav" aria-label="Beju Creative">
       <a id="nav-web" href="https://bejucreative.digital/">Website</a>
@@ -103,6 +105,7 @@
       <button type="button" class="icon-btn hide-ph" data-act="signout" aria-label="Sign out" title="Sign out"><svg><use href="#i-out"/></svg></button>
     </div>
   </header>
+  <main id="spage" class="spage" hidden aria-live="polite"></main>
   <section class="hero tilt" id="hero" aria-label="This month against the goal"></section>
   <div id="grid" class="grid" aria-live="off"></div>
   <h2 class="zone-h" id="zone-portal">Client <em class="sf">portal</em><span id="zone-sub"></span></h2>
@@ -147,24 +150,30 @@
   </div>
 </div>
 
-<!-- founder tools sidebar (11-19): floating glass panel on the left, retractable; side.js fills it -->
-<button type="button" id="side-handle" class="side-handle" aria-controls="side" aria-expanded="false" title="Founder tools  ( [ )" hidden><svg aria-hidden="true"><use href="#i-chev"/></svg><span>Tools</span></button>
-<aside id="side" class="side" aria-label="Founder tools" hidden inert>
-  <header class="sd-top">
-    <div class="sd-h"><b>Founder <em class="sf">tools</em></b><small class="mut" id="sd-sub"></small></div>
-    <button type="button" class="icon-btn" id="sd-wide" aria-pressed="false" aria-label="Make the panel wider" title="Wider"><svg aria-hidden="true"><use href="#i-expand"/></svg></button>
-    <button type="button" class="icon-btn" id="sd-close" aria-label="Hide the sidebar" title="Hide  ( [ )"><svg aria-hidden="true"><use href="#i-back"/></svg></button>
-  </header>
-  <nav class="sd-nav" role="tablist" aria-label="Sidebar sections">
-    <button type="button" role="tab" id="sdt-expenses" data-sd="expenses" aria-controls="sd-body"><svg aria-hidden="true"><use href="#i-cash"/></svg><span>Expenses</span></button>
-    <button type="button" role="tab" id="sdt-email" data-sd="email" aria-controls="sd-body"><svg aria-hidden="true"><use href="#i-mail"/></svg><span>Email tests</span></button>
-    <button type="button" role="tab" id="sdt-clients" data-sd="clients" aria-controls="sd-body"><svg aria-hidden="true"><use href="#i-film"/></svg><span>Clients</span></button>
-    <button type="button" role="tab" id="sdt-weekly" data-sd="weekly" aria-controls="sd-body"><svg aria-hidden="true"><use href="#i-chart"/></svg><span>Weekly</span></button>
-    <button type="button" role="tab" id="sdt-todos" data-sd="todos" aria-controls="sd-body"><svg aria-hidden="true"><use href="#i-board"/></svg><span>To-dos</span></button>
-  </nav>
-  <div class="sd-body" id="sd-body" role="tabpanel" tabindex="0" aria-live="polite"></div>
-  <footer class="sd-foot mut" id="sd-foot"></footer>
-</aside>
+<!-- founder navigation sidebar (SIMAS 11-19 15:0x redesign): floating glass rail, always on screen; each item opens its own page (?p=) -->
+<nav id="snav" class="snav" aria-label="Founder CRM" hidden>
+  <div class="sn-top">
+    <a class="sn-brand" href="./" data-nav="dashboard" aria-label="BEJÚ Founder CRM, Dashboard"><span class="sn-logo"><img src="icon-64.png?v=20261119i1" alt="" width="34" height="34"></span><span class="sn-lbl"><b>BEJÚ</b><small>Founder CRM</small></span></a>
+    <button type="button" class="sn-tog" id="sn-tog" aria-label="Collapse the menu" aria-expanded="true" title="Collapse  ( [ )"><svg aria-hidden="true"><use href="#i-back"/></svg></button>
+  </div>
+  <span class="sn-cap"><span class="sn-lbl">Menu</span></span>
+  <ul class="sn-list">
+    <li><a href="./" data-nav="dashboard" data-tip="Dashboard"><svg aria-hidden="true"><use href="#i-home"/></svg><span class="sn-lbl">Dashboard</span></a></li>
+    <li><a href="?p=expenses" data-nav="expenses" data-tip="Expenses"><svg aria-hidden="true"><use href="#i-cash"/></svg><span class="sn-lbl">Expenses</span></a></li>
+    <li><a href="?p=email" data-nav="email" data-tip="Email tests"><svg aria-hidden="true"><use href="#i-mail"/></svg><span class="sn-lbl">Email tests</span></a></li>
+    <li><a href="?p=clients" data-nav="clients" data-tip="Clients"><svg aria-hidden="true"><use href="#i-film"/></svg><span class="sn-lbl">Clients</span></a></li>
+    <li><a href="?p=weekly" data-nav="weekly" data-tip="Weekly analysis"><svg aria-hidden="true"><use href="#i-chart"/></svg><span class="sn-lbl">Weekly analysis</span></a></li>
+    <li><a href="?p=todos" data-nav="todos" data-tip="To-dos"><svg aria-hidden="true"><use href="#i-board"/></svg><span class="sn-lbl">To-dos</span><i class="sn-badge" id="sn-todo-n" hidden></i></a></li>
+  </ul>
+  <div class="sn-sp"></div>
+  <ul class="sn-list sn-foot">
+    <li><button type="button" data-act="drill" data-k="look" data-a="" data-tip="Look"><svg aria-hidden="true"><use href="#i-sun"/></svg><span class="sn-lbl">Look</span></button></li>
+    <li><button type="button" data-act="drill" data-k="me" data-a="" data-tip="Account"><svg aria-hidden="true"><use href="#i-user"/></svg><span class="sn-lbl">Account</span></button></li>
+    <li><button type="button" data-act="signout" data-tip="Log out"><svg aria-hidden="true"><use href="#i-out"/></svg><span class="sn-lbl">Log out</span></button></li>
+  </ul>
+</nav>
+<div id="sn-scrim" class="sn-scrim" hidden></div>
+<div id="sn-tip" class="sn-tip" role="tooltip" hidden></div>
 
 <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
 <canvas id="fx" class="fx" hidden aria-hidden="true"></canvas>
@@ -174,7 +183,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="config.js?v=20261112p3"></script>
-<script src="crm.js?v=20261119s1"></script>
-<script src="side.js?v=20261119s1"></script>
+<script src="crm.js?v=20261119n2"></script>
+<script src="side.js?v=20261119n2"></script>
 </body>
 </html>
