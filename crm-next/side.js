@@ -414,19 +414,25 @@ function wireEmail() {
 
 /* 3. clients + their videos (SIMAS 11-19 15:3x: grouped by category, retainer plans, videos by date, today's highlighted) */
 async function loadClients() {
-  const [clients, deliveries, payments, retainers, st, notes, m, proms, scs] = await Promise.all([
+  const [clients, deliveries, payments, retainers, st, notes, m, proms, scs, pipe] = await Promise.all([
     all("clients", "id,name,emails,show,drive_folder,source"),
     all("deliveries", "id,client_id,title,order_name,kind,duration_s,link,delivered_at", q => q.order("delivered_at", { ascending: false }).order("id")),
-    all("payments", "client_id,amount,refunded,paid_at"),
+    all("payments", "client_id,amount,refunded,paid_at,package"),
     all("retainers", "id,email,name,amount,interval,status,started_at,current_period_end").catch(() => []),
     all("sync_status", "name,ran_at").catch(() => []),
     all("client_notes", "lead_email,kind,note,noted_at,created_at", q => q.eq("kind", "priority")).catch(() => []),
     panel("metrics").catch(() => null),
     all("promises", "lead_email,promise,owner,due_at,status", q => q.eq("status", "open")).catch(() => []),
     all("scopes", "slug,client,email,url,status").catch(() => []),
+    all("pipeline", "email,next_action,status").catch(() => []),
   ]);
   const t = dayOf(Date.now()), plans = (m && m.data && m.data.retainer_plans) || {};
-  const vids = {}, paid = {}, nPay = {}, lastPay = {};
+  const vids = {}, paid = {}, nPay = {}, lastPay = {}, payL = {};
+  payments.forEach(p => { if (!p.refunded) (payL[p.client_id] = payL[p.client_id] || []).push(p); });
+  /* 11-19 21:1x (Simas: "is the pack they bought finished or not"): bought = the number the order folder starts with, else the Stripe
+     pack; delivered = Shorts in that folder, each counted once. No size is guessed: an unmapped payment says "size unknown". */
+  const sizeOf = q => { const mm = /short_(\d+)/.exec(String(q.package || "")); if (mm) return +mm[1]; return ({ 150: 5, 75: 5, 60: 3, 27: 1, 100: 10 })[Math.round(+q.amount)] || null; };
+  const PST = { notstarted: ["Not started", ""], progress: ["In progress", "o"], waiting: ["Waiting on client", "b"], finished: ["Finished", "g"], unknown: ["Size unknown", ""] };
   deliveries.forEach(v => (vids[v.client_id] = vids[v.client_id] || []).push(v));
   payments.forEach(p => { if (p.refunded) return; paid[p.client_id] = (paid[p.client_id] || 0) + (+p.amount || 0); nPay[p.client_id] = (nPay[p.client_id] || 0) + 1; const d = dayOf(p.paid_at); if (!lastPay[p.client_id] || d > lastPay[p.client_id]) lastPay[p.client_id] = d; });
   const ret = {}; retainers.forEach(r => { if (/active|trialing|past_due/i.test(r.status || "")) ret[lc(r.email)] = r; });
@@ -440,20 +446,33 @@ async function loadClients() {
     if (r) { const pl = plans[r.id] || {}, start = dayOf(new Date(Math.max(+new Date(r.started_at), +new Date(r.current_period_end) - 31 * 864e5)).toISOString());
       plan = { shorts: pl.shorts || null, text: [pl.shorts ? `${pl.shorts} Shorts/mo` : (pl.product || "Monthly plan"), cadence(pl.shorts), `${usd(r.amount)}/${(r.interval || "month").slice(0, 2)}`].filter(Boolean).join(" · "), done: uniq(vs.filter(v => v.delivered_at >= start)), start, renews: dayOf(r.current_period_end) }; }
     const cat = gone ? "past" : r ? "retainer" : (lastAct && lastAct < addDays(t, -60)) ? "past" : "pack";
+    const doms = es.map(e => e.split("@")[1]).filter(x => x && !/^(gmail|yahoo|hotmail|outlook|icloud|aol|proton)\./.test(x)), mine = q => es.includes(lc(q.email)) || doms.includes(lc(q.email).split("@")[1]);
+    const waitRow = pipe.find(q => mine(q) && /wait|their ok|on ok\b|approv|footage|awaiting|\bsends\b|next episode|check-?in sent|only if .{0,20}write|until (he|she|they)/i.test(q.next_action || "")), waiting = waitRow ? String(waitRow.next_action).slice(0, 120) : "";
+    const isRet = q => /month/i.test(q.package || "") || (r && Math.round(+q.amount) === Math.round(+r.amount) && +new Date(q.paid_at) >= +new Date(r.started_at) - 864e5);
+    const pp = (payL[c.id] || []).filter(q => !isRet(q)).sort((a, b) => String(a.paid_at).localeCompare(String(b.paid_at))), ords = {};
+    vs.forEach(v => { const mm = /^(\d+)[\s-]*(shorts?|short form|videos?|long)/i.exec(v.order_name || ""); if (!mm) return; (ords[v.order_name] = ords[v.order_name] || { name: v.order_name, bought: +mm[1], vs: [] }).vs.push(v); });
+    const packs = Object.values(ords).map(o => ({ name: o.name, bought: o.bought, done: uniq(o.vs), last: o.vs.reduce((x, v) => v.delivered_at > x ? v.delivered_at : x, ""), first: o.vs.reduce((x, v) => !x || v.delivered_at < x ? v.delivered_at : x, "") }))
+      .filter(o => !(plan && plan.shorts && o.bought === plan.shorts && o.last >= plan.start)).sort((a, b) => a.first.localeCompare(b.first));
+    pp.slice(packs.length).forEach(q => { const recent = Date.now() - new Date(q.paid_at) < 14 * 864e5, n = sizeOf(q); if (recent) packs.push({ name: `Paid ${dLabel(dayOf(q.paid_at))} · ${usd(q.amount)}`, bought: n, done: 0, last: "", first: "", paidAt: q.paid_at, unpaired: true }); });
+    packs.forEach(o => { o.st = o.bought == null ? "unknown" : o.done >= o.bought ? "finished" : waiting ? "waiting" : o.done === 0 ? "notstarted" : "progress"; });
+    const worst = ["notstarted", "progress", "waiting", "unknown", "finished"].find(k => packs.some(o => o.st === k)) || "", state = r ? "retainer" : worst;
     const pr = proms.filter(q => es.includes(lc(q.lead_email))).sort((a, b) => String(a.due_at).localeCompare(String(b.due_at))), sc = scs.find(q => q.email && es.includes(lc(q.email))) || null, att = [];
     if (plan) { plan.daysLeft = Math.ceil((new Date(r.current_period_end) - Date.now()) / 864e5); const len = Math.max(1, (new Date(r.current_period_end) - new Date(plan.start + "T00:00:00Z")) / 864e5), frac = Math.min(1, Math.max(0, 1 - plan.daysLeft / len));
       plan.expected = plan.shorts ? Math.round(plan.shorts * frac) : null;
       if (plan.daysLeft <= 5) att.push(["o", `renews in ${plan.daysLeft} day${plan.daysLeft === 1 ? "" : "s"}`]);
       if (plan.shorts && plan.done < plan.expected - Math.max(2, plan.shorts * .15)) att.push(["r", `behind: ${plan.done} delivered, about ${plan.expected} expected by now`]); }
     pr.filter(q => q.due_at && new Date(q.due_at) < new Date()).forEach(q => att.push(["r", `promise overdue: ${String(q.promise).slice(0, 70)}`]));
-    return { ...c, vids: vs, paid: paid[c.id] || 0, nPay: nPay[c.id] || 0, last, ret: r, plan, gone, cat, today: vs.filter(v => v.delivered_at === t).length, proms: pr, scope: sc, att };
+    packs.forEach(o => { if (o.st === "notstarted" && o.paidAt && Date.now() - new Date(o.paidAt) > 864e5) att.push(["r", `paid pack not started: ${o.name}${o.bought ? ` (${o.bought} Shorts)` : ""}`]);
+      if (o.st === "progress" && o.last && o.last < addDays(t, -3) && o.last >= addDays(t, -30) && cat !== "past") att.push(["o", `pack ${o.done} / ${o.bought}, no delivery since ${dLabel(o.last)}`]); });
+    return { ...c, vids: vs, paid: paid[c.id] || 0, nPay: nPay[c.id] || 0, last, ret: r, plan, gone, cat, today: vs.filter(v => v.delivered_at === t).length, proms: pr, scope: sc, att, packs, state, worst, waiting };
   }).filter(c => c.vids.length || c.paid || c.ret);
   const by = k => list.filter(c => c.cat === k);
   const groups = [["retainer", "Monthly retainer", by("retainer").sort((a, b) => b.ret.amount - a.ret.amount)],
-    ["pack", "Pack clients", by("pack").sort((a, b) => (b.nPay > 1) - (a.nPay > 1) || (b.last || "").localeCompare(a.last || "") || b.paid - a.paid)],
+    ["pack", "Pack clients", by("pack").sort((a, b) => (/notstarted|progress|waiting/.test(b.worst) - /notstarted|progress|waiting/.test(a.worst)) || (b.last || "").localeCompare(a.last || "") || b.paid - a.paid)],
     ["past", "Past / parted ways", by("past").sort((a, b) => (b.last || "").localeCompare(a.last || ""))]];
   const ds = st.find(x => x.name === "deliveries");
-  return { list, groups, t, synced: ds ? ds.ran_at : null, lastDelivery: deliveries.reduce((x, v) => v.delivered_at > x ? v.delivered_at : x, ""), todayN: list.reduce((s, c) => s + c.today, 0), todayC: list.filter(c => c.today).length };
+  const allP = list.flatMap(c => c.packs.map(o => ({ ...o, client: c.name }))), nSt = k => allP.filter(o => o.st === k).length;
+  return { list, groups, t, PST, counts: { retainer: by("retainer").length, progress: nSt("progress"), finished: nSt("finished"), notstarted: nSt("notstarted"), waiting: nSt("waiting"), unknown: nSt("unknown") }, unknownL: allP.filter(o => o.st === "unknown").map(o => `${o.client}: ${o.name}`), synced: ds ? ds.ran_at : null, lastDelivery: deliveries.reduce((x, v) => v.delivered_at > x ? v.delivered_at : x, ""), todayN: list.reduce((s, c) => s + c.today, 0), todayC: list.filter(c => c.today).length };
 }
 const fdur = s => s ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : "";
 function clientDetail(c, t) {
@@ -461,21 +480,31 @@ function clientDetail(c, t) {
   const days = {}; c.vids.forEach(v => (days[v.delivered_at || ""] = days[v.delivered_at || ""] || []).push(v));
   const keys = Object.keys(days).sort().reverse();
   return `<div class="cl-head"><div><h2>${esc(c.name || "Client")}</h2><p>${esc([c.show, (c.emails || [])[0], c.last ? `last video ${dLabel(c.last)}` : "no videos yet"].filter(Boolean).join(" · "))}</p></div>
-    <div class="cl-chips">${c.today ? `<span class="chip g">${c.today} today</span>` : ""}${c.plan ? `<span class="chip g">${esc(c.plan.text)}</span>` : ""}<span class="chip">${int(c.vids.length)} video${c.vids.length === 1 ? "" : "s"}</span>${c.paid ? `<span class="chip b">${usd(c.paid)} paid${c.nPay > 1 ? ` · ${c.nPay} payments` : ""}</span>` : ""}${c.gone ? `<span class="chip">parted ways</span>` : ""}${c.scope && c.scope.url ? `<a class="chip lkc" href="${esc(c.scope.url)}" target="_blank" rel="noopener noreferrer">Scope ↗</a>` : ""}</div></div>
+    <div class="cl-chips">${stChip(c)}${c.plan ? `<span class="chip">renews in ${c.plan.daysLeft} d</span>` : ""}${c.today ? `<span class="chip g">${c.today} today</span>` : ""}${c.plan ? `<span class="chip g">${esc(c.plan.text)}</span>` : ""}<span class="chip">${int(c.vids.length)} video${c.vids.length === 1 ? "" : "s"}</span>${c.paid ? `<span class="chip b">${usd(c.paid)} paid${c.nPay > 1 ? ` · ${c.nPay} payments` : ""}</span>` : ""}${c.gone ? `<span class="chip">parted ways</span>` : ""}${c.scope && c.scope.url ? `<a class="chip lkc" href="${esc(c.scope.url)}" target="_blank" rel="noopener noreferrer">Scope ↗</a>` : ""}</div></div>
+    ${packLines(c)}
     ${c.att.length ? `<div class="sp-alerts cl-al">${c.att.map(a => `<div class="sp-alert ${a[0] === "r" ? "red" : "amber"}"><i></i><span>${esc(a[1])}</span></div>`).join("")}</div>` : ""}
     ${c.proms.length ? `<div class="cl-plan"><b class="cl-ph">Promised to this client</b>${c.proms.map(q => `<div class="cl-pr"><span class="grow">${esc(q.promise)}</span><span class="chip${q.due_at && new Date(q.due_at) < new Date() ? " r" : ""}">${q.due_at ? "due " + esc(dLabel(dayOf(q.due_at))) : "no date"}</span></div>`).join("")}</div>` : ""}
     ${c.plan ? `<div class="cl-plan"><div class="sp-bar"><span>Delivered this billing month <small class="mut">since ${esc(dLabel(c.plan.start))} · renews ${esc(dLabel(c.plan.renews))} (${c.plan.daysLeft} days left)${c.plan.expected != null ? ` · about ${c.plan.expected} expected by now` : ""}</small></span><span class="v">${c.plan.done}${c.plan.shorts ? ` / ${c.plan.shorts}` : ""}</span><div class="bar c-green"><i data-v="w:${c.plan.shorts ? Math.min(100, Math.max(2, Math.round(100 * c.plan.done / c.plan.shorts))) : 100}%"></i></div></div><p class="sp-note">Counts each Short once (new versions of the same Short don't add up), from the files in Drive.</p></div>` : ""}
     ${keys.map(k => `<div class="cl-ord${k === t ? " today" : ""}">${k === t ? "Today · " : ""}${esc(dLabel(k))} · ${days[k].length}</div><div class="vid-grid">${days[k].map(v => `<a class="vid${k === t ? " today" : ""}" href="${esc(v.link)}" target="_blank" rel="noopener noreferrer" title="Open in Drive"><span class="pl">${ic("play")}${k === t ? `<em class="vt">Today</em>` : ""}</span><b>${esc(v.title || "Video")}</b><small>${esc(fdur(v.duration_s))}${v.duration_s ? " · " : ""}<span class="vo">${esc(v.order_name || "")}</span></small></a>`).join("")}</div>`).join("") || empty("No videos for this client in the delivery index yet.")}`;
 }
-let CL_TODAY = false;
+let CL_TODAY = false, CLF = "";
+const PCH = { notstarted: ["Not started", ""], progress: ["In progress", "o"], waiting: ["Waiting on client", "b"], finished: ["Finished", "g"], unknown: ["Size unknown", ""] };
+function stChip(c) {
+  if (c.ret) return `<span class="chip acc">Ongoing</span>`;
+  const o = c.packs.find(x => x.st === c.worst); if (!o) return "";
+  return `<span class="chip ${PCH[o.st][1]}">${o.st === "finished" ? "✓ Finished" : `${PCH[o.st][0]}${o.bought != null && o.st !== "waiting" ? ` · ${o.done} / ${o.bought}` : ""}`}</span>`;
+}
+const packLines = c => c.packs.length ? `<div class="cl-plan"><b class="cl-ph">Packs</b>${c.packs.map(o => `<div class="cl-pk"><span class="ring ${PCH[o.st][1]}" data-v="p:${o.bought ? Math.min(100, Math.round(100 * o.done / o.bought)) : 0}"></span><span class="grow">${esc(o.name)}${o.st === "waiting" && c.waiting ? `<small class="mut"> · ${esc(c.waiting)}</small>` : ""}</span><b class="mono">${o.bought == null ? "? " : `${o.done} / ${o.bought}`}</b><span class="chip ${PCH[o.st][1]}">${o.st === "finished" ? "✓ Finished" : PCH[o.st][0]}</span></div>`).join("")}</div>` : "";
 function clientRow(c, sel) {
   const sub = c.plan ? `${c.plan.text}${c.plan.shorts ? ` · ${c.plan.done} / ${c.plan.shorts} this month` : ""}` : c.last ? `last video ${dLabel(c.last)}${c.nPay > 1 ? ` · ${c.nPay} payments` : ""}` : c.paid ? `${usd(c.paid)} paid` : "";
-  return `<a class="cl-item" href="?p=clients&amp;c=${esc(c.id)}" data-cl="${esc(c.id)}" data-today="${c.today}" data-q="${esc(lc([c.name, c.show, ...(c.emails || [])].join(" ")))}"${sel && c.id === sel.id ? ' aria-current="true"' : ""}><span class="av">${esc(initials(c.name))}</span><span class="grow"><span class="t">${esc(c.name || "Client")}</span><span class="s">${esc(sub)}</span></span>${c.today ? `<span class="chip g">${c.today} today</span>` : ""}<span class="n">${int(c.vids.length)}</span></a>`;
+  return `<a class="cl-item" href="?p=clients&amp;c=${esc(c.id)}" data-cl="${esc(c.id)}" data-st="${esc([c.ret ? "retainer" : "", ...new Set(c.packs.map(o => o.st))].join(" "))}" data-today="${c.today}" data-q="${esc(lc([c.name, c.show, ...(c.emails || [])].join(" ")))}"${sel && c.id === sel.id ? ' aria-current="true"' : ""}><span class="av">${esc(initials(c.name))}</span><span class="grow"><span class="t">${esc(c.name || "Client")}</span><span class="s">${esc(sub)}</span></span>${c.today ? `<span class="chip g">${c.today} today</span>` : ""}${stChip(c)}<span class="n">${int(c.vids.length)}</span></a>`;
 }
 function viewClients(d) {
   if (!d.list.length) return empty("No clients with videos or payments yet.");
   const sel = d.list.find(c => c.id === param("c")) || (d.groups.find(g => g[2].length) || [0, 0, []])[2][0], n = d.list.reduce((s, c) => s + c.vids.length, 0);
   return `<div class="sp-kpis">${kpi("Delivered today", int(d.todayN), d.todayN ? `${d.todayC} client${d.todayC === 1 ? "" : "s"} · ${esc(dLabel(d.t))}` : "nothing yet today")}${kpi("On a monthly retainer", int(d.groups[0][2].length), usd(d.groups[0][2].reduce((s, c) => s + (+c.ret.amount || 0), 0)) + " a month")}${kpi("Clients", int(d.list.length), "paid or got videos")}${kpi("Videos delivered", int(n), `newest ${esc(dLabel(d.lastDelivery))}`)}</div>
+  <div class="cl-filt" role="group" aria-label="Filter by status">${[["retainer", "Retainers ongoing", "acc"], ["progress", "Packs in progress", "o"], ["finished", "Packs finished", "g"], ["notstarted", "Not started", ""], ["waiting", "Waiting on client", "b"]].map(([k, l, cl]) => `<button type="button" class="cl-fb ${cl}${CLF === k ? " on" : ""}" data-clf="${k}" aria-pressed="${CLF === k}"><b>${d.counts[k]}</b><span>${l}</span></button>`).join("")}</div>
+  ${d.counts.unknown ? `<p class="sp-note">Size unknown for ${d.counts.unknown} payment${d.counts.unknown === 1 ? "" : "s"} (not guessed): ${esc(d.unknownL.join("; "))}.</p>` : ""}
   ${d.list.some(c => c.att.length) ? `<section class="card sp-card"><h2>Needs attention <small>${d.list.filter(c => c.att.length).length} client${d.list.filter(c => c.att.length).length === 1 ? "" : "s"}</small></h2><div class="sp-alerts">${d.list.filter(c => c.att.length).flatMap(c => c.att.map(a => `<a class="sp-alert ${a[0] === "r" ? "red" : "amber"} cl-go" href="?p=clients&amp;c=${esc(c.id)}" data-cl-go="${esc(c.id)}"><i></i><span><b>${esc(c.name)}</b> · ${esc(a[1])}</span></a>`)).join("")}</div></section>` : ""}
   <div class="cl-wrap"><section class="card sp-card"><div class="cl-tools"><input class="cl-q" id="cl-q" type="search" placeholder="Find a client" aria-label="Find a client" autocomplete="off" spellcheck="false"><button type="button" class="chip${CL_TODAY ? " g" : ""}" id="cl-today" aria-pressed="${CL_TODAY}" title="Show only clients who got videos today">Delivered today · ${d.todayC}</button></div>
     <div class="cl-list" id="cl-list">${d.groups.map(([k, label, cs]) => cs.length ? `<div class="cl-grp" data-grp="${k}"><span>${label}</span><span class="chip">${cs.length}</span></div>${cs.map(c => clientRow(c, sel)).join("")}` : "").join("")}</div></section>
@@ -483,19 +512,21 @@ function viewClients(d) {
 }
 function filterClients() {
   const q = lc($("#cl-q")?.value || "");
-  $$("#cl-list [data-q]").forEach(el => { el.hidden = (!!q && !el.dataset.q.includes(q)) || (CL_TODAY && el.dataset.today === "0"); });
+  $$("#cl-list [data-q]").forEach(el => { el.hidden = (!!q && !el.dataset.q.includes(q)) || (CL_TODAY && el.dataset.today === "0") || (!!CLF && !el.dataset.st.split(" ").includes(CLF)); });
   $$("#cl-list .cl-grp").forEach(g => { let n = g.nextElementSibling, any = false; while (n && !n.classList.contains("cl-grp")) { if (!n.hidden) any = true; n = n.nextElementSibling; } g.hidden = !any; });
 }
 function wireClients() {
   $$("[data-cl-go]", PAGE_EL).forEach(a => a.addEventListener("click", ev => { if (ev.metaKey || ev.ctrlKey) return; ev.preventDefault(); $(`#cl-list [data-cl="${CSS.escape(a.dataset.clGo)}"]`)?.click(); $("#cl-detail").scrollIntoView({ behavior: RM ? "auto" : "smooth", block: "start" }); }));
   $("#cl-q")?.addEventListener("input", filterClients);
   $("#cl-today")?.addEventListener("click", ev => { CL_TODAY = !CL_TODAY; ev.currentTarget.classList.toggle("g", CL_TODAY); ev.currentTarget.setAttribute("aria-pressed", CL_TODAY); filterClients(); });
+  $$("[data-clf]", PAGE_EL).forEach(b => b.addEventListener("click", () => { CLF = CLF === b.dataset.clf ? "" : b.dataset.clf; $$("[data-clf]", PAGE_EL).forEach(x => { const on = x.dataset.clf === CLF; x.classList.toggle("on", on); x.setAttribute("aria-pressed", on); }); filterClients(); }));
+  $$(".ring[data-v]", PAGE_EL).forEach(el => el.style.setProperty("--p", el.dataset.v.split(":")[1]));
   filterClients();
   $("#cl-list")?.addEventListener("click", ev => {
     const a = ev.target.closest("[data-cl]"); if (!a || ev.metaKey || ev.ctrlKey || ev.shiftKey) return; ev.preventDefault();
     const c = CACHE.clients.list.find(x => x.id === a.dataset.cl); if (!c) return;
     $$("#cl-list [data-cl]").forEach(x => x.dataset.cl === c.id ? x.setAttribute("aria-current", "true") : x.removeAttribute("aria-current"));
-    $("#cl-detail").innerHTML = clientDetail(c, CACHE.clients.t); applyVars($("#cl-detail")); history.replaceState({ p: "clients" }, "", `?p=clients&c=${encodeURIComponent(c.id)}`);
+    $("#cl-detail").innerHTML = clientDetail(c, CACHE.clients.t); applyVars($("#cl-detail")); $$("#cl-detail .ring[data-v]").forEach(el => el.style.setProperty("--p", el.dataset.v.split(":")[1])); history.replaceState({ p: "clients" }, "", `?p=clients&c=${encodeURIComponent(c.id)}`);
     if (innerWidth <= 900) $("#cl-detail").scrollIntoView({ behavior: RM ? "auto" : "smooth", block: "start" });
   });
 }

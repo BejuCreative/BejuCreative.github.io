@@ -474,3 +474,16 @@ a.lk{color:var(--blue)}
   .wk-rk{grid-template-columns:minmax(0,1fr) 56px} .wk-rk .b{grid-column:1/-1;order:3} .wk-rk small{grid-column:1/-1;order:4}
   .ex-owe .arrow{min-width:110px} .ex-six{gap:6px}
 }
+
+/* ---------- round 6 (11-19 21:1x): pack status ---------- */
+.chip.acc{background:var(--sn-pill);color:var(--sn-pill-ink)}
+.cl-filt{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.cl-fb{display:grid;gap:2px;text-align:left;padding:12px 14px;border-radius:16px;background:var(--card);box-shadow:var(--edge);-webkit-backdrop-filter:var(--blurv);backdrop-filter:var(--blurv);border:1.5px solid transparent;transition:border-color .2s,transform .2s var(--ease)}
+html.fx-lite .cl-fb{-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--glass),var(--tint-lite)}
+.cl-fb:hover{transform:translateY(-1px)} .cl-fb.on{border-color:var(--focus)}
+.cl-fb b{font-family:var(--mono);font-size:24px;font-weight:500;letter-spacing:-.03em} .cl-fb span{font-size:12.5px;color:var(--mute)}
+.cl-fb.g b{color:var(--green)} .cl-fb.o b{color:var(--orange)} .cl-fb.b b,.cl-fb.acc b{color:var(--blue)}
+.cl-pk{display:flex;align-items:center;gap:10px;font-size:13px;padding:7px 0;border-top:1px solid var(--line)} .cl-pk:first-of-type{border-top:0} .cl-pk .grow{flex:1;min-width:0}
+.ring{width:22px;height:22px;border-radius:50%;flex:none;background:conic-gradient(var(--c,var(--faint)) calc(var(--p,0)*1%),var(--line) 0);-webkit-mask:radial-gradient(circle,transparent 6px,#000 6.5px);mask:radial-gradient(circle,transparent 6px,#000 6.5px)}
+.ring.g{--c:var(--green)} .ring.o{--c:var(--orange)} .ring.b{--c:var(--blue)}
+@media (max-width:600px){.cl-filt{grid-template-columns:repeat(2,minmax(0,1fr))} .cl-pk{flex-wrap:wrap}}
