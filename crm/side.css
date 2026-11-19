@@ -2,13 +2,14 @@
    A tall floating glass rail, always on screen, with a gap from the left, top and bottom. Collapses to an icon rail.
    Each item opens its own page (?p=...) in the main area. Built from the CRM's glass tokens, so all five looks work. */
 :root{
-  --sn-gap:16px;                 /* space from the window edges */
+  --sn-gap:16px;                 /* space from the top and bottom edges */
+  --sn-gap-left:clamp(40px,3.5vw,64px);   /* space from the left wall (Simas 11-19 18:2x: not attached to the left) */
   --sn-w:252px;                  /* expanded width (Simas 11-19 'smaller a bit': if he meant width, 220px here) */
   --sn-h:auto;                   /* height: auto = hugs its menu, centred on the screen; calc(100dvh - var(--sn-gap)*2) = full height */
   --sn-air:36px;                 /* space between the menu and the Look / Account / Log out group */
   --sn-w-mini:72px;              /* collapsed icon rail */
-  --sn-room:calc(var(--sn-gap) + var(--sn-w) + 18px);
-  --sn-room-mini:calc(var(--sn-gap) + var(--sn-w-mini) + 18px);
+  --sn-room:calc(var(--sn-gap-left) + var(--sn-w) + 18px);
+  --sn-room-mini:calc(var(--sn-gap-left) + var(--sn-w-mini) + 18px);
   --sn-pill:linear-gradient(135deg,#4a86ff 0%,#2463f0 52%,#5f6ef7 100%);
   --sn-pill-ink:#fff;
   --sn-pill-glow:0 10px 26px rgba(36,99,240,.42),0 2px 6px rgba(36,99,240,.25),inset 0 1px 0 rgba(255,255,255,.55),inset 0 -1px 0 rgba(10,30,120,.2);
@@ -27,22 +28,22 @@ html.sn-m .app{padding-left:var(--sn-room-mini)}
 html.sn-x .app,html.sn-m .app{transition:padding-left .42s var(--ease)}
 /* the bento's column breakpoints were set for the full window: shift them by the rail's width so cards never get cramped */
 html.sn-x .grid{--cols:1}
-@media (min-width:818px){html.sn-x .grid{--cols:2}}
-@media (min-width:1098px){html.sn-x .grid{--cols:3}}
-@media (min-width:1358px){html.sn-x .grid{--cols:4}}
-@media (min-width:1638px){html.sn-x .grid{--cols:5}}
+@media (min-width:858px){html.sn-x .grid{--cols:2}}
+@media (min-width:1138px){html.sn-x .grid{--cols:3}}
+@media (min-width:1398px){html.sn-x .grid{--cols:4}}
+@media (min-width:1678px){html.sn-x .grid{--cols:5}}
 html.sn-m .grid{--cols:1}
-@media (min-width:638px){html.sn-m .grid{--cols:2}}
-@media (min-width:918px){html.sn-m .grid{--cols:3}}
-@media (min-width:1178px){html.sn-m .grid{--cols:4}}
-@media (min-width:1458px){html.sn-m .grid{--cols:5}}
-@media (max-width:1358px){html.sn-x .hero-top{grid-template-columns:1fr;gap:16px}}
-@media (max-width:1178px){html.sn-m .hero-top{grid-template-columns:1fr;gap:16px}}
+@media (min-width:678px){html.sn-m .grid{--cols:2}}
+@media (min-width:958px){html.sn-m .grid{--cols:3}}
+@media (min-width:1218px){html.sn-m .grid{--cols:4}}
+@media (min-width:1498px){html.sn-m .grid{--cols:5}}
+@media (max-width:1398px){html.sn-x .hero-top{grid-template-columns:1fr;gap:16px}}
+@media (max-width:1218px){html.sn-m .hero-top{grid-template-columns:1fr;gap:16px}}
 html.wall .snav{display:none}
 html.wall.sn-x .app,html.wall.sn-m .app{padding-left:28px}
 
 /* ---------- the rail ---------- */
-.snav{position:fixed;z-index:36;left:var(--sn-gap);top:50%;translate:0 -50%;height:var(--sn-h);max-height:calc(100dvh - var(--sn-gap)*2);overflow-y:auto;scrollbar-width:none;width:var(--sn-w);display:flex;flex-direction:column;gap:2px;
+.snav{position:fixed;z-index:36;left:var(--sn-gap-left);top:50%;translate:0 -50%;height:var(--sn-h);max-height:calc(100dvh - var(--sn-gap)*2);overflow-y:auto;scrollbar-width:none;width:var(--sn-w);display:flex;flex-direction:column;gap:2px;
   padding:16px 12px 14px;border-radius:28px;background:var(--card);isolation:isolate;-webkit-backdrop-filter:var(--blurv);backdrop-filter:var(--blurv);
   border:1.5px solid var(--sn-rim);box-shadow:var(--edge),0 24px 60px rgba(40,60,140,.16);overflow:hidden;
   transition:width .42s var(--ease),transform .42s var(--ease),box-shadow .3s}
