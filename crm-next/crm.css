@@ -773,7 +773,7 @@ html.paused *,html.paused *::before,html.paused *::after{animation-play-state:pa
   :root[data-mode="light"] .tabs button.on svg{stroke:var(--blue)}
   .tabs svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
   .tabs i{position:absolute;top:5px;left:calc(50% + 6px);min-width:17px;height:17px;border-radius:99px;background:var(--red);color:var(--on-accent);font:600 10px/17px var(--mono);font-style:normal;text-align:center;padding:0 4px}
-  html[data-tab="home"] .card:not([data-tab="home"]),html[data-tab="money"] .card:not([data-tab="money"]),html[data-tab="leads"] .card:not([data-tab="leads"]),html[data-tab="outreach"] .card:not([data-tab="outreach"]),html[data-tab="clients"] .card:not([data-tab="clients"]){display:none}
+  html[data-tab="home"] .card:not([data-tab="home"]):not(.sp-card),html[data-tab="money"] .card:not([data-tab="money"]):not(.sp-card),html[data-tab="leads"] .card:not([data-tab="leads"]):not(.sp-card),html[data-tab="outreach"] .card:not([data-tab="outreach"]):not(.sp-card),html[data-tab="clients"] .card:not([data-tab="clients"]):not(.sp-card){display:none}   /* .sp-card = side pages: never hidden by the phone tabs */
   html:not([data-tab="home"]) .hero{display:none} html:not([data-tab="clients"]) .zone-h{display:none}
   .zone-h{font-size:22px;margin:8px 2px 12px} .zone-h span{flex-basis:100%}
   /* compact header */
