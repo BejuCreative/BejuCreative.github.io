@@ -276,3 +276,8 @@ html.fx-lite .sd-col{-webkit-backdrop-filter:none;backdrop-filter:none;backgroun
   html.sn-m .top-tools [data-k="look"],html.sn-m .top-tools [data-k="me"],html.sn-m .top-tools [data-act="signout"]{display:none}
 }
 @media (max-width:1240px){html.sn-x .top-nav a:not(.on){display:none}html.sn-x .stat small{display:none}}
+/* no doubles (Simas 11-19): the rail has the logo, so the bento's brand card goes while the rail is on screen */
+@media (min-width:601px){html.sn-x #c-brand,html.sn-m #c-brand{display:none}}
+/* the ticker's second copy exists only for the marquee loop: when the marquee is off (Calm / reduced motion) it showed every item twice */
+html[data-motion="calm"] .ticker-t [aria-hidden="true"]{display:none}
+@media (prefers-reduced-motion:reduce){.ticker-t [aria-hidden="true"]{display:none}}

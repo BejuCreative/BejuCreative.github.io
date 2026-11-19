@@ -85,7 +85,7 @@ async function all(table, cols = "*", mod) {   // REST caps at 1,000 rows per ca
 }
 async function fetchAll() {
   const t = today(), since60 = new Date(Date.now() - 60 * 864e5).toISOString();
-  const [pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls] = await Promise.all([
+  const [pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels] = await Promise.all([
     all("pipeline", "*", q => q.order("email")),
     all("payments", "id,client_id,email,payer_name,amount,currency,package,refunded,paid_at", q => q.order("paid_at", { ascending: false })),
     all("campaign_daily", "campaign_id,day,sent,new_leads,replies,replies_auto,opportunities", q => q.gte("day", addDays(t, -75)).order("day").order("campaign_id")),
@@ -107,8 +107,9 @@ async function fetchAll() {
     all("founder_tasks", "*", q => q.is("done_at", null).order("due_at", { ascending: true })).catch(() => []),   // 11-16: only what a founder must do (Do next)
     all("retainers", "*").catch(() => []),   // 11-17: Stripe subscriptions = retainer clients (crm_sync.py)
     all("calls", "*", q => q.gte("start_at", new Date(Date.now() - 30 * 864e5).toISOString()).order("start_at")).catch(() => []),   // 11-17: cal.com bookings = the only calls
+    all("crm_panels", "id,data,updated_at", q => q.eq("id", "metrics")).catch(() => []),   // 11-19: outreach + money straight from the APIs (scripts/crm_panels_sync.py, every 15 min)
   ]);
-  return { pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls };
+  return { pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels };
 }
 
 /* ---------------- derive ---------------- */
@@ -168,6 +169,18 @@ function derive() {
   d.replyRate = d.contacted ? d.repAll / d.contacted * 100 : null; d.posRate = d.contacted ? d.oppAll / d.contacted * 100 : null;
   const win = (a, b) => { const s = d.series.slice(a, b), nw = sum(s, x => x.nw); return nw ? sum(s, x => x.rep) / nw * 100 : null; };
   const r7 = win(52, 59), p7 = win(45, 52); d.rate7 = r7; d.rateDelta = r7 != null && p7 != null ? r7 - p7 : null;
+  /* 11-19 (Simas: "we are not supposed to guess the metrics"): outreach totals come straight from Instantly's analytics for ALL
+     campaigns (campaign_live above only holds the active ones), and period totals from Instantly's overview (unique replies per
+     period; adding up daily unique counts double-counts a lead who replies on two days). Written by scripts/crm_panels_sync.py. */
+  const MR = (R.panels || []).find(x => x.id === "metrics"), M = d.M = MR && MR.data ? MR.data : null; d.mAt = MR ? MR.updated_at : null;
+  const MPer = k => M && M.periods ? M.periods[k] : null;
+  if (M && M.total) {
+    d.sentAll = M.total.sent; d.contacted = M.total.contacted; d.repAll = M.total.replies; d.autoAll = M.total.replies_auto; d.oppAll = M.total.opportunities;
+    d.bounced = M.total.bounced; d.loaded = M.total.leads; d.replyRate = M.total.reply_rate; d.posRate = M.total.pos_rate;
+    const a7 = MPer("7d"), b7 = MPer("prev_7d"); if (a7 && b7 && a7.reply_rate != null && b7.reply_rate != null) { d.rate7 = a7.reply_rate; d.rateDelta = a7.reply_rate - b7.reply_rate; }
+    if (MPer("today")) { d.todayNew = MPer("today").contacted; d.todaySent = MPer("today").sent; }
+    if (MPer("yesterday")) d.yNew = MPer("yesterday").contacted;
+  }
   const newest = Math.max(0, ...R.camps.map(c => +new Date(c.updated_at || 0)));
   const rr = c => c.new_contacted ? (c.replies || 0) / c.new_contacted * 100 : -1;
   d.camps = R.camps.filter(c => newest - +new Date(c.updated_at || 0) < 3 * 36e5).sort(STATE.campSort === "rate" ? (a, b) => rr(b) - rr(a) : (a, b) => (b.emails_sent || 0) - (a.emails_sent || 0));
@@ -235,7 +248,7 @@ function derive() {
   const calToday = d.calls.filter(x => dayOf(x.start_at) === t).map(x => ({ id: "cal-" + x.uid, kind: "call", title: x.name || x.email || "Call", detail: "Booked on cal.com", at: x.start_at, lead_email: x.email || "" }));
   d.todayItems = R.todayItems.filter(x => x.kind !== "call" && !gone.has(lc(x.lead_email || ""))).concat(calToday).sort((a, b) => (ord[a.kind] ?? 9) - (ord[b.kind] ?? 9) || String(a.at || "").localeCompare(String(b.at || "")));
   /* 11-16 (Simas: "how many leads are we sending out today"): today's live numbers for the Today card */
-  d.td = { rep: d.series[59].rep, opp: d.series[59].opp, money: sum(pays.filter(p => p.day === t), p => p.amount), vids: R.deliveries.filter(x => String(x.delivered_at || "").slice(0, 10) === t).length,
+  d.td = { rep: MPer("today") ? MPer("today").replies : d.series[59].rep, opp: MPer("today") ? MPer("today").opportunities : d.series[59].opp, money: sum(pays.filter(p => p.day === t), p => p.amount), vids: R.deliveries.filter(x => String(x.delivered_at || "").slice(0, 10) === t).length,
     samples: R.pipeline.filter(p => p.delivered_at && dayOf(p.delivered_at) === t).length, calls: d.todayItems.filter(x => x.kind === "call").length, stuck: d.todayItems.filter(x => x.kind === "payment_failed").length };
   /* funnel + deliveries */
   const allDelivered = R.pipeline.filter(p => p.delivered_at).length, allBuyers = R.pipeline.filter(isBuyer).length;
@@ -256,6 +269,7 @@ function derive() {
   P.delta = P.prev > 0 ? (P.rev - P.prev) / P.prev * 100 : null; P.vs = per === "month" ? "vs same days last month" : `vs the ${pLen === 1 ? "day" : pLen + " days"} before`;
   P.cum = []; { let c = 0; for (let i = 0; i < pLen; i++) { const dd = addDays(pStart, i); c += sum(pays.filter(p => p.day === dd), p => p.amount); P.cum.push(c); } }
   P.nw = sum(ser, x => x.nw); P.sent = sum(ser, x => x.sent); P.rep = sum(ser, x => x.rep); P.opp = sum(ser, x => x.opp);
+  const MP = MPer(per); if (MP) { P.nw = MP.contacted; P.sent = MP.sent; P.rep = MP.replies; P.opp = MP.opportunities; }
   P.samples = delivered.filter(p => inP(dayOf(p.delivered_at))).length;
 
   /* ---- v2: client portal ---- */
@@ -325,6 +339,8 @@ function derive() {
   d.inbList = [...R.inboxes].sort((x, y) => String(x.email).localeCompare(String(y.email)));
   const sumDays = (from, to, k) => { let s = 0; for (let x = from; x < to; x = addDays(x, 1)) s += (byDay[x] || {})[k] || 0; return s; }, chg = (now, was) => was > 0 ? (now - was) / was * 100 : null;
   P.dNw = chg(P.nw, sumDays(qStart, pStart, "nw")); P.dRep = chg(P.rep, sumDays(qStart, pStart, "rep")); P.dSamples = chg(P.samples, delivered.filter(p => { const dd = dayOf(p.delivered_at); return dd >= qStart && dd < pStart; }).length);
+  const MQ = MPer({ today: "yesterday", "7d": "prev_7d", "30d": "prev_30d", month: "prev_month_same_days" }[per]);
+  if (MP && MQ) { P.dNw = chg(MP.contacted, MQ.contacted); P.dRep = chg(MP.replies, MQ.replies); }
 
   /* ---- 11-16: Paid clients page (Simas: "all of our paid clients, what are the next steps and important info") ---- */
   const lastAt = d.lastAt = {}; R.tlite.forEach(m => { lastAt[lc(m.lead_email)] = m.at; });   // tlite is oldest first, so the newest wins
@@ -500,10 +516,13 @@ const CARDS = [
 { id: "next", title: "Do next", focus: ["next", ""], render: d => `${head(`Do <em class="sf">next</em>`, dB("next", "", d.nextN ? `${d.nextN} for you` : "all clear", `chip ${d.nextN ? "o" : "g"}`, "Open everything that needs a founder"), true)}<div class="stack">${d.next.map((x, i) => nextRow(x, i)).join("") || empty("Nothing needs you right now.")}</div>
   ${d.claudeQ.length ? `<p class="sub">${dB("claudeq", "", `🤖 Claude is handling ${esc(d.claudeSum)}`, "lk", "Open Claude's queue. Nothing to do here, it is only to watch.")}</p>` : ""}` },
 { id: "today", title: "Today", render: d => { const T = d.td, I = { call: ["phone", "c-blue"], payment_failed: ["alert", "c-red"], action: ["check", "c-green"], partner: ["flag", "c-orange"], sample_due: ["film", "c-purple"], followup: ["clock", "c-grey"] }, items = d.todayItems, list = STATE.todayAll ? items : items.slice(0, 4), pct = d.target ? Math.round(d.todayNew / d.target * 100) : 0;
-    return `${head(`Today <em class="sf">${esc(dLabel(d.t))}</em>`, dB("todaylist", "", `${T.calls} call${T.calls === 1 ? "" : "s"} · ${T.stuck} money stuck`, "lk", "Open today's whole list"), true)}
-    ${big("day", d.t, `${N(d.todayNew)}<small>of ${nf0.format(d.target)} new leads · ${pct}%</small>`, "Open today's split per campaign")}
-    <div class="trio">${tri("Emails sent", N(d.todaySent), "day", d.t)}${tri("Replies", `${N(T.rep)}${T.opp ? ` · ${N(T.opp)}👍` : ""}`, "replies", "")}${tri("Money in", usd(T.money), "pays", d.t)}</div>
-    <div class="trio">${tri("Videos out", N(T.vids), "vids", d.t)}${tri("Samples out", N(T.samples), "samples", "week")}${tri("Calls", N(T.calls), "todaylist", "")}</div>
+    /* 11-19 (Simas: "looks ugly w this structure"): one clean 3x2 grid, label on top, one value, optional sub-line */
+    const cell = (label, val, sub, k, a) => dB(k, a, `<span class="tl">${label}</span><b>${val}</b>${sub ? `<small>${sub}</small>` : ""}`, "tc", `${label}: open the list`);
+    return `${head(`Today <em class="sf">${esc(dLabel(d.t))}</em>`, `<span class="tchips">${dB("todaylist", "", `${T.calls} call${T.calls === 1 ? "" : "s"}`, "chip", "Open today's whole list")}${T.stuck ? dB("todaylist", "", `${T.stuck} money stuck`, "chip r", "Payments that failed today") : ""}</span>`, true)}
+    ${big("day", d.t, `${N(d.todayNew)}<small>/ ${nf0.format(d.target)} new leads today</small>`, "Open today's split per campaign")}
+    ${dB("day", d.t, bar(pct, pct >= 100 ? "c-green" : ""), "barb", `${pct}% of today's target of ${nf0.format(d.target)} new leads`)}
+    <p class="sub">${pct}% of today's target · yesterday ${nf0.format(d.yNew || 0)} · ${nf0.format(d.queued)} queued${d.streak ? ` · ${d.streak}-day streak at 150+` : ""}</p>
+    <div class="tgrid">${cell("Sent", N(d.todaySent), "", "day", d.t)}${cell("Replies", N(T.rep), T.opp ? `${nf0.format(T.opp)} positive` : "", "replies", "")}${cell("Money", N(T.money, "usd"), "", "pays", d.t)}${cell("Videos", N(T.vids), "", "vids", d.t)}${cell("Samples", N(T.samples), "", "samples", "week")}${cell("Calls", N(T.calls), "", "todaylist", "")}</div>
     <div class="stack sp">${list.map(x => { const [icon, c] = I[x.kind] || ["clock", "c-grey"]; const inner = `<span class="it ${c}"><svg><use href="#i-${icon}"/></svg></span><span class="row-main"><b>${esc(cut(x.title, 60))}</b><small>${esc(cut(x.detail || x.kind, 60))}</small></span>${x.kind === "call" && x.at ? `<span class="row-end">${timeOf(x.at)}</span>` : ""}`;
       return x.lead_email ? leadBtn(x.lead_email, inner) : dB("item", x.id, inner, "tile row"); }).join("") || empty("Nothing else on today's list.")}</div>
     ${items.length > 4 ? `<button type="button" class="more" data-act="todayall">${STATE.todayAll ? "Show fewer" : `Show all ${items.length}`}</button>` : ""}
@@ -516,14 +535,8 @@ const CARDS = [
     <div class="stack sp">${R0.live.map(r => dB("retainers", "", `<span class="av">${esc(initials({ name: r.name || r.email }))}</span><span class="row-main"><b>${esc(cut(r.name || r.email || "Client", 40))}</b><small>since ${r.started_at ? dLabel(dayOf(r.started_at)) : "—"}${r.current_period_end ? ` · next bill ${dLabel(dayOf(r.current_period_end))}` : ""}${r.cancel_at_period_end ? " · cancels at period end" : ""}</small></span><span class="row-end">${usd(r.amount)}<small>/${esc(r.interval === "month" ? "mo" : r.interval || "")}</small></span>`, "tile row", "Open the retainers")).join("") || empty("No retainer yet. Monthly plans show here.")}</div>
     ${kv("Paid on retainers so far", usd(R0.total), "retainers", "")}${R0.ended ? kv("Ended retainers", N(R0.ended), "retainers", "") : ""}
     <p class="sub">Only clients on a monthly plan (Stripe subscription). Repeat pack buyers are not counted.</p>`; } },
-{ id: "money", title: "Money", render: d => { const P = d.per;
-    return `${head(`Money · ${P.label}`, `<button type="button" class="chip" data-act="pernext" title="Change the period: today, 7 days, 30 days, month">${P.chip}</button>`)}
-    ${big("pays", "period", N(P.rev, "usd"), `Open the payments of ${P.label}`)}
-    <p class="sub">${P.delta == null ? `<span class="mut">nothing in the period before to compare</span>` : `<span class="${P.delta >= 0 ? "up" : "dn"} mono">${P.delta >= 0 ? "▲" : "▼"} ${Math.abs(P.delta).toFixed(1)}%</span> ${P.vs}`}</p>
-    <button type="button" class="spark" data-act="drill" data-k="pays" data-a="period" aria-label="Money day by day in this period. Open the payments." title="Open the payments"><svg viewBox="0 0 300 64" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="g-spark" x1="0" y1="0" x2="0" y2="1"><stop class="stop-a" offset="0"/><stop class="stop-b" offset="1"/></linearGradient></defs>${(() => { const pts = lineXY(P.cum.length > 1 ? P.cum : [0, P.cum[0] || 0], 300, 64, 6, Math.max(1, ...P.cum)); const p = smooth(pts, 6, 58); return `<path class="ar" d="${p}L300,64L0,64Z"/><path class="ln" d="${p}"/>`; })()}</svg></button>
-    <div class="trio">${tri("Payments", N(P.revN), "pays", "period")}${tri(`${d.prevName} total`, N(d.prevFull, "usd"), "pays", d.pym)}${tri("Avg order", N(d.avgOrder, "usd"), "pays", "all")}</div>`; } },
 { id: "outreach", cls: "w2 chart-card", title: "Outreach", focus: ["days", ""], render: d => {
-    const days = d.series.slice(-STATE.range), W = 600, H = 200, pad = 10, max = Math.max(1, ...days.map(x => Math.max(STATE.sa ? x.sent : 0, STATE.sb ? x.nw : 0)));
+    const OR = d.M && d.M.periods ? d.M.periods[STATE.range + "d"] : null, days = d.series.slice(-STATE.range), W = 600, H = 200, pad = 10, max = Math.max(1, ...days.map(x => Math.max(STATE.sa ? x.sent : 0, STATE.sb ? x.nw : 0)));
     const pa = lineXY(days.map(x => x.sent), W, H, pad, max), pb = lineXY(days.map(x => x.nw), W, H, pad, max), part = days.length > 2 && days[days.length - 1].day === d.t, n = part ? -1 : undefined,
       A = smooth(pa.slice(0, n), pad, H - pad), B = smooth(pb.slice(0, n), pad, H - pad), ax = part ? pa[pa.length - 2][0].toFixed(1) : W,
       dash = (q, c) => part ? `<line class="${c} part" x1="${q[q.length - 2][0].toFixed(1)}" y1="${q[q.length - 2][1].toFixed(1)}" x2="${q[q.length - 1][0].toFixed(1)}" y2="${q[q.length - 1][1].toFixed(1)}"/>` : "";
@@ -534,7 +547,7 @@ const CARDS = [
       ${[.25, .5, .75].map(f => `<line class="gl" x1="0" x2="${W}" y1="${(H * f).toFixed(0)}" y2="${(H * f).toFixed(0)}"/>`).join("")}${STATE.sa ? `<path class="aa" d="${A}L${ax},${H}L0,${H}Z"/>` : ""}${STATE.sb ? `<path class="lb" d="${B}"/>${dash(pb, "lb")}` : ""}${STATE.sa ? `<path class="la" d="${A}"/>${dash(pa, "la")}` : ""}</svg>
       <i class="cur"></i><i class="cdot a c-blue"></i><i class="cdot b c-orange"></i><div class="tip"></div></div>
     <div class="xl">${ticks.map(i => `<span class="${i === days.length - 1 ? "on" : ""}">${i === days.length - 1 ? "Today" : dLabel(days[i].day)}</span>`).join("")}</div>
-    <div class="trio quad">${tri(`Sent, ${STATE.range} d`, N(sum(days, x => x.sent)), "days", "")}${tri("New leads", N(sum(days, x => x.nw)), "days", "")}${tri("Real replies", N(sum(days, x => x.rep)), "replies", "real")}${tri("Positive", `<span class="up">${N(sum(days, x => x.opp))}</span>`, "funnel", "2")}</div>`;
+    <div class="trio quad">${tri(`Sent, ${STATE.range} d`, N(OR ? OR.sent : sum(days, x => x.sent)), "days", "")}${tri("New leads", N(OR ? OR.contacted : sum(days, x => x.nw)), "days", "")}${tri("Real replies", N(OR ? OR.replies : sum(days, x => x.rep)), "replies", "real")}${tri("Positive", `<span class="up">${N(OR ? OR.opportunities : sum(days, x => x.opp))}</span>`, "funnel", "2")}</div>`;
   } },
 { id: "close", cls: "feat tilt", title: "Emails to close", focus: ["close", ""], render: d => { const C = d.close, c1 = 2 * Math.PI * 62, p = clamp(C.in5 || 0, 0, 100);   // 11-16 (Simas): replaces the 10k goal card (the goal stays in the hero)
     return `${head(`Emails to <em class="sf">close</em>`)}
@@ -543,28 +556,6 @@ const CARDS = [
     ${kv("Paid within 5 emails", C.in5 == null ? "—" : N(C.in5, "pct"), "close", "")}<hr>
     ${kv("Average", C.avg == null ? "—" : C.avg.toFixed(1), "close", "")}${kv("Fastest · most", C.n ? `${N(C.min)} · ${N(C.max)}` : "—", "close", "")}${kv("Clients counted", N(C.n), "close", "")}
     <p class="sub">Our emails to a client before their first payment. Clients won by DM (no email trail) are left out.</p>`; } },
-{ id: "revchart", cls: "w2 chart-card", title: "Revenue this month", focus: ["pays", "month"], render: d => {
-    const W = 600, H = 180, pad = 8, ymax = Math.max(GOAL, d.projected, d.month, 1), X = i => i / d.dim * W, Y = v => H - pad - v / ymax * (H - pad * 2), pc = (v, of) => (v / of * 100).toFixed(2) + "%";
-    const line = "M" + [[0, Y(0)]].concat(d.cum.map((v, i) => [X(i + 1), Y(v)])).map(p => p[0].toFixed(1) + "," + p[1].toFixed(1)).join("L"), paceNow = GOAL * d.dom / d.dim;
-    PLOT.rev = { n: d.dim, i: d.dom - 1, paint: i => paintRev(d, ymax, H, pad, i), drill: i => { const day = `${d.ym}-${String(i + 1).padStart(2, "0")}`; openDrill("pays", day <= d.t ? day : "month"); } };
-    const lg = (s, label) => `<button type="button" class="lgt${STATE[s] ? "" : " off"}" data-act="series" data-s="${s}" aria-pressed="${STATE[s]}" title="Show or hide this line"><i class="dash"></i>${label}</button>`;
-    return `${head(`Revenue in ${d.monthName}`, `<span class="lgd">${lg("rg", "Goal pace")}${lg("rp", "Projection")}</span>`, true)}
-    <div class="rev plot" id="rev" data-plot="rev" tabindex="0" role="group" aria-label="Money per day this month against the pace to the goal. Arrow keys move through the days, Enter opens the payments of that day."><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="g-rev" x1="0" y1="0" x2="0" y2="1"><stop class="stop-k" offset="0"/><stop class="stop-kb" offset="1"/></linearGradient></defs>
-      ${[.25, .5, .75].map(f => `<line class="gl" x1="0" x2="${W}" y1="${Y(ymax * f).toFixed(1)}" y2="${Y(ymax * f).toFixed(1)}"/>`).join("")}
-      ${STATE.rg ? `<line class="goal" x1="0" y1="${Y(0).toFixed(1)}" x2="${W}" y2="${Y(GOAL).toFixed(1)}"/>` : ""}<path class="ar" d="${line}L${X(d.dom).toFixed(1)},${H}L0,${H}Z"/>
-      ${STATE.rp && d.dom < d.dim ? `<line class="proj" x1="${X(d.dom).toFixed(1)}" y1="${Y(d.month).toFixed(1)}" x2="${W}" y2="${Y(d.projected).toFixed(1)}"/>` : ""}<path class="act" d="${line}"/></svg>
-      <i class="dotn" data-v="x:${pc(X(d.dom), W)};y:${pc(Y(d.month), H)}"></i>
-      ${STATE.rg ? `<span class="lab" data-v="y:${pc(Y(GOAL), H)}">goal ${usd(GOAL)}</span>` : ""}${STATE.rp ? `<span class="lab k" data-v="y:${pc(Y(d.projected), H)}">on pace ${usd(d.projected)}</span>` : ""}
-      <i class="cur"></i><i class="cdot a c-blue"></i><div class="tip"></div></div>
-    <div class="xl"><span>${d.monthName} 1</span><span>${d.monthName} ${Math.round(d.dim / 2)}</span><span>${d.monthName} ${d.dim}</span></div>
-    <div class="trio quad">${tri("So far", N(d.month, "usd"), "pays", "month")}${tri("Pace needed by today", N(paceNow, "usd"), "goal", "")}${tri(d.month >= paceNow ? "Ahead of pace" : "Behind pace", `<span class="${d.month >= paceNow ? "up" : "dn"}">${N(Math.abs(paceNow - d.month), "usd")}</span>`, "goal", "")}${tri("On pace for", N(d.projected, "usd"), "goal", "")}</div>`;
-  } },
-{ id: "newleads", title: "New leads today", render: d => { const on = clamp(Math.round(d.todayNew / d.target * 10), 0, 10);
-    return `${head("New leads today", dB("sync", "", `target ${nf0.format(d.target)}`, "lk", "Where the target comes from"))}
-    ${big("day", d.t, `${N(d.todayNew)}<small>contacted so far</small>`, "Open today's split per campaign")}
-    ${dB("day", d.t, Array.from({ length: 10 }, (_, i) => `<i class="${i < on ? "on" : ""}" data-v="k:${i}"></i>`).join(""), "pips", `${Math.round(d.todayNew / d.target * 100)}% of today's target of ${d.target}`).replace('class="pips"', 'class="pips" data-go')}
-    <div class="trio">${tri("Yesterday", N(d.yNew), "day", addDays(d.t, -1))}${tri("Queued", N(d.queued), "queued", "")}${tri("Streak", N(d.streak), "days", "")}</div>
-    <p class="sub">Sends run in US hours, so today fills up in the evening. Streak = days in a row with 150+.</p>`; } },
 { id: "owner", cls: "bare", title: "Owner filter", mount(el) { el.innerHTML = `<div class="seg" role="group" aria-label="Whose leads">${["All", "Simas", "Benas"].map(o => `<button type="button" data-act="owner" data-o="${o}">${o}</button>`).join("")}</div>`; },
   update() { $$("#c-owner button").forEach(b => { const on = b.dataset.o === STATE.owner; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); }); } },
 { id: "hot", title: "Hot leads", focus: ["hotlist", ""], render: d => { const list = STATE.hotAll ? d.hot : d.hot.slice(0, 6);
@@ -586,10 +577,6 @@ const CARDS = [
 { id: "total", title: "Sent in total", render: d => `${head("Sent in total")}${big("sent", "", `${N(d.sentAll)}<small>emails</small>`, "Open the totals per campaign")}
     <div class="stack sp">${kv("Leads contacted", N(d.contacted), "sent", "")}${kv("Leads loaded", N(d.loaded), "sent", "")}${kv("Still queued", N(d.queued), "queued", "")}</div>
     ${dB("queued", "", bar(d.loaded ? d.contacted / d.loaded * 100 : 0), "barb", "Leads contacted out of leads loaded. Open what is still queued.")}<p class="sub">${dB("queued", "", `${N(d.loaded ? d.contacted / d.loaded * 100 : null, "pct")} of loaded leads`, "lk")} already contacted.</p>` },
-{ id: "week", title: "New leads, 7 days", render: d => { const s = d.series.slice(-7), max = Math.max(1, ...s.map(x => x.nw));
-    return `${head("New leads, last 7 days")}${big("days", "", N(sum(s, x => x.nw)), "Open the last 30 days", "sm")}
-    <div class="wk">${s.map((x, i) => `<button type="button" class="${i === 6 ? "on" : ""}" data-act="drill" data-k="day" data-a="${x.day}" data-v="h:${(x.nw / max * 100).toFixed(1)}%;k:${i}" title="${dLong(x.day)}: ${nf0.format(x.nw)} new leads" aria-label="${dLong(x.day)}: ${nf0.format(x.nw)} new leads. Open the day."></button>`).join("")}</div>
-    <div class="wkl">${s.map((x, i) => `<span class="${i === 6 ? "on" : ""}">${DOW[dow(x.day)]}</span>`).join("")}</div>`; } },
 { id: "heat", title: "Lead heatmap", render: d => { const flat = []; for (let w = 0; w < 8; w++) for (let r = 0; r < 7; r++) flat.push(d.heat.rows[r][w]); const live = flat.filter(c => !c.fut);
     PLOT.heat = { n: live.length, i: live.length - 1, paint: i => { const c = live[i]; $$("#heat .hc").forEach(el => el.classList.toggle("sel", el.dataset.a === c.day)); const cap = $("#heat-cap"); if (cap) cap.textContent = `${dLong(c.day)} · ${nf0.format(c.n)} new leads`; }, drill: i => openDrill("day", live[i].day) };
     const pk = live.reduce((m, x) => x.n > m.n ? x : m, live[0] || { n: 0, day: d.t });
@@ -610,7 +597,7 @@ const CARDS = [
     <div class="stack duelist">${sel.list.slice(0, 6).map(f => leadBtn(f.email, `<span class="av">${esc(initials(f))}</span><span class="row-main"><b>${esc(f.name || f.email)}</b><small>touch ${Math.min((f.touches_done || 0) + 1, f.touches_total || 99)} of ${f.touches_total || "?"} · ${esc((f.fu_stage || "").replace(/_/g, " "))}</small></span>${f.owner ? `<span class="who" title="${esc(f.owner)}">${esc(f.owner[0])}</span>` : ""}`)).join("") || empty(`Nobody due on ${dLabel(sel.day)}.`)}${sel.list.length > 6 ? dB("fu", sel.day, `+${sel.list.length - 6} more`, "lk") : ""}</div>
     ${d.fuOver.length ? `<p class="sub">${dB("fu", "over", `${d.fuOver.length} overdue`, "lk dn")} from earlier days.</p>` : ""}`; } },
 { id: "rate", title: "Reply rate", render: d => `${head("Reply rate")}<div class="hrow">${big("sent", "rate", N(d.replyRate, "pct1"), "Open the reply rate per campaign")}${d.rateDelta == null ? "" : dB("days", "", `<i class="tri"></i>${d.rateDelta >= 0 ? "+" : "−"}${Math.abs(d.rateDelta).toFixed(1)} pts`, `delta ${d.rateDelta >= 0 ? "up" : "dn"}`, "Last 7 days against the 7 before. Open the days.")}</div>
-    <p class="sub">Real replies per lead contacted, all time. The chip compares the last 7 days with the 7 before.</p>
+    <p class="sub">Unique human replies (auto-replies excluded) per lead contacted, all campaigns, all time. The chip compares the last 7 days with the 7 before. Opens: not tracked (plain-text emails, open tracking off).</p>
     <div class="trio">${tri("Positive", `<span class="up">${N(d.posRate, "pct1")}</span>`, "funnel", "2")}${tri("Real", N(d.repAll), "replies", "real")}${tri("Auto", N(d.autoAll), "away", "")}</div>` },
 { id: "speed", title: "Speed to reply", render: d => { const S = d.speed, max = Math.max(1, ...S.weeks.map(w => w.med || 0)), better = S.w != null && S.pw != null ? S.w <= S.pw : null;
     return `${head("Speed to reply", better == null ? "median" : `<span class="${better ? "up" : "dn"}">${better ? "faster" : "slower"} than last week</span>`)}${big("speed", "", S.all == null ? "—" : esc(fmtMin(S.all)), "Open every answered reply with its waiting time")}
@@ -687,8 +674,8 @@ const CARDS = [
 ];
 const byId = id => CARDS.find(c => c.id === id);
 /* phone: five tabs, each shows only its cards (the desktop keeps the whole bento) */
-const TABS = { home: ["next", "today", "paidc", "retainers", "hot", "activity", "followups"], money: ["money", "close", "revchart", "buyers", "topc", "alltime", "moneypage", "price"], leads: ["attention", "moods", "samples", "turn", "speed", "clock", "score", "away", "funnel", "search", "export"],
-  outreach: ["outreach", "newleads", "total", "week", "heat", "rate", "camps", "deliv", "inboxes", "sync"], clients: ["portal", "psamples", "pvideos", "pnotes", "pclients", "videos"], none: ["brand", "owner", "theme"] };
+const TABS = { home: ["next", "today", "paidc", "retainers", "hot", "activity", "followups"], money: ["close", "buyers", "topc", "alltime", "moneypage", "price"], leads: ["attention", "moods", "samples", "turn", "speed", "clock", "score", "away", "funnel", "search", "export"],
+  outreach: ["outreach", "total", "heat", "rate", "camps", "deliv", "inboxes", "sync"], clients: ["portal", "psamples", "pvideos", "pnotes", "pclients", "videos"], none: ["brand", "owner", "theme"] };
 const TABOF = {}; Object.entries(TABS).forEach(([t, ids]) => ids.forEach(id => { TABOF[id] = t; }));
 
 /* ---------------- chart painters (hover, tap and arrow keys share them) ---------------- */
@@ -720,7 +707,7 @@ function mountHero() {
   const k = f => { const v = GOAL * f; return v >= 1000 ? `$${+(v / 1000).toFixed(1)}k` : usd(v); };
   $("#hero").innerHTML = `<div class="hero-top"><div><div class="hero-h"><button type="button" class="hero-t" data-act="drill" data-k="goal" data-a="" title="Open the maths">Road to <b>${usd(GOAL)}</b> a <em class="sf">month</em></button><span class="seg per" role="group" aria-label="Period for the numbers on this page">${Object.keys(PER).map(p => `<button type="button" data-act="period" data-p="${p}">${p === "month" ? "Month" : p === "today" ? "Today" : p}</button>`).join("")}</span></div>
       <button type="button" class="odo tapn" id="odo" data-act="drill" data-k="pays" data-a="month" aria-label="Money this month. Open the payments."></button>
-      <button type="button" class="hero-sub" id="hero-sub" data-act="drill" data-k="goal" data-a="" title="Open the maths"></button></div>
+      <button type="button" class="hero-sub" id="hero-sub" data-act="drill" data-k="goal" data-a="" title="Open the maths"></button><div id="hero-src"></div></div>
     <div><div class="hero-facts" id="hero-facts"></div><div class="kpis" id="kpis"></div></div></div>
     <button type="button" class="trk-w" data-act="drill" data-k="goal" data-a="" aria-label="Progress to the monthly goal. Open the maths."><span class="trk" id="trk"><i class="fill"></i><i class="pace"></i><i class="head"></i></span><span class="tk t25">${k(.25)}</span><span class="tk t50">${k(.5)}</span><span class="tk t75">${k(.75)}</span><span class="tk t100">${k(1)}</span><span class="tk pc" id="trk-pc">where today's pace is</span></button>
     <div class="ticker" id="ticker" role="group" aria-label="Latest activity"><div class="ticker-t" id="ticker-t"></div></div>
@@ -731,16 +718,31 @@ function part(id, html, cardKey) { if (HERO[id] === html) return; HERO[id] = htm
 function updateHero(d) {
   const P = d.per, mp = d.dom / d.dim * 100, w = clamp(d.goalPct, 0, 100).toFixed(2) + "%";
   setOdo($("#odo"), usd(d.month));
-  part("hero-sub", `${d.monthName} so far: <span class="mono">${d.goalPct < 10 ? d.goalPct.toFixed(1) : Math.round(d.goalPct)}%</span> of the goal with <span class="mono">${Math.round(mp)}%</span> of the month gone. ${d.month >= GOAL * d.dom / d.dim ? "Ahead of pace." : `<span class="mono">${usd(GOAL * d.dom / d.dim - d.month)}</span> behind pace.`}`);
+  part("hero-sub", `${d.monthName} so far: <span class="mono">${d.goalPct < 10 ? d.goalPct.toFixed(1) : Math.round(d.goalPct)}%</span> of the goal with <span class="mono">${Math.round(mp)}%</span> of the month gone. ${d.month >= GOAL * d.dom / d.dim ? "Ahead of pace." : `<span class="mono">${usd(GOAL * d.dom / d.dim - d.month)}</span> behind pace.`} ${esc(d.prevName)} total <span class="mono">${usd(d.prevFull)}</span>.`);
+  part("hero-src", srcHtml("hero"));
   part("hero-facts", `${dB("goal", "", `<span>Needed per day</span><b>${N(d.perDay, "usd")}</b>`, "hf")}${dB("goal", "", `<span>On pace for</span><b>${N(d.projected, "usd")}</b>`, "hf")}${dB("goal", "", `<span>Days left</span><b>${N(d.daysLeft)}</b>`, "hf")}`, "hero-facts");
   const isT = P.key === "today", nl = isT ? `${N(d.todayNew)}<small>/ ${nf0.format(d.target)}</small>` : N(P.nw) + dl(P.dNw);
-  part("kpis", `${dB("pays", "period", `<span><i class="c-green"></i>Money · ${P.chip}</span><b>${N(P.rev, "usd")}${dl(P.delta)}</b>`, "kpi")}${dB(isT ? "day" : "days", isT ? d.t : "", `<span><i class="c-blue"></i>New leads · ${P.chip}</span><b>${nl}</b>`, "kpi")}${dB("replies", "real", `<span><i class="c-blue2"></i>Real replies · ${P.chip}</span><b>${N(P.rep)}${dl(P.dRep)}</b>`, "kpi")}${dB("samples", "period", `<span><i class="c-orange"></i>Samples · ${P.chip}</span><b>${N(P.samples)}${dl(P.dSamples)}</b>`, "kpi")}${dB("hotlist", "", `<span><i class="c-red"></i>Hot leads now</span><b>${N(d.hot.length)}</b>`, "kpi")}${dB("att", "reply", `<span><i class="c-purple"></i>Replies waiting</span><b>${N((d.att.reply || []).length)}</b>`, "kpi")}`, "hero-kpis");
+  part("kpis", `${dB("pays", "period", `<span><i class="c-green"></i>Payments · ${P.chip}</span><b>${N(P.revN)}<small>${P.key === "month" ? (P.revN ? `avg ${usd(P.rev / P.revN)}` : "") : usd(P.rev)}</small></b>`, "kpi")}${dB(isT ? "day" : "days", isT ? d.t : "", `<span><i class="c-blue"></i>New leads · ${P.chip}</span><b>${nl}</b>`, "kpi")}${dB("replies", "real", `<span><i class="c-blue2"></i>Real replies · ${P.chip}</span><b>${N(P.rep)}${dl(P.dRep)}</b>`, "kpi")}${dB("samples", "period", `<span><i class="c-orange"></i>Samples · ${P.chip}</span><b>${N(P.samples)}${dl(P.dSamples)}</b>`, "kpi")}${dB("hotlist", "", `<span><i class="c-red"></i>Hot leads now</span><b>${N(d.hot.length)}</b>`, "kpi")}${dB("att", "reply", `<span><i class="c-purple"></i>Replies waiting</span><b>${N((d.att.reply || []).length)}</b>`, "kpi")}`, "hero-kpis");
   const trk = $("#trk"); $(".fill", trk).style.setProperty("--w", w); $(".head", trk).style.setProperty("--w", w); $(".pace", trk).style.setProperty("--x", mp + "%"); $("#trk-pc").style.setProperty("--x", clamp(mp, 12, 88) + "%");
   const tk = hid => d.feed.slice(0, 12).map(e => `<button type="button" ${hid ? 'tabindex="-1" aria-hidden="true" ' : ""}${e.email ? `data-act="lead" data-email="${esc(e.email)}"` : `data-act="drill" data-k="${e.k}" data-a="${esc(e.a)}"`}><i class="${e.c}"></i>${esc(cut(e.title, 52))}<em>${e.dateOnly ? dLabel(dayOf(e.t)) : rel(e.t)}</em></button>`).join(""), items = tk(false);
   if (HERO.tick !== items) { HERO.tick = items; const t = $("#ticker-t"); t.innerHTML = items + tk(true); t.style.setProperty("--dur", Math.max(30, d.feed.slice(0, 12).length * 6) + "s"); }
   $$("#hero .per button").forEach(b => { const on = b.dataset.p === STATE.period; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
 }
 
+/* 11-19 (Simas: every number must come from a real source): a small "source · synced N min ago" line under each data card. */
+const SRC = { hero: ["Money: Stripe · Outreach: Instantly API · Samples: Samples tab", "metrics"], next: ["CRM tasks + Samples tab", "sheet"], today: ["Instantly API, Stripe, cal.com", "metrics"],
+  paidc: ["Stripe + Drive delivery index", "metrics"], retainers: ["Stripe subscriptions", "metrics"], outreach: ["Instantly API", "metrics"], close: ["Instantly replies", "replies"],
+  hot: ["Samples tab + Instantly interested", "interested"], activity: ["Stripe, Instantly, Samples tab", "replies"], moods: ["Samples tab", "sheet"], score: ["Samples tab", "sheet"],
+  attention: ["CRM ops", "replies"], total: ["Instantly API", "metrics"], heat: ["Instantly daily analytics", "instantly"], samples: ["Samples tab", "sheet"], turn: ["Samples tab", "sheet"],
+  followups: ["CRM follow-ups", "replies"], rate: ["Instantly API", "metrics"], speed: ["Instantly threads", "replies"], clock: ["Instantly replies", "replies"], camps: ["Instantly API", "instantly"],
+  deliv: ["Instantly API", "metrics"], buyers: ["Stripe", "metrics"], topc: ["Stripe", "metrics"], alltime: ["Stripe", "metrics"], funnel: ["Instantly API, Samples tab, Stripe", "metrics"],
+  away: ["Instantly replies", "replies"], inboxes: ["Instantly accounts", "instantly"], videos: ["Drive delivery index", "deliveries"], portal: ["Client portal", ""], psamples: ["Client portal", ""],
+  pvideos: ["Client portal", ""], pnotes: ["Client portal", ""], pclients: ["Client portal", ""] };
+function srcHtml(id) {
+  const s = SRC[id]; if (!s || !RAW) return "";
+  const at = s[1] === "metrics" ? (D && D.mAt) : s[1] ? ((RAW.sync || []).find(x => x.name === s[1]) || {}).ran_at : null, old = at && Date.now() - new Date(at) > 3 * 36e5;
+  return `<p class="src${old ? " old" : ""}" title="${old ? "This source hasn't synced for over 3 hours" : "Where this card's numbers come from"}">${esc(s[0])} · ${s[1] ? (at ? `synced ${ago(at)}` : "not synced yet") : "live"}</p>`;
+}
 /* ---------------- render ---------------- */
 const IO = new IntersectionObserver(es => es.forEach(e => e.target.classList.toggle("inview", e.isIntersecting)), { rootMargin: "60px" });   // ambient loops run only on cards in view
 function build() {
@@ -755,6 +757,7 @@ function build() {
 function fit(el) { el.style.gridRowEnd = "span " + Math.ceil((el.offsetHeight + 16) / 4); }
 function renderAll(fromData) {
   D = derive();
+  requestAnimationFrame(() => CARDS.forEach(c => { if (!c.el || !c.render) return; const h = srcHtml(c.id), old = $(".src", c.el); if (!h) return; if (old) { if (old.outerHTML !== h) old.outerHTML = h; } else c.el.insertAdjacentHTML("beforeend", h); }));
   CARDS.forEach(c => {
     if (c.render) { const html = c.render(D); if (html !== c.last) { c.last = html; c.el.innerHTML = html; c.el.appendChild(c.sh); if (c.focus) { const h = $(".ch", c.el); if (h) h.insertAdjacentHTML("beforeend", `<button type="button" class="xp" data-act="drill" data-k="${c.focus[0]}" data-a="${c.focus[1]}" aria-label="Expand ${esc(c.title)}" title="Expand">${ic("expand")}</button>`); } countUp(c); applyVars(c.el);
         const sig = $$(".n[data-n]", c.el).map(x => x.dataset.n).join("|"); if (fromData && c.sig !== undefined && c.sig !== sig && !RM) { c.el.classList.remove("chg"); void c.el.offsetWidth; c.el.classList.add("chg"); } c.sig = sig; } }
