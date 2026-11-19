@@ -3,7 +3,9 @@
    Each item opens its own page (?p=...) in the main area. Built from the CRM's glass tokens, so all five looks work. */
 :root{
   --sn-gap:16px;                 /* space from the window edges */
-  --sn-w:252px;                  /* expanded width */
+  --sn-w:252px;                  /* expanded width (Simas 11-19 'smaller a bit': if he meant width, 220px here) */
+  --sn-h:auto;                   /* height: auto = hugs its menu, centred on the screen; calc(100dvh - var(--sn-gap)*2) = full height */
+  --sn-air:36px;                 /* space between the menu and the Look / Account / Log out group */
   --sn-w-mini:72px;              /* collapsed icon rail */
   --sn-room:calc(var(--sn-gap) + var(--sn-w) + 18px);
   --sn-room-mini:calc(var(--sn-gap) + var(--sn-w-mini) + 18px);
@@ -40,7 +42,7 @@ html.wall .snav{display:none}
 html.wall.sn-x .app,html.wall.sn-m .app{padding-left:28px}
 
 /* ---------- the rail ---------- */
-.snav{position:fixed;z-index:36;left:var(--sn-gap);top:var(--sn-gap);bottom:var(--sn-gap);width:var(--sn-w);display:flex;flex-direction:column;gap:2px;
+.snav{position:fixed;z-index:36;left:var(--sn-gap);top:50%;translate:0 -50%;height:var(--sn-h);max-height:calc(100dvh - var(--sn-gap)*2);overflow-y:auto;scrollbar-width:none;width:var(--sn-w);display:flex;flex-direction:column;gap:2px;
   padding:16px 12px 14px;border-radius:28px;background:var(--card);isolation:isolate;-webkit-backdrop-filter:var(--blurv);backdrop-filter:var(--blurv);
   border:1.5px solid var(--sn-rim);box-shadow:var(--edge),0 24px 60px rgba(40,60,140,.16);overflow:hidden;
   transition:width .42s var(--ease),transform .42s var(--ease),box-shadow .3s}
@@ -86,7 +88,7 @@ html.sn-m .sn-cap .sn-lbl{display:none}
   font-family:var(--mono);background:var(--blue-soft);color:var(--blue)}
 a[aria-current="page"] .sn-badge{background:rgba(255,255,255,.25);color:inherit}
 html.sn-m .sn-badge{position:absolute;top:6px;right:6px;min-width:9px;width:9px;height:9px;padding:0;font-size:0;background:var(--blue);box-shadow:0 0 0 2px var(--solid)}
-.sn-sp{flex:1}
+.sn-sp{flex:1;min-height:var(--sn-air)}
 .sn-foot{padding-top:10px;border-top:1px solid var(--line)}
 .sn-foot a,.sn-foot button{height:42px;font-size:13.5px;color:var(--mute)}
 
@@ -221,7 +223,7 @@ html.fx-lite .sd-col{-webkit-backdrop-filter:none;backdrop-filter:none;backgroun
   html.sn-x .app,html.sn-m .app{padding-left:12px}
   html.sn-x .grid,html.sn-m .grid{--cols:1}
   .sn-menu{display:grid;flex:none}
-  .snav{left:8px;top:calc(8px + env(safe-area-inset-top));bottom:calc(8px + env(safe-area-inset-bottom));width:min(290px,84vw);z-index:66;
+  .snav{left:8px;top:calc(8px + env(safe-area-inset-top));bottom:calc(8px + env(safe-area-inset-bottom));translate:none;height:auto;max-height:none;width:min(290px,84vw);z-index:66;
     transform:translateX(calc(-100% - 20px));-webkit-backdrop-filter:blur(18px) saturate(160%);backdrop-filter:blur(18px) saturate(160%);background:var(--glass),var(--tint-lite)}
   html.sn-m .snav{width:min(290px,84vw)}
   .snav.open{transform:none}
@@ -284,3 +286,30 @@ html[data-motion="calm"] .ticker-t [aria-hidden="true"]{display:none}
 /* Today grid: "$1,140"-size money must never clip in the narrow card */
 .tgrid .tc{padding:10px 4px 10px 8px}
 .tgrid b{font-size:15.5px;letter-spacing:-.05em;overflow:visible;text-overflow:clip}
+
+/* ---------- round 3 (11-19 15:3x): money page, grouped clients, today's videos ---------- */
+.sp-alerts{display:grid;gap:8px}
+.sp-alert{display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.45;padding:10px 12px;border-radius:12px;background:var(--panel)}
+.sp-alert i{width:8px;height:8px;border-radius:50%;margin-top:5px;flex:none;background:var(--faint)}
+.sp-alert.red{background:var(--red-soft)} .sp-alert.red i{background:var(--red)}
+.sp-alert.amber{background:var(--orange-soft)} .sp-alert.amber i{background:var(--orange)}
+.sp-more summary{cursor:pointer;font-size:15px;font-weight:600;display:flex;align-items:baseline;justify-content:space-between;gap:10px;list-style:none}
+.sp-more summary::-webkit-details-marker{display:none}
+.sp-more summary::before{content:"+";font-family:var(--mono);margin-right:8px;color:var(--key)}
+.sp-more[open] summary::before{content:"−"}
+.sp-more summary small{font-weight:400;color:var(--mute);font-size:12.5px;margin-left:auto}
+.sp-more[open] summary{margin-bottom:12px}
+.sp-kpi b{font-size:26px}
+.cl-tools{display:flex;gap:8px;align-items:center;margin-bottom:10px} .cl-tools .cl-q{margin:0;flex:1;min-width:0} .cl-tools .chip{height:32px;padding:0 11px;white-space:nowrap;cursor:pointer}
+.cl-grp{display:flex;align-items:center;justify-content:space-between;font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);padding:12px 8px 4px}
+.cl-grp:first-child{padding-top:2px}
+.cl-item .chip{flex:none}
+.cl-plan{margin:0 0 6px;padding:12px 14px;border-radius:14px;background:var(--tile);border:1px solid var(--line)}
+.cl-plan .sp-note{margin-top:8px}
+.cl-ord.today{color:var(--green)}
+.vid.today{border-color:var(--green);box-shadow:0 0 0 1.5px var(--green),0 8px 22px color-mix(in srgb,var(--green) 18%,transparent)}
+.vid .pl{position:relative}
+.vid .vt{position:absolute;top:8px;left:8px;font-style:normal;font-family:var(--sans);font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:999px;background:var(--green);color:#fff}
+.vid .vo{font-family:var(--sans)}
+.cl-list{grid-template-columns:minmax(0,1fr)}
+.cl-item .s{white-space:normal;line-height:1.35}
