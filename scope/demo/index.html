@@ -104,7 +104,8 @@ section.first{border-top:0;padding-top:0;padding-bottom:clamp(40px,5vw,64px)}
 .timeline{display:grid;gap:14px;counter-reset:t}
 @media(min-width:900px){.timeline{grid-template-columns:repeat(4,1fr)}}
 .tl{background:var(--card);border:1px solid var(--hair);border-radius:20px;padding:24px 22px;display:grid;gap:8px;align-content:start}
-.tl .when{font:500 13px/1 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--gold)}
+.tl .when{font:italic 400 40px/1 var(--serif);color:var(--gold)}
+@media print{.tl .when{font-size:26px}}
 .tl h3{font-size:22px}
 .tl p{font-size:15.5px}
 
@@ -328,10 +329,10 @@ section:has(+ section.band){border-bottom:0}
   <div class="head"><span class="kicker">After you pay</span><h2>We start <em>the same day.</em></h2>
   <p class="lede">No kickoff meetings and no waiting. This is what happens next.</p></div>
   <div class="timeline">
-    <div class="tl fade"><span class="when">Within the hour</span><h3>A welcome email</h3><p>Benas asks which videos to start from, or whether we pick them for you. Send any brand assets you want us to use, and tell us if you'd like your batches on a set schedule.</p></div>
-    <div class="tl fade"><span class="when">Same day</span><h3>We start editing</h3><p>The team starts as soon as your answers land. No answer yet? We start from your most recent videos, so no time is lost.</p></div>
-    <div class="tl fade"><span class="when">Within 24 hours</span><h3>Your first Short, for approval</h3><p>Tell us what to change, if anything. Once you like it, that locks the look.</p></div>
-    <div class="tl fade"><span class="when">Then it runs</span><h3>3–4 Shorts a week</h3><p>The rest follow in the same style, into your own Drive folder, ready to post.</p></div>
+    <div class="tl fade"><span class="when">1</span><h3>Your onboarding form</h3><p>Right after you pay, a two-minute form opens: which videos to start from (or we pick), brand assets, where viewers should go, and your schedule. Benas also emails you the link.</p></div>
+    <div class="tl fade"><span class="when">2</span><h3>We start editing</h3><p>The team starts the same day, as soon as your answers land. No answers yet? We start from your most recent videos, so no time is lost.</p></div>
+    <div class="tl fade"><span class="when">3</span><h3>Your first Short, for approval</h3><p>It reaches you within 24 hours. Tell us what to change, if anything. Once you like it, that locks the look.</p></div>
+    <div class="tl fade"><span class="when">4</span><h3>3–4 Shorts a week</h3><p>The rest follow in the same style, into your own Drive folder, ready to post.</p></div>
   </div>
  </div>
 </section>
