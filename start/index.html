@@ -104,7 +104,8 @@ section.first{border-top:0;padding-top:0;padding-bottom:clamp(40px,5vw,64px)}
 .timeline{display:grid;gap:14px;counter-reset:t}
 @media(min-width:900px){.timeline{grid-template-columns:repeat(4,1fr)}}
 .tl{background:var(--card);border:1px solid var(--hair);border-radius:20px;padding:24px 22px;display:grid;gap:8px;align-content:start}
-.tl .when{font:500 13px/1 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--gold)}
+.tl .when{font:italic 400 40px/1 var(--serif);color:var(--gold)}
+@media print{.tl .when{font-size:26px}}
 .tl h3{font-size:22px}
 .tl p{font-size:15.5px}
 
@@ -235,7 +236,11 @@ section:has(+ section.band){border-bottom:0}
 }
 
 @media print{#sample .sample{display:block!important}#sample .phone,#sample iframe{display:none!important;height:0!important}#sample{break-before:auto!important}}
-@media print{#sample .head{break-inside:auto!important}#sample .head *{break-after:auto!important}#sample{break-inside:auto!important}#sample .wrap{display:block!important}}
+@media print{#sample .head{break-inside:auto!important}#sample .head .kicker,#sample .head h2{break-after:avoid!important;page-break-after:avoid!important}#sample{break-inside:auto!important}#sample .wrap{display:block!important}}
+@media print{#sample{break-before:auto!important}#sample .sample{display:block!important}#sample .sample>*{break-inside:auto!important}#goal{padding-bottom:0!important}#goal .quotes{gap:14px!important}.quote{font-size:20px!important}section{padding:16px 0!important}.hero{padding-bottom:10px!important}}
+@media print{#sample .head .kicker{display:none!important}#sample{break-before:page!important;page-break-before:always!important}}
+@media(min-width:1000px){.comm>div:last-child:nth-child(3n+2){grid-column:span 2}}
+@media(min-width:760px) and (max-width:999px){.comm>div:last-child:nth-child(2n+1){grid-column:span 2}}
 </style>
 
 <style>
@@ -314,7 +319,7 @@ footer a{color:rgba(247,245,236,.8)}
    <div class="q"><label for="start_from">Which videos should we start from?</label>
     <p class="hint">Paste links to the videos or episodes you'd like first.</p>
     <textarea id="start_from" name="start_from" placeholder="Links, one per line"></textarea>
-    <label class="check"><input type="checkbox" name="pick_for_us" value="Yes, pick for me"> Or pick the strongest ones for me</label>
+    <label class="check"><input type="checkbox" name="pick_for_us" value="Yes"> Or pick the strongest ones for me</label>
    </div>
    <div class="q"><label for="brand_assets">Brand assets <span class="opt">optional</span></label>
     <p class="hint">A link to your logo, fonts and colours (Drive, Dropbox or Canva), if you'd like us to use them.</p>
@@ -323,7 +328,7 @@ footer a{color:rgba(247,245,236,.8)}
    <div class="q"><label for="viewers_go">Where should viewers go?</label>
     <p class="hint">One link for people who like your Shorts: your site, course, newsletter or booking page.</p>
     <input type="text" id="viewers_go" name="viewers_go" placeholder="Link">
-    <label class="check"><input type="checkbox" name="to_source" value="Yes, link the full video each Short came from"> Or send them to the full video each Short was made from</label>
+    <label class="check"><input type="checkbox" name="to_source" value="Yes"> Or send them to the full video each Short was made from</label>
    </div>
    <div class="q"><label for="short_you_love">A Short you love <span class="opt">optional</span></label>
     <p class="hint">One or two Shorts, yours or anyone's, whose style you like.</p>
@@ -355,7 +360,7 @@ footer a{color:rgba(247,245,236,.8)}
 <footer><div class="wrap"><img src="/assets/beju-mark-640.png" alt="Beju Creative" width="34" height="20"><span>Questions? Just reply to our email.</span><span><a href="/">bejucreative.digital</a> · <a href="/terms.html">Terms</a></span></div></footer>
 
 <script>
-const FORM="", ENTRY={"name": "", "email": "", "client": "", "start_from": "", "pick_for_us": "", "brand_assets": "", "viewers_go": "", "short_you_love": "", "schedule": "", "phone": "", "notes": "", "to_source": ""};
+const FORM="https://docs.google.com/forms/d/e/1FAIpQLScOegVXAfBlqOSpvVpj5YGWC0LwJ96nfvs3yTLYxA4Cw2_fKQ/formResponse", ENTRY={"name": "536609973", "email": "477819847", "client": "829587851", "start_from": "1337965485", "pick_for_us": "67656165", "brand_assets": "184209080", "viewers_go": "390998072", "to_source": "1243651291", "short_you_love": "1626368581", "schedule": "781432150", "phone": "1183941985", "notes": "492690107"};
 const q=new URLSearchParams(location.search), f=document.getElementById("f");
 const n=(q.get("n")||"").trim();
 if(n){document.getElementById("hi").textContent=n+".";document.getElementById("hi2").textContent=n+".";f.name.value=n}
@@ -365,7 +370,7 @@ f.addEventListener("submit",async ev=>{
   ev.preventDefault();
   const body=new FormData();
   for(const k in ENTRY){const el=f.elements[k];if(!el||!ENTRY[k])continue;
-    const v=el.type==="checkbox"?(el.checked?el.value:""):el.value.trim(); if(v)body.append("entry."+ENTRY[k],v)}
+    const v=el.type==="checkbox"?(el.checked?"Yes":"No"):el.value.trim(); if(v)body.append("entry."+ENTRY[k],v)}
   try{if(FORM)await fetch(FORM,{method:"POST",mode:"no-cors",body})}catch(e){}
   f.classList.add("hide");document.getElementById("done").classList.add("show");scrollTo({top:0,behavior:"smooth"});
 });
