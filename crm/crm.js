@@ -1445,6 +1445,7 @@ $("#wait-check").addEventListener("click", async () => { const { data } = await 
 (async () => {
   if (!window.supabase || !CFG.supabaseUrl || !CFG.supabaseAnonKey) { show("gate"); return msg("Couldn't load the page. Check your connection and refresh."); }
   sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+  window.BEJU_CRM_SB = sb;   // 11-19: the sidebar (side.js) shares this one client, so there is one session and one token refresh
   sb.auth.onAuthStateChange(ev => { if (ev === "SIGNED_OUT" && ME) setTimeout(signOut, 0); });   // no Supabase calls inside this callback
   try { const { data } = await sb.auth.getSession(); if (data.session) await enter(data.session.user); else show("gate"); }
   catch (e) { show("gate"); }
