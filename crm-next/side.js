@@ -148,13 +148,13 @@ const HEAD = {
 function srcOf(p, d) {
   if (p === "expenses") return d ? ["Beju Finance sheet + Stripe", d.updated_at] : null;
   if (p === "email") return d && d.ab ? ["Instantly API", d.ab.updated_at] : null;
-  if (p === "clients") return d ? ["Drive delivery index + Stripe", d.synced] : null;
+  if (p === "clients") return d ? [d.dsOk === false ? "Drive access expired: delivered counts are stale" : "Google Drive + Stripe", d.synced] : null;
   if (p === "weekly") return d ? ["Instantly API, Stripe, Samples tab, CRM", d.synced] : null;
   if (p === "todos") return ["Live board", null];
   return null;
 }
 function header(p, d) {
-  const [h, sub] = HEAD[p], s = srcOf(p, d), old = s && s[1] && Date.now() - new Date(s[1]) > 3 * 36e5;
+  const [h, sub] = HEAD[p], s = srcOf(p, d), old = s && (/expired/.test(s[0]) || (s[1] && Date.now() - new Date(s[1]) > 3 * 36e5));
   return `<header class="sp-h"><div><h1>${h}</h1><p>${esc(sub)}</p></div>${s ? `<span class="sp-src${old ? " old" : ""}"${old ? ' title="Older than 3 hours: the numbers may be out of date"' : ""}><i></i>${esc(s[0])}${s[1] ? ` · synced ${esc(ago(s[1]))}${old ? " · may be out of date" : ""}` : " · live"}</span>` : ""}</header>`;
 }
 async function renderPage(quiet) {
@@ -419,7 +419,7 @@ async function loadClients() {
     all("deliveries", "id,client_id,title,order_name,kind,duration_s,link,delivered_at", q => q.order("delivered_at", { ascending: false }).order("id")),
     all("payments", "client_id,amount,refunded,paid_at,package"),
     all("retainers", "id,email,name,amount,interval,status,started_at,current_period_end").catch(() => []),
-    all("sync_status", "name,ran_at").catch(() => []),
+    all("sync_status", "name,ran_at,ok,detail").catch(() => []),
     all("client_notes", "lead_email,kind,note,noted_at,created_at", q => q.eq("kind", "priority")).catch(() => []),
     panel("metrics").catch(() => null),
     all("promises", "lead_email,promise,owner,due_at,status", q => q.eq("status", "open")).catch(() => []),
@@ -479,7 +479,7 @@ async function loadClients() {
     ["past", "Past / parted ways", by("past").sort((a, b) => (b.last || "").localeCompare(a.last || ""))]];
   const ds = st.find(x => x.name === "deliveries");
   const allP = list.flatMap(c => c.packs.map(o => ({ ...o, client: c.name }))), nSt = k => allP.filter(o => o.st === k).length;
-  return { list, groups, t, PST, counts: { retainer: by("retainer").length, progress: nSt("progress"), finished: nSt("finished"), notstarted: nSt("notstarted"), waiting: nSt("waiting"), unknown: nSt("unknown") }, unknownL: allP.filter(o => o.st === "unknown").map(o => `${o.client}: ${o.name}`), synced: ds ? ds.ran_at : null, lastDelivery: deliveries.reduce((x, v) => v.delivered_at > x ? v.delivered_at : x, ""), todayN: list.reduce((s, c) => s + c.today, 0), todayC: list.filter(c => c.today).length };
+  return { list, groups, t, PST, counts: { retainer: by("retainer").length, progress: nSt("progress"), finished: nSt("finished"), notstarted: nSt("notstarted"), waiting: nSt("waiting"), unknown: nSt("unknown") }, unknownL: allP.filter(o => o.st === "unknown").map(o => `${o.client}: ${o.name}`), synced: ds ? ds.ran_at : null, dsOk: ds ? ds.ok !== false : true, lastDelivery: deliveries.reduce((x, v) => v.delivered_at > x ? v.delivered_at : x, ""), todayN: list.reduce((s, c) => s + c.today, 0), todayC: list.filter(c => c.today).length };
 }
 const fdur = s => s ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : "";
 function clientDetail(c, t) {
