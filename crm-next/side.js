@@ -414,7 +414,7 @@ function wireEmail() {
 
 /* 3. clients + their videos (SIMAS 11-19 15:3x: grouped by category, retainer plans, videos by date, today's highlighted) */
 async function loadClients() {
-  const [clients, deliveries, payments, retainers, st, notes, m, proms, scs, pipe] = await Promise.all([
+  const [clients, deliveries, payments, retainers, st, notes, m, proms, scs, pipe, ovs] = await Promise.all([
     all("clients", "id,name,emails,show,drive_folder,source"),
     all("deliveries", "id,client_id,title,order_name,kind,duration_s,link,delivered_at", q => q.order("delivered_at", { ascending: false }).order("id")),
     all("payments", "client_id,amount,refunded,paid_at,package"),
@@ -425,6 +425,7 @@ async function loadClients() {
     all("promises", "lead_email,promise,owner,due_at,status", q => q.eq("status", "open")).catch(() => []),
     all("scopes", "slug,client,email,url,status").catch(() => []),
     all("pipeline", "email,next_action,status").catch(() => []),
+    all("pack_overrides", "*").catch(() => []),
   ]);
   const t = dayOf(Date.now()), plans = (m && m.data && m.data.retainer_plans) || {};
   const vids = {}, paid = {}, nPay = {}, lastPay = {}, payL = {};
@@ -459,6 +460,8 @@ async function loadClients() {
     const parked = pipe.some(q => mine(q) && /\bparked\b/i.test(q.next_action || ""));
     packs.forEach(o => { const std = o.unpaired || /^\d+\s+Shorts?\s+·/i.test(o.name), fin = o.bought != null && o.done >= o.bought, custom = !std || (!fin && o.bought != null && o.files > o.bought * 2 + 2);
       o.st = std && fin ? "finished" : cat === "past" && o.bought != null ? (fin ? "finished" : "past") : custom ? "custom" : o.bought == null ? "unknown" : parked ? "parked" : waiting ? "waiting" : o.done === 0 ? "notstarted" : "progress"; });
+    packs.forEach(o => { const ov = ovs.find(q => q.client_id === c.id && q.order_name === o.name); if (!ov) return;   /* a founder's word beats the Drive count */
+      o.st = ov.status; if (ov.done != null) o.done = ov.done; if (ov.bought != null) o.bought = ov.bought; o.ov = ov; });
     const worst = ["notstarted", "progress", "waiting", "parked", "unknown", "past", "finished", "custom"].find(k => packs.some(o => o.st === k)) || "", state = r ? "retainer" : worst;
     const pr = proms.filter(q => es.includes(lc(q.lead_email))).sort((a, b) => String(a.due_at).localeCompare(String(b.due_at))), sc = scs.find(q => q.email && es.includes(lc(q.email))) || null, att = [];
     if (plan) { plan.daysLeft = Math.ceil((new Date(r.current_period_end) - Date.now()) / 864e5); const len = Math.max(1, (new Date(r.current_period_end) - new Date(plan.start + "T00:00:00Z")) / 864e5), frac = Math.min(1, Math.max(0, 1 - plan.daysLeft / len));
@@ -498,9 +501,9 @@ function stChip(c) {
   const o = c.packs.find(x => x.st === c.worst); if (!o) return "";
   if (o.st === "custom") return `<span class="chip">Custom deal</span>`;
   if (o.st === "past") return `<span class="chip">Past client · ${o.done} of ${o.bought} delivered</span>`;
-  return `<span class="chip ${PCH[o.st][1]}">${o.st === "finished" ? "✓ Finished" : `${PCH[o.st][0]}${o.bought != null && o.st !== "waiting" ? ` · ${o.done} / ${o.bought}` : ""}`}</span>`;
+  return `<span class="chip ${PCH[o.st][1]}">${o.st === "finished" ? `✓ Finished${o.ov && o.bought != null ? ` · ${o.done} / ${o.bought}` : ""}` : `${PCH[o.st][0]}${o.bought != null && o.st !== "waiting" ? ` · ${o.done} / ${o.bought}` : ""}`}</span>`;
 }
-const packLines = c => c.packs.length ? `<div class="cl-plan"><b class="cl-ph">Packs</b>${c.packs.map(o => `<div class="cl-pk"><span class="ring ${PCH[o.st][1]}" data-v="p:${o.bought ? Math.min(100, Math.round(100 * o.done / o.bought)) : 0}"></span><span class="grow">${esc(o.name)}${o.st === "waiting" && c.waiting ? `<small class="mut"> · ${esc(c.waiting)}</small>` : ""}</span><b class="mono">${o.st === "custom" ? `${o.files} files` : o.bought == null ? "? " : `${o.done} / ${o.bought}`}</b><span class="chip ${PCH[o.st][1]}">${o.st === "finished" ? "✓ Finished" : PCH[o.st][0]}</span></div>`).join("")}</div>` : "";
+const packLines = c => c.packs.length ? `<div class="cl-plan"><b class="cl-ph">Packs</b>${c.packs.map(o => `<div class="cl-pk"><span class="ring ${PCH[o.st][1]}" data-v="p:${o.bought ? Math.min(100, Math.round(100 * o.done / o.bought)) : 0}"></span><span class="grow">${esc(o.name)}${o.st === "waiting" && c.waiting ? `<small class="mut"> · ${esc(c.waiting)}</small>` : ""}</span><b class="mono">${o.st === "custom" ? `${o.files} files` : o.bought == null ? "? " : `${o.done} / ${o.bought}`}</b><span class="chip ${PCH[o.st][1]}">${o.st === "finished" ? "✓ Finished" : PCH[o.st][0]}</span>${o.ov ? `<small class="mut">set by ${esc(o.ov.set_by || "a founder")} ${esc(dLabel(dayOf(o.ov.set_at)))}</small><button type="button" class="lk" data-ovundo="${esc(o.name)}">undo</button>` : o.st !== "finished" && !o.unpaired ? `<button type="button" class="act" data-ovfin="${esc(o.name)}" data-b="${o.bought == null ? "" : o.bought}">Mark finished</button>` : ""}</div>`).join("")}</div>` : "";
 function clientRow(c, sel) {
   const sub = c.plan ? c.plan.text : c.last ? `last video ${dLabel(c.last)}${c.nPay > 1 ? ` · ${c.nPay} payments` : ""}` : c.paid ? `${usd(c.paid)} paid` : "";
   return `<a class="cl-item" href="?p=clients&amp;c=${esc(c.id)}" data-cl="${esc(c.id)}" data-st="${esc([c.ret ? "retainer" : "", ...new Set(c.packs.map(o => o.st))].join(" "))}" data-today="${c.today}" data-q="${esc(lc([c.name, c.show, ...(c.emails || [])].join(" ")))}"${sel && c.id === sel.id ? ' aria-current="true"' : ""}><span class="av">${esc(initials(c.name))}</span><span class="grow"><span class="t">${esc(c.name || "Client")}</span><span class="s">${esc(sub)}</span></span><span class="n">${int(c.vids.length)}</span><span class="cl-ch">${stChip(c)}${c.plan && c.plan.shorts ? `<span class="chip">${c.plan.done} / ${c.plan.shorts} this month</span>` : ""}${c.today ? `<span class="chip g">${c.today} today</span>` : ""}</span></a>`;
@@ -525,6 +528,17 @@ function wireClients() {
   $$("[data-cl-go]", PAGE_EL).forEach(a => a.addEventListener("click", ev => { if (ev.metaKey || ev.ctrlKey) return; ev.preventDefault(); $(`#cl-list [data-cl="${CSS.escape(a.dataset.clGo)}"]`)?.click(); $("#cl-detail").scrollIntoView({ behavior: RM ? "auto" : "smooth", block: "start" }); }));
   $("#cl-q")?.addEventListener("input", filterClients);
   $("#cl-today")?.addEventListener("click", ev => { CL_TODAY = !CL_TODAY; ev.currentTarget.classList.toggle("g", CL_TODAY); ev.currentTarget.setAttribute("aria-pressed", CL_TODAY); filterClients(); });
+  $("#cl-detail")?.addEventListener("click", async ev => {
+    const f = ev.target.closest("[data-ovfin]"), u = ev.target.closest("[data-ovundo]"); if (!f && !u) return;
+    const cid = new URLSearchParams(location.search).get("c") || ($("#cl-list [aria-current=true]") || {}).dataset?.cl; if (!cid) return;
+    await me(); const who = (ME && ME.who !== "Both" ? ME.who : (ME && ME.name)) || null;
+    try {
+      if (f) { const b = f.dataset.b ? +f.dataset.b : null; if (!confirm(`Mark "${f.dataset.ovfin}" as finished${b ? ` (${b} / ${b})` : ""}?`)) return;
+        await must(sb().from("pack_overrides").upsert({ client_id: cid, order_name: f.dataset.ovfin, status: "finished", done: b, bought: b, set_by: who, set_at: new Date().toISOString() })); }
+      else await must(sb().from("pack_overrides").delete().eq("client_id", cid).eq("order_name", u.dataset.ovundo));
+      history.replaceState({ p: "clients" }, "", `?p=clients&c=${encodeURIComponent(cid)}`); CACHE.clients = null; await renderPage(true); toast(f ? "Marked finished" : "Override removed");
+    } catch (e) { toast("Couldn't save that. Check your connection."); }
+  });
   $$("[data-clf]", PAGE_EL).forEach(b => b.addEventListener("click", () => { CLF = CLF === b.dataset.clf ? "" : b.dataset.clf; $$("[data-clf]", PAGE_EL).forEach(x => { const on = x.dataset.clf === CLF; x.classList.toggle("on", on); x.setAttribute("aria-pressed", on); }); filterClients(); }));
   $$(".ring[data-v]", PAGE_EL).forEach(el => el.style.setProperty("--p", el.dataset.v.split(":")[1]));
   filterClients();
