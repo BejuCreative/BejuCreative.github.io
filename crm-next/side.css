@@ -497,3 +497,5 @@ html.fx-lite .cl-fb{-webkit-backdrop-filter:none;backdrop-filter:none;background
 .sp-src.old{border-color:var(--orange);color:var(--orange)}
 
 .ab-split{margin:0 0 12px}.ab-split b{color:var(--ink)}
+.ab-subj{margin:0 0 16px}.ab-tri{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.ab-v.grey{opacity:.55;filter:grayscale(1)}
+@media (max-width:600px){.ab-tri{grid-template-columns:minmax(0,1fr)}}

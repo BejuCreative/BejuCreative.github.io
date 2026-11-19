@@ -371,6 +371,18 @@ function abStatus(c, s, acts) {
   if (win || a) { const w = win || (a && a.winner), l = w === "B" ? "A" : "B"; return { k: "due", chip: "chip o", text: `Change due: drop ${l}, write a new challenger against ${w}`, a, w, l }; }
   return { k: "none", chip: "chip", text: "No change needed yet", a: null };
 }
+function subjCard(S, vt) {   /* subject-line test (council 11-19): arms greyed out until each has `look` sends; no verdict before that */
+  if (!S || !S.since) return "";
+  const R = S.rules || {}, LOOK = R.look || 600, WIN = R.win || 1000, TIE = R.tie || 1500, GAP = R.gap || 2;
+  const row = g => { const early = g.state === "too_early";
+    return `<div class="ab-test"><div class="ab-th"><b>${esc(g.name)}</b><span class="chip${g.state === "winner" ? " g" : g.state === "looking" || g.state === "no_winner" ? " b" : ""}">${esc(g.verdict)}</span></div>
+    <div class="ab-tri">${g.arms.map(a => { const grey = a.sent < LOOK, win = !early && g.lead === a.arm && (g.state === "winner" || g.state === "tie");
+      return `<div class="ab-v${grey ? " grey" : ""}${win ? " win" : !early && g.lead === a.arm ? " lead" : ""}"><div class="ab-vh"><span class="sp-tag">${esc(a.label)}</span>${win ? `<em class="ab-badge w">${g.state === "tie" ? "Keep (shortest)" : "Winner"}</em>` : ""}</div>
+      <b>${grey || a.pos_rate == null ? "—" : a.pos_rate.toFixed(1) + "%"}</b><small>${a.sent ? `${int(a.positives)} positive of ${int(a.sent)} sent · ${int(a.replies)} replies` : "nothing sent yet"}${grey && a.sent ? " · rate hidden until " + LOOK : ""}</small>
+      <div class="ab-prog" title="${int(a.sent)} of ${LOOK} sends before any look"><i data-v="w:${Math.min(100, Math.round(100 * a.sent / LOOK))}%"></i></div><span class="ab-pn">${int(Math.min(a.sent, LOOK))} / ${LOOK} sends${a.sent >= LOOK ? " ✓" : ""} · ${int(a.leads)} leads</span></div>`; }).join("")}</div></div>`; };
+  return `<section class="card sp-card ab-subj"><h2>Subject lines <small>email 1 · pooled across campaigns · since ${esc(vt(S.since))}</small></h2>${(S.groups || []).map(row).join("")}
+  <p class="sp-note">No verdict before ${int(LOOK)} sends per arm; winner needs ${int(WIN).toLocaleString("en-US")}–${int(TIE).toLocaleString("en-US")} sends and a ${GAP}-point gap. No gap by ${int(TIE).toLocaleString("en-US")} = tie, keep the shortest subject. A send counts only when its subject matches the lead's arm.</p></section>`;
+}
 function viewEmail(x) {
   const d = x.ab && x.ab.data, M = x.m && x.m.data, acts = x.acts || [];
   if (!d || !Array.isArray(d.campaigns)) return empty("No A/B data yet. It arrives with the next sync (hourly).");
@@ -393,6 +405,7 @@ function viewEmail(x) {
   const done = acts.filter(a => a.done_at);
   return `<div class="sp-kpis">${kpi("Tests running", cu(running, "int", "ab-run"), waiting ? `${waiting} more waiting for first sends since the split` : "A and B both sending")}${kpi("Winners found", cu(tests.filter(t => t.s.state === "winner").length, "int", "ab-win"), `needs ${MIN}+ sends per side and ${r.min_pos || 8}+ positives`)}${kpi("Changes due", cu(tests.filter(t => t.st.k === "due").length, "int", "ab-due"), "loser to drop, new challenger to write")}${kpi("Changes done", cu(done.length, "int", "ab-done"), done[0] ? `last ${esc(dLabel(dayOf(done[0].done_at)))}` : "none yet")}</div>
   <p class="sp-note ab-split"><b>Split 50/50 by lead since ${esc(vt(d.split_since))}</b> · each lead keeps one version per email, and A vs B is counted by that version, not by Instantly's variant numbers.</p>
+  ${subjCard(d.subjects, vt)}
   <div class="ab-grid">${d.campaigns.map(c => `<section class="card sp-card ab-card"><h2>${esc(c.name)} <small>${c.since ? `split since ${esc(vt(c.since))}` : "not split yet"}</small></h2>${(c.steps || []).map(s => test(c, s)).join("")}${smp(c)}</section>`).join("")}</div>
   <section class="card sp-card"><h2>Partner campaigns <small>arms are tags, not Instantly variants</small></h2>${part && part.length ? `<div class="sp-bars">${part.map(a => `<div class="sp-bar"><span>${esc(a.arm)} <small class="mut">${esc((a.campaigns || []).filter(n => /PARTNER/i.test(n)).map(n => n.replace(/^PARTNER\s*/i, "")).join(", "))}</small></span><span class="v">${a.reply_rate == null ? "—" : a.reply_rate.toFixed(1) + "% replied"} · ${int(a.positive)} positive · ${int(a.contacted)} contacted</span><div class="bar"><i data-v="w:${Math.max(2, Math.round(100 * (a.reply_rate || 0) / pmx))}%"></i></div></div>`).join("")}</div><p class="sp-note">Too early for a winner: every partner arm is under 100 leads contacted.</p>` : empty("No data yet: no partner-campaign leads are tagged in the arms sync.")}</section>
   <section class="card sp-card"><h2>Reply rate by campaign <small>all time · Instantly API${x.m ? ` · synced ${esc(ago(x.m.updated_at))}` : ""}</small></h2>${camps.length ? `<div class="sp-bars">${camps.map(c => `<div class="sp-bar"><span>${esc(c.name.split(" —")[0])} <small class="mut">${esc(c.status_label || "")}</small></span><span class="v">${c.reply_rate == null ? "—" : c.reply_rate.toFixed(1) + "%"} replied · ${c.pos_rate == null ? "—" : c.pos_rate.toFixed(1) + "%"} positive</span><div class="bar"><i data-v="w:${Math.max(2, Math.round(100 * (c.reply_rate || 0) / rmx))}%"></i></div></div>`).join("")}</div>
