@@ -497,3 +497,7 @@ html.fx-lite .cl-fb{-webkit-backdrop-filter:none;backdrop-filter:none;background
 .sp-src.old{border-color:var(--orange);color:var(--orange)}
 
 .ab-split{margin:0 0 12px}.ab-split b{color:var(--ink)}
+.ab-subj{margin:0 0 16px}.ab-tri{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.ab-v.grey{opacity:.55;filter:grayscale(1)}
+@media (max-width:600px){.ab-tri{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:600px){html.sn-m .snav{left:8px;padding-left:0;padding-right:0}}   /* phone drawer: the round-5 rail gap must not push the closed drawer on screen */
+@media (max-width:600px){html.sn-x .top-brand,html.sn-m .top-brand{display:none}}   /* phone: the menu button takes the logo slot (the drawer shows the brand); the top bar was 15px wider than the screen */
