@@ -142,14 +142,14 @@ const HEAD = {
   expenses: ["Money <em class=\"sf\">&amp; expenses</em>", "What's in Stripe right now, what's coming up, and where the money went."],
   email: ["Email <em class=\"sf\">tests</em>", "Variant A against B per campaign, plus each campaign's real reply and positive rates."],
   clients: ["Clients <em class=\"sf\">&amp; videos</em>", "Everyone who paid or got videos from us, and every video we delivered."],
-  weekly: ["Weekly <em class=\"sf\">analysis</em>", "Eight weeks of outreach, positive replies and money, week by week."],
+  weekly: ["Weekly <em class=\"sf\">analysis</em>", "What worked, what we changed and what performed best: this week against last week."],
   todos: ["To-<em class=\"sf\">dos</em>", "The founders' board. Drag cards between columns; both of you see changes live."],
 };
 function srcOf(p, d) {
   if (p === "expenses") return d ? ["Stripe API + Beju Finance sheet", d.updated_at] : null;
   if (p === "email") return d && d.ab ? ["Instantly API", d.ab.updated_at] : null;
   if (p === "clients") return d ? ["Drive delivery index + Stripe", d.synced] : null;
-  if (p === "weekly") return d ? ["Instantly, Stripe and the Samples tab", d.synced] : null;
+  if (p === "weekly") return d ? ["Instantly API, Stripe, Samples tab, CRM", d.synced] : null;
   if (p === "todos") return ["Live board", null];
   return null;
 }
@@ -165,7 +165,7 @@ async function renderPage(quiet) {
     const d = CACHE[p] || (CACHE[p] = await LOAD[p]());
     if (seq !== SEQ || p !== PAGE) return;
     PAGE_EL.innerHTML = header(p, d) + VIEW[p](d);
-    applyVars(PAGE_EL); if (p === "todos") wireBoard(); if (p === "clients") wireClients();
+    applyVars(PAGE_EL); if (p === "todos") wireBoard(); if (p === "clients") wireClients(); if (p === "weekly") wireWeekly();
   } catch (e) {
     if (seq !== SEQ) return; delete CACHE[p];
     PAGE_EL.innerHTML = `${header(p, null)}<p class="sp-err">Couldn't load this page. ${esc(String(e && e.message || e).slice(0, 160))}</p><div><button type="button" class="act" id="sp-retry">${ic("refresh")}Try again</button></div>`;
@@ -316,55 +316,170 @@ function wireClients() {
   });
 }
 
-/* 4. weekly analysis */
+/* 4. weekly analysis (SIMAS 11-19 15:3x: "what worked, what we changed, what performed best"; revenue is one small card) */
+const medn = a => { const s = a.filter(x => x != null && isFinite(x)).sort((x, y) => x - y); return s.length ? (s.length % 2 ? s[(s.length - 1) / 2] : (s[s.length / 2 - 1] + s[s.length / 2]) / 2) : null; };
+const fmtH = h => h == null ? "—" : h < 1 ? `${Math.max(1, Math.round(h * 60))} min` : h < 48 ? `${h.toFixed(1)} h` : `${(h / 24).toFixed(1)} d`;
 async function loadWeekly() {
-  const t = dayOf(Date.now()), w0 = monday(t), from = addDays(w0, -7 * 7);
-  const [daily, interested, pipe, payments, deliveries, st] = await Promise.all([
-    all("campaign_daily", "day,sent,new_leads,replies,replies_auto,opportunities", q => q.gte("day", from)),
-    all("interested_leads", "email,interest_changed_at"),
-    all("pipeline", "email,yes_at,delivered_at"),
-    all("payments", "amount,refunded,paid_at", q => q.gte("paid_at", from)),
+  const t = dayOf(Date.now()), w0 = monday(t), from = addDays(w0, -7 * 7), since21 = new Date(Date.now() - 21 * 864e5).toISOString();
+  const opt = p => p.catch(() => null), optL = p => p.catch(() => []);
+  const [m, arms, ab, daily, interested, pipe, payments, retainers, deliveries, promises, fu, scopes, changes, threads, snaps, clients, lostLog] = await Promise.all([
+    opt(panel("metrics")), opt(panel("arms")), opt(panel("ab_tests")),
+    all("campaign_daily", "day,opportunities", q => q.gte("day", from)),
+    all("interested_leads", "email,first_name,company,interest_changed_at,last_reply_at"),
+    all("pipeline", "email,name,status,yes_at,delivered_at,last_reply_at,paid,fu_stage,fu_day0,notes,updated_at"),
+    all("payments", "client_id,email,payer_name,amount,refunded,paid_at"),
+    optL(all("retainers", "id,email,name,amount,interval,status,started_at,current_period_end,canceled_at")),
     all("deliveries", "delivered_at", q => q.gte("delivered_at", from)),
-    all("sync_status", "name,ran_at").catch(() => []),
+    optL(all("promises", "lead_email,promise,owner,due_at,status", q => q.eq("status", "open"))),
+    optL(all("fu_state", "email,state,due_at")),
+    optL(all("scopes", "*", q => q.order("sent_at", { ascending: false }))),
+    optL(all("change_log", "*", q => q.order("day", { ascending: false }).order("id", { ascending: false }))),
+    optL(all("threads", "lead_email,at,direction", q => q.gte("at", since21).order("at"))),
+    optL(all("weekly_snapshots", "week,data", q => q.order("week", { ascending: false }).limit(9))),
+    optL(all("clients", "id,name")),
+    optL(all("stage_log", "lead_email,to_status,at", q => q.eq("to_status", "LOST").gte("at", new Date(Date.now() - 15 * 864e5).toISOString()))),
   ]);
+  const M = m && m.data, k = Math.round((new Date(t + "T12:00:00Z") - new Date(w0 + "T12:00:00Z")) / 864e5) + 1, p0 = addDays(w0, -7), p1 = addDays(p0, k - 1);
+  const inC = d => d && d >= w0 && d <= t, inP = d => d && d >= p0 && d <= p1, cnt = (rows, f, inR) => rows.filter(r => inR(dayOf(f(r)))).length;
+  const both = (rows, f) => ({ cur: cnt(rows, f, inC), prev: cnt(rows, f, inP) });
+  const pays = payments.filter(p => !p.refunded && p.paid_at).map(p => ({ ...p, amount: +p.amount || 0, day: dayOf(p.paid_at) }));
+  const PW = M && M.periods ? M.periods.week : null, PP = M && M.periods ? M.periods.prev_week_same_days : null;
+  const missing = [];
+  /* funnel */
+  const price = pipe.filter(p => p.fu_stage === "asked_price");
+  const funnel = [
+    ["New leads contacted", PW ? PW.contacted : null, PP ? PP.contacted : null], ["Real replies", PW ? PW.replies : null, PP ? PP.replies : null], ["Positive replies", PW ? PW.opportunities : null, PP ? PP.opportunities : null],
+    ["Sample yes", ...Object.values(both(pipe, r => r.yes_at))], ["Samples delivered", ...Object.values(both(pipe, r => r.delivered_at))],
+    ["Price asked", cnt(price, r => r.fu_day0, inC), cnt(price, r => r.fu_day0, inP)], ["Scopes sent", ...Object.values(both(scopes, r => r.sent_at))], ["Paid", ...Object.values(both(pays, r => r.paid_at))],
+  ].map(([label, cur, prev]) => ({ label, cur, prev }));
+  missing.push("Price asked: only leads whose CURRENT stage is 'asked price' are counted (stage history isn't stored), so last week's number is too low.");
+  if (!scopes.some(s => dayOf(s.sent_at) < w0)) missing.push("Scopes started 11-18: there is no earlier week to compare.");
+  /* scopes */
+  const sPaid = scopes.filter(s => s.status === "paid" && s.paid_at), sHrs = sPaid.map(s => (new Date(s.paid_at) - new Date(s.sent_at)) / 36e5).filter(h => h >= 0);
+  const scopeRev = sPaid.filter(s => inC(dayOf(s.paid_at))).reduce((a, s) => a + (+s.amount || 0), 0), weekRev = pays.filter(p => inC(p.day)).reduce((a, p) => a + p.amount, 0);
+  const SC = { rows: scopes, sent: scopes.length, paid: sPaid.length, medH: medn(sHrs), rev: scopeRev, mrr: sPaid.filter(s => s.monthly).reduce((a, s) => a + (+s.amount || 0), 0), other: Math.max(0, weekRev - scopeRev) };
+  /* hot leads */
+  const paidEmails = new Set([...pays.map(p => lc(p.email)), ...pipe.filter(p => p.paid && String(p.paid).trim()).map(p => lc(p.email))].filter(Boolean));
+  const pBy = Object.fromEntries(pipe.map(p => [lc(p.email), p])), hotSet = new Set(interested.map(x => lc(x.email)));
+  pipe.forEach(p => { if ((p.status || "").toUpperCase() === "HOT" || /^(said_yes|asked_price)$/.test(p.fu_stage || "")) hotSet.add(lc(p.email)); });
+  pipe.forEach(p => { if (/^(parked|none)$/.test(p.fu_stage || "")) hotSet.delete(lc(p.email)); });
+  const hotNow = [...hotSet].filter(e => !paidEmails.has(e) && !/^LOST$/i.test((pBy[e] || {}).status || "")).length;
+  const byLead = {}; threads.forEach(x => (byLead[lc(x.lead_email)] = byLead[lc(x.lead_email)] || []).push(x));
+  const gaps = []; hotSet.forEach(e => { let wait = null; (byLead[e] || []).forEach(x => { if (x.direction !== "out") { if (wait == null) wait = +new Date(x.at); } else if (wait != null) { if (inC(dayOf(wait))) gaps.push((+new Date(x.at) - wait) / 6e4); wait = null; } }); });
+  const cohort = interested.filter(x => { const d = dayOf(x.interest_changed_at); return d >= p0 && d < w0; }).map(x => { const e = lc(x.email), p = pBy[e] || {}, lastIn = (byLead[e] || []).filter(y => y.direction !== "out").pop();
+    const out = paidEmails.has(e) ? "paid" : /^LOST$/i.test(p.status || "") ? "lost" : (p.delivered_at || p.yes_at || /^(asked_price|said_yes)$/.test(p.fu_stage || "")) ? "forward" : (!lastIn || Date.now() - new Date(lastIn.at) > 5 * 864e5) ? "quiet" : "alive"; return { e, out }; });
+  const co = k2 => cohort.filter(c => c.out === k2).length;
+  const lastSnap = snaps.find(s => s.week === p0), HOT = { now: hotNow, weekAgo: lastSnap && lastSnap.data && lastSnap.data.hot ? lastSnap.data.hot.now : null, n: gaps.length, in30: gaps.filter(g => g <= 30).length, in2h: gaps.filter(g => g <= 120).length, med: medn(gaps),
+    cohort: cohort.length, paid: co("paid"), forward: co("forward"), alive: co("alive"), quiet: co("quiet"), lost: co("lost"), retention: cohort.length ? Math.round(100 * (co("paid") + co("forward") + co("alive")) / cohort.length) : null,
+    fuOver: fu.filter(f => f.state === "active" && f.due_at && new Date(f.due_at) < new Date()).length };
+  if (HOT.weekAgo == null) missing.push("Hot leads a week ago: no saved snapshot yet. This page saves one each week from now on, so the comparison appears next week.");
+  /* clients / retention */
+  const live = retainers.filter(r => /active|trialing|past_due/i.test(r.status || "")), mrr = live.reduce((a, r) => a + (+r.amount || 0), 0), newR = live.filter(r => inC(dayOf(r.started_at)));
+  const firstPay = {}; pays.forEach(p => { const key = p.client_id || lc(p.email); if (!firstPay[key] || p.day < firstPay[key]) firstPay[key] = p.day; });
+  const repeat = new Set(pays.filter(p => inC(p.day) && firstPay[p.client_id || lc(p.email)] < w0).map(p => p.client_id || lc(p.email)));
+  const cName = Object.fromEntries(clients.map(c => [c.id, c.name]));
+  const CL = { mrr, mrrNew: newR.reduce((a, r) => a + (+r.amount || 0), 0), newR: newR.map(r => `${r.name} ${usd(r.amount)}/mo`), churned: retainers.filter(r => inC(dayOf(r.canceled_at))).map(r => r.name), repeat: [...repeat].map(x => cName[x] || x),
+    vids: both(deliveries, r => r.delivered_at), promOpen: promises.length, promLate: promises.filter(p => p.due_at && new Date(p.due_at) < new Date()).length,
+    renew: live.slice().sort((a, b) => String(a.current_period_end).localeCompare(String(b.current_period_end))).map(r => ({ name: r.name, day: dayOf(r.current_period_end), amount: r.amount })) };
+  /* samples */
+  const hrs = inR => pipe.filter(p => p.yes_at && p.delivered_at && inR(dayOf(p.delivered_at))).map(p => (new Date(p.delivered_at) - new Date(p.yes_at)) / 36e5).filter(h => h >= 0 && h < 720);
+  const d14 = pipe.filter(p => p.delivered_at && dayOf(p.delivered_at) >= addDays(t, -14) && dayOf(p.delivered_at) <= addDays(t, -2)), allDel = pipe.filter(p => p.delivered_at);
+  const buyer = p => /^(WON|DONE)$/i.test(p.status || "") || !!(p.paid && String(p.paid).trim());
+  const SA = { medCur: medn(hrs(inC)), medPrev: medn(hrs(inP)), nCur: hrs(inC).length, replyN: d14.length, replied: d14.filter(p => p.last_reply_at && new Date(p.last_reply_at) > new Date(p.delivered_at)).length, del: allDel.length, paid: allDel.filter(buyer).length,
+    lost: pipe.filter(p => /^LOST$/i.test(p.status || "") && lostLog.some(x => lc(x.lead_email) === lc(p.email) && inC(dayOf(x.at)))).map(p => ({ name: p.name || p.email, why: (p.notes || "").replace(/\s+/g, " ").slice(-160) })) };
+  missing.push("Sample rejections: the reason is the tail of the lead's Samples-tab note, not a dedicated field.");
+  /* trend, revenue */
   const weeks = []; for (let i = 7; i >= 0; i--) weeks.push(addDays(w0, -7 * i));
-  const W = Object.fromEntries(weeks.map(w => [w, { w, now: w === w0, sent: 0, newLeads: 0, replies: 0, pos: 0, samples: 0, shorts: 0, pays: 0, rev: 0 }]));
-  const k = Math.round((new Date(t + "T12:00:00Z") - new Date(w0 + "T12:00:00Z")) / 864e5) + 1, pw0 = addDays(w0, -7), pcut = addDays(pw0, k);
-  const P = { sent: 0, newLeads: 0, pos: 0, pays: 0, rev: 0, days: k };   // last week, same weekdays as this week so far
-  const wk = d => W[monday(d)], inP = d => d >= pw0 && d < pcut;
-  daily.forEach(r => { const x = wk(r.day); if (x) { x.sent += +r.sent || 0; x.newLeads += +r.new_leads || 0; x.replies += +r.replies || 0; } if (inP(r.day)) { P.sent += +r.sent || 0; P.newLeads += +r.new_leads || 0; } });
-  const first = {};
-  interested.forEach(r => { const d = dayOf(r.interest_changed_at); if (d) { const e = lc(r.email); if (!first[e] || d < first[e]) first[e] = d; } });
-  pipe.forEach(r => { const d = dayOf(r.yes_at); if (d) { const e = lc(r.email); if (!first[e] || d < first[e]) first[e] = d; } });
-  Object.values(first).forEach(d => { const x = wk(d); if (x) x.pos++; if (inP(d)) P.pos++; });
-  pipe.forEach(r => { const d = dayOf(r.delivered_at), x = d && wk(d); if (x) x.samples++; });
-  payments.forEach(p => { if (p.refunded) return; const d = dayOf(p.paid_at), x = wk(d); if (x) { x.pays++; x.rev += +p.amount || 0; } if (inP(d)) { P.pays++; P.rev += +p.amount || 0; } });
-  deliveries.forEach(v => { const x = wk(v.delivered_at); if (x) x.shorts++; });
-  const inst = st.find(x => x.name === "instantly");
-  return { weeks: weeks.map(w => W[w]), prevSoFar: P, synced: inst ? inst.ran_at : null };
+  const first = {}; interested.forEach(r => { const d = dayOf(r.interest_changed_at), e = lc(r.email); if (d && (!first[e] || d < first[e])) first[e] = d; }); pipe.forEach(r => { const d = dayOf(r.yes_at), e = lc(r.email); if (d && (!first[e] || d < first[e])) first[e] = d; });
+  const trend = weeks.map(w => ({ w, now: w === w0, pos: Object.values(first).filter(d => monday(d) === w).length, paid: pays.filter(p => monday(p.day) === w).length, rev: pays.filter(p => monday(p.day) === w).reduce((a, p) => a + p.amount, 0) }));
+  const REV = { cur: weekRev, prev: pays.filter(p => inP(p.day)).reduce((a, p) => a + p.amount, 0) };
+  /* campaigns + arms + A/B */
+  const camps = M ? (M.campaigns || []).filter(c => c.week && (c.week.sent || (c.prev_week && c.prev_week.sent))).sort((a, b) => b.week.sent - a.week.sent) : [];
+  const ok = camps.filter(c => c.week.contacted >= 100 && c.week.pos_rate != null), best = ok.slice().sort((a, b) => b.week.pos_rate - a.week.pos_rate)[0], worst = ok.length > 1 ? ok.slice().sort((a, b) => a.week.pos_rate - b.week.pos_rate)[0] : null;
+  if (!M) missing.push("Outreach numbers: the metrics sync hasn't written yet.");
+  if (!arms) missing.push("Source / arm tags: the hourly arms sync hasn't written yet.");
+  missing.push("Source / arm tags: all time and last-14-days only (Instantly's lead list has no first-send date, so no clean week split), and its replies include auto-replies.");
+  const abRows = ab && ab.data ? ab.data.campaigns || [] : [];
+  if (!abRows.some(c => (c.steps || []).some(s => s.B.sent))) missing.push("A/B tests: variant B went live 11-19 and has not sent yet, so there is nothing to compare.");
+  /* headlines: biggest moves with enough volume */
+  const H = [];
+  funnel.forEach(f => { if (f.cur != null && f.prev != null && Math.max(f.cur, f.prev) >= 5 && f.prev > 0) { const r = (f.cur - f.prev) / f.prev; if (Math.abs(r) >= .15) H.push({ s: Math.abs(r) * Math.log10(10 + Math.max(f.cur, f.prev)), good: r > 0, text: `${f.label}: ${int(f.prev)} → ${int(f.cur)} (${r > 0 ? "+" : "−"}${Math.abs(Math.round(r * 100))}% vs the same ${k} days last week)` }); } });
+  if (SC.sent) H.push({ s: 3, good: SC.paid > 0, text: `Scopes: ${SC.sent} sent → ${SC.paid} paid${sPaid.length ? ` (${sPaid.map(s => `${s.client.split(" (")[0]} ${usd(s.amount)}${s.monthly ? "/mo" : ""}`).join(", ")})` : ""}` });
+  if (best) H.push({ s: 2, good: true, text: `Best campaign this week: ${best.name.split(" —")[0]} at ${best.week.pos_rate.toFixed(1)}% positive (${best.week.contacted} contacted)` });
+  if (worst && worst !== best) H.push({ s: 1.5, good: false, text: `Weakest campaign: ${worst.name.split(" —")[0]} at ${worst.week.pos_rate.toFixed(1)}% positive (${worst.week.contacted} contacted)` });
+  if (CL.mrrNew) H.push({ s: 2.5, good: true, text: `New monthly revenue: +${usd(CL.mrrNew)}/mo (${CL.newR.join(", ")}); MRR now ${usd(mrr)}` });
+  if (HOT.retention != null && HOT.cohort >= 5) H.push({ s: 1.8, good: HOT.retention >= 50, text: `Hot-lead retention: ${HOT.retention}% of last week's ${HOT.cohort} hot leads are still alive or converted` });
+  const heads = H.sort((a, b) => b.s - a.s).slice(0, 5);
+  const D = { t, w0, k, funnel, camps, best: best && best.id, worst: worst && worst !== best ? worst.id : null, arms: arms && arms.data, armsAt: arms && arms.updated_at, ab: abRows, SC, HOT, CL, SA, trend, REV, changes, heads, missing, synced: m ? m.updated_at : null };
+  D.export = { week_of: w0, days_so_far: k, compared_with: `same ${k} days last week`, headlines: heads.map(h => h.text), funnel: funnel.map(f => ({ step: f.label, this_week: f.cur, last_week_same_days: f.prev })),
+    campaigns: camps.map(c => ({ name: c.name, this_week: c.week, last_week_same_days: c.prev_week })), arms: D.arms ? D.arms.arms : null, ab_tests: abRows.map(c => ({ campaign: c.name, since: c.since, steps: c.steps })),
+    scopes: { sent: SC.sent, paid: SC.paid, median_hours_to_pay: SC.medH, revenue_this_week_usd: SC.rev, mrr_from_scopes_usd: SC.mrr, payments_without_scope_usd: SC.other, list: scopes.map(s => ({ client: s.client, offer: s.offer, amount: s.amount, monthly: s.monthly, sent_at: s.sent_at, paid_at: s.paid_at, status: s.status })) },
+    hot: HOT, clients: CL, samples: SA, revenue_usd: REV, trend_8_weeks: trend.map(x => ({ week_of: x.w, positives: x.pos, payments: x.paid, revenue_usd: x.rev })), changes: changes.map(c => ({ day: c.day, area: c.area, what: c.what, who: c.who })), thin_or_missing: missing };
+  sb().from("weekly_snapshots").upsert({ week: w0, data: D.export, updated_at: new Date().toISOString() }).then(() => {}, () => {});   // history builds up week by week
+  return D;
 }
-function delta(a, b, f, n) { if (!b) return `same ${n} day${n === 1 ? "" : "s"} last week: ${f(b)}`; const r = (a - b) / b; return `<span class="${r >= 0 ? "sd-up" : "sd-dn"}">${r >= 0 ? "▲" : "▼"} ${Math.abs(Math.round(r * 100))}%</span> vs the same ${n} day${n === 1 ? "" : "s"} last week (${f(b)})`; }
+const dl = (cur, prev, opts = {}) => { if (cur == null) return `<span class="mut">no data yet</span>`; if (prev == null) return `<span class="mut">no earlier data yet</span>`; if (!prev) return `<span class="mut">last week ${opts.f ? opts.f(prev) : int(prev)}</span>`; const r = (cur - prev) / prev, up = opts.lowGood ? r <= 0 : r >= 0; return `<span class="${up ? "sd-up" : "sd-dn"}">${r >= 0 ? "▲" : "▼"} ${Math.abs(Math.round(r * 100))}%</span> <span class="mut">vs ${opts.f ? opts.f(prev) : int(prev)}</span>`; };
+const pp = (a, b) => b ? (100 * a / b).toFixed(1) + "%" : "—";
 function cols(weeks, key, cls, fmt) {
   const mx = Math.max(1, ...weeks.map(w => w[key]));
   return `<div class="wk-cols ${cls}" role="img" aria-label="${esc(weeks.map(w => `${dLabel(w.w)}: ${fmt(w[key])}`).join(", "))}">${weeks.map(w => `<i class="${w.now ? "now" : ""}" data-v="h:${Math.max(2, Math.round(100 * w[key] / mx))}%" title="${esc(`Week of ${dLabel(w.w)}: ${fmt(w[key])}`)}"></i>`).join("")}</div>
     <div class="wk-axis" aria-hidden="true">${weeks.map(w => `<span>${esc(dLabel(w.w))}</span>`).join("")}</div>`;
 }
 function viewWeekly(d) {
-  const ws = d.weeks, now = ws[ws.length - 1], P = d.prevSoFar, n = P.days;
-  if (!ws.some(w => w.sent || w.pos || w.rev)) return empty("No weekly data yet.");
-  return `<div class="sp-kpis">${kpi("Positive replies this week", int(now.pos), delta(now.pos, P.pos, int, n))}${kpi("Per 100 new leads", now.newLeads ? pct(now.pos, now.newLeads) : "—", P.newLeads ? `same days last week ${pct(P.pos, P.newLeads)}` : "this week so far")}${kpi("Revenue this week", usd(now.rev), delta(now.rev, P.rev, usd, n))}${kpi("Emails sent this week", int(now.sent), delta(now.sent, P.sent, int, n))}</div>
-  <div class="sp-2b"><section class="card sp-card"><h2>Positive replies per week</h2>${cols(ws, "pos", "c-green", int)}</section><section class="card sp-card"><h2>Revenue per week <small>Stripe, USD</small></h2>${cols(ws, "rev", "c-blue", usd)}</section></div>
-  <section class="card sp-card"><h2>Week by week <small>newest first</small></h2><div class="sp-scroll"><table class="sp-tbl"><thead><tr><th>Week of</th><th class="num">New leads</th><th class="num">Sent</th><th class="num">Replies</th><th class="num">Positive</th><th class="num">Per 100 new</th><th class="num">Samples</th><th class="num">Paid videos</th><th class="num">Payments</th><th class="num">Revenue</th></tr></thead><tbody>
-    ${ws.slice().reverse().map(w => `<tr class="${w.now ? "now" : ""}"><td>${esc(dLabel(w.w))}${w.now ? " · so far" : ""}</td><td class="num">${int(w.newLeads)}</td><td class="num">${int(w.sent)}</td><td class="num">${int(w.replies)}</td><td class="num">${int(w.pos)}</td><td class="num">${w.newLeads ? pct(w.pos, w.newLeads) : "—"}</td><td class="num">${int(w.samples)}</td><td class="num">${int(w.shorts)}</td><td class="num">${int(w.pays)}</td><td class="num">${w.pays ? usd(w.rev) : "—"}</td></tr>`).join("")}
-  </tbody></table></div><p class="sp-note">Positive = marked interested in Instantly or said yes to a free sample, counted once in the week it first happened. Per 100 new = positives per 100 new leads emailed that week. Samples = free samples delivered. Paid videos = files in the Drive delivery index. Weeks run Monday to Sunday (Vilnius); this week is compared with the same days of last week.</p></section>`;
+  const sec = (n, title, small, body, cls = "") => `<section class="card sp-card ${cls}"><h2><span><em class="wk-n">${n}</em>${title}</span>${small ? `<small>${small}</small>` : ""}</h2>${body}</section>`;
+  const stat = (label, val, sub) => `<div class="wk-stat"><span>${esc(label)}</span><b>${val}</b>${sub ? `<small>${sub}</small>` : ""}</div>`;
+  const H = d.HOT, C = d.CL, S = d.SA, SC = d.SC, rate = c => c && c.contacted ? c : null;
+  const fmax = Math.max(1, ...d.funnel.map(f => Math.max(f.cur || 0, f.prev || 0)));
+  const funnel = `<div class="wk-fun">${d.funnel.map((f, i) => { const pv = i ? d.funnel[i - 1] : null; return `<div class="wk-fr"><span class="l">${esc(f.label)}</span><span class="b"><i class="c" data-v="w:${f.cur ? Math.max(3, Math.round(Math.sqrt(f.cur / fmax) * 100)) : 0}%"></i><i class="p" data-v="w:${f.prev ? Math.max(3, Math.round(Math.sqrt(f.prev / fmax) * 100)) : 0}%"></i></span><b>${f.cur == null ? "—" : int(f.cur)}</b><span class="cv">${pv && pv.cur ? pp(f.cur || 0, pv.cur) + " of the step before" : ""}</span><span class="d">${dl(f.cur, f.prev)}</span></div>`; }).join("")}</div><p class="sp-note">Blue = this week so far, grey = the same ${d.k} day${d.k === 1 ? "" : "s"} last week. Bars use a square-root scale so small steps stay visible.</p>`;
+  const campT = d.camps.length ? `<div class="sp-scroll"><table class="sp-tbl"><thead><tr><th>Campaign</th><th class="num">Sent</th><th class="num">Contacted</th><th class="num">Reply %</th><th class="num">vs last wk</th><th class="num">Positive %</th><th class="num">vs last wk</th></tr></thead><tbody>${d.camps.map(c => { const w = c.week, p = rate(c.prev_week), small = w.contacted < 100; return `<tr><td>${esc(c.name.split(" —")[0])}${c.id === d.best ? ` <span class="chip g">best</span>` : c.id === d.worst ? ` <span class="chip r">weakest</span>` : small ? ` <span class="chip">small sample</span>` : ""}</td><td class="num">${int(w.sent)}</td><td class="num">${int(w.contacted)}</td><td class="num">${w.reply_rate == null ? "—" : w.reply_rate.toFixed(1) + "%"}</td><td class="num">${p && p.reply_rate != null ? p.reply_rate.toFixed(1) + "%" : "—"}</td><td class="num">${w.pos_rate == null ? "—" : w.pos_rate.toFixed(1) + "%"}</td><td class="num">${p && p.pos_rate != null ? p.pos_rate.toFixed(1) + "%" : "—"}</td></tr>`; }).join("")}</tbody></table></div>` : empty("No data yet.");
+  const A = d.arms && d.arms.arms ? d.arms.arms : null, aOk = A ? A.filter(a => a.contacted >= 100) : [], aBest = aOk.slice().sort((a, b) => b.pos_rate - a.pos_rate)[0], aWorst = aOk.length > 1 ? aOk.slice().sort((a, b) => a.pos_rate - b.pos_rate)[0] : null;
+  const armT = A ? `<div class="sp-scroll"><table class="sp-tbl"><thead><tr><th>Source / arm</th><th class="num">Contacted</th><th class="num">Reply %</th><th class="num">Positive %</th><th class="num">Positives</th><th class="num">Last 14 d</th><th class="num">Positive % 14 d</th></tr></thead><tbody>${A.filter(a => a.contacted >= 30).map(a => `<tr><td>${esc(a.arm)}${a === aBest ? ` <span class="chip g">best</span>` : a === aWorst ? ` <span class="chip r">weakest</span>` : a.contacted < 100 ? ` <span class="chip">small sample</span>` : ""}<span class="sub">${esc((a.campaigns || []).join(", "))}</span></td><td class="num">${int(a.contacted)}</td><td class="num">${a.reply_rate == null ? "—" : a.reply_rate.toFixed(1) + "%"}</td><td class="num">${a.pos_rate == null ? "—" : a.pos_rate.toFixed(1) + "%"}</td><td class="num">${int(a.positive)}</td><td class="num">${int(a.contacted_14d)}</td><td class="num">${a.pos_rate_14d == null ? "—" : a.pos_rate_14d.toFixed(1) + "%"}</td></tr>`).join("")}</tbody></table></div><p class="sp-note">${A.filter(a => a.contacted < 30).length} arms with under 30 leads contacted are left out. Best and weakest need 100+ leads contacted. ${esc(d.arms.note || "")} Synced ${esc(ago(d.armsAt))}.</p>` : empty("No data yet: the arms sync runs hourly.");
+  const abT = d.ab.length ? `<div class="sp-scroll"><table class="sp-tbl"><thead><tr><th>Campaign</th><th>Step</th><th class="num">A sent</th><th class="num">A positive %</th><th class="num">B sent</th><th class="num">B positive %</th><th>Leader</th></tr></thead><tbody>${d.ab.flatMap(c => (c.steps || []).map(s => `<tr><td>${esc(c.name)}</td><td>${esc(s.step)}</td><td class="num">${int(s.A.sent)}</td><td class="num">${s.A.pos_rate == null ? "—" : s.A.pos_rate.toFixed(1) + "%"}</td><td class="num">${int(s.B.sent)}</td><td class="num">${s.B.pos_rate == null ? "—" : s.B.pos_rate.toFixed(1) + "%"}</td><td>${/wins/.test(s.verdict) ? `<span class="chip g">${esc(s.verdict)}</span>` : `<span class="chip">${/hasn't/.test(s.verdict) ? "B hasn't sent yet" : "too early"}</span>`}</td></tr>`)).join("")}</tbody></table></div>` : empty("No data yet.");
+  return `<div class="wk-tools"><span class="mut">Week of ${esc(dLabel(d.w0))} · day ${d.k} of 7 · compared with the same ${d.k} day${d.k === 1 ? "" : "s"} last week</span><button type="button" class="act go" id="wk-copy">${ic("copy")}Copy for Claude</button></div>
+  ${sec(1, "What worked this week", "", d.heads.length ? `<div class="wk-heads">${d.heads.map(h => `<div class="wk-head ${h.good ? "g" : "r"}"><i></i><span>${esc(h.text)}</span></div>`).join("")}</div>` : empty("Not enough volume yet this week for a clear win or loss."), "wk-top")}
+  <div class="sp-2">${sec(2, "Funnel", "this week vs last week", funnel)}
+    <div class="sp-col">${sec("", "8-week trend", "positive replies", cols(d.trend, "pos", "c-green", int))}${sec("", "Paid", "payments per week", cols(d.trend, "paid", "c-blue", int) + `<div class="wk-stats two">${stat("Revenue this week", usd(d.REV.cur), dl(d.REV.cur, d.REV.prev, { f: usd }))}${stat("MRR", usd(C.mrr), C.mrrNew ? `<span class="sd-up">+${usd(C.mrrNew)}</span> new this week` : "no change this week")}</div>`)}</div></div>
+  ${sec(3, "By campaign", "this week so far vs the same days last week", campT + `<p class="sp-note">Reply % = unique human replies ÷ leads contacted. Positive % = Instantly opportunities ÷ leads contacted. Under 100 contacted is marked "small sample": don't over-read it.</p>`)}
+  ${sec("", "By source / arm tag", "all time + last 14 days", armT)}
+  ${sec(4, "A/B tests", "A = line-first, B = question-first", abT)}
+  <div class="sp-2b">${sec(5, "Scopes", "since 11-18", `<div class="wk-stats">${stat("Sent", int(SC.sent))}${stat("Paid", int(SC.paid), SC.sent ? pp(SC.paid, SC.sent) + " of sent" : "")}${stat("Scope → paid", fmtH(SC.medH), "median")}${stat("From scopes, this week", usd(SC.rev), SC.mrr ? `${usd(SC.mrr)}/mo recurring` : "")}${stat("Payments without a scope", usd(SC.other), "this week")}</div>
+      <div class="sp-scroll"><table class="sp-tbl"><thead><tr><th>Client</th><th>Offer</th><th>Sent</th><th>Status</th></tr></thead><tbody>${SC.rows.map(s => `<tr><td>${s.url ? `<a class="lk" href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.client)}</a>` : esc(s.client)}</td><td>${esc(s.offer || "—")}${s.amount ? `<span class="sub">${usd(s.amount)}${s.monthly ? " / month" : ""}</span>` : ""}</td><td>${esc(dLabel(dayOf(s.sent_at)))}</td><td>${s.status === "paid" ? `<span class="chip g">paid ${esc(dLabel(dayOf(s.paid_at)))}</span>` : `<span class="chip o">${esc(s.status)}</span>`}</td></tr>`).join("") || `<tr><td colspan="4" class="mut">No scopes yet.</td></tr>`}</tbody></table></div>`)}
+    ${sec(6, "Hot leads", "", `<div class="wk-stats">${stat("Hot + interested now", int(H.now), H.weekAgo == null ? "no data for a week ago yet" : dl(H.now, H.weekAgo))}${stat("Answered within 30 min", H.n ? pp(H.in30, H.n) : "—", H.n ? `${H.in30} of ${H.n} replies this week` : "no replies from hot leads yet")}${stat("Within 2 h", H.n ? pp(H.in2h, H.n) : "—", H.n ? `median ${fmtH(H.med == null ? null : H.med / 60)}` : "")}${stat("Overdue follow-ups", int(H.fuOver), "")}${stat("Hot-lead retention", H.retention == null ? "—" : H.retention + "%", H.cohort ? `of last week's ${H.cohort} new hot leads` : "no hot leads last week")}</div>
+      ${H.cohort ? `<div class="sp-bars">${[["Paid", H.paid, "c-green"], ["Moved forward (sample / price)", H.forward, "c-green"], ["Still talking", H.alive, ""], ["Went quiet (5+ days)", H.quiet, "c-orange"], ["Lost", H.lost, "c-red"]].map(([l, v, c]) => barRow(l, int(v), v / H.cohort, c)).join("")}</div>` : ""}`)}</div>
+  <div class="sp-2b">${sec(7, "Clients & retention", "", `<div class="wk-stats">${stat("MRR", usd(C.mrr), C.mrrNew ? `<span class="sd-up">+${usd(C.mrrNew)}</span> this week` : "no change")}${stat("New retainers", int(C.newR.length), esc(C.newR.join(", ")))}${stat("Churned", int(C.churned.length), esc(C.churned.join(", ")))}${stat("Repeat buyers this week", int(C.repeat.length), esc(C.repeat.slice(0, 4).join(", ")))}${stat("Videos delivered", int(C.vids.cur), dl(C.vids.cur, C.vids.prev))}${stat("Open promises", int(C.promOpen), C.promLate ? `<span class="sd-dn">${C.promLate} overdue</span>` : "none overdue")}</div>
+      <p class="sp-note">Next renewals: ${C.renew.map(r => `${esc(r.name)} ${esc(dLabel(r.day))} (${usd(r.amount)})`).join(" · ") || "none"}</p>`)}
+    ${sec(8, "Samples", "", `<div class="wk-stats">${stat("Yes → delivered", fmtH(S.medCur), S.nCur ? `median of ${S.nCur} this week · last week ${fmtH(S.medPrev)}` : "none delivered this week")}${stat("Delivered → replied", S.replyN ? pp(S.replied, S.replyN) : "—", S.replyN ? `${S.replied} of ${S.replyN} (delivered 2–14 days ago)` : "")}${stat("Sample → paid", S.del ? pp(S.paid, S.del) : "—", `${S.paid} of ${S.del} all time`)}${stat("Lost this week", int(S.lost.length), "")}</div>
+      ${S.lost.length ? `<div class="wk-lost">${S.lost.map(l => `<div><b>${esc(l.name)}</b><span class="mut">${esc(l.why || "no reason noted")}</span></div>`).join("")}</div>` : ""}`)}</div>
+  ${sec(9, "What we changed", "tie results to changes", `<form class="wk-add" id="wk-add"><input name="day" type="date" value="${esc(d.t)}" aria-label="Date" required><select name="area" aria-label="Area">${["copy", "offer", "pricing", "leads", "campaigns", "replies", "sales", "editing", "clients", "process"].map(a => `<option>${a}</option>`).join("")}</select><input name="what" type="text" maxlength="600" placeholder="What changed? (one line)" aria-label="What changed" required><button type="submit" class="act go">${ic("plus")}Add</button></form>
+    <div class="wk-log" id="wk-log">${logHtml(d.changes)}</div>`)}
+  ${sec("", "Thin or missing data", "read before trusting a number", `<ul class="wk-miss">${d.missing.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`)}`;
+}
+const logHtml = rows => rows.length ? rows.map(c => `<div class="wk-ch"><span class="mono">${esc(dLabel(c.day))}</span><span class="chip">${esc(c.area)}</span><span class="w">${esc(c.what)}</span><span class="mut">${esc(c.who || "")}</span></div>`).join("") : empty("No changes logged yet.");
+function wireWeekly() {
+  $("#wk-copy")?.addEventListener("click", async ev => {
+    const txt = "BEJÚ weekly snapshot (paste to Claude)\n" + JSON.stringify(CACHE.weekly.export);
+    try { await navigator.clipboard.writeText(txt); toast("Copied the week: paste it to Claude"); }
+    catch { const ta = document.createElement("textarea"); ta.value = txt; ta.className = "wk-ta"; ta.readOnly = true; ev.currentTarget.closest(".wk-tools").after(ta); ta.select(); toast("Copy blocked by the browser: the text is selected, press ⌘C"); }
+  });
+  $("#wk-add")?.addEventListener("submit", async ev => {
+    ev.preventDefault(); const f = ev.target, what = f.what.value.trim(); if (!what) return;
+    await me();
+    try { const row = await must(sb().from("change_log").insert({ day: f.day.value, area: f.area.value, what, who: (ME && ME.who !== "Both" ? ME.who : (ME && ME.name)) || null }).select().single());
+      CACHE.weekly.changes.unshift(row); CACHE.weekly.changes.sort((a, b) => String(b.day).localeCompare(String(a.day)) || b.id - a.id); $("#wk-log").innerHTML = logHtml(CACHE.weekly.changes); f.what.value = ""; toast("Change logged"); }
+    catch (e) { toast("Couldn't save that line. Check your connection."); }
+  });
 }
 
 /* 5. to-do board */
-const COLS = [["todo", "To do"], ["doing", "Doing"], ["done", "Done"]];
+const COLS = [["todo", "To do"], ["doing", "Doing"], ["done", "Done"]], OWNERS = ["Simas", "Benas", "Both"];
+const K_TV = "beju-crm-todo-view";
+let TVIEW = store.get(K_TV) === "founder" ? "founder" : "board", OWNF = "All";
 async function loadTodos() { await me(); return all("todo_cards", "*", q => q.order("pos").order("id")); }
 const cardsIn = (list, col) => list.filter(c => c.col === col).sort((a, b) => a.pos - b.pos || a.id - b.id);
 async function todoBadge() {
-  try { const { count } = await sb().from("todo_cards").select("id", { count: "exact", head: true }).neq("col", "done"); const b = $("#sn-todo-n"); if (b) { b.hidden = !count; b.textContent = count || ""; } } catch {}
+  try { const rows = await must(sb().from("todo_cards").select("owner").neq("col", "done")), n = rows.length, by = o => rows.filter(r => r.owner === o).length;
+    const b = $("#sn-todo-n"), a = $('#snav a[data-nav="todos"]'), tip = n ? `To-dos · Simas ${by("Simas")} · Benas ${by("Benas")}${by("Both") ? ` · Both ${by("Both")}` : ""}` : "To-dos";
+    if (b) { b.hidden = !n; b.textContent = n || ""; } if (a) { a.dataset.tip = tip; a.title = tip; } } catch {}
 }
 function cardHtml(c) {
   if (EDIT && EDIT.id === c.id) return formHtml(c);
@@ -377,23 +492,33 @@ function cardHtml(c) {
       <button type="button" class="mini" data-ed aria-label="Edit" title="Edit"><svg aria-hidden="true"><use href="#i-edit"/></svg></button></div></div>`;
 }
 function formHtml(c) {
-  const o = c ? c.owner : (ME && ME.who) || "Both";
+  const o = c ? c.owner : (EDIT && EDIT.owner) || (TVIEW === "board" && OWNF !== "All" ? OWNF : "") || (ME && ME.who) || "Both";
   return `<form class="tile sd-form" data-form="${c ? c.id : "new"}" data-col="${esc(c ? c.col : EDIT.col)}">
     <textarea name="title" rows="2" maxlength="300" required placeholder="What needs doing?" aria-label="Card title">${esc(c ? c.title : "")}</textarea>
     <textarea name="detail" rows="2" maxlength="4000" placeholder="Details (optional)" aria-label="Details">${esc(c && c.detail ? c.detail : "")}</textarea>
     <div class="seg" role="group" aria-label="Owner">${["Simas", "Benas", "Both"].map(x => `<button type="button" data-own="${x}" class="${x === o ? "on" : ""}" aria-pressed="${x === o}">${x}</button>`).join("")}</div>
     <div class="row">${c ? `<button type="button" class="act no del" data-del>Delete</button>` : ""}<button type="button" class="act" data-cancel>Cancel</button><button type="submit" class="act go">${c ? "Save" : "Add card"}</button></div></form>`;
 }
-const boardHtml = list => COLS.map(([k, label]) => {
-  const cs = cardsIn(list, k);
-  return `<section class="sd-col" data-col="${k}" aria-label="${label}"><div class="sd-col-h"><span>${label}</span><span class="chip">${cs.length}</span></div>
-    ${EDIT && EDIT.id === "new" && EDIT.col === k ? formHtml(null) : `<button type="button" class="sd-add" data-add="${k}"><svg aria-hidden="true"><use href="#i-plus"/></svg>Add a card</button>`}
-    ${cs.map(cardHtml).join("")}${!cs.length && !(EDIT && EDIT.col === k) ? `<p class="empty">Nothing here yet.</p>` : ""}</section>`;
-}).join("");
-function viewTodos(list) { return `<div class="sd-board" id="sd-board">${boardHtml(list)}</div>`; }
+const addBtn = (k, o) => EDIT && EDIT.id === "new" && EDIT.col === k && (EDIT.owner || "") === (o || "") ? formHtml(null) : `<button type="button" class="sd-add" data-add="${k}"${o ? ` data-owner="${o}"` : ""}><svg aria-hidden="true"><use href="#i-plus"/></svg>Add a card</button>`;
+function boardHtml(list) {
+  if (TVIEW === "founder") return OWNERS.map(o => { const mine = list.filter(c => c.owner === o), open = mine.filter(c => c.col !== "done").length, done = cardsIn(mine, "done");
+    return `<section class="sd-lane${o === "Both" ? " slim" : ""}" data-lane="${o}" aria-label="${o}"><div class="sd-col-h"><span>${o === "Both" ? "Both / unassigned" : o}</span><span class="chip">${open} open</span></div>
+      ${[["todo", "To do"], ["doing", "Doing"]].map(([k, label]) => { const cs = cardsIn(mine, k); return `<div class="sd-sub">${label} · ${cs.length}</div><div class="sd-col sd-zone" data-col="${k}" data-owner="${o}">${k === "todo" ? addBtn(k, o) : ""}${cs.map(cardHtml).join("")}${!cs.length && k === "doing" ? `<p class="empty">Drop a card here.</p>` : ""}</div>`; }).join("")}
+      <details class="sd-done"><summary>Done · ${done.length}</summary><div class="sd-col sd-zone" data-col="done" data-owner="${o}">${done.map(cardHtml).join("")}</div></details></section>`; }).join("");
+  const show = OWNF === "All" ? list : list.filter(c => c.owner === OWNF);
+  return COLS.map(([k, label]) => { const cs = cardsIn(show, k);
+    return `<section class="sd-col" data-col="${k}" aria-label="${label}"><div class="sd-col-h"><span>${label}</span><span class="chip">${cs.length}</span></div>
+      ${addBtn(k, "")}${cs.map(cardHtml).join("")}${!cs.length && !(EDIT && EDIT.col === k) ? `<p class="empty">Nothing here yet.</p>` : ""}</section>`; }).join("");
+}
+function toolsHtml(list) { const n = o => list.filter(c => c.col !== "done" && (o === "All" || c.owner === o)).length;
+  return `<div class="seg sd-view" role="group" aria-label="View">${[["board", "Board"], ["founder", "By founder"]].map(([k, l]) => `<button type="button" data-tv="${k}" class="${TVIEW === k ? "on" : ""}" aria-pressed="${TVIEW === k}">${l}</button>`).join("")}</div>
+    ${TVIEW === "board" ? `<span class="sd-chips" role="group" aria-label="Owner">${["All", ...OWNERS].map(o => `<button type="button" class="chip${OWNF === o ? " b" : ""}" data-of="${o}" aria-pressed="${OWNF === o}">${o} · ${n(o)}</button>`).join("")}</span>` : `<span class="mut">Drag a card to another lane to change its owner.</span>`}`; }
+function viewTodos(list) { return `<div class="sd-tools" id="sd-tools">${toolsHtml(list)}</div><div class="sd-board${TVIEW === "founder" ? " lanes" : ""}" id="sd-board">${boardHtml(list)}</div>`; }
 function renderTodos() {
   const bd = $("#sd-board"); if (PAGE !== "todos" || !CACHE.todos || !bd) return;
-  const sx = bd.scrollLeft; bd.innerHTML = boardHtml(CACHE.todos); bd.scrollLeft = sx;
+  const sx = bd.scrollLeft, openD = new Set($$("details.sd-done[open]", bd).map(x => x.closest("[data-lane]").dataset.lane));
+  bd.classList.toggle("lanes", TVIEW === "founder"); bd.innerHTML = boardHtml(CACHE.todos); bd.scrollLeft = sx; $("#sd-tools").innerHTML = toolsHtml(CACHE.todos);
+  $$("details.sd-done", bd).forEach(x => { if (openD.has(x.closest("[data-lane]").dataset.lane)) x.open = true; });
   const f = $(".sd-form textarea", bd); if (f) { f.focus(); f.setSelectionRange(f.value.length, f.value.length); }
   todoBadge();
 }
@@ -404,12 +529,16 @@ async function saveCard(id, patch) {
   try { await must(sb().from("todo_cards").update(patch).eq("id", id)); } catch (e) { Object.assign(c, before); renderTodos(); toast("Couldn't save that card. Check your connection."); }
 }
 const moveCard = (id, col, idx) => saveCard(id, { col, pos: posBetween(CACHE.todos, col, idx, id) });
+function dropCard(id, col, owner, prevId, nextId) {   // position from the neighbours in the zone it was dropped into (works in both views)
+  const L = CACHE.todos, a = L.find(x => x.id === prevId), b = L.find(x => x.id === nextId), pos = a && b ? (a.pos + b.pos) / 2 : a ? a.pos + 1024 : b ? b.pos - 1024 : posBetween(L, col, 0, id);
+  return saveCard(id, { col, pos, ...(owner ? { owner } : {}) });
+}
 function wireBoard() {
   const board = $("#sd-board"); if (!board) return;
   board.addEventListener("click", async ev => {
     const t = ev.target.closest("button"); if (!t) return;
     const card = t.closest("[data-card]"), id = card ? +card.dataset.card : null, list = CACHE.todos;
-    if (t.dataset.add) { EDIT = { id: "new", col: t.dataset.add }; renderTodos(); return; }
+    if (t.dataset.add) { EDIT = { id: "new", col: t.dataset.add, owner: t.dataset.owner || "" }; renderTodos(); return; }
     if (t.dataset.own) { $$("[data-own]", t.parentElement).forEach(b => { b.classList.toggle("on", b === t); b.setAttribute("aria-pressed", b === t); }); return; }
     if (t.hasAttribute("data-cancel")) { EDIT = null; renderTodos(); return; }
     if (t.hasAttribute("data-del")) {
@@ -438,6 +567,7 @@ function wireBoard() {
     const id = +card.dataset.card, c = CACHE.todos.find(x => x.id === id);
     if (ev.key === "Enter") { ev.preventDefault(); EDIT = { id, col: c.col }; renderTodos(); return; }
     if (!ev.altKey) return;
+    if (TVIEW === "founder" && (ev.key === "ArrowLeft" || ev.key === "ArrowRight")) { const oi = OWNERS.indexOf(c.owner) + (ev.key === "ArrowRight" ? 1 : -1); if (OWNERS[oi]) { ev.preventDefault(); saveCard(id, { owner: OWNERS[oi] }).then(() => $(`[data-card="${id}"]`)?.focus()); } return; }
     const cs = cardsIn(CACHE.todos, c.col), i = cs.findIndex(x => x.id === id), ci = COLS.findIndex(x => x[0] === c.col);
     let col = c.col, idx = null;
     if (ev.key === "ArrowLeft" && ci > 0) { col = COLS[ci - 1][0]; idx = 0; }
@@ -448,6 +578,8 @@ function wireBoard() {
     ev.preventDefault(); moveCard(id, col, idx).then(() => $(`[data-card="${id}"]`)?.focus());
   });
   board.addEventListener("pointerdown", dragStart);
+  $("#sd-tools").addEventListener("click", ev => { const b = ev.target.closest("button"); if (!b) return;
+    if (b.dataset.tv) { TVIEW = b.dataset.tv; store.set(K_TV, TVIEW); EDIT = null; renderTodos(); } else if (b.dataset.of) { OWNF = b.dataset.of; renderTodos(); } });
 }
 /* pointer drag: a mouse drags after a 6 px move; a finger needs a short press-and-hold (280 ms), so a swipe still scrolls */
 function dragStart(ev) {
@@ -459,7 +591,7 @@ function dragStart(ev) {
   document.addEventListener("pointermove", dragMove); document.addEventListener("pointerup", dragEnd); document.addEventListener("pointercancel", dragEnd);
 }
 function liftUp(D) {
-  D.on = true;
+  D.on = true; $$("details.sd-done").forEach(x => { x.open = true; });
   D.lift = D.card.cloneNode(true); D.lift.classList.add("lift"); D.lift.removeAttribute("data-card"); D.lift.removeAttribute("tabindex"); D.lift.setAttribute("aria-hidden", "true");
   D.lift.style.setProperty("--w", D.w + "px"); document.body.append(D.lift);
   D.ph = document.createElement("div"); D.ph.className = "sd-ph"; D.ph.style.setProperty("--h", D.h + "px");
@@ -467,12 +599,14 @@ function liftUp(D) {
 }
 function place(D, x, y) {
   D.lift.style.setProperty("--x", x - D.dx + "px"); D.lift.style.setProperty("--y", y - D.dy + "px");
-  const cols = $$(".sd-col"), col = cols.find(c => { const b = c.getBoundingClientRect(); return x >= b.left && x <= b.right && y >= b.top - 40 && y <= b.bottom + 120; });
+  const cols = $$(".sd-col").filter(c => c.offsetParent), hit = (c, up, down) => { const b = c.getBoundingClientRect(); return x >= b.left && x <= b.right && y >= b.top - up && y <= b.bottom + down; },
+    col = cols.find(c => hit(c, 0, 0)) || cols.find(c => hit(c, 24, 24)) || cols.find(c => hit(c, 40, 120));
   cols.forEach(c => c.classList.toggle("drop", c === col));
   if (col) {
     const others = $$("[data-card]:not([hidden])", col), next = others.find(el => { const b = el.getBoundingClientRect(); return y < b.top + b.height / 2; });
     next ? next.before(D.ph) : col.append(D.ph);
-    D.col = col.dataset.col; D.idx = next ? others.indexOf(next) : others.length;
+    D.col = col.dataset.col; D.idx = next ? others.indexOf(next) : others.length; D.owner = col.dataset.owner || null;
+    const i = next ? others.indexOf(next) : others.length; D.nextId = next ? +next.dataset.card : null; D.prevId = others[i - 1] ? +others[i - 1].dataset.card : null;
   }
   if (y < 60) scrollBy(0, -14); else if (y > innerHeight - 60) scrollBy(0, 14);   // auto-scroll near the edges
   const bd = $("#sd-board"); if (bd) { const bb = bd.getBoundingClientRect(); if (x < bb.left + 30) bd.scrollLeft -= 14; else if (x > bb.right - 30) bd.scrollLeft += 14; }
@@ -495,7 +629,7 @@ function dragEnd(ev) {
   D.lift.remove(); D.ph.remove(); D.card.hidden = false;
   $$(".sd-col").forEach(c => c.classList.remove("drop"));
   if (ev.type === "pointercancel" || !D.col) return renderTodos();
-  moveCard(D.id, D.col, D.idx);
+  dropCard(D.id, D.col, D.owner, D.prevId, D.nextId);
 }
 document.addEventListener("touchmove", ev => { if (DRAG && DRAG.on) ev.preventDefault(); }, { passive: false });
 document.addEventListener("contextmenu", ev => { if (DRAG && ev.target.closest && ev.target.closest(".sd-card")) ev.preventDefault(); });
