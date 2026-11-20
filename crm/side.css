@@ -578,3 +578,33 @@ html.fx-lite .cl-fb{-webkit-backdrop-filter:none;backdrop-filter:none;background
   .wbr-fs{grid-template-columns:minmax(0,1fr) 52px 56px;gap:8px} .wbr-fs .b,.wbr-fs .avg4,.wbr-fs.hd span:nth-child(2),.wbr-fs.hd span:nth-child(5){display:none}
   .wbr-cards{grid-template-columns:minmax(0,1fr)} .pf-ln{font-size:12.5px}}
 .wbr-lg td:first-child{min-width:150px}
+
+/* Email tests: campaigns coloured by state (SIMAS 11-20). Violet = A/B test running (wins over green), green = active, dimmed = paused.
+   Own violet variable: the Forest look redefines --purple as olive. */
+:root{--abv:#6a4ce0} :root[data-mode="dark"]{--abv:#b49cff}
+.camp-legend{display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--ink-2);margin:4px 0 14px}
+.camp-legend span{display:inline-flex;align-items:center;gap:7px;font-weight:500} .camp-legend small{font-size:11.5px}
+.cs{display:inline-block;width:10px;height:10px;border-radius:50%;flex:none}
+.cs.on{background:var(--green)} .cs.ab{background:var(--abv)} .cs.off{background:transparent;box-shadow:inset 0 0 0 1.5px var(--mute)}
+.cs-tag{font-style:normal;font-size:10.5px;font-weight:600;letter-spacing:.02em;padding:2px 7px;border-radius:999px;vertical-align:middle;white-space:nowrap}
+.cs-tag.on{color:var(--green);background:color-mix(in srgb,var(--green) 14%,transparent)} .cs-tag.ab{color:var(--abv);background:color-mix(in srgb,var(--abv) 16%,transparent)} .cs-tag.off{color:var(--mute);background:var(--panel)}
+.card.camp-st.st-on{background:linear-gradient(100deg,color-mix(in srgb,var(--green) 13%,transparent),color-mix(in srgb,var(--green) 3%,transparent) 65%),var(--card);box-shadow:var(--edge),inset 4px 0 0 var(--green)}
+.card.camp-st.st-ab{background:linear-gradient(100deg,color-mix(in srgb,var(--abv) 16%,transparent),color-mix(in srgb,var(--abv) 4%,transparent) 65%),var(--card);box-shadow:var(--edge),inset 4px 0 0 var(--abv)}
+.card.camp-st.st-off{opacity:.62}
+.sp-bar.camp-st{position:relative;padding:8px 10px 8px 14px;border-radius:12px}
+.sp-bar.camp-st::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:3px;border-radius:3px}
+.sp-bar.camp-st.st-on{background:color-mix(in srgb,var(--green) 9%,transparent)} .sp-bar.camp-st.st-on::before{background:var(--green)}
+.sp-bar.camp-st.st-ab{background:color-mix(in srgb,var(--abv) 11%,transparent)} .sp-bar.camp-st.st-ab::before{background:var(--abv)} .sp-bar.camp-st.st-ab .bar i{background:var(--abv)}
+.sp-bar.camp-st.st-off{opacity:.58} .sp-bar.camp-st.st-off::before{background:var(--line-2)}
+.sp-bars:has(.camp-st){gap:6px}
+tr.camp-st.st-on>td{background:color-mix(in srgb,var(--green) 8%,transparent)} tr.camp-st.st-on>td:first-child{box-shadow:inset 3px 0 0 var(--green)}
+tr.camp-st.st-ab>td{background:color-mix(in srgb,var(--abv) 10%,transparent)} tr.camp-st.st-ab>td:first-child{box-shadow:inset 3px 0 0 var(--abv)}
+tr.camp-st.st-off>td{opacity:.6}
+/* Email tests: real per-campaign numbers + the split-restart note (coordinator 11-20) */
+.ab-reset{display:flex;gap:10px;align-items:flex-start;margin:0 0 14px;padding:11px 14px;border-radius:13px;background:var(--blue-soft);color:var(--ink);font-size:13.5px;line-height:1.45}
+.ab-reset .ic{width:16px;height:16px;flex:none;margin-top:2px;color:var(--blue)}
+.ab-nums{display:grid;gap:6px;margin:2px 0 14px;padding:10px 12px;border-radius:12px;background:var(--tile);border:1px solid var(--line)}
+.ab-num{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 6px;font-size:12.5px}
+.ab-num>span{min-width:92px;font-size:12px}
+.ab-num b{font-family:var(--mono);font-weight:500;font-size:14px} .ab-num small{color:var(--mute);margin-right:10px}
+.ab-unit{font-size:12px;color:var(--mute);font-family:var(--sans);font-weight:500}
