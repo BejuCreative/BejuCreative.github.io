@@ -501,3 +501,17 @@ html.fx-lite .cl-fb{-webkit-backdrop-filter:none;backdrop-filter:none;background
 @media (max-width:600px){.ab-tri{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:600px){html.sn-m .snav{left:8px;padding-left:0;padding-right:0}}   /* phone drawer: the round-5 rail gap must not push the closed drawer on screen */
 @media (max-width:600px){html.sn-x .top-brand,html.sn-m .top-brand{display:none}}   /* phone: the menu button takes the logo slot (the drawer shows the brand); the top bar was 15px wider than the screen */
+/* client performance page (11-20, Simas): trend per platform + "did they post ours" table */
+.pf-pl{margin:10px 0 18px}
+.pf-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.pf-h small{color:var(--mute);font-size:12.5px}
+.pf-d{margin-left:auto;font-size:13px;color:var(--ink-2)}
+.pf-wk{margin-top:10px}
+.pf-wl{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;margin-top:6px;text-align:center;font-size:12.5px}
+.pf-wl small{display:block;color:var(--mute);font-size:11px}
+.pf-tbl td{white-space:normal}
+.pf-tbl th:nth-child(2),.pf-tbl td:nth-child(2){text-align:left;font-family:var(--sans);min-width:180px}
+.pf-tbl th:first-child,.pf-tbl td:first-child{text-align:right;font-family:var(--mono);width:3.5em}
+.pf-tbl td .chip{margin:1px 0}
+@media (max-width:600px){.pf-d{margin-left:0;width:100%}.pf-tbl th:nth-child(3),.pf-tbl td:nth-child(3){display:none}}
+.cl-item[aria-current="true"] .cl-ch .sd-up,.cl-item[aria-current="true"] .cl-ch .sd-dn{color:inherit;font-weight:600}

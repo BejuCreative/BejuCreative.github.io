@@ -33,7 +33,7 @@ const initials = s => { const w = String(s || "?").replace(/[^\p{L}\p{N} ]/gu, "
 const NAV = $("#snav"), PAGE_EL = $("#spage"), APP = $("#app"), TIP = $("#sn-tip"), SCRIM = $("#sn-scrim"), MENU = $("#sn-menu"), TOG = $("#sn-tog");
 if (!NAV || !PAGE_EL || !APP) return;
 const HTML = document.documentElement, BASE_TITLE = document.title;
-const PAGES = { dashboard: "Dashboard", expenses: "Expenses", email: "Email tests", clients: "Clients", weekly: "Weekly analysis", todos: "To-dos" };
+const PAGES = { dashboard: "Dashboard", expenses: "Expenses", email: "Email tests", clients: "Clients", perf: "Client performance", weekly: "Weekly analysis", todos: "To-dos" };
 const K_NAV = "beju-crm-nav";
 let PAGE = "dashboard", ME = null, CACHE = {}, TIMER = null, CH = null, DRAG = null, SEQ = 0, EDIT = null, ON = false;
 const sb = () => window.BEJU_CRM_SB;
@@ -85,7 +85,7 @@ const param = k => new URLSearchParams(location.search).get(k);
 function go(p, extra = {}, replace = false) {
   const u = new URL(location.href);
   p === "dashboard" ? u.searchParams.delete("p") : u.searchParams.set("p", p);
-  if (p !== "clients") u.searchParams.delete("c"); if (p !== "expenses") u.searchParams.delete("m");
+  if (p !== "clients") u.searchParams.delete("c"); if (p !== "expenses") u.searchParams.delete("m"); if (p !== "perf") u.searchParams.delete("k");
   Object.entries(extra).forEach(([k, v]) => v == null ? u.searchParams.delete(k) : u.searchParams.set(k, v));
   if (u.href !== location.href) history[replace ? "replaceState" : "pushState"]({ p }, "", u);
   show(p);
@@ -136,12 +136,13 @@ async function me() {
 }
 
 /* ---------------- pages ---------------- */
-const LOAD = { expenses: loadExpenses, email: loadEmail, clients: loadClients, weekly: loadWeekly, todos: loadTodos };
-const VIEW = { expenses: viewExpenses, email: viewEmail, clients: viewClients, weekly: viewWeekly, todos: viewTodos };
+const LOAD = { expenses: loadExpenses, email: loadEmail, clients: loadClients, perf: loadPerf, weekly: loadWeekly, todos: loadTodos };
+const VIEW = { expenses: viewExpenses, email: viewEmail, clients: viewClients, perf: viewPerf, weekly: viewWeekly, todos: viewTodos };
 const HEAD = {
   expenses: ["Expenses <em class=\"sf\">&amp; profit</em>", "Tick what's paid this month and see the profit that's left."],
   email: ["Email <em class=\"sf\">tests</em>", "Which variant wins in each campaign, and whether the change has been made."],
   clients: ["Clients <em class=\"sf\">&amp; videos</em>", "Everyone who paid or got videos from us, and every video we delivered."],
+  perf: ["Client <em class=\"sf\">performance</em>", "Monthly clients' YouTube, TikTok and Instagram: views and trend, which of our Shorts they posted, what works."],
   weekly: ["Weekly <em class=\"sf\">analysis</em>", "What worked, what we changed and what performed best: this week against last week."],
   todos: ["To-<em class=\"sf\">dos</em>", "The founders' board. Drag cards between columns; both of you see changes live."],
 };
@@ -149,6 +150,7 @@ function srcOf(p, d) {
   if (p === "expenses") return d ? ["Beju Finance sheet + Stripe", d.updated_at] : null;
   if (p === "email") return d && d.ab ? ["Instantly API", d.ab.updated_at] : null;
   if (p === "clients") return d ? [d.dsOk === false ? "Drive access expired: delivered counts are stale" : "Google Drive + Stripe", d.synced] : null;
+  if (p === "perf") return d ? ["YouTube API, TikTok, Instagram (public)", d.synced] : null;
   if (p === "weekly") return d ? ["Instantly API, Stripe, Samples tab, CRM", d.synced] : null;
   if (p === "todos") return ["Live board", null];
   return null;
@@ -165,7 +167,7 @@ async function renderPage(quiet) {
     const d = CACHE[p] || (CACHE[p] = await LOAD[p]());
     if (seq !== SEQ || p !== PAGE) return;
     PAGE_EL.innerHTML = header(p, d) + VIEW[p](d);
-    applyVars(PAGE_EL); if (p === "todos") wireBoard(); if (p === "clients") wireClients(); if (p === "weekly") wireWeekly(); if (p === "expenses") wireExpenses(); if (p === "email") wireEmail(); countUps(PAGE_EL);
+    applyVars(PAGE_EL); if (p === "todos") wireBoard(); if (p === "clients") wireClients(); if (p === "perf") wirePerf(); if (p === "weekly") wireWeekly(); if (p === "expenses") wireExpenses(); if (p === "email") wireEmail(); countUps(PAGE_EL);
   } catch (e) {
     if (seq !== SEQ) return; delete CACHE[p];
     PAGE_EL.innerHTML = `${header(p, null)}<p class="sp-err">Couldn't load this page. ${esc(String(e && e.message || e).slice(0, 160))}</p><div><button type="button" class="act" id="sp-retry">${ic("refresh")}Try again</button></div>`;
@@ -565,6 +567,85 @@ function wireClients() {
     $$("#cl-list [data-cl]").forEach(x => x.dataset.cl === c.id ? x.setAttribute("aria-current", "true") : x.removeAttribute("aria-current"));
     $("#cl-detail").innerHTML = clientDetail(c, CACHE.clients.t); applyVars($("#cl-detail")); $$("#cl-detail .ring[data-v]").forEach(el => el.style.setProperty("--p", el.dataset.v.split(":")[1])); history.replaceState({ p: "clients" }, "", `?p=clients&c=${encodeURIComponent(c.id)}`);
     if (innerWidth <= 900) $("#cl-detail").scrollIntoView({ behavior: RM ? "auto" : "smooth", block: "start" });
+  });
+}
+
+/* 3b. client performance (SIMAS 11-20: "a new tab in the crm for client performance where we could click on the client and see their
+   metrics and their account"). Data: scripts/client_metrics.py scan, twice a day (client_accounts, client_posts, client_reports).
+   Weeks = rolling 7-day windows by posting date; views are today's counts, so the newest week always looks lower at first. */
+const PL = { youtube: ["YouTube", "YT"], tiktok: ["TikTok", "TT"], instagram: ["Instagram", "IG"] };
+const kf = v => v == null || !isFinite(v) ? "—" : v >= 1e6 ? (v / 1e6).toFixed(1).replace(/\.0$/, "") + "M" : v >= 1e4 ? Math.round(v / 1e3) + "k" : v >= 1e3 ? (v / 1e3).toFixed(1).replace(/\.0$/, "") + "k" : String(Math.round(v));
+const pfDelta = (cur, prev) => cur == null || !prev ? "" : `<span class="${cur >= prev ? "sd-up" : "sd-dn"}">${cur >= prev ? "▲" : "▼"} ${Math.abs(Math.round(100 * (cur - prev) / prev))}%</span>`;
+async function loadPerf() {
+  const since = new Date(Date.now() - 120 * 864e5).toISOString();
+  const [ret, accts, posts, reps, clients, dels] = await Promise.all([
+    all("retainers", "*"), all("client_accounts", "*").catch(() => []),
+    all("client_posts", "platform,post_id,email,url,title,posted_at,duration_s,is_short,views,likes,comments,ours,our_ref", q => q.gte("posted_at", since).order("posted_at", { ascending: false })).catch(() => []),
+    all("client_reports", "*", q => q.order("week", { ascending: false })).catch(() => []),
+    all("clients", "id,name,emails,show"), all("deliveries", "client_id,title,order_name,delivered_at")]);
+  const now = Date.now(), age = p => (now - new Date(p.posted_at)) / 864e5;
+  const list = ret.filter(r => /^(active|past_due|trialing)$/.test(r.status || "")).map(r => {
+    const e = lc(r.email), A = accts.filter(a => lc(a.email) === e), P = posts.filter(p => lc(p.email) === e), cl = clients.find(c => (c.emails || []).some(x => lc(x) === e)), byN = {};
+    (cl ? dels.filter(x => x.client_id === cl.id) : []).forEach(x => { const m = /Short (\d+)/i.exec(x.title || ""); if (!m) return; const n = +m[1]; if (!byN[n] || String(x.delivered_at || "") >= String(byN[n].delivered_at || "")) byN[n] = x; });
+    const ours = Object.entries(byN).map(([n, x]) => ({ n: +n, title: String(x.title || "").replace(/^.*?Short \d+( v\d+)?\s*-?\s*/i, "") || "Short " + n, at: x.delivered_at, order: x.order_name || "", posts: P.filter(p => p.ours && p.our_ref === "Short " + n) })).sort((a, b) => a.n - b.n);
+    const pDay = dayOf(r.started_at); ours.forEach(o => { o.plan = !!(o.at && String(o.at).slice(0, 10) >= pDay); });   // Benas 11-20: an earlier pack doesn't count toward the plan
+    const planOurs = ours.filter(o => o.plan);
+    const end = r.current_period_end ? new Date(r.current_period_end) : null, start = end ? new Date(end) : null; if (start) start.setUTCMonth(start.getUTCMonth() - 1);
+    const sDay = start ? dayOf(start.toISOString()) : "", latest = [...ours].sort((a, b) => String(b.at || "").localeCompare(String(a.at || "")))[0];
+    const plat = ["youtube", "tiktok", "instagram"].map(pl => { const sh = P.filter(p => p.platform === pl && p.is_short && p.views != null && p.posted_at), weeks = [];
+      for (let w = 5; w >= 0; w--) { const v = sh.filter(p => age(p) >= 7 * w && age(p) < 7 * (w + 1)).map(p => +p.views); weeks.push({ w, n: v.length, med: medn(v) }); }
+      const in28 = sh.filter(p => age(p) < 28).sort((a, b) => b.views - a.views);
+      return { pl, acct: A.find(a => a.platform === pl) || null, sh, weeks, last: medn(sh.filter(p => age(p) < 7).map(p => +p.views)), prev: medn(sh.filter(p => age(p) >= 7 && age(p) < 28).map(p => +p.views)), best: in28.slice(0, 3), worst: in28.slice(3).slice(-2).reverse() };
+    }).filter(x => x.acct || x.sh.length);
+    const posted = new Set(P.filter(p => p.ours && p.our_ref).map(p => p.our_ref)), main = plat.filter(x => x.sh.length).sort((a, b) => b.sh.filter(p => age(p) < 60).length - a.sh.filter(p => age(p) < 60).length || (b.pl === "youtube") - (a.pl === "youtube"))[0] || null;
+    const yt = A.find(a => a.platform === "youtube"), handle = (yt && yt.handle) || (A[0] && A[0].handle) || "";
+    return { key: e, r, cl, name: (A.find(a => a.name) || {}).name || (cl && cl.show) || r.name || (cl && cl.name) || e, handle, A, P, plat, main, ours, planOurs, sDay,
+      monthN: ours.filter(o => sDay && o.at && String(o.at).slice(0, 10) >= sDay).length, planN: latest ? +((/^(\d+)\s*Shorts/i.exec(latest.order) || [])[1]) || null : null,
+      postedN: planOurs.filter(o => posted.has("Short " + o.n)).length, scan: A.reduce((m, a) => (a.updated_at && a.updated_at > m ? a.updated_at : m), ""), reps: reps.filter(x => lc(x.email) === e) };
+  }).sort((a, b) => (+b.r.amount || 0) - (+a.r.amount || 0));
+  return { list, synced: list.reduce((m, c) => (c.scan > m ? c.scan : m), ""), t: dayOf(new Date().toISOString()) };
+}
+const pfPost = p => `<a class="vid" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer" title="Open on ${esc((PL[p.platform] || [p.platform])[0])}"><span class="pl">${ic("play")}${p.ours ? `<em class="vt">Ours · ${esc(p.our_ref)}</em>` : ""}</span><b>${esc(p.title || "Post")}</b><small><span class="mono">${kf(p.views)} views</span> · ${esc((PL[p.platform] || [p.platform])[0])} · ${esc(dLabel(dayOf(p.posted_at)))}</small></a>`;
+function pfTrend(p) {
+  if (p.pl === "instagram" && !p.sh.length) return `<div class="pf-pl"><div class="pf-h"><b>Instagram</b><small>${p.acct ? `${kf(p.acct.followers)} followers · ${kf(p.acct.posts_count)} posts` : ""}</small></div><p class="sp-note">Reel views need Meta access. Without a login, Instagram shows only the account numbers.</p></div>`;
+  const max = Math.max(1, ...p.weeks.map(w => w.med || 0));
+  return `<div class="pf-pl"><div class="pf-h"><b>${PL[p.pl][0]}</b><small>${p.acct ? `${kf(p.acct.followers)} followers` : ""}</small><span class="pf-d">last 7 days <b class="mono">${kf(p.last)}</b> ${pfDelta(p.last, p.prev)} <span class="mut">vs ${kf(p.prev)} the 3 weeks before</span></span></div>
+    <div class="wk mini pf-wk">${p.weeks.map((w, i) => `<i class="${w.w === 0 ? "on" : ""}" data-v="h:${((w.med || 0) / max * 100).toFixed(1)}%;k:${i}" title="${w.w === 0 ? "Last 7 days (still growing)" : `${w.w}–${w.w + 1} weeks ago`}: ${w.n} Short${w.n === 1 ? "" : "s"}, median ${w.med == null ? "—" : int(w.med)} views"></i>`).join("")}</div>
+    <div class="pf-wl">${p.weeks.map(w => `<span><b class="mono">${w.med == null ? "—" : kf(w.med)}</b><small>${w.w === 0 ? "now" : `−${w.w} wk`} · ${w.n}</small></span>`).join("")}</div></div>`;
+}
+function perfDetail(c) {
+  if (!c) return empty("Pick a client on the left.");
+  const end = c.r.current_period_end, left = end ? Math.max(0, Math.ceil((new Date(end) - Date.now()) / 864e5)) : null, waiting = c.planOurs.length - c.postedN;
+  const top = c.P.filter(p => p.is_short && p.views != null && (Date.now() - new Date(p.posted_at)) / 864e5 < 60).sort((a, b) => b.views - a.views).slice(0, 6);
+  return `<div class="cl-head"><div><h2>${esc(c.name)}</h2><p>${esc([c.handle, c.key, `last scan ${ago(c.scan)}`].filter(Boolean).join(" · "))}</p></div>
+    <div class="cl-chips"><span class="chip acc">${usd(c.r.amount)} / month</span>${c.planN ? `<span class="chip">${c.monthN} / ${c.planN} Shorts this month</span>` : ""}${left != null ? `<span class="chip">renews in ${left} d · ${esc(dLabel(dayOf(end)))}</span>` : ""}<span class="chip ${c.postedN ? "g" : "o"}">ours posted ${c.postedN} / ${c.planOurs.length}</span></div></div>
+    <div class="cl-plan"><b class="cl-ph">Views and trend</b><p class="sp-note">Median views per Short, by the week it was posted (last 6 weeks). Under each bar: weeks ago · Shorts posted that week. The newest week is still growing.</p>${c.plat.map(pfTrend).join("") || empty("No account scanned yet. Add this client to scripts/data/client_perf/accounts.json.")}</div>
+    ${c.plat.filter(p => p.best.length).map(p => `<div class="cl-ord">${esc(PL[p.pl][0])} · best Shorts, last 28 days</div><div class="vid-grid">${p.best.map(pfPost).join("")}</div>${p.worst.length ? `<div class="cl-ord">${esc(PL[p.pl][0])} · lowest, last 28 days</div><div class="vid-grid">${p.worst.map(pfPost).join("")}</div>` : ""}`).join("")}
+    <div class="cl-plan"><b class="cl-ph">Did they post ours · ${c.postedN} posted · ${waiting} waiting</b><p class="sp-note">Matched by length and title words against their public YouTube and TikTok posts. Instagram is matched by caption words only (Meta doesn't share video length), so check those by eye.</p>
+      ${c.ours.length ? `<div class="tblw"><table class="tbl pf-tbl"><thead><tr><th>Short</th><th>Title</th><th>Delivered</th><th>Posted</th></tr></thead><tbody>${c.ours.map(o => `<tr><td>${o.n}</td><td>${esc(o.title)}</td><td>${esc(dLabel(String(o.at || "").slice(0, 10)))}${o.plan ? "" : ` <small class="mut">earlier pack</small>`}</td><td>${o.posts.length ? o.posts.map(p => `<a class="chip g" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">${esc(PL[p.platform][0])} ${esc(dLabel(dayOf(p.posted_at)))}</a>`).join(" ") : `<span class="chip">not yet</span>`}</td></tr>`).join("")}</tbody></table></div>` : empty("No delivered Short indexed for this client yet.")}</div>
+    <div class="cl-ord">What works · top Shorts, last 60 days</div>${top.length ? `<div class="vid-grid">${top.map(pfPost).join("")}</div>` : empty("No Shorts in the last 60 days.")}
+    <div class="cl-plan"><b class="cl-ph">Weekly reports</b>${c.reps.length ? c.reps.map(x => { const dd = x.data || {}; return `<div class="cl-pr"><span class="grow"><b>Week of ${esc(dLabel(String(x.week).slice(0, 10)))}</b> ${esc(dd.summary || dd.headline || "")}</span>${x.page_url ? `<a class="chip lkc" href="${esc(x.page_url)}" target="_blank" rel="noopener noreferrer">Page ↗</a>` : ""}<span class="chip ${x.status === "sent" ? "g" : ""}">${esc(x.status)}${x.sent_at ? " " + esc(dLabel(dayOf(x.sent_at))) : ""}</span></div>`; }).join("") : empty("First report from week 2, once our Shorts are posted and have views.")}</div>
+    <div class="cl-plan"><b class="cl-ph">Account and plan</b>${c.A.map(a => `<div class="cl-pr"><span class="grow"><b>${esc(PL[a.platform] ? PL[a.platform][0] : a.platform)}</b> <a href="${esc(a.url)}" target="_blank" rel="noopener noreferrer">${esc(a.handle || a.url)} ↗</a></span><span class="mono">${kf(a.followers)} followers · ${kf(a.posts_count)} posts</span></div>`).join("") || empty("No accounts on file.")}
+      <div class="cl-pr"><span class="grow">Plan</span><span class="mono">${usd(c.r.amount)} / month${c.planN ? ` · ${c.planN} Shorts` : ""} · since ${esc(dLabel(dayOf(c.r.started_at)))}</span></div>
+      <div class="cl-pr"><span class="grow">Delivered this billing month</span><span class="mono">${c.monthN}${c.planN ? ` / ${c.planN}` : ""}${c.sDay ? ` · since ${esc(dLabel(c.sDay))}` : ""}</span></div></div>`;
+}
+const perfRow = (c, sel) => { const m = c.main;
+  return `<a class="cl-item" href="?p=perf&amp;k=${encodeURIComponent(c.key)}" data-pf="${esc(c.key)}"${sel && c.key === sel.key ? ' aria-current="true"' : ""}><span class="av">${esc(initials(c.name))}</span><span class="grow"><span class="t">${esc(c.name)}</span><span class="s">${esc([c.handle, `${usd(c.r.amount)}/mo`, c.plat.map(p => `${PL[p.pl][1]} ${kf(p.acct && p.acct.followers)}`).join(" · ")].filter(Boolean).join(" · "))}</span></span><span class="n">${c.postedN}/${c.planOurs.length}</span><span class="cl-ch">${m ? `<span class="chip">${PL[m.pl][1]} 7 d ${kf(m.last)} ${pfDelta(m.last, m.prev)}</span>` : `<span class="chip">no Shorts data</span>`}</span></a>`; };
+function viewPerf(d) {
+  if (!d.list.length) return empty("No monthly client yet. Retainer clients show here.");
+  const sel = d.list.find(c => c.key === lc(param("k") || "")) || d.list[0], all3 = d.list.reduce((s, c) => s + c.planOurs.length, 0), postedAll = d.list.reduce((s, c) => s + c.postedN, 0);
+  const best = d.list.flatMap(c => c.P.filter(p => p.is_short && p.views != null && (Date.now() - new Date(p.posted_at)) / 864e5 < 7).map(p => ({ p, c }))).sort((a, b) => b.p.views - a.p.views)[0];
+  return `<div class="sp-kpis">${kpi("Monthly clients", int(d.list.length), usd(d.list.reduce((s, c) => s + (+c.r.amount || 0), 0)) + " a month")}${kpi("Our Shorts posted", `${int(postedAll)} / ${int(all3)}`, all3 - postedAll ? `${all3 - postedAll} delivered, not posted yet` : "all posted")}${kpi("Best Short this week", best ? kf(best.p.views) : "—", best ? `${esc(best.c.name)} · ${esc((PL[best.p.platform] || [""])[0])}` : "no Short posted in 7 days")}${kpi("Last scan", esc(ago(d.synced)), "runs every Sunday 10:00")}</div>
+  <div class="cl-wrap"><section class="card sp-card"><div class="cl-list" id="pf-list">${d.list.map(c => perfRow(c, sel)).join("")}</div></section>
+    <section class="card sp-card" id="pf-detail">${perfDetail(sel)}</section></div>`;
+}
+function wirePerf() {
+  $("#pf-list")?.addEventListener("click", ev => {
+    const a = ev.target.closest("[data-pf]"); if (!a || ev.metaKey || ev.ctrlKey || ev.shiftKey) return; ev.preventDefault();
+    const c = CACHE.perf.list.find(x => x.key === a.dataset.pf); if (!c) return;
+    $$("#pf-list [data-pf]").forEach(x => x.dataset.pf === c.key ? x.setAttribute("aria-current", "true") : x.removeAttribute("aria-current"));
+    $("#pf-detail").innerHTML = perfDetail(c); applyVars($("#pf-detail")); history.replaceState({ p: "perf" }, "", `?p=perf&k=${encodeURIComponent(c.key)}`);
+    if (innerWidth <= 900) $("#pf-detail").scrollIntoView({ behavior: RM ? "auto" : "smooth", block: "start" });
   });
 }
 
