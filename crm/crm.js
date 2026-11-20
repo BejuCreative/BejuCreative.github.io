@@ -85,7 +85,7 @@ async function all(table, cols = "*", mod) {   // REST caps at 1,000 rows per ca
 }
 async function fetchAll() {
   const t = today(), since60 = new Date(Date.now() - 60 * 864e5).toISOString();
-  const [pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels] = await Promise.all([
+  const [pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk] = await Promise.all([
     all("pipeline", "*", q => q.order("email")),
     all("payments", "id,client_id,email,payer_name,amount,currency,package,refunded,paid_at", q => q.order("paid_at", { ascending: false })),
     all("campaign_daily", "campaign_id,day,sent,new_leads,replies,replies_auto,opportunities", q => q.gte("day", addDays(t, -75)).order("day").order("campaign_id")),
@@ -108,8 +108,9 @@ async function fetchAll() {
     all("retainers", "*").catch(() => []),   // 11-17: Stripe subscriptions = retainer clients (crm_sync.py)
     all("calls", "*", q => q.gte("start_at", new Date(Date.now() - 30 * 864e5).toISOString()).order("start_at")).catch(() => []),   // 11-17: cal.com bookings = the only calls
     all("crm_panels", "id,data,updated_at", q => q.eq("id", "metrics")).catch(() => []),   // 11-19: outreach + money straight from the APIs (scripts/crm_panels_sync.py, every 15 min)
+    all("desk_items", "*", q => q.eq("status", "open").order("created_at")).catch(() => []),   // 11-21: founder holds + what is being built right now (scripts/crm_desk.py)
   ]);
-  return { pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels };
+  return { pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk };
 }
 
 /* ---------------- derive ---------------- */
@@ -245,7 +246,11 @@ function derive() {
   /* 11-17 (Simas: "you need to track it through cal.com"): a call = a cal.com booking (public.calls), never a "call" note. */
   d.calls = (R.calls || []).filter(x => x.status === "booked");
   d.callsUp = d.calls.filter(x => +new Date(x.end_at || x.start_at) >= Date.now() - 15 * 6e4 && +new Date(x.start_at) <= Date.now() + 7 * 864e5);
-  const calToday = d.calls.filter(x => dayOf(x.start_at) === t).map(x => ({ id: "cal-" + x.uid, kind: "call", title: x.name || x.email || "Call", detail: "Booked on cal.com", at: x.start_at, lead_email: x.email || "" }));
+  /* 11-21 (Simas: "dont send X anything", "have u adjusted her vids"): founder holds and the work in production (public.desk_items) */
+  d.holds = (R.desk || []).filter(x => x.kind === "hold");
+  d.prod = (R.desk || []).filter(x => x.kind === "production").sort((a, b) => STG_ORD.indexOf(a.stage) - STG_ORD.indexOf(b.stage) || String(a.client).localeCompare(String(b.client)));
+  /* 11-21: a call that has ended is no longer one of today's calls (same 15-minute grace as callsUp) */
+  const calToday = d.calls.filter(x => dayOf(x.start_at) === t && +new Date(x.end_at || x.start_at) >= Date.now() - 15 * 6e4).map(x => ({ id: "cal-" + x.uid, kind: "call", title: x.name || x.email || "Call", detail: "Booked on cal.com", at: x.start_at, lead_email: x.email || "" }));
   d.todayItems = R.todayItems.filter(x => x.kind !== "call" && !gone.has(lc(x.lead_email || ""))).concat(calToday).sort((a, b) => (ord[a.kind] ?? 9) - (ord[b.kind] ?? 9) || String(a.at || "").localeCompare(String(b.at || "")));
   /* 11-16 (Simas: "how many leads are we sending out today"): today's live numbers for the Today card */
   d.td = { rep: MPer("today") ? MPer("today").replies : d.series[59].rep, opp: MPer("today") ? MPer("today").opportunities : d.series[59].opp, money: sum(pays.filter(p => p.day === t), p => p.amount), vids: R.deliveries.filter(x => String(x.delivered_at || "").slice(0, 10) === t).length,
@@ -435,6 +440,11 @@ const big = (k, a, inner, label, cls = "") => dB(k, a, inner, "big tapn " + cls,
 const tri = (label, val, k, a) => k ? dB(k, a, `<span>${label}</span><b>${val}</b>`, "", `${label}: open the list`) : `<div><span>${label}</span><b>${val}</b></div>`;
 const kv = (label, val, k, a, cls = "") => k ? dB(k, a, `<span>${label}</span><span>${val}</span>`, "kv " + cls) : `<div class="kv ${cls}"><span>${label}</span><span>${val}</span></div>`;
 const leadBtn = (email, inner, cls = "tile row") => `<button type="button" class="${cls}" data-act="lead" data-email="${esc(email)}">${inner}</button>`;
+/* 11-21: On hold + In production cards (public.desk_items) */
+const STG = { founder_check: ["Waits on a founder", "o", "c-orange"], ready: ["Ready to send", "g", "c-green"], review: ["Our check", "b", "c-purple"], building: ["Building", "b", "c-blue"], client_check: ["Waits on the client", "w", "c-grey"], queued: ["Queued", "", "c-grey"] };
+const STG_ORD = Object.keys(STG);
+const holdRow = x => dB("holds", "", `<span class="it c-red"><svg><use href="#i-flag"/></svg></span><span class="row-main"><b>${esc(cut(x.client, 40))}</b><small>${esc(cut(x.title, 90))}</small></span><span class="row-end"><small>${esc(x.set_by || "")}</small></span>`, "tile row", `${x.client}: ${x.title}`);
+const prodRow = x => { const s = STG[x.stage] || [x.stage || "Open", "", "c-grey"]; return dB("prod", "", `<span class="it ${s[2]}"><svg><use href="#i-film"/></svg></span><span class="row-main"><b>${esc(cut(x.title, 60))}</b><span class="tagline"><span class="chip ${s[1]}">${esc(s[0])}</span><small>${esc([x.client, x.builder].filter(Boolean).join(" · "))}</small></span></span>`, "tile row", `${x.client}: ${x.title} (${s[0]})`); };
 const lrow = (p, sub, end = "") => leadBtn(p.email || p.lead_email, `<span class="av">${esc(initials(p))}</span><span class="row-main"><b>${esc(p.name || p.email || p.lead_email)}</b><small>${esc(cut(sub, 90))}</small></span>${end}`);
 const cvChip = n => `<span class="chip cvn${n ? "" : " z"}" title="${n ? n + " messages in the conversation" : "No email conversation synced for this address yet"}">💬 ${n}</span>`;
 const dl = v => v == null || !isFinite(v) ? "" : `<em class="dl ${v >= 0 ? "up" : "dn"}" title="Against the same length of time just before">${v >= 0 ? "▲" : "▼"} ${Math.abs(v) >= 1000 ? "999+" : Math.abs(v).toFixed(0)}%</em>`;
@@ -535,6 +545,11 @@ const CARDS = [
     <div class="stack sp">${R0.live.map(r => dB("retainers", "", `<span class="av">${esc(initials({ name: r.name || r.email }))}</span><span class="row-main"><b>${esc(cut(r.name || r.email || "Client", 40))}</b><small>since ${r.started_at ? dLabel(dayOf(r.started_at)) : "—"}${r.current_period_end ? ` · next bill ${dLabel(dayOf(r.current_period_end))}` : ""}${r.cancel_at_period_end ? " · cancels at period end" : ""}</small></span><span class="row-end">${usd(r.amount)}<small>/${esc(r.interval === "month" ? "mo" : r.interval || "")}</small></span>`, "tile row", "Open the retainers")).join("") || empty("No retainer yet. Monthly plans show here.")}</div>
     ${kv("Paid on retainers so far", usd(R0.total), "retainers", "")}${R0.ended ? kv("Ended retainers", N(R0.ended), "retainers", "") : ""}
     <p class="sub">Only clients on a monthly plan (Stripe subscription). Repeat pack buyers are not counted.</p>`; } },
+{ id: "holds", title: "On hold", focus: ["holds", ""], render: d => `${head(`On <em class="sf">hold</em>`, dB("holds", "", d.holds.length ? `${d.holds.length} active` : "none", `chip ${d.holds.length ? "r" : "g"}`, "Open every hold: who it covers, the rule, who set it"), true)}<div class="stack">${d.holds.slice(0, 5).map(holdRow).join("") || empty("Nothing is on hold.")}</div>
+    ${d.holds.length > 5 ? dB("holds", "", `Show all ${d.holds.length}`, "more") : ""}<p class="sub">Nothing goes out to these people until a founder lifts the hold. Tell Claude to lift one.</p>` },
+{ id: "prod", title: "In production", focus: ["prod", ""], render: d => { const n = k => d.prod.filter(x => x.stage === k).length, w = n("founder_check"), r = n("ready");
+    return `${head(`In <em class="sf">production</em>`, dB("prod", "", `${d.prod.length} open`, `chip ${w ? "o" : ""}`, "Open every piece of client work: stage, who builds it, the file"), true)}<div class="stack">${d.prod.slice(0, 6).map(prodRow).join("") || empty("Nothing is in production.")}</div>
+    ${d.prod.length > 6 ? dB("prod", "", `Show all ${d.prod.length}`, "more") : ""}<p class="sub">${w ? `<span class="dn">${w} wait${w === 1 ? "s" : ""} on a founder</span> · ` : ""}${r} ready to send · ${n("building") + n("review")} being built · ${n("client_check")} with the client</p>`; } },
 { id: "outreach", cls: "w2 chart-card", title: "Outreach", focus: ["days", ""], render: d => {
     const OR = d.M && d.M.periods ? d.M.periods[STATE.range + "d"] : null, days = d.series.slice(-STATE.range), W = 600, H = 200, pad = 10, max = Math.max(1, ...days.map(x => Math.max(STATE.sa ? x.sent : 0, STATE.sb ? x.nw : 0)));
     const pa = lineXY(days.map(x => x.sent), W, H, pad, max), pb = lineXY(days.map(x => x.nw), W, H, pad, max), part = days.length > 2 && days[days.length - 1].day === d.t, n = part ? -1 : undefined,
@@ -674,7 +689,7 @@ const CARDS = [
 ];
 const byId = id => CARDS.find(c => c.id === id);
 /* phone: five tabs, each shows only its cards (the desktop keeps the whole bento) */
-const TABS = { home: ["next", "today", "paidc", "retainers", "hot", "activity", "followups"], money: ["close", "buyers", "topc", "alltime", "moneypage", "price"], leads: ["attention", "moods", "samples", "turn", "speed", "clock", "score", "away", "funnel", "search", "export"],
+const TABS = { home: ["next", "today", "paidc", "retainers", "holds", "prod", "hot", "activity", "followups"], money: ["close", "buyers", "topc", "alltime", "moneypage", "price"], leads: ["attention", "moods", "samples", "turn", "speed", "clock", "score", "away", "funnel", "search", "export"],
   outreach: ["outreach", "total", "heat", "rate", "camps", "deliv", "inboxes", "sync"], clients: ["portal", "psamples", "pvideos", "pnotes", "pclients", "videos"], none: ["brand", "owner", "theme"] };
 const TABOF = {}; Object.entries(TABS).forEach(([t, ids]) => ids.forEach(id => { TABOF[id] = t; }));
 
@@ -737,7 +752,8 @@ const SRC = { hero: ["Money: Stripe · Outreach: Instantly API · Samples: Sampl
   followups: ["CRM follow-ups", "replies"], rate: ["Instantly API", "metrics"], speed: ["Instantly threads", "replies"], clock: ["Instantly replies", "replies"], camps: ["Instantly API", "instantly"],
   deliv: ["Instantly API", "metrics"], buyers: ["Stripe", "metrics"], topc: ["Stripe", "metrics"], alltime: ["Stripe", "metrics"], funnel: ["Instantly API, Samples tab, Stripe", "metrics"],
   away: ["Instantly replies", "replies"], inboxes: ["Instantly accounts", "instantly"], videos: ["Drive delivery index", "deliveries"], portal: ["Client portal", ""], psamples: ["Client portal", ""],
-  pvideos: ["Client portal", ""], pnotes: ["Client portal", ""], pclients: ["Client portal", ""] };
+  pvideos: ["Client portal", ""], pnotes: ["Client portal", ""], pclients: ["Client portal", ""],
+  holds: ["Founder orders, kept by Claude", ""], prod: ["Video tabs and delivery notes, kept by Claude", ""] };
 function srcHtml(id) {
   const s = SRC[id]; if (!s || !RAW) return "";
   const at = s[1] === "metrics" ? (D && D.mAt) : s[1] ? ((RAW.sync || []).find(x => x.name === s[1]) || {}).ran_at : null, old = at && Date.now() - new Date(at) > 3 * 36e5;
@@ -896,6 +912,9 @@ const DR = {
   next() { return { title: "Do next", sub: `${D.nextN} thing${D.nextN === 1 ? "" : "s"} only a founder can do, most urgent first`, html: stackOf(D.nextAll.map((x, i) => nextRow(x, i, true)), "Nothing needs you right now.") }; },
   close() { const C = D.close; return { title: "Emails to close", sub: `${C.n} paying client${C.n === 1 ? "" : "s"} · typical ${C.med ?? "—"} · average ${C.avg == null ? "—" : C.avg.toFixed(1)} · fewest first`, html: stackOf(C.list.map(c => { const inner = `<span class="av">${esc(initials({ name: c.name }))}</span><span class="row-main"><b>${esc(c.name)}</b><small>${esc(cut(c.p.show || [...c.emails].join(", "), 80))} · first paid ${c.firstPaid ? fDT(c.firstPaid) : "—"}</small></span><span class="row-end">${c.toClose}<small>email${c.toClose === 1 ? "" : "s"}</small></span>`; return c.p.email ? leadBtn(c.p.email, inner) : dB("client", c.key, inner, "tile row"); }), "No paying client with an email trail yet.") }; },
   retainers() { const R0 = D.ret; return { title: "Retainer clients", sub: `${R0.live.length} live · ${usd(R0.mrr)}/month · ${usd(R0.total)} paid so far${R0.ended ? ` · ${R0.ended} ended` : ""}`, html: stackOf(R0.all.map(r => { const inner = `<span class="av">${esc(initials({ name: r.name || r.email }))}</span><span class="row-main"><b>${esc(r.name || r.email || "Client")}</b><small>${esc(r.status || "")} · since ${r.started_at ? dLabel(dayOf(r.started_at)) : "—"}${r.current_period_end && r.live ? ` · next bill ${dLabel(dayOf(r.current_period_end))}` : ""}${r.canceled_at ? ` · ended ${dLabel(dayOf(r.canceled_at))}` : ""} · ${r.invoices_paid || 0} paid, ${usd(r.paid_total)}</small></span><span class="row-end">${usd(r.amount)}<small>/${esc(r.interval === "month" ? "mo" : r.interval || "")}</small></span>`; return r.e ? dB("client", "e:" + r.e, inner, "tile row", "Open this client") : `<div class="tile row">${inner}</div>`; }), "No retainer yet.") }; },
+  holds() { return { title: "On hold", sub: `${D.holds.length} active hold${D.holds.length === 1 ? "" : "s"} · nothing goes out to these people until a founder lifts it`, html: stackOf(D.holds.map(x => `<div class="tile note"><small>Set by ${esc(x.set_by || "a founder")}${(x.emails || []).length ? ` · ${esc(x.emails.join(", "))}` : ""}</small><b>${esc(x.client)}</b><br>${esc(x.title)}${x.detail ? `<br><span class="mut">${esc(x.detail)}</span>` : ""}</div>`), "Nothing is on hold.") + `<p class="sub">To set or lift a hold, tell Claude. It checks this list before every send.</p>` }; },
+  prod() { const by = {}; D.prod.forEach(x => { (by[x.client] || (by[x.client] = [])).push(x); });
+    return { title: "In production", sub: `${D.prod.length} open piece${D.prod.length === 1 ? "" : "s"} of client work · the stage is the last one Claude logged`, html: Object.keys(by).map(c => grp(esc(c), by[c].length) + stackOf(by[c].map(x => { const s = STG[x.stage] || [x.stage || "Open", ""]; return `<div class="tile note"><small><span class="chip ${s[1]}">${esc(s[0])}</span> ${esc([x.builder, x.set_by && x.stage === "founder_check" ? "waits on " + (x.set_by === "Both" ? "both of you" : x.set_by) : "", "updated " + ago(x.updated_at)].filter(Boolean).join(" · "))}</small><b>${esc(x.title)}</b>${x.detail ? `<br><span class="mut">${esc(x.detail)}</span>` : ""}${x.link && webUrl(x.link) ? `<br>${rich(x.link)}` : ""}</div>`; }))).join("") || empty("Nothing is in production.") }; },
   claudeq() { return { title: "Claude's queue", sub: `${D.claudeQ.length} item${D.claudeQ.length === 1 ? "" : "s"} Claude is handling · ${D.claudeSum || "none"} · nothing for you to do`, html: stackOf(D.claudeQ.map((x, i) => nextRow(x, i, true)), "Claude's queue is empty.") }; },
   speed(a) { let list = [...D.speed.gaps], title = "Speed to reply";
     if (a === "slow") { list.sort((x, y) => y.g - x.g); title = "Slowest replies"; } else if (a === "fast") { list = list.filter(x => x.g <= 60).sort((x, y) => y.t - x.t); title = "Answered within an hour"; } else if (a === "7") { list = list.filter(x => x.t >= Date.now() - 7 * 864e5).sort((x, y) => y.t - x.t); title = "Replies answered in the last 7 days"; }
