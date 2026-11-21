@@ -651,3 +651,49 @@ tr.camp-st.st-win>td{background:var(--gold7-soft)} tr.camp-st.st-win>td:first-ch
 .rev-sort{max-width:320px;margin:0 0 12px}
 .rev-un{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:14px;color:var(--ink-2)} .rev-un b{font-family:var(--mono);font-weight:500;color:var(--ink)}
 @media (max-width:600px){.rev-sort{max-width:none} .sp-bar.camp-st{grid-template-columns:minmax(0,1fr)}}   /* phones: the longer value line (now with revenue) goes under the name instead of squeezing it */
+/* 11-21 Clients page: one row per order from public.order_progress (big delivered / bought, plain revision words, status, Fix) */
+.cl-ords{display:grid;gap:0}
+.cl-or{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:13.5px}
+.cl-ords > .cl-or:first-child,.cl-leg > summary + .cl-or{border-top:0}
+.cl-or .grow{flex:1;min-width:0;display:grid;gap:2px}
+.cl-or-n{overflow-wrap:anywhere;color:var(--ink);font-weight:500}
+.cl-or-t{font-size:12.5px;color:var(--mute)} .cl-or-t b{font-weight:600}
+.cl-or-v{font-family:var(--mono);font-size:20px;font-weight:500;letter-spacing:-.03em;white-space:nowrap} .cl-or-v small{font-size:13px;color:var(--mute);font-weight:400}
+.cl-or .chip{flex:none}
+.cl-or-fix{flex:none}
+.cl-leg{border-top:1px solid var(--line);padding-top:8px;margin-top:2px}
+.cl-leg > summary{cursor:pointer;font-size:12.5px;color:var(--mute);min-height:32px;display:flex;align-items:center}
+.cl-prob{margin-top:8px}
+.cl-oe{display:grid;grid-template-columns:110px minmax(0,1fr) minmax(0,1fr) auto;gap:8px;align-items:end;padding:10px;margin:2px 0 8px;border-radius:12px;background:var(--panel);border:1px solid var(--line)}
+.cl-oe label{display:grid;gap:4px;font-size:11.5px;color:var(--mute);min-width:0}
+.cl-oe input,.cl-oe select{height:36px;border-radius:10px;border:1px solid var(--line);background:var(--tile);padding:0 10px;font:inherit;font-size:13px;color:var(--ink);outline:0;min-width:0;width:100%}
+.cl-oe input:focus-visible,.cl-oe select:focus-visible{border-color:var(--focus)}
+.cl-oe-b{display:flex;gap:8px}
+.cl-oe-err{grid-column:1/-1;color:var(--red);font-size:12.5px;margin:0}
+@media (min-width:601px){.cl-filt.n6{grid-template-columns:repeat(6,minmax(0,1fr))}}
+@media (max-width:600px){
+  .cl-or{flex-wrap:wrap;row-gap:6px} .cl-or .grow{flex:1 1 calc(100% - 40px)} .cl-or-v{margin-left:32px}
+  .cl-or-fix{height:44px;min-width:56px;margin-left:auto} .cl-leg > summary{min-height:44px}
+  .cl-oe{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} .cl-oe label:first-child{grid-column:1/-1} .cl-oe-b{grid-column:1/-1} .cl-oe-b .act{flex:1;height:44px}
+  .cl-oe input,.cl-oe select{height:44px;font-size:16px}
+}
+/* 11-21 To-dos from public.task_queue: the lead a task belongs to (one chip) + a Done tick */
+.sd-card .sd-lead{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sd-card .sd-tick:hover{color:var(--green);opacity:1}
+/* 11-21 Clients page: Calls section (Upcoming / Past calls), one row per call; a tap opens crm.js's full call card */
+.clc-h{font-size:13px;font-weight:600;color:var(--mute);margin:14px 0 4px}
+.clc-list{display:grid}
+.clc-row{display:flex;align-items:center;gap:10px;border-top:1px solid var(--line);padding:2px 0}
+.clc-list > .clc-row:first-child{border-top:0}
+.clc-m{flex:1;min-width:0;display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:10px;row-gap:2px;align-items:baseline;text-align:left;padding:8px 6px;min-height:44px;border-radius:10px;color:inherit;font:inherit;background:none;border:0}
+button.clc-m{cursor:pointer} button.clc-m:hover{background:var(--tile)}
+.clc-d{font-family:var(--mono);font-size:12.5px;font-weight:500;white-space:nowrap}
+.clc-w{font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.clc-s,.clc-x{grid-column:1/-1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.clc-s{font-size:13.5px} .clc-x{font-size:12.5px;color:var(--mute)}
+.clc-miss{color:var(--red);font-weight:600}
+.clc-add,.clc-meet{flex:none}
+.clc-card{padding:2px 0 12px}
+.clc-none{font-size:13px;margin:0}
+.clc-more{margin-top:6px}
+@media (max-width:600px){.clc-row{flex-wrap:wrap} .clc-m{grid-template-columns:minmax(0,1fr)} .clc-add,.clc-meet{height:44px;flex:1 1 100%;justify-content:center;margin-bottom:6px} .clc-more{min-height:44px}}

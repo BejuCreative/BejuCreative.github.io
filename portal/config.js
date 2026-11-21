@@ -5,6 +5,7 @@ window.BEJU_PORTAL = {
   supabaseUrl: "https://zfnpvcrnujxlycmqukqs.supabase.co",
   supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpmbnB2Y3JudWp4bHljbXF1a3FzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzMjMyNzgsImV4cCI6MjEwNzg5OTI3OH0.1MT1RtPT_REhVtekoLRga_BRvlxZnWSzwUF-Z_S314Y",
 
+  open: false,        // 11-21 (founders): false = portal hidden; only founders (profiles.is_admin) get in, everyone else sees "isn't available right now"
   google: false,      // true = show "Continue with Google" (turn on only after the Google provider is set up in Supabase Auth)
   showPrices: false,   // false = packs show "Book a call to get pricing" instead of prices and buy buttons
   callUrl: "https://cal.com/beju-creative/15min-call",

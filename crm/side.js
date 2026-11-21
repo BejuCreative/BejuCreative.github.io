@@ -3,7 +3,7 @@
    Pages live on one URL with ?p= (history.pushState), so back, refresh and links work on GitHub Pages with no 404.
    Shares crm.js's Supabase client (window.BEJU_CRM_SB); shows only while the founder dashboard is on screen.
    Reads: crm_panels ('expenses', 'ab_tests', 'metrics' from scripts/crm_panels_sync.py), clients, deliveries, payments, retainers,
-   campaign_daily, interested_leads, pipeline. Writes: todo_cards only (founder RLS). CSP: no inline styles. */
+   campaign_daily, interested_leads, pipeline, order_progress, order_problems. Writes: tasks + the row it came from (todo_cards / call_tasks / founder_tasks), orders (size / kind / status), founder RLS. CSP: no inline styles. */
 (() => {
 "use strict";
 const CFG = window.BEJU_CRM || {};
@@ -118,7 +118,7 @@ function show(p) {
   slackLive(p === "slack");
   if (was !== p) scrollTo(0, 0);
 }
-function startTimer() { stopTimer(); TIMER = setInterval(() => { if (!document.hidden && PAGE !== "dashboard" && !DRAG && !EDIT) { delete CACHE[PAGE]; renderPage(true); } }, 5 * 60000); }
+function startTimer() { stopTimer(); TIMER = setInterval(() => { if (!document.hidden && PAGE !== "dashboard" && !DRAG && !EDIT && !$(".cl-oe, .cnform", PAGE_EL)) { delete CACHE[PAGE]; renderPage(true); } }, 5 * 60000); }   // an open Fix / call-notes form is never wiped
 function stopTimer() { if (TIMER) clearInterval(TIMER); TIMER = null; }
 
 /* keys: [ toggles the rail, Escape closes the phone drawer */
@@ -477,7 +477,7 @@ function wireEmail() {
 
 /* 3. clients + their videos (SIMAS 11-19 15:3x: grouped by category, retainer plans, videos by date, today's highlighted) */
 async function loadClients() {
-  const [clients, deliveries, payments, retainers, st, notes, m, proms, scs, pipe, ovs] = await Promise.all([
+  const [clients, deliveries, payments, retainers, st, notes, m, proms, scs, pipe, ordRows, probs, calls, cNotes, cTasks] = await Promise.all([
     all("clients", "id,name,emails,show,drive_folder,source"),
     all("deliveries", "id,client_id,title,order_name,kind,duration_s,link,delivered_at", q => q.order("delivered_at", { ascending: false }).order("id")),
     all("payments", "client_id,amount,refunded,paid_at,package"),
@@ -488,15 +488,19 @@ async function loadClients() {
     all("promises", "lead_email,promise,owner,due_at,status", q => q.eq("status", "open")).catch(() => []),
     all("scopes", "slug,client,email,url,status").catch(() => []),
     all("pipeline", "email,next_action,status").catch(() => []),
-    all("pack_overrides", "*").catch(() => []),
+    all("order_progress", "*", q => q.order("opened_at")),
+    all("order_problems", "*").catch(() => []),
+    all("calls", "uid,name,email,title,start_at,end_at,status,organizer,meet_url", q => q.order("start_at", { ascending: false })).catch(() => []),
+    all("touches", "id,call_uid,summary,takeaways,recording_url", q => q.not("call_uid", "is", null)).catch(() => []),
+    all("call_tasks", "id,touch_id,text,owner,due_at,done_at", q => q.order("id")).catch(() => []),
   ]);
   const t = dayOf(Date.now()), plans = (m && m.data && m.data.retainer_plans) || {};
-  const vids = {}, paid = {}, nPay = {}, lastPay = {}, payL = {};
-  payments.forEach(p => { if (!p.refunded) (payL[p.client_id] = payL[p.client_id] || []).push(p); });
-  /* 11-19 21:1x (Simas: "is the pack they bought finished or not"): bought = the number the order folder starts with, else the Stripe
-     pack; delivered = Shorts in that folder, each counted once. No size is guessed: an unmapped payment says "size unknown". */
-  const sizeOf = q => { const mm = /short_(\d+)/.exec(String(q.package || "")); if (mm) return +mm[1]; return ({ 150: 5, 75: 5, 60: 3, 27: 1, 100: 10 })[Math.round(+q.amount)] || null; };
-  const PST = { notstarted: ["Not started", ""], progress: ["In progress", "o"], waiting: ["Waiting on client", "b"], finished: ["Finished", "g"], unknown: ["Size unknown", ""] };
+  const vids = {}, paid = {}, nPay = {}, lastPay = {};
+  /* 11-21 (BENAS: "pack status should be in the client's page"): packs come from public.order_progress (one row per paid order,
+     Shorts counted once per number in the order folder, revisions per Short). Founders fix size / kind / status on the page. */
+  const byOrd = {}, cOrd = {}, cProb = {};
+  ordRows.forEach(o => { byOrd[o.id] = o; (cOrd[o.client_id] = cOrd[o.client_id] || []).push(o); });
+  probs.forEach(q => { const o = byOrd[q.order_id], k = o ? o.client_id : "n:" + lc(q.client); (cProb[k] = cProb[k] || []).push(q); });
   deliveries.forEach(v => (vids[v.client_id] = vids[v.client_id] || []).push(v));
   payments.forEach(p => { if (p.refunded) return; paid[p.client_id] = (paid[p.client_id] || 0) + (+p.amount || 0); nPay[p.client_id] = (nPay[p.client_id] || 0) + 1; const d = dayOf(p.paid_at); if (!lastPay[p.client_id] || d > lastPay[p.client_id]) lastPay[p.client_id] = d; });
   const ret = {}; retainers.forEach(r => { if (/active|trialing|past_due/i.test(r.status || "")) ret[lc(r.email)] = r; });
@@ -512,29 +516,30 @@ async function loadClients() {
     const cat = gone ? "past" : r ? "retainer" : (lastAct && lastAct < addDays(t, -45)) ? "past" : "pack";
     const doms = es.map(e => e.split("@")[1]).filter(x => x && !/^(gmail|yahoo|hotmail|outlook|icloud|aol|proton)\./.test(x)), mine = q => es.includes(lc(q.email)) || doms.includes(lc(q.email).split("@")[1]);
     const waitRow = pipe.find(q => mine(q) && /wait|their ok|on ok\b|approv|footage|awaiting|\bsends\b|next episode|check-?in sent|only if .{0,20}write|until (he|she|they)/i.test(q.next_action || "")), waiting = waitRow ? String(waitRow.next_action).slice(0, 120) : "";
-    const isRet = q => /month/i.test(q.package || "") || (r && Math.round(+q.amount) === Math.round(+r.amount) && +new Date(q.paid_at) >= +new Date(r.started_at) - 864e5);
-    const pp = (payL[c.id] || []).filter(q => !isRet(q)).sort((a, b) => String(a.paid_at).localeCompare(String(b.paid_at))), ords = {};
-    vs.forEach(v => { const mm = /^(\d+)[\s-]*(shorts?|short form|videos?|long)/i.exec(v.order_name || ""); if (!mm) return; (ords[v.order_name] = ords[v.order_name] || { name: v.order_name, bought: +mm[1], vs: [] }).vs.push(v); });
-    const packs = Object.values(ords).map(o => ({ name: o.name, bought: o.bought, files: o.vs.length, done: uniq(o.vs), last: o.vs.reduce((x, v) => v.delivered_at > x ? v.delivered_at : x, ""), first: o.vs.reduce((x, v) => !x || v.delivered_at < x ? v.delivered_at : x, "") }))
-      .filter(o => !(plan && plan.shorts && o.bought === plan.shorts && o.last >= plan.start)).sort((a, b) => a.first.localeCompare(b.first));
-    pp.slice(packs.length).forEach(q => { const recent = Date.now() - new Date(q.paid_at) < 14 * 864e5, n = sizeOf(q); if (recent) packs.push({ name: `Paid ${dLabel(dayOf(q.paid_at))} · ${usd(q.amount)}`, bought: n, done: 0, last: "", first: "", paidAt: q.paid_at, unpaired: true }); });
-    /* 11-19 late (Simas): old-style folders or far more files than the folder's number = a custom deal, not an n/m pack; a past
-       client's open pack is not "in progress"; a next action that says "parked" is Parked, not waiting on the client. */
+    /* 11-19 late (Simas): a past client's open pack is not "in progress"; a next action that says "parked" is Parked, not waiting. */
     const parked = pipe.some(q => mine(q) && /\bparked\b/i.test(q.next_action || ""));
-    packs.forEach(o => { const std = o.unpaired || /^\d+\s+Shorts?\s+·/i.test(o.name), fin = o.bought != null && o.done >= o.bought, custom = !std || (!fin && o.bought != null && o.files > o.bought * 2 + 2);
-      o.st = std && fin ? "finished" : cat === "past" && o.bought != null ? (fin ? "finished" : "past") : custom ? "custom" : o.bought == null ? "unknown" : parked ? "parked" : waiting ? "waiting" : o.done === 0 ? "notstarted" : "progress"; });
-    packs.forEach(o => { const ov = ovs.find(q => q.client_id === c.id && q.order_name === o.name); if (!ov) return;   /* a founder's word beats the Drive count */
-      o.st = ov.status; if (ov.done != null) o.done = ov.done; if (ov.bought != null) o.bought = ov.bought; o.ov = ov; });
-    const worst = ["notstarted", "progress", "waiting", "parked", "unknown", "past", "finished", "custom"].find(k => packs.some(o => o.st === k)) || "", state = r ? "retainer" : worst;
+    const all0 = (cOrd[c.id] || []).map(o => ({ id: o.id, name: ordName(o), kind: o.kind, status: o.status, bought: o.bought, done: +o.delivered || 0, revised: +o.revised || 0, inrev: +o.in_revision || 0,
+      exp: o.expected_by_now, last: o.last_delivery_at ? dayOf(o.last_delivery_at) : "", opened: o.opened_at, folder: o.folder || "" }));
+    all0.forEach(o => { o.st = o.status === "complete" ? "finished" : o.status !== "open" ? o.status : cat === "past" ? "past" : o.kind === "custom" ? "custom" : o.bought == null ? "unknown" : parked ? "parked" : waiting ? "waiting" : o.done === 0 ? "notstarted" : "progress"; });
+    const packs = all0.filter(o => o.status !== "legacy"), legacy = all0.filter(o => o.status === "legacy" && (o.folder || o.bought != null || o.done));
+    const mo = packs.filter(o => o.kind === "monthly").pop();   // the newest monthly order carries this billing month's count
+    if (plan && mo) { if (mo.bought != null) plan.shorts = mo.bought; plan.done = mo.done; plan.order = mo; }
+    const worst = ["notstarted", "progress", "waiting", "paused", "parked", "unknown", "custom", "past", "finished"].find(k => packs.some(o => o.st === k)) || "", state = r ? "retainer" : worst;
     const pr = proms.filter(q => es.includes(lc(q.lead_email))).sort((a, b) => String(a.due_at).localeCompare(String(b.due_at))), sc = scs.find(q => q.email && es.includes(lc(q.email))) || null, att = [];
     if (plan) { plan.daysLeft = Math.ceil((new Date(r.current_period_end) - Date.now()) / 864e5); const len = Math.max(1, (new Date(r.current_period_end) - new Date(plan.start + "T00:00:00Z")) / 864e5), frac = Math.min(1, Math.max(0, 1 - plan.daysLeft / len));
-      plan.expected = plan.shorts ? Math.round(plan.shorts * frac) : null;
+      plan.expected = plan.order ? plan.order.exp : plan.shorts ? Math.round(plan.shorts * frac) : null;
       if (plan.daysLeft <= 5) att.push(["o", `renews in ${plan.daysLeft} day${plan.daysLeft === 1 ? "" : "s"}`]);
-      if (plan.shorts && plan.done < plan.expected - Math.max(2, plan.shorts * .15)) att.push(["r", `behind: ${plan.done} delivered, about ${plan.expected} expected by now`]); }
+      if (!plan.order && plan.shorts && plan.done < plan.expected - Math.max(2, plan.shorts * .15)) att.push(["r", `behind: ${plan.done} delivered, about ${plan.expected} expected by now`]); }
     pr.filter(q => q.due_at && new Date(q.due_at) < new Date()).forEach(q => att.push(["r", `promise overdue: ${String(q.promise).slice(0, 70)}`]));
-    packs.forEach(o => { if (o.st === "notstarted" && o.paidAt && Date.now() - new Date(o.paidAt) > 864e5) att.push(["r", `paid pack not started: ${o.name}${o.bought ? ` (${o.bought} Shorts)` : ""}`]);
-      if (o.st === "progress" && o.last && o.last < addDays(t, -3) && o.last >= addDays(t, -30) && cat !== "past") att.push(["o", `pack ${o.done} / ${o.bought}, no delivery since ${dLabel(o.last)}`]); });
-    return { ...c, vids: vs, paid: paid[c.id] || 0, nPay: nPay[c.id] || 0, last, ret: r, plan, gone, cat, today: vs.filter(v => v.delivered_at === t).length, proms: pr, scope: sc, att, packs, state, worst, waiting };
+    const pb = (cProb[c.id] || []).concat(cProb["n:" + lc(c.name)] || []), PB = { behind_pace: "r", past_due: "r", revision_open: "o" };   // size_unknown: the page note above the list
+    if (cat !== "past") {
+      packs.forEach(o => { if (o.st === "notstarted" && o.opened && Date.now() - new Date(o.opened) > 864e5) att.push(["r", `paid pack not started: ${o.name}${o.bought ? ` (${o.bought} Shorts)` : ""}`]);
+        if (o.st === "progress" && o.last && o.last < addDays(t, -3) && o.last >= addDays(t, -30)) att.push(["o", `${o.name}: ${o.done} / ${o.bought}, no delivery since ${dLabel(o.last)}`]); });
+      pb.filter(q => PB[q.problem]).forEach(q => att.push([PB[q.problem], `${q.problem === "revision_open" ? "change asked" : byOrd[q.order_id] ? ordName(byOrd[q.order_id]) : q.ref || "order"}: ${q.detail}`])); }
+    const unN = pb.filter(q => q.problem === "file_unnumbered").length;   // files the count can't use: one small line on the client, never a card
+    const prob = [unN ? `${unN} file${unN === 1 ? "" : "s"} not counted (no Short number in the name)` : "", ...pb.filter(q => q.problem === "folder_unmatched").map(q => `“${q.ref}”: ${q.detail}`),
+      ...pb.filter(q => q.problem === "over_delivered").map(q => `${byOrd[q.order_id] ? ordName(byOrd[q.order_id]) : q.ref}: ${q.detail}`)].filter(Boolean).join(" · ");
+    return { ...c, vids: vs, paid: paid[c.id] || 0, nPay: nPay[c.id] || 0, last, ret: r, plan, gone, cat, today: vs.filter(v => v.delivered_at === t).length, proms: pr, scope: sc, att, packs, legacy, prob, state, worst, waiting };
   }).filter(c => c.vids.length || c.paid || c.ret);
   const by = k => list.filter(c => c.cat === k);
   const groups = [["retainer", "Monthly retainer", by("retainer").sort((a, b) => b.ret.amount - a.ret.amount)],
@@ -542,7 +547,7 @@ async function loadClients() {
     ["past", "Past / parted ways", by("past").sort((a, b) => (b.last || "").localeCompare(a.last || ""))]];
   const ds = st.find(x => x.name === "deliveries");
   const allP = list.flatMap(c => c.packs.map(o => ({ ...o, client: c.name }))), nSt = k => allP.filter(o => o.st === k).length;
-  return { list, groups, t, PST, counts: { retainer: by("retainer").length, progress: nSt("progress"), finished: nSt("finished"), notstarted: nSt("notstarted"), waiting: nSt("waiting"), unknown: nSt("unknown") }, unknownL: allP.filter(o => o.st === "unknown").map(o => `${o.client}: ${o.name}`), synced: ds ? ds.ran_at : null, dsOk: ds ? ds.ok !== false : true, lastDelivery: deliveries.reduce((x, v) => v.delivered_at > x ? v.delivered_at : x, ""), todayN: list.reduce((s, c) => s + c.today, 0), todayC: list.filter(c => c.today).length };
+  return { list, groups, t, calls: callModel(calls, cNotes, cTasks), counts: { retainer: by("retainer").length, progress: nSt("progress"), finished: nSt("finished"), notstarted: nSt("notstarted"), waiting: nSt("waiting"), paused: nSt("paused"), unknown: nSt("unknown") }, unknownL: allP.filter(o => o.st === "unknown").map(o => `${o.client}: ${o.name}`), synced: ds ? ds.ran_at : null, dsOk: ds ? ds.ok !== false : true, lastDelivery: deliveries.reduce((x, v) => v.delivered_at > x ? v.delivered_at : x, ""), todayN: list.reduce((s, c) => s + c.today, 0), todayC: list.filter(c => c.today).length };
 }
 const fdur = s => s ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : "";
 function clientDetail(c, t) {
@@ -550,11 +555,11 @@ function clientDetail(c, t) {
   const days = {}; c.vids.forEach(v => (days[v.delivered_at || ""] = days[v.delivered_at || ""] || []).push(v));
   const keys = Object.keys(days).sort().reverse();
   return `<div class="cl-head"><div><h2>${esc(c.name || "Client")}</h2><p>${esc([c.show, (c.emails || [])[0], c.last ? `last video ${dLabel(c.last)}` : "no videos yet"].filter(Boolean).join(" · "))}</p></div>
-    <div class="cl-chips">${stChip(c)}${c.plan ? `<span class="chip">renews in ${c.plan.daysLeft} d</span>` : ""}${c.today ? `<span class="chip g">${c.today} today</span>` : ""}${c.plan ? `<span class="chip g">${esc(c.plan.text)}</span>` : ""}<span class="chip">${int(c.vids.length)} video${c.vids.length === 1 ? "" : "s"}</span>${c.paid ? `<span class="chip b">${usd(c.paid)} paid${c.nPay > 1 ? ` · ${c.nPay} payments` : ""}</span>` : ""}${c.gone ? `<span class="chip">parted ways</span>` : ""}${c.scope && c.scope.url ? `<a class="chip lkc" href="${esc(c.scope.url)}" target="_blank" rel="noopener noreferrer">Scope ↗</a>` : ""}</div></div>
-    ${packLines(c)}
+    <div class="cl-chips">${stChip(c, true)}${c.plan ? `<span class="chip">renews in ${c.plan.daysLeft} d</span>` : ""}${c.today ? `<span class="chip g">${c.today} today</span>` : ""}${c.plan ? `<span class="chip g">${esc(c.plan.text)}</span>` : ""}<span class="chip">${int(c.vids.length)} video${c.vids.length === 1 ? "" : "s"}</span>${c.paid ? `<span class="chip b">${usd(c.paid)} paid${c.nPay > 1 ? ` · ${c.nPay} payments` : ""}</span>` : ""}${c.gone ? `<span class="chip">parted ways</span>` : ""}${c.scope && c.scope.url ? `<a class="chip lkc" href="${esc(c.scope.url)}" target="_blank" rel="noopener noreferrer">Scope ↗</a>` : ""}</div></div>
+    ${ordLines(c)}
     ${c.att.length ? `<div class="sp-alerts cl-al">${c.att.map(a => `<div class="sp-alert ${a[0] === "r" ? "red" : "amber"}"><i></i><span>${esc(a[1])}</span></div>`).join("")}</div>` : ""}
     ${c.proms.length ? `<div class="cl-plan"><b class="cl-ph">Promised to this client</b>${c.proms.map(q => `<div class="cl-pr"><span class="grow">${esc(q.promise)}</span><span class="chip${q.due_at && new Date(q.due_at) < new Date() ? " r" : ""}">${q.due_at ? "due " + esc(dLabel(dayOf(q.due_at))) : "no date"}</span></div>`).join("")}</div>` : ""}
-    ${c.plan ? `<div class="cl-plan"><div class="sp-bar"><span>Delivered this billing month <small class="mut">since ${esc(dLabel(c.plan.start))} · renews ${esc(dLabel(c.plan.renews))} (${c.plan.daysLeft} days left)${c.plan.expected != null ? ` · about ${c.plan.expected} expected by now` : ""}</small></span><span class="v">${c.plan.done}${c.plan.shorts ? ` / ${c.plan.shorts}` : ""}</span><div class="bar c-green"><i data-v="w:${c.plan.shorts ? Math.min(100, Math.max(2, Math.round(100 * c.plan.done / c.plan.shorts))) : 100}%"></i></div></div><p class="sp-note">Counts each Short once (new versions of the same Short don't add up), from the files in Drive.</p></div>` : ""}
+    ${c.plan && !c.plan.order ? `<div class="cl-plan"><div class="sp-bar"><span>Delivered this billing month <small class="mut">since ${esc(dLabel(c.plan.start))} · renews ${esc(dLabel(c.plan.renews))}${c.plan.expected != null ? ` · about ${c.plan.expected} expected by now` : ""}</small></span><span class="v">${c.plan.done}${c.plan.shorts ? ` / ${c.plan.shorts}` : ""}</span><div class="bar c-green"><i data-v="w:${c.plan.shorts ? Math.min(100, Math.max(2, Math.round(100 * c.plan.done / c.plan.shorts))) : 100}%"></i></div></div><p class="sp-note">No monthly order yet: counted from the files in Drive.</p></div>` : ""}
     ${keys.map(k => `<div class="cl-ord${k === t ? " today" : ""}">${k === t ? "Today · " : ""}${esc(dLabel(k))} · ${days[k].length}</div><div class="vid-grid">${days[k].map(v => `<a class="vid${k === t ? " today" : ""}" href="${esc(v.link)}" target="_blank" rel="noopener noreferrer" title="Open in Drive"><span class="pl">${ic("play")}${k === t ? `<em class="vt">Today</em>` : ""}</span><b>${esc(v.title || "Video")}</b><small>${esc(fdur(v.duration_s))}${v.duration_s ? " · " : ""}<span class="vo">${esc(v.order_name || "")}</span></small></a>`).join("")}</div>`).join("") || empty("No videos for this client in the delivery index yet.")}
     <div class="cl-calls" data-emails="${esc((c.emails || []).join(","))}"></div>`;
 }
@@ -563,16 +568,73 @@ function fillCalls() {
   const el = $("#cl-detail .cl-calls"); if (!el || !window.BEJU_CRM_CALLS) return;
   window.BEJU_CRM_CALLS(el.dataset.emails.split(",").filter(Boolean)).then(html => { if (el.isConnected && html) el.innerHTML = `<div class="cl-plan"><b class="cl-ph">Calls</b>${html}</div>`; }, () => {});
 }
-let CL_TODAY = false, CLF = "";
-const PCH = { notstarted: ["Not started", ""], progress: ["In progress", "o"], waiting: ["Waiting on client", "b"], finished: ["Finished", "g"], unknown: ["Size unknown", ""], past: ["Past client", ""], parked: ["Parked", ""], custom: ["Custom deal", ""] };
-function stChip(c) {
+let CL_TODAY = false, CLF = "", CALLS_ALL = false;
+/* 11-21 (SIMAS: "in the clients tab, we need a new section about the calls that would be clear"): Upcoming (cal.com bookings still to
+   come: when in Vilnius, who, what about, the Meet link) and Past calls (newest first, one row each: when, who, the summary's first
+   line, takeaways, open next tasks). No notes = a red "Notes missing" + Add call notes. A tap opens crm.js's full call card. */
+function callModel(calls, notes, tasks) {
+  const now = Date.now(), live = calls.filter(c => !/cancel/i.test(c.status || "")), note = {}, tk = {};
+  notes.forEach(n => { note[n.call_uid] = n; }); tasks.forEach(x => (tk[x.touch_id] = tk[x.touch_id] || []).push(x));
+  const row = c => { const n = note[c.uid] || null; return { c, n, tasks: n ? tk[n.id] || [] : [] }; }, at = c => +new Date(c.start_at);
+  return { up: live.filter(c => at(c) > now).sort((a, b) => at(a) - at(b)).map(row), past: live.filter(c => at(c) <= now).sort((a, b) => at(b) - at(a)).map(row) };
+}
+const wkd = t => new Date(t).toLocaleDateString("en-GB", { timeZone: TZ, weekday: "short" });
+const callWhen = t => `${wkd(t)}, ${dLabel(dayOf(t))} · ${hm(t)}`;
+const callAbout = c => String(c.title || "").replace(/\s+between\s+beju creative\s+and\s+.*$/i, "").trim() || "Call";
+function callUp({ c }) {
+  const meet = webUrl(c.meet_url || "");
+  return `<div class="clc-row clc-up"><span class="clc-m"><b class="clc-d">${esc(callWhen(c.start_at))}</b><span class="clc-w">${esc(c.name || c.email || "Lead")}</span><span class="clc-s">${esc(callAbout(c))}</span></span>${meet ? `<a class="act go clc-meet" href="${esc(meet)}" target="_blank" rel="noopener noreferrer">${ic("link")}Join Meet</a>` : ""}</div>`;
+}
+function callPast({ c, n, tasks }) {
+  const ended = +new Date(c.end_at || c.start_at), missing = !n && ended < Date.now() - 2 * 36e5, open = tasks.filter(x => !x.done_at), tk = n && n.takeaways ? n.takeaways.length : 0;
+  const line = n ? String(n.summary || "").split("\n")[0] : "";
+  const extra = [tk ? `${tk} takeaway${tk === 1 ? "" : "s"}` : "", open.length ? `next: ${open[0].owner}, ${open[0].text}${open.length > 1 ? ` (+${open.length - 1} more)` : ""}` : tasks.length ? "tasks done" : ""].filter(Boolean).join(" · ");
+  return `<div class="clc-row" data-uid="${esc(c.uid)}"><button type="button" class="clc-m" data-callopen="${esc(c.uid)}" aria-expanded="false"><b class="clc-d">${esc(callWhen(c.start_at))}</b><span class="clc-w">${esc(c.name || c.email || "Lead")}</span>
+    ${n ? `<span class="clc-s">${esc(line)}</span>` : `<span class="clc-s ${missing ? "clc-miss" : "mut"}">${missing ? "Notes missing" : "No notes yet"}</span>`}${extra ? `<span class="clc-x">${esc(extra)}</span>` : ""}</button>
+    ${n ? "" : `<button type="button" class="act clc-add" data-calladd="${esc(c.uid)}">${ic("edit")}Add call notes</button>`}</div><div class="clc-card" data-card-uid="${esc(c.uid)}" hidden></div>`;
+}
+const callsSec = m => m ? `<section class="card sp-card clc" id="clc">${callsInner(m)}</section>` : "";
+function callsInner(m) {
+  const past = CALLS_ALL ? m.past : m.past.slice(0, 5);
+  return `<h2>Calls</h2>
+    <h3 class="clc-h">Upcoming</h3>${m.up.length ? `<div class="clc-list">${m.up.map(callUp).join("")}</div>` : `<p class="mut clc-none">No calls booked.</p>`}
+    <h3 class="clc-h">Past calls</h3>${past.length ? `<div class="clc-list">${past.map(callPast).join("")}</div>${m.past.length > 5 ? `<button type="button" class="more clc-more" data-callmore>${CALLS_ALL ? "Show fewer" : `Show all ${m.past.length}`}</button>` : ""}` : `<p class="mut clc-none">No calls yet.</p>`}`;
+}
+function callToggle(uid, add) {   // open / close the full call card under its row; add = open the notes form right away
+  const sec = $("#clc"), btn = sec && $(`[data-callopen="${CSS.escape(uid)}"]`, sec), box = sec && $(`[data-card-uid="${CSS.escape(uid)}"]`, sec); if (!btn || !box) return;
+  const on = add || box.hidden, row = CACHE.clients && CACHE.clients.calls.past.find(r => r.c.uid === uid);
+  if (on && box.hidden) { box.innerHTML = window.BEJU_CRM_CALLCARD && row ? window.BEJU_CRM_CALLCARD(row) : ""; box.hidden = !box.innerHTML; }
+  else if (!on) { box.hidden = true; box.innerHTML = ""; }
+  btn.setAttribute("aria-expanded", !box.hidden);
+  if (add) { const a = $('[data-act="cnadd"]', box); if (a && !a.hidden) a.click(); }
+}
+const PCH = { notstarted: ["Not started", ""], progress: ["In progress", "o"], waiting: ["Waiting on client", "b"], finished: ["Complete", "g"], unknown: ["Size unknown", ""], past: ["Past client", ""], parked: ["Parked", ""], custom: ["Custom", ""],
+  paused: ["Paused", "b"], refunded: ["Refunded", ""], canceled: ["Canceled", ""], legacy: ["Older order", ""] };
+const OKIND = [["pack", "Pack"], ["monthly", "Monthly"], ["long", "Long-form"], ["custom", "Custom"], ["referral", "Referral"], ["legacy", "Older order"]];
+const OSTAT = [["open", "Open"], ["complete", "Complete"], ["paused", "Paused"], ["refunded", "Refunded"], ["canceled", "Canceled"], ["legacy", "Older order"]];
+/* "15 Shorts · Month 1 · 2026-11-19" -> "Month 1 · Nov 19" (the size is the number next to it); other folders as they are */
+function ordName(o) {
+  const f = String(o.folder || ""), m = /^\d+\s+\S+\s+·\s+(.+?)\s+·\s+(\d{4}-\d{2}-\d{2})$/.exec(f);
+  return m ? `${m[1]} · ${dLabel(m[2])}` : f || `${(OKIND.find(k => k[0] === o.kind) || [0, o.kind])[1]} · ${dLabel(dayOf(o.opened_at || o.opened))}`;
+}
+function stChip(c, bare) {
   if (c.ret) return `<span class="chip acc">Ongoing</span>`;
   const o = c.packs.find(x => x.st === c.worst); if (!o) return "";
-  if (o.st === "custom") return `<span class="chip">Custom deal</span>`;
-  if (o.st === "past") return `<span class="chip">Past client · ${o.done} of ${o.bought} delivered</span>`;
-  return `<span class="chip ${PCH[o.st][1]}">${o.st === "finished" ? `✓ Finished${o.ov && o.bought != null ? ` · ${o.done} / ${o.bought}` : ""}` : `${PCH[o.st][0]}${o.bought != null && o.st !== "waiting" ? ` · ${o.done} / ${o.bought}` : ""}`}</span>`;
+  const n = !bare && o.bought != null && !/finished|waiting|paused/.test(o.st) ? ` · ${o.done} / ${o.bought}` : "";
+  return `<span class="chip ${PCH[o.st][1]}">${o.st === "finished" ? "✓ " : ""}${PCH[o.st][0]}${n}</span>`;
 }
-const packLines = c => c.packs.length ? `<div class="cl-plan"><b class="cl-ph">Packs</b>${c.packs.map(o => `<div class="cl-pk"><span class="ring ${PCH[o.st][1]}" data-v="p:${o.bought ? Math.min(100, Math.round(100 * o.done / o.bought)) : 0}"></span><span class="grow">${esc(o.name)}${o.st === "waiting" && c.waiting ? `<small class="mut"> · ${esc(c.waiting)}</small>` : ""}</span><b class="mono">${o.st === "custom" ? `${o.files} files` : o.bought == null ? "? " : `${o.done} / ${o.bought}`}</b><span class="chip ${PCH[o.st][1]}">${o.st === "finished" ? "✓ Finished" : PCH[o.st][0]}</span>${o.ov ? `<small class="mut">set by ${esc(o.ov.set_by || "a founder")} ${esc(dLabel(dayOf(o.ov.set_at)))}</small><button type="button" class="lk" data-ovundo="${esc(o.name)}">undo</button>` : o.st !== "finished" && !o.unpaired ? `<button type="button" class="act" data-ovfin="${esc(o.name)}" data-b="${o.bought == null ? "" : o.bought}">Mark finished</button>` : ""}</div>`).join("")}</div>` : "";
+/* one row per order: big delivered / bought, plain words for revisions, the status, and a founder Fix (writes public.orders) */
+const ordRow = o => `<div class="cl-or" data-oid="${o.id}"><span class="ring ${PCH[o.st][1]}" data-v="p:${o.bought ? Math.min(100, Math.round(100 * o.done / o.bought)) : 0}"></span>
+  <span class="grow"><span class="cl-or-n">${esc(o.name)}</span>${o.revised || o.inrev ? `<span class="cl-or-t">${[o.revised ? `${o.revised} revised` : "", o.inrev ? `<b class="dn">${o.inrev} in revision</b>` : ""].filter(Boolean).join(" · ")}</span>` : ""}</span>
+  <b class="cl-or-v">${o.done}<small> / ${o.bought == null ? "?" : o.bought}</small></b><span class="chip ${PCH[o.st][1]}">${o.st === "finished" ? "✓ " : ""}${PCH[o.st][0]}</span><button type="button" class="act cl-or-fix" data-ofix="${o.id}" aria-expanded="false">Fix</button></div>`;
+function ordLines(c) {
+  if (!c.packs.length && !c.legacy.length) return "";
+  return `<div class="cl-plan cl-ords">${c.packs.map(ordRow).join("")}${c.legacy.length ? `<details class="cl-leg"><summary>${c.legacy.length} older order${c.legacy.length === 1 ? "" : "s"} (before the order system)</summary>${c.legacy.map(ordRow).join("")}</details>` : ""}${c.prob ? `<p class="sp-note cl-prob">${esc(c.prob)}</p>` : ""}</div>`;
+}
+const oSel = (name, opts, v) => `<select name="${name}">${opts.map(([k, l]) => `<option value="${k}"${k === v ? " selected" : ""}>${l}</option>`).join("")}</select>`;
+const ordForm = o => `<form class="cl-oe" data-oid="${o.id}" novalidate><label><span>Shorts bought</span><input name="bought" type="number" min="0" max="1000" inputmode="numeric" value="${o.bought == null ? "" : o.bought}"></label>
+  <label><span>Kind</span>${oSel("kind", OKIND, o.kind)}</label><label><span>Status</span>${oSel("status", OSTAT, o.status)}</label>
+  <div class="cl-oe-b"><button type="button" class="act" data-ocancel>Cancel</button><button type="submit" class="act go">Save</button></div><p class="cl-oe-err" hidden></p></form>`;
 function clientRow(c, sel) {
   const sub = c.plan ? c.plan.text : c.last ? `last video ${dLabel(c.last)}${c.nPay > 1 ? ` · ${c.nPay} payments` : ""}` : c.paid ? `${usd(c.paid)} paid` : "";
   return `<a class="cl-item" href="?p=clients&amp;c=${esc(c.id)}" data-cl="${esc(c.id)}" data-st="${esc([c.ret ? "retainer" : "", ...new Set(c.packs.map(o => o.st))].join(" "))}" data-today="${c.today}" data-q="${esc(lc([c.name, c.show, ...(c.emails || [])].join(" ")))}"${sel && c.id === sel.id ? ' aria-current="true"' : ""}><span class="av">${esc(initials(c.name))}</span><span class="grow"><span class="t">${esc(c.name || "Client")}</span><span class="s">${esc(sub)}</span></span><span class="n">${int(c.vids.length)}</span><span class="cl-ch">${stChip(c)}${c.plan && c.plan.shorts ? `<span class="chip">${c.plan.done} / ${c.plan.shorts} this month</span>` : ""}${c.today ? `<span class="chip g">${c.today} today</span>` : ""}</span></a>`;
@@ -581,9 +643,10 @@ function viewClients(d) {
   if (!d.list.length) return empty("No clients with videos or payments yet.");
   const sel = d.list.find(c => c.id === param("c")) || (d.groups.find(g => g[2].length) || [0, 0, []])[2][0], n = d.list.reduce((s, c) => s + c.vids.length, 0);
   return `<div class="sp-kpis">${kpi("Delivered today", int(d.todayN), d.todayN ? `${d.todayC} client${d.todayC === 1 ? "" : "s"} · ${esc(dLabel(d.t))}` : "nothing yet today")}${kpi("On a monthly retainer", int(d.groups[0][2].length), usd(d.groups[0][2].reduce((s, c) => s + (+c.ret.amount || 0), 0)) + " a month")}${kpi("Clients", int(d.list.length), "paid or got videos")}${kpi("Videos delivered", int(n), `newest ${esc(dLabel(d.lastDelivery))}`)}</div>
-  <div class="cl-filt" role="group" aria-label="Filter by status">${[["retainer", "Retainers ongoing", "acc"], ["progress", "Packs in progress", "o"], ["finished", "Packs finished", "g"], ["notstarted", "Not started", ""], ["waiting", "Waiting on client", "b"]].map(([k, l, cl]) => `<button type="button" class="cl-fb ${cl}${CLF === k ? " on" : ""}" data-clf="${k}" aria-pressed="${CLF === k}"><b>${d.counts[k]}</b><span>${l}</span></button>`).join("")}</div>
-  ${d.counts.unknown ? `<p class="sp-note">Size unknown for ${d.counts.unknown} payment${d.counts.unknown === 1 ? "" : "s"} (not guessed): ${esc(d.unknownL.join("; "))}.</p>` : ""}
+  <div class="cl-filt${d.counts.paused ? " n6" : ""}" role="group" aria-label="Filter by status">${[["retainer", "Retainers ongoing", "acc"], ["progress", "Packs in progress", "o"], ["finished", "Packs complete", "g"], ["notstarted", "Not started", ""], ["waiting", "Waiting on client", "b"], ...(d.counts.paused ? [["paused", "Paused", "b"]] : [])].map(([k, l, cl]) => `<button type="button" class="cl-fb ${cl}${CLF === k ? " on" : ""}" data-clf="${k}" aria-pressed="${CLF === k}"><b>${d.counts[k]}</b><span>${l}</span></button>`).join("")}</div>
+  ${d.counts.unknown ? `<p class="sp-note">Size unknown for ${d.counts.unknown} order${d.counts.unknown === 1 ? "" : "s"} (not guessed, set it with Fix): ${esc(d.unknownL.join("; "))}.</p>` : ""}
   ${d.list.some(c => c.att.length) ? `<section class="card sp-card"><h2>Needs attention <small>${d.list.filter(c => c.att.length).length} client${d.list.filter(c => c.att.length).length === 1 ? "" : "s"}</small></h2><div class="sp-alerts">${d.list.filter(c => c.att.length).flatMap(c => c.att.map(a => `<a class="sp-alert ${a[0] === "r" ? "red" : "amber"} cl-go" href="?p=clients&amp;c=${esc(c.id)}" data-cl-go="${esc(c.id)}"><i></i><span><b>${esc(c.name)}</b> · ${esc(a[1])}</span></a>`)).join("")}</div></section>` : ""}
+  ${callsSec(d.calls)}
   <div class="cl-wrap"><section class="card sp-card"><div class="cl-tools"><input class="cl-q" id="cl-q" type="search" placeholder="Find a client" aria-label="Find a client" autocomplete="off" spellcheck="false"><button type="button" class="chip${CL_TODAY ? " g" : ""}" id="cl-today" aria-pressed="${CL_TODAY}" title="Show only clients who got videos today">Delivered today · ${d.todayC}</button></div>
     <div class="cl-list" id="cl-list">${d.groups.map(([k, label, cs]) => cs.length ? `<div class="cl-grp" data-grp="${k}"><span>${label}</span><span class="chip">${cs.length}</span></div>${cs.map(c => clientRow(c, sel)).join("")}` : "").join("")}</div></section>
     <section class="card sp-card" id="cl-detail">${clientDetail(sel, d.t)}</section></div>`;
@@ -597,19 +660,44 @@ function wireClients() {
   $$("[data-cl-go]", PAGE_EL).forEach(a => a.addEventListener("click", ev => { if (ev.metaKey || ev.ctrlKey) return; ev.preventDefault(); $(`#cl-list [data-cl="${CSS.escape(a.dataset.clGo)}"]`)?.click(); $("#cl-detail").scrollIntoView({ behavior: RM ? "auto" : "smooth", block: "start" }); }));
   $("#cl-q")?.addEventListener("input", filterClients);
   $("#cl-today")?.addEventListener("click", ev => { CL_TODAY = !CL_TODAY; ev.currentTarget.classList.toggle("g", CL_TODAY); ev.currentTarget.setAttribute("aria-pressed", CL_TODAY); filterClients(); });
-  $("#cl-detail")?.addEventListener("click", async ev => {
-    const f = ev.target.closest("[data-ovfin]"), u = ev.target.closest("[data-ovundo]"); if (!f && !u) return;
-    const cid = new URLSearchParams(location.search).get("c") || ($("#cl-list [aria-current=true]") || {}).dataset?.cl; if (!cid) return;
-    await me(); const who = (ME && ME.who !== "Both" ? ME.who : (ME && ME.name)) || null;
+  const ordOf = id => { for (const c of CACHE.clients.list) { const o = c.packs.concat(c.legacy).find(x => String(x.id) === String(id)); if (o) return o; } return null; };
+  const closeForms = () => { $$("#cl-detail .cl-oe").forEach(f => f.remove()); $$("#cl-detail [data-ofix]").forEach(b => b.setAttribute("aria-expanded", "false")); };
+  $("#cl-detail")?.addEventListener("click", ev => {
+    const fx = ev.target.closest("[data-ofix]"), cx = ev.target.closest("[data-ocancel]");
+    if (cx) { const b = $(`#cl-detail [data-ofix="${cx.closest("form").dataset.oid}"]`); closeForms(); if (b) b.focus(); return; }
+    if (!fx) return;
+    const row = fx.closest(".cl-or"), was = !!(row.nextElementSibling && row.nextElementSibling.matches(".cl-oe")), o = ordOf(fx.dataset.ofix); closeForms();
+    if (was || !o) return;
+    row.insertAdjacentHTML("afterend", ordForm(o)); fx.setAttribute("aria-expanded", "true"); $("#cl-detail .cl-oe input").focus();
+  });
+  $("#cl-detail")?.addEventListener("submit", async ev => {
+    const f = ev.target.closest(".cl-oe"); if (!f) return; ev.preventDefault();
+    const o = ordOf(f.dataset.oid), err = $(".cl-oe-err", f), go = $('button[type="submit"]', f); if (!o) return;
+    const raw = String(f.elements.bought.value || "").trim(), b = raw === "" ? null : Math.round(+raw), kind = f.elements.kind.value, status = f.elements.status.value;
+    if (raw !== "" && !(b >= 0 && b <= 1000)) { err.hidden = false; err.textContent = "Shorts bought: a number from 0 to 1000."; f.elements.bought.focus(); return; }
+    const patch = {}, said = [];
+    if (b !== o.bought) { patch.shorts_bought = b; patch.size_source = "founder"; said.push(`size ${o.bought == null ? "?" : o.bought} to ${b == null ? "?" : b}`); }
+    if (kind !== o.kind) { patch.kind = kind; said.push(`kind ${o.kind} to ${kind}`); }
+    if (status !== o.status) { patch.status = status; said.push(`status ${o.status} to ${status}`); }
+    if (!said.length) { closeForms(); return; }
+    await me(); const who = (ME && ME.who !== "Both" ? ME.who : ME && ME.name) || "a founder";
+    go.disabled = true; err.hidden = true;
     try {
-      if (f) { const b = f.dataset.b ? +f.dataset.b : null; if (!confirm(`Mark "${f.dataset.ovfin}" as finished${b ? ` (${b} / ${b})` : ""}?`)) return;
-        await must(sb().from("pack_overrides").upsert({ client_id: cid, order_name: f.dataset.ovfin, status: "finished", done: b, bought: b, set_by: who, set_at: new Date().toISOString() })); }
-      else await must(sb().from("pack_overrides").delete().eq("client_id", cid).eq("order_name", u.dataset.ovundo));
-      history.replaceState({ p: "clients" }, "", `?p=clients&c=${encodeURIComponent(cid)}`); CACHE.clients = null; await renderPage(true); toast(f ? "Marked finished" : "Override removed");
-    } catch (e) { toast("Couldn't save that. Check your connection."); }
+      const cur = await must(sb().from("orders").select("note").eq("id", o.id).maybeSingle());
+      patch.note = [cur && cur.note, `${who} ${dayOf(Date.now())} (CRM): ${said.join(", ")}`].filter(Boolean).join(" · ");
+      patch.updated_at = new Date().toISOString();
+      const done = await must(sb().from("orders").update(patch).eq("id", o.id).select("id"));
+      if (!done || !done.length) throw new Error("not allowed. The 2-step login may have expired: sign in again");
+      CACHE.clients = null; await renderPage(true); toast(`Saved: ${o.name}`);
+    } catch (e) { go.disabled = false; err.hidden = false; err.textContent = `Couldn't save: ${String(e && e.message || e).slice(0, 140)}`; }
   });
   $$("[data-clf]", PAGE_EL).forEach(b => b.addEventListener("click", () => { CLF = CLF === b.dataset.clf ? "" : b.dataset.clf; $$("[data-clf]", PAGE_EL).forEach(x => { const on = x.dataset.clf === CLF; x.classList.toggle("on", on); x.setAttribute("aria-pressed", on); }); filterClients(); }));
   $$(".ring[data-v]", PAGE_EL).forEach(el => el.style.setProperty("--p", el.dataset.v.split(":")[1]));
+  $("#clc")?.addEventListener("click", ev => {
+    const o = ev.target.closest("[data-callopen]"), a = ev.target.closest("[data-calladd]"), more = ev.target.closest("[data-callmore]");
+    if (o) callToggle(o.dataset.callopen, false); else if (a) callToggle(a.dataset.calladd, true);
+    else if (more) { CALLS_ALL = !CALLS_ALL; $("#clc").innerHTML = callsInner(CACHE.clients.calls); $("#clc [data-callmore]")?.focus(); }
+  });
   filterClients(); fillCalls();
   $("#cl-list")?.addEventListener("click", ev => {
     const a = ev.target.closest("[data-cl]"); if (!a || ev.metaKey || ev.ctrlKey || ev.shiftKey) return; ev.preventDefault();
@@ -1034,11 +1122,25 @@ async function promNames() {   // lead / client names for the promise tiles (11-
   pl.forEach(x => { if (x.email && x.name) m[lc(x.email)] = x.name; }); cl.forEach(c => (c.emails || []).forEach(e => { if (c.name) m[lc(e)] = c.name; }));
   return m;
 }
-async function loadTodos() { await me(); [PROMS, PNAME] = await Promise.all([all("promises", "id,lead_email,promise,owner,due_at,status", q => q.eq("status", "open").order("due_at")).catch(() => []), promNames()]); return all("todo_cards", "*", q => q.order("pos").order("id")); }
+/* 11-21 (BENAS, one task list): the board reads public.task_queue (open tasks from every list + open promises) and the done tasks of
+   the last 30 days. A move, edit or tick writes the tasks row; the row it came from (todo_cards, call_tasks, founder_tasks) gets the
+   same change first, so the old lists (Do next, call cards, crm-api) agree until they retire. New cards still go in todo_cards: its
+   trigger makes the tasks row, and it is the table realtime watches. */
+const vilNoon = d => { const g = Date.parse(d + "T12:00:00Z"), p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).formatToParts(new Date(g)).map(x => [x.type, x.value]));
+  return new Date(g - (Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute) - g)).toISOString(); };   // a day at 12:00 Vilnius -> ISO
+const tCard = (t, ref) => ({ id: +t.id, title: t.title, detail: t.detail || null, owner: t.owner || "Both", col: t.status === "dropped" ? "done" : t.status, due: t.due_at ? dayOf(t.due_at) : null, pos: +t.pos || 0, big: !!t.big, source: t.source, ref: ref ?? null, lead: lc(t.lead_email) });
+async function loadTaskList() {
+  const q = await all("task_queue", "*"), open = q.filter(x => x.kind === "task"), since = new Date(Date.now() - 30 * 864e5).toISOString();
+  const [refs, done] = await Promise.all([open.length ? all("tasks", "id,source_ref", r => r.in("id", open.map(x => +x.id))) : [], all("tasks", "id,title,detail,owner,status,due_at,lead_email,source,source_ref,big,pos,done_at", r => r.eq("status", "done").gte("done_at", since))]);
+  const ref = Object.fromEntries(refs.map(r => [+r.id, r.source_ref]));
+  PROMS = q.filter(x => x.kind === "promise").map(x => ({ id: x.id, lead_email: x.lead_email, promise: x.title, owner: x.owner, due_at: x.due_at, status: "open" })).sort((a, b) => String(a.due_at || "9").localeCompare(String(b.due_at || "9")));
+  return open.map(t => tCard(t, ref[+t.id])).concat(done.map(t => tCard(t, t.source_ref)));
+}
+async function loadTodos() { await me(); const [list, pn] = await Promise.all([loadTaskList(), promNames()]); PNAME = pn; return list; }
 const overdue = d => d && d < dayOf(Date.now());
 const cardsIn = (list, col) => list.filter(c => c.col === col).sort((a, b) => a.pos - b.pos || a.id - b.id);
 async function todoBadge() {
-  try { const rows = await must(sb().from("todo_cards").select("owner").neq("col", "done")), n = rows.length, by = o => rows.filter(r => r.owner === o).length;
+  try { const rows = await must(sb().from("task_queue").select("owner").eq("kind", "task")), n = rows.length, by = o => rows.filter(r => r.owner === o).length;
     const b = $("#sn-todo-n"), a = $('#snav a[data-nav="todos"]'), tip = n ? `To-dos · Simas ${by("Simas")} · Benas ${by("Benas")}${by("Both") ? ` · Both ${by("Both")}` : ""}` : "To-dos";
     if (b) { b.hidden = !n; b.textContent = n || ""; } if (a) { a.dataset.tip = tip; a.title = tip; } } catch {}
 }
@@ -1047,10 +1149,10 @@ function cardHtml(c) {
   const oc = c.owner === "Simas" ? "chip b" : c.owner === "Benas" ? "chip o" : "chip";
   return `<div class="tile sd-card${c.col === "done" ? " done" : ""}" data-card="${c.id}" tabindex="0" aria-roledescription="draggable card" aria-label="${esc(c.title)}, ${esc(c.owner)}. Alt plus arrow keys move it.">
     <div class="tt">${esc(c.title)}</div>${c.detail ? `<div class="dd">${esc(c.detail)}</div>` : ""}
-    <div class="ft"><span class="${oc}">${esc(c.owner)}</span>${c.due ? `<span class="chip${c.col !== "done" && overdue(c.due) ? " r" : ""}">${c.col !== "done" && overdue(c.due) ? "overdue · " : "due "}${esc(dLabel(c.due))}</span>` : ""}<span class="sp"></span>
+    <div class="ft"><span class="${oc}">${esc(c.owner)}</span>${c.lead ? `<span class="chip sd-lead" title="${esc(c.lead)}">${esc(pName(c.lead))}</span>` : ""}${c.due ? `<span class="chip${c.col !== "done" && overdue(c.due) ? " r" : ""}">${c.col !== "done" && overdue(c.due) ? "overdue · " : "due "}${esc(dLabel(c.due))}</span>` : ""}<span class="sp"></span>
       <button type="button" class="mini" data-mv="-1" aria-label="Move left" title="Move left"><svg aria-hidden="true"><use href="#i-back"/></svg></button>
       <button type="button" class="mini" data-mv="1" aria-label="Move right" title="Move right"><svg aria-hidden="true"><use href="#i-chev"/></svg></button>
-      <button type="button" class="mini" data-ed aria-label="Edit" title="Edit"><svg aria-hidden="true"><use href="#i-edit"/></svg></button></div></div>`;
+      <button type="button" class="mini" data-ed aria-label="Edit" title="Edit"><svg aria-hidden="true"><use href="#i-edit"/></svg></button>${c.col !== "done" ? `<button type="button" class="mini sd-tick" data-tick aria-label="Done" title="Done"><svg aria-hidden="true"><use href="#i-check"/></svg></button>` : ""}</div></div>`;
 }
 function formHtml(c) {
   const o = c ? c.owner : (EDIT && EDIT.owner) || (TVIEW === "board" && OWNF !== "All" ? OWNF : "") || (ME && ME.who) || "Both";
@@ -1059,7 +1161,7 @@ function formHtml(c) {
     <textarea name="detail" rows="2" maxlength="4000" placeholder="Details (optional)" aria-label="Details">${esc(c && c.detail ? c.detail : "")}</textarea>
     <label class="sd-due"><span>Due</span><input type="date" name="due" value="${esc(c && c.due ? c.due : "")}" aria-label="Due date"></label>
     <div class="seg" role="group" aria-label="Owner">${["Simas", "Benas", "Both"].map(x => `<button type="button" data-own="${x}" class="${x === o ? "on" : ""}" aria-pressed="${x === o}">${x}</button>`).join("")}</div>
-    <div class="row">${c ? `<button type="button" class="act no del" data-del>Delete</button>` : ""}<button type="button" class="act" data-cancel>Cancel</button><button type="submit" class="act go">${c ? "Save" : "Add card"}</button></div></form>`;
+    <div class="row">${c ? `<button type="button" class="act no del" data-del>${c.source === "board" ? "Delete" : "Drop"}</button>` : ""}<button type="button" class="act" data-cancel>Cancel</button><button type="submit" class="act go">${c ? "Save" : "Add card"}</button></div></form>`;
 }
 const addBtn = (k, o) => EDIT && EDIT.id === "new" && EDIT.col === k && (EDIT.owner || "") === (o || "") ? formHtml(null) : `<button type="button" class="sd-add" data-add="${k}"${o ? ` data-owner="${o}"` : ""}><svg aria-hidden="true"><use href="#i-plus"/></svg>Add a card</button>`;
 function boardHtml(list) {
@@ -1105,10 +1207,28 @@ function renderTodos() {
   todoBadge();
 }
 function posBetween(list, col, idx, skipId) { const cs = cardsIn(list, col).filter(c => c.id !== skipId), a = cs[idx - 1], b = cs[idx]; return a && b ? (a.pos + b.pos) / 2 : a ? a.pos + 1024 : b ? b.pos - 1024 : 1024; }
+async function mirror(c, patch, t) {   // the same change on the old list's row (best effort; the tasks row is the one that counts)
+  const has = k => k in patch, nowI = new Date().toISOString(), flip = has("col") && (patch.col === "done") !== (c.col === "done"), who = (ME && ME.who !== "Both" ? ME.who : ME && ME.name) || null;
+  if (c.source === "board" && c.ref) { const u = {}; ["col", "pos", "owner", "title", "detail", "due"].forEach(k => { if (has(k)) u[k] = patch[k]; }); if (Object.keys(u).length) await must(sb().from("todo_cards").update(u).eq("id", +c.ref)); }
+  else if (c.source === "call" && c.ref) { const u = {}; if (flip) { u.done_at = t.done_at; u.done_by = t.done_at ? who : null; } if (has("owner")) u.owner = patch.owner; if (has("title")) u.text = patch.title; if (has("due")) u.due_at = t.due_at;
+    if (Object.keys(u).length) await must(sb().from("call_tasks").update(u).eq("id", +c.ref)); }
+  else if (c.source === "founder_tasks" && c.ref) { const u = {}; if (flip) u.done_at = t.done_at; if (has("owner")) u.who = patch.owner; if (has("title")) u.title = patch.title; if (has("detail")) u.detail = patch.detail; if (has("due")) u.due_at = t.due_at;
+    if (Object.keys(u).length) { u.updated_at = nowI; await must(sb().from("founder_tasks").update(u).eq("id", +c.ref)); } }
+}
+async function writeTask(c, patch) {   // c = the card before the change
+  const t = { updated_at: new Date().toISOString() };
+  if ("col" in patch && patch.col !== c.col) { t.status = patch.col; t.done_at = patch.col === "done" ? t.updated_at : null; }
+  if ("pos" in patch) t.pos = patch.pos; if ("owner" in patch) t.owner = patch.owner; if ("title" in patch) t.title = patch.title; if ("detail" in patch) t.detail = patch.detail;
+  if ("due" in patch) t.due_at = patch.due ? vilNoon(patch.due) : null;
+  let warn = false; try { await mirror(c, patch, t); } catch { warn = true; }
+  const ok = await must(sb().from("tasks").update(t).eq("id", c.id).select("id"));
+  if (!ok || !ok.length) throw new Error("not allowed");
+  if (warn) toast("Saved. The list it came from didn't update.");
+}
 async function saveCard(id, patch) {
   const c = CACHE.todos.find(x => x.id === id), before = { ...c };
   Object.assign(c, patch); renderTodos();
-  try { await must(sb().from("todo_cards").update(patch).eq("id", id)); } catch (e) { Object.assign(c, before); renderTodos(); toast("Couldn't save that card. Check your connection."); }
+  try { await writeTask(before, patch); } catch (e) { Object.assign(c, before); renderTodos(); toast("Couldn't save that card. Check your connection."); }
 }
 const moveCard = (id, col, idx) => saveCard(id, { col, pos: posBetween(CACHE.todos, col, idx, id) });
 function dropCard(id, col, owner, prevId, nextId) {   // position from the neighbours in the zone it was dropped into (works in both views)
@@ -1125,12 +1245,16 @@ function wireBoard() {
     if (t.hasAttribute("data-cancel")) { EDIT = null; renderTodos(); return; }
     if (t.hasAttribute("data-del")) {
       const fid = +t.closest("[data-form]").dataset.form, c = list.find(x => x.id === fid);
-      if (!c || !confirm(`Delete "${c.title}"?`)) return;
+      if (!c || !confirm(`${c.source === "board" ? "Delete" : "Drop"} "${c.title}"?`)) return;
       EDIT = null; CACHE.todos = list.filter(x => x.id !== fid); renderTodos();
-      try { await must(sb().from("todo_cards").delete().eq("id", fid)); } catch (e) { CACHE.todos = list; renderTodos(); toast("Couldn't delete that card."); }
+      try {
+        if (c.source === "board" && c.ref) { await must(sb().from("todo_cards").delete().eq("id", +c.ref)); await must(sb().from("tasks").delete().eq("id", fid)); }
+        else { const t = { status: "dropped", done_at: new Date().toISOString(), updated_at: new Date().toISOString() }; try { await mirror(c, { col: "done" }, t); } catch {} const ok = await must(sb().from("tasks").update(t).eq("id", fid).select("id")); if (!ok || !ok.length) throw new Error("not allowed"); }
+      } catch (e) { CACHE.todos = list; renderTodos(); toast("Couldn't remove that card."); }
       return;
     }
     if (id && t.hasAttribute("data-ed")) { EDIT = { id, col: list.find(x => x.id === id).col }; renderTodos(); return; }
+    if (id && t.hasAttribute("data-tick")) { await moveCard(id, "done", 0); return; }
     if (id && t.dataset.mv) { const c = list.find(x => x.id === id), i = COLS.findIndex(x => x[0] === c.col) + +t.dataset.mv; if (COLS[i]) await moveCard(id, COLS[i][0], 0); }
   });
   board.addEventListener("submit", async ev => {
@@ -1140,7 +1264,8 @@ function wireBoard() {
     if (f.dataset.form === "new") {
       const col = f.dataset.col, row = { title, detail, owner, due, col, pos: posBetween(CACHE.todos, col, 0), created_by: (ME && ME.name) || null };
       EDIT = null;
-      try { const ins = await must(sb().from("todo_cards").insert(row).select().single()); CACHE.todos.push(ins); renderTodos(); } catch (e) { renderTodos(); toast("Couldn't add that card. Check your connection."); }
+      try { const ins = await must(sb().from("todo_cards").insert(row).select().single()), t = await must(sb().from("tasks").select("*").eq("source", "board").eq("source_ref", String(ins.id)).maybeSingle());
+        if (t) CACHE.todos.push(tCard(t, t.source_ref)); else CACHE.todos = await loadTaskList(); renderTodos(); } catch (e) { renderTodos(); toast("Couldn't add that card. Check your connection."); }
     } else { EDIT = null; await saveCard(+f.dataset.form, { title, detail, owner, due }); }
   });
   board.addEventListener("keydown", ev => {
@@ -1278,7 +1403,7 @@ function startRealtime() {
     clearTimeout(RT_T); RT_T = setTimeout(async () => {
       todoBadge();
       if (DRAG || EDIT || PAGE !== "todos") return;
-      try { CACHE.todos = await all("todo_cards", "*", q => q.order("pos").order("id")); renderTodos(); } catch {}
+      try { CACHE.todos = await loadTaskList(); renderTodos(); } catch {}
     }, 400);
   }).subscribe();
 }

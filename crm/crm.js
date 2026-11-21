@@ -1147,6 +1147,7 @@ async function saveCallNotes(f) {
   if ($("#drawer").dataset.email === email) drReload(email).catch(() => {});
 }
 window.BEJU_CRM_CALLS = async ems => callsList(await loadCalls(ems || []));   // side.js: the same section on the Clients page
+window.BEJU_CRM_CALLCARD = callCard;   // side.js: the full card under a row of the Clients page's Calls section (11-21)
 
 /* ---------------- 11-21: notification centre (public.crm_inbox = crm_events + MY crm_event_state) ----------------
    Founders: "add greater notifications in the crm, make them interactive also". The bell shows only once crm_inbox answers.

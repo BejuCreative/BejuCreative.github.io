@@ -12,6 +12,7 @@ const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const view = $("#view");
 const HERE = location.origin + location.pathname;
+const OPEN = !!CFG && CFG.open === true;   // 11-21 (founders): portal hidden. Only founders (profiles.is_admin) get in; everyone else sees closedView()
 const RM = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
 let ME = null;            // own profile row + auth email
 let SEQ = 0, LAST = "";   // render counter (drops stale renders) and last route shown
@@ -350,10 +351,10 @@ function authView(mode) {
   const google = CFG.google === true && mode !== "forgot";
   view.innerHTML = authShell(`
     <div class="card auth-card">
-      <nav class="authtabs" aria-label="Account">
+      ${OPEN ? `<nav class="authtabs" aria-label="Account">
         <a href="#/signup"${mode === "signup" ? ` aria-current="page"` : ""}>Sign up</a>
         <a href="#/login"${mode === "login" ? ` aria-current="page"` : ""}>Log in</a>
-      </nav>
+      </nav>` : ""}
       <div class="head tight"><h1>${title}</h1><p class="lede">${sub}</p></div>
       ${notice ? `<p class="notice" role="status">${esc(notice)}</p>` : ""}
       ${google ? `<button class="btn glass block" type="button" id="google">Continue with Google</button><p class="or"><span>or</span></p>` : ""}
@@ -367,7 +368,7 @@ function authView(mode) {
         <p class="err" role="alert"></p>
       </form>
       <p class="switch">${mode === "signup" ? `Already have an account? <a class="link" href="#/login">Log in</a>`
-        : mode === "login" ? `New here? <a class="link" href="#/signup">Create an account</a>`
+        : mode === "login" ? (OPEN ? `New here? <a class="link" href="#/signup">Create an account</a>` : "")
         : `Remembered it? <a class="link" href="#/login">Back to log in</a>`}</p>
     </div>
     <p class="secure">${ic("lock")}Private to you. Your videos play through links that expire within the hour.</p>`);
@@ -408,6 +409,16 @@ function authView(mode) {
       }
     } catch (err) { busy(btn, false); formErr(form, friendly(err)); }
   };
+}
+// 11-21 (founders): the portal is hidden. Signed out: a quiet founder Log in link. Signed in, not a founder: Sign out.
+function closedView(signedIn) {
+  chromeOff();
+  view.innerHTML = authShell(`
+    <div class="card auth-card">
+      <div class="head tight"><h1>The client portal isn't available right now.</h1>
+        <p class="lede">For anything about your videos, just reply to our last email.</p></div>
+      <p class="switch">${signedIn ? `<button class="linkish" type="button" data-out>Sign out</button>` : `<a class="link" href="#/login">Founder log in</a>`}</p>
+    </div>`);
 }
 function checkInbox(email) {
   view.innerHTML = authShell(`
@@ -1198,7 +1209,7 @@ async function render() {
     const { data: { session } } = await sb.auth.getSession();
     if (stale()) return;
     if (route === "reset") return resetView(!!session);
-    if (!session) { ME = null; stopLive(); return authView(route === "login" || route === "forgot" ? route : "signup"); }
+    if (!session) { ME = null; stopLive(); if (!OPEN && route !== "login" && route !== "forgot") return closedView(false); return authView(route === "login" || route === "forgot" ? route : "signup"); }
     if (!ME || ME.id !== session.user.id) {
       try { ME = await loadMe(session.user); }
       catch (err) {
@@ -1213,6 +1224,7 @@ async function render() {
       }
       if (stale()) return;
     }
+    if (!OPEN && ME.is_admin !== true) { stopLive(); return closedView(true); }   // 11-21: clients never reach the portal while it is hidden
     // One Log in for everyone (SIMAS 11-12): a founder lands on the founder CRM, a client stays in the portal.
     if (ME.is_admin === true && crmHref() && new URLSearchParams(location.search).get("view") !== "portal") { location.replace(crmHref()); return; }
     if (route === "login" || route === "signup" || route === "forgot") { history.replaceState(null, "", location.pathname + "#/"); return render(); }
@@ -1264,7 +1276,7 @@ view.addEventListener("click", async e => {
   stopLive();
   await sb.auth.signOut({ scope: "local" });
   ME = null; store.del(PENDING);
-  go("#/login");
+  go(OPEN ? "#/login" : "#/");
 });
 document.addEventListener("visibilitychange", () => {
   if (document.hidden || !ME) return;
