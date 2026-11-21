@@ -701,9 +701,13 @@ const CARDS = [
 ].filter(c => !HIDDEN.has(c.id));
 const byId = id => CARDS.find(c => c.id === id);
 /* phone: five tabs, each shows only its cards (the desktop keeps the whole bento) */
-const TABS = { home: ["next", "today", "paidc", "retainers", "holds", "prod", "hot", "activity", "followups"], money: ["close", "buyers", "topc", "alltime", "moneypage", "price"], leads: ["attention", "moods", "samples", "turn", "speed", "clock", "away", "pipeline", "funnel"],
-  outreach: ["outreach", "total", "heat", "rate", "camps", "deliv", "inboxes", "sync"], clients: ["portal", "psamples", "pvideos", "pnotes", "pclients", "videos"], none: ["brand"] };
+// BENAS 11-21: stats cards live in their category; Main keeps the action cards plus Reply rate + Funnel.
+// On phones every card shows only in its tab (as before). On desktop, Main shows everything except STATS_TAB_ONLY,
+// and the other tabs show their own cards, so the stats are one click away instead of filling the main page.
+const TABS = { home: ["next", "today", "paidc", "retainers", "holds", "prod", "hot", "activity", "followups", "rate", "funnel"], money: ["close", "buyers", "topc", "alltime", "moneypage", "price"], leads: ["attention", "moods", "samples", "turn", "speed", "away", "pipeline"],
+  outreach: ["outreach", "total", "heat", "clock", "camps", "deliv", "inboxes", "sync"], clients: ["portal", "psamples", "pvideos", "pnotes", "pclients", "videos"], none: ["brand"] };
 const TABOF = {}; Object.entries(TABS).forEach(([t, ids]) => ids.forEach(id => { TABOF[id] = t; }));
+const STATS_TAB_ONLY = new Set(["moods", "heat", "clock", "speed", "turn", "total", "alltime", "topc", "away"]);   // off the desktop Main page
 
 /* ---------------- chart painters (hover, tap and arrow keys share them) ---------------- */
 function paintOut(days, max, H, pad, i) {
@@ -762,7 +766,7 @@ function build() {
   const g1 = $("#grid"), g2 = $("#grid2"); g1.innerHTML = g2.innerHTML = ""; IO.disconnect();
   const ro = new ResizeObserver(es => es.forEach(e => fit(e.target)));
   CARDS.forEach((c, i) => {
-    const el = document.createElement("section"); el.id = "c-" + c.id; el.className = "card " + (c.cls || ""); el.dataset.tab = TABOF[c.id] || "home"; el.style.setProperty("--i", c.grid === 2 ? i - 30 : i); el.setAttribute("aria-label", c.title || c.id);
+    const el = document.createElement("section"); el.id = "c-" + c.id; el.className = "card " + (c.cls || ""); el.dataset.tab = TABOF[c.id] || "home"; if (STATS_TAB_ONLY.has(c.id)) el.dataset.stat = "1"; el.style.setProperty("--i", c.grid === 2 ? i - 30 : i); el.setAttribute("aria-label", c.title || c.id);
     el.style.setProperty("--j", i % 8); c.sh = document.createElement("i"); c.sh.className = "sheen"; c.sh.setAttribute("aria-hidden", "true");
     c.el = el; c.last = null; if (c.mount) c.mount(el); el.appendChild(c.sh); (c.grid === 2 ? g2 : g1).appendChild(el); ro.observe(el); IO.observe(el);
   });
@@ -787,6 +791,7 @@ function paintStatus() {
 function jump(id) {
   const el = $("#c-" + id); if (!el) return;
   if (PHONE.matches) { if (el.dataset.tab === "none") return; setTab(el.dataset.tab, true); }
+  else if (el.offsetParent === null && el.dataset.tab !== "none") setTab(el.dataset.tab, true);   // desktop: a stats card lives in its tab
   el.scrollIntoView({ block: "center", behavior: RM ? "auto" : "smooth" }); el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
   const f = $("button,input,[tabindex]", el); if (f) f.focus({ preventScroll: true });
 }

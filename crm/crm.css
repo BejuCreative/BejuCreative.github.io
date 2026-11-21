@@ -1078,3 +1078,25 @@ html[data-motion="calm"] .ticker-t{animation:none;white-space:normal;flex-wrap:w
 .cn-t+.cn-t{margin-top:6px}
 .dlg .cn-t input,.dlg .cn-t select{padding:9px 10px;font-size:13.5px;border-radius:10px;min-width:0}
 @media (max-width:600px){.cn-t{grid-template-columns:1fr 1fr} .cn-t input[type="text"]{grid-column:1/-1} .cnform .fld input,.cnform .fld textarea,.cnform .fld select{font-size:16px}}
+
+/* ======================================================================
+   Desktop category tabs (BENAS 11-21): the phone's five tabs as a floating
+   bar. Main keeps the action cards + Reply rate + Funnel; the stats cards
+   (data-stat) sit in Money / Leads / Outreach. Phones keep their own rules.
+   ====================================================================== */
+@media (min-width:601px){
+  .tabs{display:flex;gap:4px;position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:35;padding:6px;border-radius:18px;background:var(--over);border:1px solid var(--line);box-shadow:0 10px 30px rgba(0,0,0,.18);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4)}
+  html.sn-x .tabs{left:calc(50% + var(--sn-room) / 2)} html.sn-m .tabs{left:calc(50% + var(--sn-room-mini) / 2)}
+  .tabs button{display:flex;align-items:center;gap:7px;padding:8px 14px;min-height:38px;border-radius:12px;font-size:13px;font-weight:500;color:var(--mute);position:relative;transition:color .2s,background .2s}
+  .tabs button:hover{color:var(--ink)}
+  .tabs button.on{color:var(--ink);background:var(--panel)} .tabs button.on svg{stroke:var(--key)}
+  :root[data-mode="light"] .tabs button.on svg{stroke:var(--blue)}
+  .tabs svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+  .tabs i{position:absolute;top:2px;right:4px;min-width:16px;height:16px;border-radius:99px;background:var(--red);color:var(--on-accent);font:600 10px/16px var(--mono);font-style:normal;text-align:center;padding:0 4px}
+  .app{padding-bottom:96px}
+  html.paged .tabs{display:none}
+  html[data-tab="home"] .card[data-stat]{display:none}
+  html[data-tab="money"] .grid .card:not([data-tab="money"]),html[data-tab="leads"] .grid .card:not([data-tab="leads"]),
+  html[data-tab="outreach"] .grid .card:not([data-tab="outreach"]),html[data-tab="clients"] .grid .card:not([data-tab="clients"]){display:none}
+  html:not([data-tab="home"]) .hero{display:none}
+}
