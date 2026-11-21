@@ -502,8 +502,16 @@ button.fe:hover{background:var(--panel)}
 .fe .it svg{width:15px;height:15px}
 .fe-m{flex:1;min-width:0}
 .fe-m b{display:block;font-weight:500;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.feed>.fe .fe-m b{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}   /* 11-21: "who did what to whom" needs two lines on a narrow card */
 .fe-m small{display:block;color:var(--mute);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fe time{font-family:var(--mono);font-size:11px;color:var(--mute);flex:none;padding-top:2px}
+/* 11-21 (SIMAS: "a square that says action"): on the phone home the Activity card sits right under the $ hero (same order, later in the page), above Today and the rest */
+@media (max-width:600px){html[data-tab="home"] #grid>#c-activity{order:5}}
+/* Activity list filter chips (All · Money · Replies · CRM changes · Calls · Deliveries) */
+.ffl{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+.ffl button{min-height:34px;padding:0 13px;border-radius:999px;border:1px solid var(--line);background:var(--tile);color:var(--mute);font-size:13px;font-weight:500;transition:color .2s,border-color .2s,background-color .2s}
+.ffl button:hover{color:var(--ink)} .ffl button[aria-pressed="true"]{color:var(--ink);border-color:var(--focus);box-shadow:0 0 0 1px var(--focus)}
+@media (max-width:600px){.ffl button{min-height:40px}}
 @keyframes slidein{from{opacity:0;transform:translateX(-8px)}}
 
 /* ---------- heatmap ---------- */
@@ -1079,3 +1087,173 @@ html[data-motion="calm"] .ticker-t{animation:none;white-space:normal;flex-wrap:w
 /* Desktop (BENAS 11-21 17:3x): no category tab bar. The dashboard stays one clean page; the stats-only cards
    (data-stat) are off it until the dashboard redesign. Phones keep their own tabs. */
 @media (min-width:601px){ .card[data-stat]{display:none} }
+
+/* ======================================================================
+   Phone pass 11-21 (SIMAS "optimise the crm for phone use and fix the layouts"; BENAS "we will also use this on our mobiles").
+   Layout only: every card shows the same things; only its place, size and spacing change. Desktop is untouched.
+   ====================================================================== */
+@media (max-width:600px){
+  /* phone home (BENAS): Do next, replies waiting, hot leads and the pipeline first; the $ hero under them, then the rest */
+  .top{margin-left:0;margin-right:0}
+  html[data-tab="home"] .app{display:flex;flex-direction:column}
+  html[data-tab="home"] #grid{display:contents}
+  html[data-tab="home"] #grid>.card{order:6}
+  html[data-tab="home"] #grid>#c-next{order:1}
+  html[data-tab="home"] #grid>#c-attention{order:2;display:block}
+  html[data-tab="home"] #grid>#c-hot{order:3}
+  html[data-tab="home"] #grid>#c-pipeline{order:4;display:block}
+  html[data-tab="home"] .app>.hero{order:5}
+  html[data-tab="home"] .app>.zone-h,html[data-tab="home"] .app>#grid2,html[data-tab="home"] .app>.foot{order:7}
+  /* hero numbers: a 3-up and a 2-up grid instead of sideways strips that hid the last numbers off screen */
+  .hero-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible;margin:0;padding:0}
+  .kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible;margin:8px 0 0;padding:0}
+  .hero-facts>*,.kpis>*{flex:none}
+  .hf>span,.kpi>span{white-space:normal}
+  /* Calm motion: the activity ticker stays one swipeable line instead of a 12-row list */
+  html[data-motion="calm"] .ticker{overflow-x:auto;scrollbar-width:none}
+  html[data-motion="calm"] .ticker::-webkit-scrollbar{display:none}
+  html[data-motion="calm"] .ticker-t{flex-wrap:nowrap;white-space:nowrap}
+  @media (prefers-reduced-motion:reduce){.ticker{overflow-x:auto;scrollbar-width:none} .ticker-t{flex-wrap:nowrap;white-space:nowrap}}
+  /* tab bar: solid enough that page text doesn't show through */
+  .tabs{background:var(--solid);background:color-mix(in srgb,var(--solid) 94%,transparent)}
+  /* on a side page no dashboard tab is "on"; the Clients tab is on while the Clients page is open */
+  html.paged .tabs button.on{color:var(--mute);background:none}
+  html.paged:root .tabs button.on svg{stroke:currentColor}
+  html.paged:has(#snav a[data-nav="clients"][aria-current="page"]) .tabs [data-p="clients"]{color:var(--ink);background:var(--panel)}
+  html.paged:has(#snav a[data-nav="clients"][aria-current="page"]) .tabs [data-p="clients"] svg{stroke:var(--key)}
+  :root[data-mode="light"].paged:has(#snav a[data-nav="clients"][aria-current="page"]) .tabs [data-p="clients"] svg{stroke:var(--blue)}
+}
+
+/* lead drawer on phones: full-height sheet, fixed top (name + stage + close), scrolling body, actions in a footer the thumb reaches */
+.dr-hd{min-width:0}
+.dr-stage{display:none}
+.dr-foot{display:flex;align-items:center;gap:8px;padding:8px 12px calc(8px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--solid)}
+@media (max-width:600px){
+  .dr-top{padding:22px 12px 10px 16px;border-bottom:1px solid var(--line)}
+  .dr-top .icon-btn{flex:none}
+  .dr-hd{display:flex;flex-wrap:wrap;align-items:center;column-gap:8px;row-gap:4px}
+  .dr-hd h2{font-size:20px;min-width:0}
+  .dr-stage{display:inline-flex}
+  .dr-stage .chip{font-size:13px;min-height:28px;display:inline-flex;align-items:center}
+  .dr-hd p{flex-basis:100%;margin-top:0;font-size:14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .dr-body{flex:1;min-height:0;padding-top:12px}
+  .drawer:has(#dr-foot:not([hidden])) .dr-body{padding-bottom:16px}
+  .dr-sum>.dt:first-child .dt-v>.chip{display:none}   /* the stage chip is in the fixed top now */
+  .dr-sum>.dt:first-child:not(:has(small)):has(.chip){display:none}
+  .drawer:has(#dr-foot:not([hidden])) .dr-sum>.dt:last-of-type{border-bottom:0}
+  .dr-foot .acts{flex:1;min-width:0;display:flex;gap:8px;margin:0;overflow-x:auto;scrollbar-width:none}
+  .dr-foot .acts::-webkit-scrollbar{display:none}
+  .dr-foot .act{flex:none;height:44px}
+  .dr-foot .dr-navr{flex:none;margin:0;gap:2px;font-size:13px}
+  .dr-foot .dr-navr>span:last-child{display:none}   /* "arrow keys move through the list": no keys on a phone */
+}
+
+/* phone cards: wrap instead of cutting off; 4-up number rows become 2 x 2; anchored cards land below the sticky top bar */
+@media (max-width:600px){
+  .row-main b,.row-main small{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .act{white-space:normal;height:auto;min-height:44px;max-width:100%;text-align:left;line-height:1.25;padding-top:6px;padding-bottom:6px}
+  .trio.quad{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:14px}
+  .trio.quad>:nth-child(3){border-left:0;padding-left:0}
+  .tgrid.q4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .tgrid.q4 .tc:nth-child(odd){border-left:0;padding-left:2px}
+  .tgrid.q4 .tc:nth-child(-n+2){border-bottom:1px solid var(--line)}
+  .trio span,.tgrid .tl{white-space:normal}
+  .card,.sp-card,.dr-sec{scroll-margin-top:calc(76px + env(safe-area-inset-top))}
+  .ab-th{flex-wrap:wrap} .ab-th .chip{white-space:normal;max-width:100%}
+  /* chart cards: title + expand on one line, the range and legend on their own lines under it */
+  .chart-card .ch{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;row-gap:8px}
+  .chart-card .ch>.xp{grid-column:2;grid-row:1}
+  .chart-card .ch>.cx{grid-column:1/-1;grid-row:2;justify-content:flex-start;white-space:normal}
+}
+
+/* phone text (BENAS 11-21: 13 px minimum everywhere, 15 px body; wrap, don't shrink). Same selectors as the rules
+   that set the smaller sizes (listed from this file), so each one wins on phones only. */
+@media (max-width:600px){
+  body{font-size:15px}
+  .row-main b,.dr-txt,.dr-sum .dt-v,.cv-t,.note,.msg,.kv,.res button,.pal-i,.nt-x .dr-txt,.ccall .dr-txt{font-size:15px}
+  .empty,.tbl,.row-end{font-size:14px}
+  .kbd,.grp:has(+.stack>.tile.row>.kbd),.stack:has(>.tile.row>.kbd){display:none}   /* keyboard hints + the Shortcuts list: no keys on a phone */
+  .tabs i,.nt-n{font-size:13px;line-height:20px;height:20px;min-width:20px}
+  small{font-size:max(13px,.85em)}   /* plain <small> = the browser's "smaller" (10.8 px under 13 px text) */
+  .brandrow small{font-size:13px}
+  .fld{font-size:13px}
+  .cx{font-size:13px}
+  .sub{font-size:13px}
+  .chip{font-size:13px}
+  .delta{font-size:13px}
+  .more{font-size:13px}
+  .live{font-size:13px}
+  .brand-me{font-size:13px}
+  .row-main small{font-size:13px}
+  .row-end small{font-size:13px}
+  .av{font-size:13px}
+  .names button{font-size:13px}
+  .trio span{font-size:13px}
+  .legend .lg em{font-size:13px}
+  .wkl{font-size:13px}
+  .fun .fl{font-size:13px}
+  .ring-mid small{font-size:13px}
+  .lgd{font-size:13px}
+  .rng button{font-size:13px}
+  .tip{font-size:13px}
+  .xl{font-size:13px}
+  .days small{font-size:13px}
+  .res button span:last-child{font-size:13px}
+  .offline{font-size:13px}
+  .dr-sec h3{font-size:13px}
+  .note small{font-size:13px}
+  .msg small{font-size:13px}
+  .stack>.mut{font-size:13px}
+  .stat{font-size:13px}
+  .hf>span{font-size:13px}
+  .kpi>span{font-size:13px}
+  .kpi b small{font-size:13px}
+  .tk{font-size:13px}
+  .ticker-t span{font-size:13px}
+  .ticker-t span em{font-size:13px}
+  .tbl th{font-size:13px}
+  .grp{font-size:13px}
+  .dlg .sees small{font-size:13px}
+  .fe-m small{font-size:13px}
+  .fe time{font-size:13px}
+  .heat small{font-size:13px}
+  .heat-l{font-size:13px}
+  .clock-mid small{font-size:13px}
+  .sc-l{font-size:13px}
+  .rev .lab{font-size:13px}
+  .pt-lines{font-size:13px}
+  .due{font-size:13px}
+  .pal-g{font-size:13px}
+  .pal-i small{font-size:13px}
+  .toast small{font-size:13px}
+  .lgt{font-size:13px}
+  .sortb{font-size:13px}
+  .cx button.lk{font-size:13px}
+  .seg.per button{font-size:13px}
+  .kpi b .dl,.dl{font-size:13px}
+  .ticker-t button{font-size:13px}
+  .ticker-t button em{font-size:13px}
+  .chip.cvn{font-size:13px}
+  .dr-navr{font-size:13px}
+  .cv-sum{font-size:13px}
+  .cv-day{font-size:13px}
+  .cv-subj{font-size:13px}
+  .cv-meta{font-size:13px}
+  .cv-m .lk{font-size:13px}
+  .brandrow .bt small{font-size:13px}
+  .tabs button{font-size:13px}
+  .ownr button{font-size:13px}
+  .thp small{font-size:13px}
+  .swrow small{font-size:13px}
+  .big .dl{font-size:13px}
+  .nt .row-end{font-size:13px}
+  .cc-h small{font-size:13px}
+  .cc-l{font-size:13px}
+  .ct-m{font-size:13px}
+  .cc-miss{font-size:13px}
+  .cc-rec{font-size:13px}
+  .dr-sum .dt-l{font-size:13px}
+  .dr-sum .dt-v small{font-size:13px}
+  /* taps: 44 px */
+  .pal-in input{min-height:44px}
+}

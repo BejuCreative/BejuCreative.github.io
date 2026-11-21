@@ -6,7 +6,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src https://zfnpvcrnujxlycmqukqs.supabase.co wss://zfnpvcrnujxlycmqukqs.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="robots" content="noindex,nofollow">
 <meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#2463f0">
+<meta name="theme-color" content="#eef1f8">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -20,8 +20,8 @@
 <link rel="preload" href="fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/geist-mono.woff2" as="font" type="font/woff2" crossorigin>
 <script src="theme.js?v=20261112p3"></script>
-<link rel="stylesheet" href="crm.css?v=20261121zb">
-<link rel="stylesheet" href="side.css?v=20261121zb">
+<link rel="stylesheet" href="crm.css?v=20261121zc">
+<link rel="stylesheet" href="side.css?v=20261121zc">
 </head>
 <body>
 <svg width="0" height="0" class="sprite" aria-hidden="true" focusable="false">
@@ -121,14 +121,15 @@
   <button type="button" data-act="tab" data-t="money"><svg aria-hidden="true"><use href="#i-cash"/></svg><span>Money</span><i hidden></i></button>
   <button type="button" data-act="tab" data-t="leads"><svg aria-hidden="true"><use href="#i-user"/></svg><span>Leads</span><i hidden></i></button>
   <button type="button" data-act="tab" data-t="outreach"><svg aria-hidden="true"><use href="#i-send"/></svg><span>Outreach</span><i hidden></i></button>
-  <button type="button" data-act="tab" data-t="clients"><svg aria-hidden="true"><use href="#i-film"/></svg><span>Clients</span><i hidden></i></button>
+  <button type="button" data-act="page" data-p="clients"><svg aria-hidden="true"><use href="#i-film"/></svg><span>Clients</span><i hidden></i></button>
 </nav>
 
 <!-- lead drawer -->
 <div id="scrim" class="scrim" hidden></div>
 <aside id="drawer" class="drawer" role="dialog" aria-modal="true" aria-labelledby="dr-name" hidden>
-  <header class="dr-top"><div><h2 id="dr-name"></h2><p id="dr-sub" class="mut"></p></div><button class="icon-btn" id="dr-close" type="button" aria-label="Close"><svg><use href="#i-x"/></svg></button></header>
+  <header class="dr-top"><div class="dr-hd"><h2 id="dr-name"></h2><span id="dr-stage" class="dr-stage"></span><p id="dr-sub" class="mut"></p></div><button class="icon-btn" id="dr-close" type="button" aria-label="Close"><svg><use href="#i-x"/></svg></button></header>
   <div id="dr-body" class="dr-body"></div>
+  <footer id="dr-foot" class="dr-foot" hidden></footer>
 </aside>
 
 <!-- drill-down / focus modal -->
@@ -188,7 +189,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="config.js?v=20261112p3"></script>
-<script src="crm.js?v=20261121zb"></script>
-<script src="side.js?v=20261121zb"></script>
+<script src="crm.js?v=20261121zc"></script>
+<script src="side.js?v=20261121zc"></script>
 </body>
 </html>

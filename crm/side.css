@@ -39,8 +39,8 @@ html.sn-m .grid{--cols:1}
 @media (min-width:918px){html.sn-m .grid{--cols:3}}
 @media (min-width:1178px){html.sn-m .grid{--cols:4}}
 @media (min-width:1458px){html.sn-m .grid{--cols:5}}
-@media (max-width:1358px){html.sn-x .hero-top{grid-template-columns:1fr;gap:16px}}
-@media (max-width:1178px){html.sn-m .hero-top{grid-template-columns:1fr;gap:16px}}
+@media (max-width:1358px){html.sn-x .hero-top{grid-template-columns:minmax(0,1fr);gap:16px}}
+@media (max-width:1178px){html.sn-m .hero-top{grid-template-columns:minmax(0,1fr);gap:16px}}
 html.wall .snav{display:none}
 html.wall.sn-x .app,html.wall.sn-m .app{padding-left:28px}
 
@@ -697,3 +697,105 @@ button.clc-m{cursor:pointer} button.clc-m:hover{background:var(--tile)}
 .clc-none{font-size:13px;margin:0}
 .clc-more{margin-top:6px}
 @media (max-width:600px){.clc-row{flex-wrap:wrap} .clc-m{grid-template-columns:minmax(0,1fr)} .clc-add,.clc-meet{height:44px;flex:1 1 100%;justify-content:center;margin-bottom:6px} .clc-more{min-height:44px}}
+
+/* phone text + taps for the side pages (BENAS 11-21: 13 px minimum, 15 px body, 44 px targets). Same selectors as the
+   rules in this file that set the smaller sizes, so each one wins on phones only. Layout only. */
+@media (max-width:600px){
+  .sp-src{font-size:13px}
+  .sp-card h2 small{font-size:13px}
+  .sp-kpi small{font-size:13px}
+  .sp-tbl th{font-size:13px}
+  .sp-tbl .sub{font-size:13px}
+  .sp-note{font-size:13px}
+  .sp-tag{font-size:13px}
+  .ab-card th{font-size:13px}
+  .cl-item .av{font-size:13px}
+  .cl-item .s{font-size:13px}
+  .cl-item .n{font-size:13px}
+  .cl-ord{font-size:13px}
+  .vid small{font-size:13px}
+  .wk-axis{font-size:13px}
+  .sd-card .dd{font-size:13px}
+  .sd-form .seg button{font-size:13px}
+  .tgrid .tl{font-size:13px}
+  .sp-more summary small{font-size:13px}
+  .cl-grp{font-size:13px}
+  .vid .vt{font-size:13px}
+  .sd-sub{font-size:13px}
+  .sd-done summary{font-size:13px}
+  .wk-n{font-size:13px}
+  .wk-fr .cv{font-size:13px}
+  .wk-fr .d{font-size:13px}
+  .wk-stat span{font-size:13px}
+  .wk-stat small{font-size:13px}
+  .wk-lost{font-size:13px}
+  .wk-ta{font-size:13px}
+  .ex-nums>div small{font-size:13px}
+  .ex-legend{font-size:13px}
+  .ex-grp h2 small{font-size:13px}
+  .ex-tile small{font-size:13px}
+  .ex-amt em{font-size:13px}
+  .ex-meta{font-size:13px}
+  .ex-sc b{font-size:13px}
+  .ex-sc span{font-size:13px}
+  .ex-owe .p small{font-size:13px}
+  .ex-owe .arrow small{font-size:13px}
+  .ex-day span{font-size:13px}
+  .ex-day small{font-size:13px}
+  .ex-form label{font-size:13px}
+  .ab-vh{font-size:13px}
+  .ab-badge{font-size:13px}
+  .ab-v small{font-size:13px}
+  .ab-pn{font-size:13px}
+  .ab-st{font-size:13px}
+  .ab-txt summary{font-size:13px}
+  .ab-copy{font-size:13px}
+  .wk-rk small{font-size:13px}
+  .cl-ph{font-size:13px}
+  .sd-pg{font-size:13px}
+  .sd-due{font-size:13px}
+  .cl-fb span{font-size:13px}
+  .cl-ch .chip{font-size:13px}
+  .pf-h small{font-size:13px}
+  .pf-wl{font-size:13px}
+  .pf-wl small{font-size:13px}
+  .pf-ln i{font-size:13px}
+  .pf-ln small{font-size:13px}
+  .wbr-legend{font-size:13px}
+  .wbr-tile .l{font-size:13px}
+  .wbr-tile small{font-size:13px}
+  .wbr-tl{font-size:13px}
+  .wbr-next b{font-size:13px}
+  .wbr-fs.hd{font-size:13px}
+  .wbr-fs .avg4{font-size:13px}
+  .wbr-lg td .sub{font-size:13px}
+  .wbr-card .top{font-size:13px}
+  .wbr-card .ba{font-size:13px}
+  .wbr-acts small{font-size:13px}
+  .pf-ln{font-size:13px}
+  .camp-legend{font-size:13px}
+  .camp-legend small{font-size:13px}
+  .cs-tag{font-size:13px}
+  .ab-num{font-size:13px}
+  .ab-num>span{font-size:13px}
+  .ab-unit{font-size:13px}
+  .sl-h time{font-size:13px}
+  .ab-rev small{font-size:13px}
+  .cl-or-t{font-size:13px}
+  .cl-leg > summary{font-size:13px}
+  .cl-oe label{font-size:13px}
+  .cl-oe-err{font-size:13px}
+  .clc-d{font-size:13px}
+  .clc-x{font-size:13px}
+  .sp-h p,.sd-card .tt,.sd-pc .tt,.cl-pr{font-size:15px}
+  .sn-brand small,.sn-cap,.sn-badge{font-size:13px}
+  .wbr-tl,.sn-cap{color:var(--mute)}   /* faint grey was 2.5:1 on the cards / menu */
+  .fe-m b,.cl-item .t,.cl-item .s,.ex-tile small,.sd-pt b{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}   /* wrap to 2 lines, not "…" */
+  .sp-tbl,.sp-alert,.cl-head p{font-size:14px}
+  .sd-chips .chip,.cl-tools .chip,.ab-st .act,.sd-add{min-height:44px;height:auto}
+  .sd-card .mini{width:44px;height:44px}
+  .ex-filters input,.ex-filters select,.wk-pick select,.ex-form input,.ex-form select,.sd-due input{min-height:44px}
+  .sd-done summary,.ab-txt summary,.sp-more summary,.sp-card>summary{min-height:44px;padding-top:10px;padding-bottom:10px;box-sizing:border-box}
+  .pf-ln{min-height:44px}
+  a.chip{position:relative} a.chip::after{content:"";position:absolute;inset:-11px -4px}
+}
