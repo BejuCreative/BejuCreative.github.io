@@ -618,3 +618,24 @@ tr.camp-st.st-win>td{background:var(--gold7-soft)} tr.camp-st.st-win>td:first-ch
 .win-rows{display:grid;gap:8px;margin-top:16px} .win-rows p{display:flex;gap:12px;font-size:15.5px;line-height:1.4} .win-rows b{flex:0 0 96px;font-weight:600;color:var(--mute)}
 .pf-quiet{font-size:15px;line-height:1.5;color:var(--ink-2);background:var(--tile);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:12px 0 4px} .pf-quiet b{color:var(--ink)}
 @media (max-width:600px){.win-big b{font-size:42px} .sp-card h2.win-n{font-size:22px}}
+
+/* ---------- 11-21: Slack page ---------- */
+.sl-post{display:grid;gap:12px}
+.sl-post .fld select,.sl-post .fld textarea{background:var(--tile);border:1px solid var(--line);border-radius:12px;padding:11px 12px;font:inherit;font-size:14.5px;color:var(--ink);outline:none;width:100%}
+.sl-post .fld select:focus,.sl-post .fld textarea:focus{border-color:var(--focus)}
+.sl-post .sp-err{padding:0}
+.sl-post .row{display:flex;justify-content:flex-end}
+.sl-pr{max-width:260px}
+.sl-f{max-width:440px}
+.sl-list{display:grid;gap:8px}
+.sl-m{padding:12px 14px}
+.sl-m.me{border-color:var(--blue);box-shadow:inset 3px 0 0 var(--blue)}
+.sl-m.flash{animation:flash 1.4s var(--ease)}
+.sl-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px}
+.sl-h time{font-size:12.5px}
+.sl-o{margin-left:auto;display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:500;color:var(--blue);text-decoration:none}
+.sl-o .ic{width:13px;height:13px}
+.sl-t{margin-top:6px;font-size:14px;line-height:1.5;color:var(--ink-2);white-space:pre-wrap;overflow-wrap:anywhere}
+.sl-t a{color:var(--blue)}
+.sl-at{color:var(--blue);background:var(--blue-soft);border-radius:5px;padding:0 3px;font-weight:600}
+@media (max-width:600px){.sl-pr,.sl-f{max-width:none} .sl-post .fld select,.sl-post .fld textarea{font-size:16px} .sl-o{min-height:44px}}

@@ -85,7 +85,7 @@ async function all(table, cols = "*", mod) {   // REST caps at 1,000 rows per ca
 }
 async function fetchAll() {
   const t = today(), since60 = new Date(Date.now() - 60 * 864e5).toISOString();
-  const [pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk] = await Promise.all([
+  const [pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk, stages, nextSteps, forecast] = await Promise.all([
     all("pipeline", "*", q => q.order("email")),
     all("payments", "id,client_id,email,payer_name,amount,currency,package,refunded,paid_at", q => q.order("paid_at", { ascending: false })),
     all("campaign_daily", "campaign_id,day,sent,new_leads,replies,replies_auto,opportunities", q => q.gte("day", addDays(t, -75)).order("day").order("campaign_id")),
@@ -109,6 +109,9 @@ async function fetchAll() {
     all("calls", "*", q => q.gte("start_at", new Date(Date.now() - 30 * 864e5).toISOString()).order("start_at")).catch(() => []),   // 11-17: cal.com bookings = the only calls
     all("crm_panels", "id,data,updated_at", q => q.eq("id", "metrics")).catch(() => []),   // 11-19: outreach + money straight from the APIs (scripts/crm_panels_sync.py, every 15 min)
     all("desk_items", "*", q => q.eq("status", "open").order("created_at")).catch(() => []),   // 11-21: founder holds + what is being built right now (scripts/crm_desk.py)
+    all("lead_stage", "*").catch(() => null),   // 11-21: each lead's stage from evidence (drawer chip, Pipeline card list)
+    all("lead_next_step", "*").catch(() => null),   // 11-21: one next step per lead (drawer)
+    must(sb.from("pipeline_forecast").select("*").order("ord")).catch(() => null),   // 11-21: leads and weighted $ per stage (Pipeline card)
   ]);
   /* 11-21 (tracking check, from v7): Instantly's daily "unique opportunities" counts a lead again on each day it is active, so sums over days
      ran up to 1.9x too high. Positives per day come from interested_leads: one row per lead, on the day it was marked interested. */
@@ -116,7 +119,7 @@ async function fetchAll() {
     interested.forEach(x => { const dd = dayOf(x.interest_changed_at || x.last_reply_at || x.created_at); if (!dd || !x.campaign_id) return; const k = x.campaign_id + "|" + dd; m[k] = (m[k] || 0) + 1; });
     if (interested.length) { daily.forEach(r => { const k = r.campaign_id + "|" + r.day; seen.add(k); r.opportunities = m[k] || 0; });
       Object.entries(m).forEach(([k, n]) => { const [campaign_id, day] = k.split("|"); if (!seen.has(k) && day >= lo) daily.push({ campaign_id, day, sent: 0, new_leads: 0, replies: 0, replies_auto: 0, opportunities: n }); }); } }
-  return { pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk };
+  return { pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk, stages, nextSteps, forecast };
 }
 
 /* ---------------- derive ---------------- */
@@ -423,6 +426,10 @@ function derive() {
   (att.reply || []).filter(x => !gone.has(lc(x.email))).forEach(x => push(cq, { q: "reply", w: 70, icon: "mail", c: "c-blue", title: `Reply to ${x.name}`, sub: x.detail || "A reply is waiting", email: x.email }));
   (att.overdue || []).filter(x => !gone.has(lc(x.email))).forEach(x => push(cq, { q: "other", w: 60, icon: "alert", c: "c-orange", title: `Overdue: ${x.name}`, sub: x.detail || "", email: x.email }));
   d.fuDays[0].list.forEach(f => push(cq, { q: "fu", w: 40, icon: "clock", c: "c-grey", title: `Follow up with ${f.name || f.email}`, sub: `touch ${Math.min((f.touches_done || 0) + 1, f.touches_total || 99)} of ${f.touches_total || "?"} · due today`, email: f.email }));
+  /* 11-21 Pipeline card: pipeline_forecast for everyone; with the owner switch on, the same sums from lead_stage */
+  { const F = (R.forecast || []).filter(x => x.is_open).sort((a, b) => a.ord - b.ord), L = (R.stages || []).filter(x => x.is_open && STATE.owner !== "All" && own(x));
+    d.fc = !F.length ? null : STATE.owner === "All" ? { open: F.map(x => ({ stage: x.stage, leads: +x.leads || 0 })), overdue: sum(F, x => x.overdue), weighted: sum(F, x => x.weighted_usd) }
+      : { open: F.map(x => ({ stage: x.stage, leads: L.filter(y => y.stage === x.stage).length })), overdue: L.filter(y => y.overdue).length, weighted: Math.round(sum(L, y => (+y.deal_value_usd || 0) * (+y.probability || 0))) }; }
   d.claudeQ = cq.sort((x, y) => y.w - x.w);
   d.claudeSum = [["replies", "reply"], ["follow-ups", "fu"], ["deliveries", "deliver"], ["promises", "promise"], ["other", "other"]].map(([l, k]) => [l, cq.filter(x => x.q === k).length]).filter(x => x[1]).map(x => `${x[1]} ${x[0]}`).join(" · ");
   return d;
@@ -454,6 +461,12 @@ const big = (k, a, inner, label, cls = "") => dB(k, a, inner, "big tapn " + cls,
 const tri = (label, val, k, a) => k ? dB(k, a, `<span>${label}</span><b>${val}</b>`, "", `${label}: open the list`) : `<div><span>${label}</span><b>${val}</b></div>`;
 const kv = (label, val, k, a, cls = "") => k ? dB(k, a, `<span>${label}</span><span>${val}</span>`, "kv " + cls) : `<div class="kv ${cls}"><span>${label}</span><span>${val}</span></div>`;
 const leadBtn = (email, inner, cls = "tile row") => `<button type="button" class="${cls}" data-act="lead" data-email="${esc(email)}">${inner}</button>`;
+/* 11-21: deal stages (public.lead_stage, computed from evidence by the database) */
+const STAGE_L = { replied: "Replied", engaged: "Engaged", proposal: "Proposal", committed: "Committed", won: "Won", parked: "Parked", lost: "Lost" };
+const stageOf = e => ((RAW && RAW.stages) || []).find(x => lc(x.email) === e) || null;
+const nextOf = e => ((RAW && RAW.nextSteps) || []).find(x => lc(x.email) === e) || null;
+const stDays = x => `${Math.max(0, Math.round(+x.days_in_stage || 0))} d`;
+const stageChip = x => `<span class="chip ${x.overdue ? "o" : "b"}" title="${x.overdue ? "Longer in this stage than its limit" : "Days in this stage"}">${esc(STAGE_L[x.stage] || x.stage)} · ${stDays(x)}</span>`;
 /* 11-21: On hold + In production cards (public.desk_items) */
 const STG = { founder_check: ["Waits on a founder", "o", "c-orange"], ready: ["Ready to send", "g", "c-green"], review: ["Our check", "b", "c-purple"], building: ["Building", "b", "c-blue"], client_check: ["Waits on the client", "w", "c-grey"], queued: ["Queued", "", "c-grey"] };
 const STG_ORD = Object.keys(STG);
@@ -645,6 +658,12 @@ const CARDS = [
 { id: "alltime", title: "All-time money", render: d => `${dB("pays", "all", `<span class="it c-blue"><svg><use href="#i-flag"/></svg></span><span class="row-main"><b>Next milestone $${nf0.format(d.nextMs)}</b></span><span class="big sm">${N(d.msPct, "pct")}</span>`, "row np", "Open every payment")}
     ${dB("pays", "all", bar(d.msPct), "barb", "Progress to the next $1,000 milestone")}
     <div class="tile row-pad sp2">${kv("Money generated, all time", N(d.allTime, "usd"), "pays", "all")}${kv("To go", N(d.nextMs - d.allTime, "usd"), "pays", "all")}</div>` },
+{ id: "pipeline", title: "Pipeline", focus: ["pipeline", ""], render: d => { const F = d.fc;   // 11-21 (Simas: "clear pipeline stages ... keeping forecasts realistic")
+    if (!F) return `${head("Pipeline", "", true)}${empty("The stage numbers aren't there yet.")}`;
+    const cell = x => dB("pipeline", x.stage, `<span class="tl">${esc(STAGE_L[x.stage] || x.stage)}</span><b>${N(x.leads)}</b>`, "tc", `${STAGE_L[x.stage] || x.stage}: open the leads`);
+    return `${head("Pipeline", F.overdue ? dB("pipeline", "overdue", `${F.overdue} overdue`, "chip o", "Open the leads that sat in their stage too long") : "", true)}
+    ${big("pipeline", "", `${N(F.weighted, "usd")}<small>forecast</small>`, "Weighted forecast: each open lead's deal value times its stage's chance. Open the open stages.")}
+    <div class="tgrid q4">${F.open.map(cell).join("")}</div>`; } },
 { id: "funnel", title: "Funnel", render: d => { const max = Math.max(1, d.funnel[0][1]);
     return `${head("Funnel, all time", "", true)}<div class="fun">${d.funnel.map(([label, v, c], i) => dB("funnel", i, `<span class="fl"><span>${label}</span><b>${N(v)}</b></span><span class="fb"><i class="${c}" data-v="w:${clamp(Math.sqrt(v / max) * 100, v ? 5 : 0, 100).toFixed(1)}%;k:${i}"></i></span>`, "fr", `${label}: ${nf0.format(v)}. Open them.`)).join("")}</div>`; } },
 { id: "away", title: "Away leads", render: d => `${head("Away, last 7 days")}${big("away", "", `${N(d.away.length)}<small>leads away</small>`, "Open every lead that is away")}
@@ -688,7 +707,7 @@ const CARDS = [
 ];
 const byId = id => CARDS.find(c => c.id === id);
 /* phone: five tabs, each shows only its cards (the desktop keeps the whole bento) */
-const TABS = { home: ["next", "today", "paidc", "retainers", "holds", "prod", "hot", "activity", "followups"], money: ["close", "buyers", "topc", "alltime", "moneypage", "price"], leads: ["attention", "moods", "samples", "turn", "speed", "clock", "score", "away", "funnel", "search", "export"],
+const TABS = { home: ["next", "today", "paidc", "retainers", "holds", "prod", "hot", "activity", "followups"], money: ["close", "buyers", "topc", "alltime", "moneypage", "price"], leads: ["attention", "moods", "samples", "turn", "speed", "clock", "score", "away", "pipeline", "funnel", "search", "export"],
   outreach: ["outreach", "total", "heat", "rate", "camps", "deliv", "inboxes", "sync"], clients: ["portal", "psamples", "pvideos", "pnotes", "pclients", "videos"], none: ["brand", "owner", "theme"] };
 const TABOF = {}; Object.entries(TABS).forEach(([t, ids]) => ids.forEach(id => { TABOF[id] = t; }));
 
@@ -906,6 +925,11 @@ const DR = {
   deliv() { const list = [...RAW.camps].filter(c => c.emails_sent).map(c => ({ ...c, rate: (c.bounced || 0) / c.emails_sent * 100 })).sort((x, y) => y.rate - x.rate);
     return { title: "Deliverability", sub: `${nf0.format(D.bounced)} bounced of ${nf0.format(D.sentAll)} sent · ${D.deliv.rate.toFixed(2)}% · keep every campaign under 2%`, html: tbl(["Campaign", "Sent", "Bounced", "Bounce %", "Unsubscribed"], list.map(c => `<tr><td>${dB("camp", c.campaign_id, esc(campName(c.name)), "lk")}</td><td>${nf0.format(c.emails_sent)}</td><td>${nf0.format(c.bounced || 0)}</td><td class="${c.rate > 2 ? "dn" : ""}">${c.rate.toFixed(2)}%</td><td>${nf0.format(c.unsubscribed || 0)}</td></tr>`)) + `<div class="acts sp">${dB("inboxes", "", "Open the inboxes", "act")}</div>` }; },
   feed() { return { title: "Activity", sub: "Payments, replies, samples, portal and lead loads, newest first", html: `<div class="feed">${D.feed.map(e => feedRow(e, false)).join("")}</div>` }; },
+  pipeline(a) { const L = (RAW.stages || []).filter(x => STATE.owner === "All" || (x.owner || "") === STATE.owner), list = (a === "overdue" ? L.filter(x => x.is_open && x.overdue) : a ? L.filter(x => x.stage === a) : L.filter(x => x.is_open))
+      .sort((x, y) => x.ord - y.ord || +y.overdue - +x.overdue || (+y.days_in_stage || 0) - (+x.days_in_stage || 0)), by = {}; list.forEach(x => (by[x.stage] = by[x.stage] || []).push(x));
+    return { title: a === "overdue" ? "Overdue in their stage" : a ? STAGE_L[a] || a : "Open pipeline", sub: `${list.length} lead${list.length === 1 ? "" : "s"}${STATE.owner === "All" ? "" : ` · ${STATE.owner}`} · stage from evidence · days in the stage on the right`,
+      html: Object.entries(by).map(([k, xs]) => `${grp(esc(STAGE_L[k] || k), xs.length)}${stackOf(xs.slice(0, 300).map(x => lrow({ email: x.email, name: x.name || x.email }, x.evidence || "", `<span class="row-end">${x.overdue ? `<span class="chip o">${stDays(x)}</span>` : stDays(x)}</span>`)))}`).join("") || empty("No lead in this stage.") }; },
+  notifs() { return ntDrill(); },
   psamples() { return { title: "Free sample requests", sub: "One free sample per person, ever. Check the badges before accepting.", html: stackOf(D.pSamples.map(sampleTile), "No sample request yet.") }; },
   pvideos() { return { title: "Video requests", sub: "Deliver = the next numbered version; open change requests are marked done", html: stackOf(D.pVideos.map(videoTile), "No video request yet.") }; },
   pnotes() { return { title: "Change requests", sub: "Open notes, grouped by video and round", html: stackOf(D.pNotes.map(noteTile), "No open change request.") }; },
@@ -924,7 +948,7 @@ function openDrill(k, a = "", opener, back) {
   const src = fresh && opener && opener.closest ? opener.closest(".card,.hero") : null;
   if (fresh && document.startViewTransition && !RM) { if (src) src.classList.add("vt-src"); M_SRC = src; document.startViewTransition(() => { if (src) src.classList.remove("vt-src"); run(); }); } else run();
 }
-function refreshDrill() { const s = STATE.drill; if (!s || $("#veil").hidden || s.k === "inbox" || s.k === "client" || document.activeElement?.classList.contains("pg-q")) return; try { const r = DR[s.k](s.a); if (r && !r.then) showDrill(r, SEQ, true); } catch {} }
+function refreshDrill() { const s = STATE.drill; if (!s || $("#veil").hidden || s.k === "inbox" || s.k === "client" || s.k === "notifs" || document.activeElement?.classList.contains("pg-q")) return; try { const r = DR[s.k](s.a); if (r && !r.then) showDrill(r, SEQ, true); } catch {} }
 function closeDrill() { const veil = $("#veil"); if (veil.hidden) return; const src = M_SRC && M_SRC.isConnected ? M_SRC : null, go = () => { veil.hidden = true; STATE.drill = null; STACK.length = 0; SEQ++; CONVS.delete("m"); if (src) src.classList.add("vt-src"); };
   if (document.startViewTransition && !RM) { const vt = document.startViewTransition(go); const done = () => { if (src) src.classList.remove("vt-src"); }; vt.finished.then(done, done); } else { go(); if (src) src.classList.remove("vt-src"); } M_SRC = null; if (M_OPENER && M_OPENER.isConnected) M_OPENER.focus(); M_OPENER = null; }
 
@@ -962,25 +986,28 @@ async function openLead(email, opener, keepNav) {
   const p = RAW.pipeline.find(x => lc(x.email) === email), f = RAW.fu.find(x => lc(x.email) === email), acct = D.pClients.find(c => lc(c.email) === email);
   if (!keepNav) { OPENER = opener || document.activeElement; const box = opener && opener.closest ? opener.closest(".stack,.feed,.names,.res,.modal-body") : null; NAV = box ? [...new Set($$('[data-act="lead"]', box).map(b => lc(b.dataset.email)))] : [email]; if (!NAV.includes(email)) NAV = [email]; }
   $("#dr-name").textContent = p ? (p.name || p.email) : email; $("#dr-sub").textContent = p ? [p.show, p.email].filter(Boolean).join(" · ") : "Not in the samples pipeline";
-  const m = p ? mood(p) : "", link = p ? safeUrl(p.drive_link) : "", at = NAV.indexOf(email);
+  const m = p ? mood(p) : "", link = p ? safeUrl(p.drive_link) : "", at = NAV.indexOf(email), st = stageOf(email);
   const body = $("#dr-body");
-  body.innerHTML = `<div class="dr-sec"><div class="acts"><button type="button" class="act" data-act="copy" data-t="${esc(email)}">${ic("copy")}Copy email</button><a class="act" href="mailto:${encodeURIComponent(email).replace(/%40/g, "@")}">${ic("mail")}Write email</a>${link ? `<a class="act" href="${esc(link)}" target="_blank" rel="noopener noreferrer">${ic("link")}Open sample</a>` : ""}${acct ? dB("client", "e:" + email, `${ic("user")}Portal account`, "act") : ""}${p && isBuyer(p) ? dB("client", "e:" + email, `${ic("cash")}Payments`, "act") : ""}</div>
-      ${NAV.length > 1 ? `<div class="dr-navr"><button type="button" class="act" data-act="nav" data-d="-1" ${at <= 0 ? "disabled" : ""} aria-label="Previous lead in the list">←</button><span class="mut mono">${at + 1} / ${NAV.length}</span><button type="button" class="act" data-act="nav" data-d="1" ${at >= NAV.length - 1 ? "disabled" : ""} aria-label="Next lead in the list">→</button><span class="mut">arrow keys move through the list</span></div>` : ""}</div>
-    ${p ? `<div class="dr-sec"><div class="dr-chips"><span class="chip b">${esc(p.status || "—")}</span>${cvChip(D.tc[email] || 0)}${dB("mood", m, esc(MOOD_LABEL[m] || m), "chip", "Open every lead with this mood")}${p.owner ? `<span class="chip">${esc(p.owner)}</span>` : ""}${p.inbox ? `<span class="chip">${esc(p.inbox)}</span>` : ""}${f && f.touches_total ? `<span class="chip">follow-ups ${f.touches_done || 0}/${f.touches_total}</span>` : ""}</div></div>
-    <div class="dr-sec"><h3>Next action${p.next_action_at ? ` · ${fDT(p.next_action_at)}` : ""}</h3><p class="dr-txt">${esc(p.next_action || "None set")}</p></div>
+  body.innerHTML = `<div class="dr-sec"><div class="acts"><button type="button" class="act" data-act="copy" data-t="${esc(email)}">${ic("copy")}Copy email</button><a class="act" href="mailto:${encodeURIComponent(email).replace(/%40/g, "@")}">${ic("mail")}Write email</a>${link ? `<a class="act" href="${esc(link)}" target="_blank" rel="noopener noreferrer">${ic("link")}Open sample</a>` : ""}${acct ? dB("client", "e:" + email, `${ic("user")}Portal account`, "act") : ""}${p && isBuyer(p) ? dB("client", "e:" + email, `${ic("cash")}Payments`, "act") : ""}<button type="button" class="act" data-act="tlog" aria-expanded="false">${ic("edit")}Log a touch</button></div>
+      ${NAV.length > 1 ? `<div class="dr-navr"><button type="button" class="act" data-act="nav" data-d="-1" ${at <= 0 ? "disabled" : ""} aria-label="Previous lead in the list">←</button><span class="mut mono">${at + 1} / ${NAV.length}</span><button type="button" class="act" data-act="nav" data-d="1" ${at >= NAV.length - 1 ? "disabled" : ""} aria-label="Next lead in the list">→</button><span class="mut">arrow keys move through the list</span></div>` : ""}<div id="dr-tf"></div></div>
+    ${p ? `<div class="dr-sec"><div class="dr-chips">${st ? stageChip(st) : ""}<span class="chip b">${esc(p.status || "—")}</span>${cvChip(D.tc[email] || 0)}${dB("mood", m, esc(MOOD_LABEL[m] || m), "chip", "Open every lead with this mood")}${p.owner ? `<span class="chip">${esc(p.owner)}</span>` : ""}${p.inbox ? `<span class="chip">${esc(p.inbox)}</span>` : ""}${f && f.touches_total ? `<span class="chip">follow-ups ${f.touches_done || 0}/${f.touches_total}</span>` : ""}</div>${st && st.evidence ? `<p class="dr-txt sp">${esc(st.evidence)}</p>` : ""}</div>
+    ${nextSec(email, p)}
     <div class="dr-sec"><h3>Timeline</h3><div class="kv"><span>Said yes</span><span>${fDT(p.yes_at)}</span></div><div class="kv"><span>Sample delivered</span><span>${fDT(p.delivered_at)}</span></div><div class="kv"><span>Last reply</span><span>${fDT(p.last_reply_at)}</span></div>${p.paid ? `<div class="kv"><span>Paid</span><span class="up">${esc(cut(p.paid, 40))}</span></div>` : ""}</div>
-    ${p.notes ? `<div class="dr-sec"><h3>Notes</h3><p class="dr-txt">${esc(cut(p.notes, 900))}</p></div>` : ""}` : ""}
+    ${p.notes ? `<div class="dr-sec"><h3>Notes</h3><p class="dr-txt">${esc(cut(p.notes, 900))}</p></div>` : ""}` : `${st ? `<div class="dr-sec"><div class="dr-chips">${stageChip(st)}</div>${st.evidence ? `<p class="dr-txt sp">${esc(st.evidence)}</p>` : ""}</div>` : ""}${nextSec(email, null)}`}
     <div class="dr-sec" id="dr-more"><div class="boot-in"><span class="spin"></span> Loading the thread…</div></div>`;
   const dr = $("#drawer"), sc = $("#scrim"); dr.hidden = sc.hidden = false; dr.dataset.email = email;
   requestAnimationFrame(() => { dr.classList.add("on"); sc.classList.add("on"); if (!keepNav) $("#dr-close").focus(); });
+  const ems = [...new Set([email, p ? lc(p.email) : "", ...(((RAW.clients.find(c => (c.emails || []).some(e => lc(e) === email)) || {}).emails) || []).map(lc)].filter(Boolean))]; DR_EMS = ems; TL = { rows: null, all: false };
   try {
-    const [prom, notes, msgs] = await Promise.all([
+    const [prom, notes, msgs, tl] = await Promise.all([
       must(sb.from("promises").select("promise,due_at,status,owner").eq("lead_email", email).eq("status", "open").order("due_at")),
       must(sb.from("client_notes").select("kind,note,created_at").eq("lead_email", email).order("created_at", { ascending: false }).limit(5)),
       loadConv([email, p ? p.email : "", ...(((RAW.clients.find(c => (c.emails || []).some(e => lc(e) === email)) || {}).emails) || [])]),   // a buyer with several addresses: one merged conversation
+      loadTl(ems),
     ]);
     if (dr.dataset.email !== email) return;
-    $("#dr-more").outerHTML = `${prom.length ? `<div class="dr-sec"><h3>Open promises</h3><div class="stack">${prom.map(x => `<div class="tile note"><small>${esc(x.owner || "")} · due ${fDT(x.due_at)}</small>${esc(cut(x.promise, 300))}</div>`).join("")}</div></div>` : ""}
+    TL.rows = tl;
+    $("#dr-more").outerHTML = `${tlSec()}${prom.length ? `<div class="dr-sec"><h3>Open promises</h3><div class="stack">${prom.map(x => `<div class="tile note"><small>${esc(x.owner || "")} · due ${fDT(x.due_at)}</small>${esc(cut(x.promise, 300))}</div>`).join("")}</div></div>` : ""}
       ${notes.length ? `<div class="dr-sec"><h3>Client notes</h3><div class="stack">${notes.map(x => `<div class="tile note"><small>${esc(x.kind || "note")} · ${dLabel(dayOf(x.created_at))}</small>${esc(cut(x.note, 400))}</div>`).join("")}</div></div>` : ""}
       <div class="dr-sec"><h3>Conversation</h3>${convBlock(msgs, "dr", `No email conversation synced for this address yet.${igOf(email) ? ` Conversation is on Instagram (${igOf(email)}).` : ""}`)}</div>`;
     if (PHONE.matches) { const bd = $("#dr-body"); bd.scrollTop = bd.scrollHeight; }
@@ -996,8 +1023,9 @@ function closeLead() {
 }
 
 /* ---------------- toasts + confetti ---------------- */
-function toast(title, icon = "check", c = "c-green", sub = "") {
-  const box = $("#toasts"), el = document.createElement("button"); el.type = "button"; el.className = "toast"; el.title = "Dismiss";
+function toast(title, icon = "check", c = "c-green", sub = "", key = "") {
+  const box = $("#toasts"); if (key && $$(".nt-toast", box).some(t => t.dataset.key === key || t.dataset.kind === key)) return;   // 11-21: the action toast about the same lead already shows
+  const el = document.createElement("button"); el.type = "button"; el.className = "toast"; el.title = "Dismiss"; if (key) el.dataset.key = key;
   el.innerHTML = `<span class="it ${c}"><svg><use href="#i-${icon}"/></svg></span><span><b>${esc(title)}</b>${sub ? `<small>${esc(sub)}</small>` : ""}</span>`;
   const kill = () => { if (!el.isConnected) return; el.classList.add("out"); setTimeout(() => el.remove(), RM ? 0 : 300); };
   el.addEventListener("click", kill); box.appendChild(el); setTimeout(kill, 6500); while (box.children.length > 4) box.firstElementChild.remove();
@@ -1011,6 +1039,183 @@ function confetti() {
     requestAnimationFrame(step); };
   requestAnimationFrame(step);
 }
+
+/* ---------------- 11-21: touchpoints in the lead drawer (public.lead_timeline, public.lead_next_step, insert into public.touches) ----------------
+   Founders: "Log every touchpoint ... so context is never lost". The form writes one touches row as the founder (RLS: founders add). */
+let DR_EMS = [], TL = { rows: null, all: false };
+const TL_IC = { email: "mail", call: "phone", meeting: "user", payment: "cash", stage: "chev", note: "edit", promise: "flag", hold: "alert", production: "film", delivery: "film", dm: "send", loom: "play", decision: "check", other: "clock" };
+const loadTl = ems => ems.length ? must(sb.from("lead_timeline").select("*").in("email", ems).order("at", { ascending: false }).limit(400)).catch(() => null) : Promise.resolve(null);
+const tlRow = x => { const c = x.kind === "payment" ? "c-green" : x.kind === "hold" ? "c-red" : x.status === "planned" ? "c-orange" : x.direction === "in" ? "c-blue" : x.direction === "out" ? "c-blue2" : "c-grey",
+    txt = [x.summary, x.next_step ? `next: ${x.next_step}` : ""].filter(Boolean).join(" · ");
+  return `<div class="fe tl${x.status === "canceled" ? " cx" : ""}"><span class="it ${c}"><svg><use href="#i-${TL_IC[x.kind] || "clock"}"/></svg></span><span class="fe-m"><b title="${esc(txt)}">${esc(cut(txt, 220))}</b></span><time title="${esc(fDT(x.at))}">${x.status === "planned" ? esc(dLabel(dayOf(x.at))) : esc(rel(+new Date(x.at)))}</time></div>`; };
+function tlSec() {
+  const R = TL.rows; if (!R) return `<div id="dr-tl" hidden></div>`;
+  const show = TL.all ? R : R.slice(0, 15);
+  return `<div class="dr-sec" id="dr-tl"><h3>Touchpoints</h3>${R.length ? `<div class="feed">${show.map(tlRow).join("")}</div>${R.length > 15 ? `<button type="button" class="more" data-act="tlall">${TL.all ? "Show fewer" : `Show all ${R.length}`}</button>` : ""}` : empty("Nothing logged for this lead yet.")}</div>`;
+}
+function nextSec(email, p) {
+  const n = nextOf(email), txt = n ? n.next_step : p && p.next_action, at = n ? n.next_at : p && p.next_action_at, late = n ? !!n.overdue : !!(at && new Date(at) < Date.now());
+  if (!n && !p) return `<div id="dr-next" hidden></div>`;
+  return `<div class="dr-sec" id="dr-next"><h3>Next step${at ? ` · <span class="${late ? "dn" : ""}">${fDT(at)}</span>` : ""}</h3><p class="dr-txt">${esc(txt || "None set")}</p></div>`;
+}
+async function drReload(email) {   // after a touch is logged: fresh touchpoints + next step
+  const [tl, ns] = await Promise.all([loadTl(DR_EMS), must(sb.from("lead_next_step").select("*").eq("email", email).maybeSingle()).catch(() => undefined)]);
+  if ($("#drawer").dataset.email !== email) return;
+  if (ns !== undefined && RAW.nextSteps) { RAW.nextSteps = RAW.nextSteps.filter(x => lc(x.email) !== email).concat(ns ? [ns] : []); const el = $("#dr-next"); if (el) el.outerHTML = nextSec(email, RAW.pipeline.find(x => lc(x.email) === email)); }
+  if (tl) { TL.rows = tl; const el = $("#dr-tl"); if (el) el.outerHTML = tlSec(); }
+}
+const founderName = () => { const s = `${ME && ME.name || ""} ${ME && ME.email || ""}`; return /simas/i.test(s) ? "Simas" : /benas/i.test(s) ? "Benas" : (ME && (ME.name || ME.email)) || "Founder"; };
+const TKINDS = [["call", "Call"], ["meeting", "Meeting"], ["email", "Email"], ["dm", "DM"], ["loom", "Loom"], ["delivery", "Delivery"], ["decision", "Decision"], ["note", "Note"], ["other", "Other"]];
+const touchForm = (email, ctx) => `<form class="tform dlg" data-email="${esc(email)}" data-ctx="${ctx}" novalidate>
+  <div class="tf2"><label class="fld"><span>Kind</span><select name="kind">${TKINDS.map(([k, l]) => `<option value="${k}">${l}</option>`).join("")}</select></label><label class="fld"><span>Next step date</span><input type="date" name="next_at"></label></div>
+  <label class="fld"><span>What happened</span><textarea name="summary" maxlength="1000" rows="3" required></textarea></label>
+  <label class="fld"><span>Next step</span><input type="text" name="next_step" maxlength="300" autocomplete="off"></label>
+  <p class="dlg-err" hidden></p><div class="acts"><button type="button" class="act" data-act="tcancel">Cancel</button><button type="submit" class="act go">${ic("check")}Log the touch</button></div></form>`;
+const tzAt = (day, h) => { const g = Date.parse(`${day}T${String(h).padStart(2, "0")}:00:00Z`), p = parts(g); return new Date(g - (Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute) - g)).toISOString(); };   // day + hour in Vilnius -> ISO
+async function logTouch(f) {
+  const g = n => (f.elements[n] ? String(f.elements[n].value || "").trim() : ""), summary = g("summary"), err = $(".dlg-err", f), go = $('button[type="submit"]', f), email = lc(f.dataset.email);
+  if (!summary) { err.hidden = false; err.textContent = "Write what happened."; f.elements.summary.focus(); return; }
+  const kind = g("kind"), d = g("next_at"), row = { lead_email: email, kind, direction: /^(note|decision)$/.test(kind) ? "internal" : "out", at: nowIso(), summary, next_step: g("next_step") || null, next_at: /^\d{4}-\d{2}-\d{2}$/.test(d) ? tzAt(d, 9) : null, actor: founderName(), source: "crm" };
+  go.disabled = true; err.hidden = true;
+  try {
+    await must(sb.from("touches").insert(row));
+    toast("Touch logged", "check", "c-green", nameOf(email));
+    if (f.dataset.ctx === "nt") { NTS.form = null; ntRender(true); }
+    else { const box = $("#dr-tf"); if (box) box.innerHTML = ""; const b = $('#drawer [data-act="tlog"]'); if (b) b.setAttribute("aria-expanded", "false"); drReload(email).catch(() => {}); }
+  } catch (e) { err.hidden = false; err.textContent = `Couldn't save: ${cut(e && e.message || e, 140)}`; go.disabled = false; }
+}
+
+/* ---------------- 11-21: notification centre (public.crm_inbox = crm_events + MY crm_event_state) ----------------
+   Founders: "add greater notifications in the crm, make them interactive also". The bell shows only once crm_inbox answers.
+   Writes: my own crm_event_state rows (read / snooze / done) and touches. Desktop alerts only after a click, only hot / money / alert. */
+let NT = null, NT_T = null, NT_SN = null;
+const NTS = { open: null, form: null, all: false }, TOASTED = new Map(), SLACK = { ok: null }, DESK = "beju-crm-desk";
+const SEV = { hot: "c-orange", money: "c-green", alert: "c-red", info: "c-blue" };
+const KICON = { reply: "mail", hot: "bolt", payment: "cash", booking: "phone", sample: "film", hold: "flag", task: "check", touch: "edit", stage: "chev", slack: "hash", alert: "alert" };
+const ntSnoozed = x => !!(x.snoozed_until && new Date(x.snoozed_until) > Date.now());
+const ntShown = x => !x.done_at && !ntSnoozed(x);
+const ntMine = x => !!(ME && x.actor && [lc(ME.name), lc(founderName())].includes(lc(x.actor)));   // what I did myself never counts as unread for me
+const ntUnread = x => ntShown(x) && !x.read_at && x.is_unread !== false && !ntMine(x);
+const ntFind = id => (NT || []).find(r => String(r.id) === String(id)) || TOASTED.get(String(id)) || null;
+const goPage = (pg, extra) => { if (window.BEJU_CRM_PAGE) window.BEJU_CRM_PAGE(pg, extra || {}); };
+async function loadInbox() {
+  try { const since = new Date(Date.now() - 14 * 864e5).toISOString(); NT = await all("crm_inbox", "*", q => q.gte("at", since).order("at", { ascending: false }).order("id", { ascending: false })); }
+  catch (e) { if (NT == null) { paintBell(); return; } }
+  ntTimer(); paintBell(); ntRender();
+}
+function ntTimer() {   // a snoozed item comes back by itself when its snooze ends
+  clearTimeout(NT_SN); const next = Math.min(...(NT || []).filter(ntSnoozed).map(x => +new Date(x.snoozed_until)));
+  if (isFinite(next)) NT_SN = setTimeout(() => { paintBell(); ntRender(); loadInbox().catch(() => {}); }, Math.min(2 ** 31 - 1, next - Date.now() + 800));
+}
+function paintBell() {
+  const b = $("#nt-btn"), i = $("#nt-n"); if (!b || !i) return;
+  b.hidden = NT == null; const n = NT ? NT.filter(ntUnread).length : 0, t = n > 99 ? "99+" : String(n);
+  i.hidden = !n; i.textContent = n ? t : ""; b.setAttribute("aria-label", n ? `Notifications: ${n} unread` : "Notifications");
+  const base = document.title.replace(/^\(\d+\+?\) /, ""); document.title = n ? `(${t}) ${base}` : base;
+}
+const ntBtn = (x, op, label, cls = "", icon = "") => `<button type="button" class="act ${cls}" data-act="nt" data-op="${op}" data-id="${esc(String(x.id))}">${icon ? ic(icon) : ""}${label}</button>`;
+const slackText = x => [x.title, x.body ? cut(x.body, 400) : "", x.lead_email ? `Lead: ${x.lead_email}` : ""].filter(Boolean).join("\n");
+const slackForm = x => `<form class="sform dlg" data-id="${esc(String(x.id))}" novalidate><label class="fld"><span>Channel</span><select name="channel"><option value="claude-sync">#claude-sync</option><option value="red-alert"${/^(hot|money|alert)$/.test(x.severity) ? " selected" : ""}>#red-alert</option></select></label>
+  <label class="fld"><span>Message</span><textarea name="text" maxlength="3000" rows="4">${esc(slackText(x))}</textarea></label><p class="dlg-err" hidden></p>
+  <div class="acts">${ntBtn(x, "slack", "Cancel")}<button type="submit" class="act go">${ic("send")}Post</button></div></form>`;
+function ntItem(x) {
+  const id = String(x.id), open = NTS.open === id, un = ntUnread(x), canOpen = !!(x.lead_email || webUrl(x.link) || x.kind === "slack");
+  return `<div class="tile nt${un ? "" : " rd"}" data-nt="${esc(id)}"><button type="button" class="row" data-act="nt" data-op="toggle" data-id="${esc(id)}" aria-expanded="${open}"><span class="it ${SEV[x.severity] || SEV.info}"><svg><use href="#i-${KICON[x.kind] || "bell"}"/></svg></span><span class="row-main"><b>${esc(cut(x.title, 120))}</b></span><span class="row-end">${un ? `<i class="nt-dot" aria-label="unread"></i>` : ""}${esc(rel(+new Date(x.at)))}</span></button>
+    ${open ? `<div class="nt-x">${x.body ? `<p class="dr-txt">${esc(cut(x.body, 700))}</p>` : ""}<div class="acts">${canOpen ? ntBtn(x, "open", "Open", "go") : ""}${un ? ntBtn(x, "read", "Mark read", "", "check") : ""}${ntBtn(x, "snooze1", "Snooze 1 h", "", "clock")}${ntBtn(x, "snooze9", "Tomorrow 09:00", "", "clock")}${ntBtn(x, "done", "Done", "", "check")}${x.lead_email ? ntBtn(x, "touch", "Log a touch", "", "edit") : ""}${SLACK.ok ? ntBtn(x, "slack", "Post to Slack", "", "send") : ""}</div>
+      ${NTS.form === "touch" && x.lead_email ? touchForm(x.lead_email, "nt") : NTS.form === "slack" && SLACK.ok ? slackForm(x) : ""}</div>` : ""}</div>`;
+}
+const deskOk = () => "Notification" in window && window.isSecureContext !== false && !COARSE;   // desktop only: phones can't show these from a page
+const deskOn = () => deskOk() && Notification.permission === "granted" && store.get(DESK) === "1";
+function ntDrill() {
+  const list = (NT || []).filter(ntShown), un = list.filter(ntUnread).length, show = NTS.all ? list : list.slice(0, 60), t = today(), td = show.filter(x => dayOf(x.at) === t), older = show.filter(x => dayOf(x.at) !== t);
+  const desk = !deskOk() ? "" : Notification.permission === "denied" ? `<span class="chip">Desktop alerts are blocked in this browser</span>` : deskOn() ? `<button type="button" class="act" data-act="nt" data-op="deskoff" aria-pressed="true">${ic("bell")}Desktop alerts on</button>` : `<button type="button" class="act" data-act="nt" data-op="deskon" aria-pressed="false" title="Hot, money and alert items pop up on this computer while the CRM is open in a tab">${ic("bell")}Desktop alerts</button>`;
+  return { title: "Notifications", sub: un ? `${un} unread` : "All read",
+    html: `<div class="acts nt-tools">${un ? `<button type="button" class="act" data-act="nt" data-op="allread">${ic("check")}Mark all read</button>` : ""}${desk}<button type="button" class="act" data-act="nt" data-op="slackpage">${ic("hash")}Slack</button></div>
+      ${td.length ? `${grp("Today")}<div class="stack">${td.map(ntItem).join("")}</div>` : ""}${older.length ? `${grp("Earlier")}<div class="stack">${older.map(ntItem).join("")}</div>` : ""}
+      ${list.length ? "" : empty("Nothing waiting. Replies, payments, bookings, holds and tasks land here the moment they happen.")}${list.length > show.length ? `<button type="button" class="more" data-act="nt" data-op="all">Show all ${list.length}</button>` : ""}` };
+}
+function ntRender(force) {
+  if (!STATE.drill || STATE.drill.k !== "notifs" || $("#veil").hidden) return;
+  const ae = document.activeElement, typing = ae && $("#m-body").contains(ae) && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName);
+  if (!force && (typing || NTS.form)) return;
+  showDrill(ntDrill(), SEQ, true);
+}
+const ntFocus = (id, sel = ".row") => { const el = $(`#m-body [data-nt="${CSS.escape(String(id))}"] ${sel}`); if (el) el.focus({ preventScroll: true }); };
+async function ntSet(rows, patch) {   // my own state rows; the page changes first, a failed write puts it back
+  if (!rows.length || !ME) return;
+  const prev = rows.map(x => [x, { read_at: x.read_at, snoozed_until: x.snoozed_until, done_at: x.done_at }]);
+  rows.forEach(x => Object.assign(x, patch)); if ((patch.snoozed_until || patch.done_at) && rows.some(x => String(x.id) === NTS.open)) { NTS.open = null; NTS.form = null; }
+  ntTimer(); paintBell(); ntRender(true);
+  try { await must(sb.from("crm_event_state").upsert(rows.map(x => ({ user_id: ME.id, event_id: x.id, read_at: x.read_at || null, snoozed_until: x.snoozed_until || null, done_at: x.done_at || null })), { onConflict: "user_id,event_id" })); }
+  catch (e) { prev.forEach(([x, s0]) => Object.assign(x, s0)); ntTimer(); paintBell(); ntRender(true); toast("Couldn't save that", "alert", "c-red", "Check your connection and try again."); }
+}
+async function ntAllRead() {
+  const list = (NT || []).filter(ntUnread); if (!list.length) return;
+  const now = nowIso(), upto = list.reduce((m, x) => (x.at > m ? x.at : m), ""); list.forEach(x => { x.read_at = now; }); paintBell(); ntRender(true);
+  try { const { error } = await sb.rpc("crm_mark_all_read", { p_before: upto }); if (error) throw error; }
+  catch (e) { list.forEach(x => { x.read_at = null; }); await ntSet(list, { read_at: now }); }
+}
+function ntOpen(x) {
+  if (x.kind === "slack") { const m = /\/p(\d{10})(\d{6})/.exec(String(x.link || "")); closeLead(); closeDrill(); return goPage("slack", m ? { ts: `${m[1]}.${m[2]}` } : {}); }
+  if (x.lead_email) return openLead(x.lead_email, $(`#m-body [data-nt="${CSS.escape(String(x.id))}"] .row`) || $("#nt-btn"));
+  const u = webUrl(x.link); if (u) window.open(u, "_blank", "noopener");
+}
+async function ntOp(op, id, btn) {
+  if (op === "allread") return ntAllRead();
+  if (op === "all") { NTS.all = true; return ntRender(true); }
+  if (op === "slackpage") { closeDrill(); return goPage("slack"); }
+  if (op === "deskoff") { store.set(DESK, "0"); return ntRender(true); }
+  if (op === "deskon") { try { const r = await Notification.requestPermission(); if (r === "granted") { store.set(DESK, "1"); toast("Desktop alerts on", "bell", "c-green", "Hot, money and alert items, while the CRM is open"); } } catch {} return ntRender(true); }
+  const x = ntFind(id); if (!x) return;
+  const tst = btn && btn.closest ? btn.closest(".toast") : null; if (tst) tst.remove();
+  if (op === "toggle") { NTS.open = NTS.open === String(x.id) ? null : String(x.id); NTS.form = null; ntRender(true); return ntFocus(x.id); }
+  if (op === "open") { if (!x.read_at) ntSet([x], { read_at: nowIso() }); return ntOpen(x); }
+  if (op === "read") { await ntSet([x], { read_at: nowIso() }); return ntFocus(x.id); }
+  if (op === "snooze1" || op === "snooze9") { const until = op === "snooze1" ? new Date(Date.now() + 36e5).toISOString() : tzAt(addDays(today(), 1), 9);
+    toast(op === "snooze1" ? "Snoozed for 1 hour" : "Snoozed until tomorrow 09:00", "clock", "c-blue", cut(x.title, 70)); return ntSet([x], { snoozed_until: until, read_at: null }); }
+  if (op === "done") return ntSet([x], { done_at: nowIso(), read_at: x.read_at || nowIso() });
+  if (op === "touch" || op === "slack") { NTS.open = String(x.id); NTS.form = NTS.form === op ? null : op; ntRender(true); const f = $(`#m-body [data-nt="${CSS.escape(String(x.id))}"] ${op === "touch" ? "textarea" : "textarea"}`); if (f && NTS.form) f.focus(); else ntFocus(x.id); }
+}
+function ntToast(x) {   // hot / money / alert: a toast with Open + Snooze (replaces the plain toast about the same lead)
+  const box = $("#toasts"), keys = [x.lead_email ? lc(x.lead_email) : "", "k:" + x.kind].filter(Boolean), id = esc(String(x.id));
+  $$(".toast:not(.nt-toast)", box).forEach(el => { if (keys.includes(el.dataset.key)) el.remove(); });
+  TOASTED.set(String(x.id), x);
+  const el = document.createElement("div"); el.className = "toast nt-toast"; el.setAttribute("role", "group"); el.setAttribute("aria-label", "New notification");
+  el.dataset.key = keys[0]; el.dataset.kind = "k:" + x.kind;
+  el.innerHTML = `<span class="it ${SEV[x.severity] || SEV.info}"><svg><use href="#i-${KICON[x.kind] || "bell"}"/></svg></span><span class="nt-tm"><b>${esc(cut(x.title, 120))}</b><span class="acts"><button type="button" class="act go" data-act="nt" data-op="open" data-id="${id}">Open</button><button type="button" class="act" data-act="nt" data-op="snooze1" data-id="${id}">Snooze 1 h</button></span></span><button type="button" class="nt-tx" aria-label="Dismiss"><svg aria-hidden="true"><use href="#i-x"/></svg></button>`;
+  const kill = () => { if (!el.isConnected) return; el.classList.add("out"); setTimeout(() => el.remove(), RM ? 0 : 300); };
+  $(".nt-tx", el).addEventListener("click", kill); box.appendChild(el); setTimeout(kill, 15000); while (box.children.length > 4) box.firstElementChild.remove();
+}
+function ntDesk(x) {   // only after the founder turned it on, only while this tab is open but not in front
+  if (!deskOn() || (!document.hidden && document.hasFocus())) return;
+  try { const n = new Notification(cut(x.title, 120), { body: cut(x.body || "", 180), tag: "beju-" + x.id, icon: "icon-64.png" }); n.onclick = () => { window.focus(); ntOpen(x); if (!x.read_at) ntSet([x], { read_at: nowIso() }); n.close(); }; } catch {}
+}
+function ntArrive(n) {   // a new crm_events row by Realtime
+  if (!n || n.id == null) return;
+  const x = { read_at: null, snoozed_until: null, done_at: null, is_unread: true, ...n };
+  if (NT && !NT.some(r => String(r.id) === String(x.id))) NT.unshift(x);
+  paintBell(); ntRender();
+  if (/^(hot|money|alert)$/.test(x.severity) && !ntMine(x) && x.source !== "backfill" && Date.now() - new Date(x.at) < 2 * 36e5) { ntToast(x); ntDesk(x); }
+  if (x.kind === "slack") document.dispatchEvent(new CustomEvent("beju-crm-slack"));
+  clearTimeout(NT_T); NT_T = setTimeout(() => loadInbox().catch(() => {}), 1500);
+}
+/* Slack: the edge function slack-post (founder JWT). The post boxes show only after a probe ({probe:true} -> {ok:true}, posts nothing) succeeds. */
+async function slackPost(channel, text, lead_email) {
+  const { data, error } = await sb.functions.invoke("slack-post", { body: { channel, text, ...(lead_email ? { lead_email } : {}) } });
+  if (error) throw error; if (!data || data.ok !== true) throw new Error((data && data.error) || "Slack did not take the message"); return data;
+}
+async function slackProbe() {
+  try { const { data, error } = await sb.functions.invoke("slack-post", { body: { probe: true } }); SLACK.ok = !error && !!data && data.ok === true; } catch { SLACK.ok = false; }
+  document.dispatchEvent(new CustomEvent("beju-crm-slack")); ntRender();
+}
+async function postSlackForm(f) {
+  const ch = f.elements.channel.value, text = String(f.elements.text.value || "").trim(), err = $(".dlg-err", f), go = $('button[type="submit"]', f), x = ntFind(f.dataset.id);
+  if (!text) { err.hidden = false; err.textContent = "Write the message first."; return; }
+  go.disabled = true; err.hidden = true;
+  try { await slackPost(ch, text, x && x.lead_email); toast(`Posted to #${ch}`, "send", "c-green"); NTS.form = null; ntRender(true); if (x) ntFocus(x.id); document.dispatchEvent(new CustomEvent("beju-crm-slack")); }
+  catch (e) { err.hidden = false; err.textContent = `Couldn't post: ${cut(e && e.message || e, 140)}`; go.disabled = false; }
+}
+window.BEJU_CRM_SLACK = { get ok() { return SLACK.ok === true; }, post: slackPost, probe: slackProbe, open: (id) => { const x = ntFind(id); if (x) ntOpen(x); } };
 
 /* ---------------- client-portal actions (the only writes in this file; same fields and order as scripts/portal_ops.py) ---------------- */
 let ASK = null;
@@ -1103,6 +1308,7 @@ function palItems(q) {
     ...["All", "Simas", "Benas"].map(o => cmd(o === "All" ? "Show everyone's leads" : `Show only ${o}'s leads`, "owner filter", "user", () => { STATE.owner = o; STATE.att = ""; renderAll(); })),
     ...Object.keys(PER).map(p => cmd(`Period: ${PER[p][0]}`, "hero, money, outreach", "clock", () => setPeriod(p))),
     cmd("Export leads CSV", "download", "down", () => { jump("export"); exportCsv(); }), cmd("Open the website", "new tab", "link", () => window.open(SITE, "_blank", "noopener")), cmd("Open the client portal", "new tab", "link", () => window.open(PORTAL, "_blank", "noopener")),
+    ...(NT ? [cmd("Notifications", "N", "bell", () => openDrill("notifs", ""))] : []), cmd("Slack", "#claude-sync · #red-alert", "hash", () => goPage("slack")),
     cmd("Wall mode on / off", "W", "expand", toggleWall), cmd("Celebrate", "confetti", "bolt", confetti), cmd("Sign out", "", "out", signOut)];
   const jumps = CARDS.filter(c => c.title && !(PHONE.matches && TABOF[c.id] === "none")).map(c => ({ g: "Jump to", label: c.title, hint: c.grid === 2 ? "client portal" : "card", icon: "chev", run: () => jump(c.id) }));
   const leads = q ? RAW.pipeline.filter(p => [p.name, p.show, p.email].some(v => lc(v).includes(q))).slice(0, 7).map(p => ({ g: "Leads", label: p.name || p.email, hint: cut(p.show || p.email, 40), icon: "user", run: () => openLead(p.email) })) : [];
@@ -1155,7 +1361,7 @@ function celebrateNew(prev) {
 async function refresh(manual) {
   const btns = $$('[data-act="refresh"]'); if (manual) btns.forEach(b => b.classList.add("spinning"));
   const first = !RAW, prevPay = RAW ? new Set(RAW.payments.map(x => x.id)) : null;
-  try { RAW = await fetchAll(); LAST_OK = Date.now(); offline(false); renderAll(!first); celebrateNew(prevPay); }
+  try { RAW = await fetchAll(); LAST_OK = Date.now(); offline(false); renderAll(!first); celebrateNew(prevPay); loadInbox().catch(() => {}); }
   catch (e) { if (!RAW) throw e; offline(true); }
   finally { setTimeout(() => btns.forEach(b => b.classList.remove("spinning")), 500); }
 }
@@ -1165,17 +1371,19 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden && RA
 function startRealtime() {
   stopRealtime();
   try { CH = sb.channel("crm-live");
-    ["payments", "reply_queue", "sample_requests", "videos", "video_notes", "profiles"].forEach(tb => CH.on("postgres_changes", { event: "*", schema: "public", table: tb }, p => onChange(tb, p)));
+    ["payments", "reply_queue", "sample_requests", "videos", "video_notes", "profiles", "crm_events", "crm_event_state"].forEach(tb => CH.on("postgres_changes", { event: "*", schema: "public", table: tb }, p => onChange(tb, p)));
     CH.subscribe(st => { RT = st === "SUBSCRIBED" ? "live" : "poll"; if (D) { paintStatus(); const b = byId("brand"); if (b && b.update) b.update(D); } });
   } catch { RT = "poll"; }
 }
 function stopRealtime() { clearTimeout(RT_T); if (CH) { try { sb.removeChannel(CH); } catch {} CH = null; } RT = "off"; }
 function onChange(tb, p) {
   const n = p.new || {}, ins = p.eventType === "INSERT";
-  if (tb === "payments" && ins && !n.refunded && !CELEB.has(n.id)) { CELEB.add(n.id); toast(`+${usd(n.amount)} from ${n.payer_name || n.email || "a client"}`, "cash", "c-green", PACK[n.package] || "New payment"); confetti(); }
-  else if (tb === "reply_queue" && ins && n.kind === "REAL") toast(`New reply from ${nameOf(n.lead_email)}`, "mail", "c-blue", cut(n.snippet, 90));
+  if (tb === "crm_events") { if (ins) ntArrive(n); return; }   // 11-21: the bell
+  if (tb === "crm_event_state") { clearTimeout(NT_T); NT_T = setTimeout(() => loadInbox().catch(() => {}), 800); return; }   // my state changed in another tab
+  if (tb === "payments" && ins && !n.refunded && !CELEB.has(n.id)) { CELEB.add(n.id); toast(`+${usd(n.amount)} from ${n.payer_name || n.email || "a client"}`, "cash", "c-green", PACK[n.package] || "New payment", lc(n.email)); confetti(); }
+  else if (tb === "reply_queue" && ins && n.kind === "REAL") toast(`New reply from ${nameOf(n.lead_email)}`, "mail", "c-blue", cut(n.snippet, 90), lc(n.lead_email));
   else if (tb === "profiles" && ins && !n.is_admin) toast(`Portal sign-up: ${n.name || n.email || "new client"}`, "user", "c-purple", n.email || "");
-  else if (tb === "sample_requests" && ins) toast("New free-sample request", "film", "c-purple", cut(n.video_url, 70));
+  else if (tb === "sample_requests" && ins) toast("New free-sample request", "film", "c-purple", cut(n.video_url, 70), "k:sample");
   else if (tb === "videos" && ins) toast(`New video request: ${cut(n.title || "Untitled", 40)}`, "play", "c-purple");
   else if (tb === "videos" && p.eventType === "UPDATE" && n.status === "revision") toast(`Changes asked on “${cut(n.title || "a video", 40)}”`, "alert", "c-red");
   else if (tb === "video_notes" && ins) toast("New change request", "alert", "c-red", cut(n.text, 90));
@@ -1255,9 +1463,15 @@ document.addEventListener("click", ev => {
   else if (a === "pop") pOp(b.dataset.op, b.dataset.id, b);
   else if (a === "dlg-no") { if (ASK) ASK.done(null); }
   else if (a === "nav") navLead(+b.dataset.d);
+  else if (a === "notifs") openDrill("notifs", "", b);
+  else if (a === "nt") ntOp(b.dataset.op, b.dataset.id, b);
+  else if (a === "tlog") { const box = $("#dr-tf"), dr = $("#drawer"); if (!box) return; const on = !box.innerHTML; box.innerHTML = on ? touchForm(dr.dataset.email, "dr") : ""; b.setAttribute("aria-expanded", on); if (on) $("textarea", box).focus(); }
+  else if (a === "tcancel") { const f = b.closest("form"); if (f && f.dataset.ctx === "nt") { NTS.form = null; ntRender(true); if (NTS.open) ntFocus(NTS.open); } else { const box = $("#dr-tf"); if (box) box.innerHTML = ""; const t = $('#drawer [data-act="tlog"]'); if (t) { t.setAttribute("aria-expanded", "false"); t.focus(); } } }
+  else if (a === "tlall") { TL.all = !TL.all; const el = $("#dr-tl"); if (el) el.outerHTML = tlSec(); const nb = $('#dr-tl [data-act="tlall"]'); if (nb) nb.focus(); }
   else if (a === "copy") { const t = b.dataset.t; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast("Email copied", "copy", "c-green", t)).catch(() => toast("Copy did not work here", "alert", "c-red", t)); }
 });
 $("#dlg-form").addEventListener("submit", ev => { ev.preventDefault(); askSubmit(); });
+document.addEventListener("submit", ev => { const f = ev.target; if (!f.classList) return; if (f.classList.contains("tform")) { ev.preventDefault(); logTouch(f); } else if (f.classList.contains("sform")) { ev.preventDefault(); postSlackForm(f); } });   // 11-21: touch + Slack forms
 $("#dlg").addEventListener("change", ev => { if (ev.target.dataset.k === "pack") { const p = PACKS.find(x => x[0] === ev.target.value); if (p) { $('[data-k="videos"]', $("#dlg")).value = p[2]; $('[data-k="amount"]', $("#dlg")).value = p[3]; } } });
 /* charts: hover, tap and arrow keys all go through PLOT[id] */
 function plotAt(box, ev, go) {
@@ -1295,6 +1509,7 @@ document.addEventListener("keydown", ev => {
   if (!typing && !L && !ev.metaKey && !ev.ctrlKey && !ev.altKey && !$("#app").hidden) {
     if (ev.key === "/") { ev.preventDefault(); const q = $("#q"); if (q) { q.focus(); q.scrollIntoView({ block: "center", behavior: RM ? "auto" : "smooth" }); } return; }
     if (lc(ev.key) === "w") return toggleWall();
+    if (lc(ev.key) === "n" && NT) { ev.preventDefault(); return openDrill("notifs", "", $("#nt-btn")); }
   }
   if (ae && ae.id === "q") {
     const opts = $$("#res button");
@@ -1438,11 +1653,11 @@ async function enter(user) {
   catch (e) { ME = null; show("gate"); msg("The 2-step login check didn't work. Check your connection and log in again."); return; }
   $("#nav-site").href = $("#nav-web").href = SITE; $("#nav-portal").href = PORTAL;
   show("boot"); build(); mountHero();
-  try { await refresh(); show("app"); startLoop(); startRealtime(); requestAnimationFrame(() => CARDS.forEach(c => fit(c.el))); measureFx();
+  try { await refresh(); show("app"); startLoop(); startRealtime(); slackProbe(); requestAnimationFrame(() => CARDS.forEach(c => fit(c.el))); measureFx();
     if (FIRST_LOOK && !store.get("beju-crm-look")) { store.set("beju-crm-look", lookOf()[0]); openDrill("look", "first"); } }
   catch (e) { show("gate"); msg("Couldn't load the CRM data. Check your connection and log in again."); }
 }
-async function signOut() { stopLoop(); stopRealtime(); closePal(); if (ASK) ASK.done(null); closeLead(); closeDrill(); try { await sb.auth.signOut(); } catch {} ME = RAW = D = null; PREV.clear(); feedSeen.clear(); $("#grid").innerHTML = $("#grid2").innerHTML = $("#hero").innerHTML = ""; setMode("in"); show("gate"); }
+async function signOut() { stopLoop(); stopRealtime(); closePal(); if (ASK) ASK.done(null); closeLead(); closeDrill(); try { await sb.auth.signOut(); } catch {} ME = RAW = D = null; NT = null; NTS.open = NTS.form = null; NTS.all = false; TOASTED.clear(); clearTimeout(NT_SN); paintBell(); PREV.clear(); feedSeen.clear(); $("#grid").innerHTML = $("#grid2").innerHTML = $("#hero").innerHTML = ""; setMode("in"); show("gate"); }
 $("#wait-out").addEventListener("click", signOut); $("#wait-portal").href = PORTAL_HOME;
 $("#wait-check").addEventListener("click", async () => { const { data } = await sb.auth.getSession(); if (data.session) enter(data.session.user).catch(() => {}); else show("gate"); });
 

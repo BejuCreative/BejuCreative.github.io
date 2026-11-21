@@ -33,7 +33,7 @@ const initials = s => { const w = String(s || "?").replace(/[^\p{L}\p{N} ]/gu, "
 const NAV = $("#snav"), PAGE_EL = $("#spage"), APP = $("#app"), TIP = $("#sn-tip"), SCRIM = $("#sn-scrim"), MENU = $("#sn-menu"), TOG = $("#sn-tog");
 if (!NAV || !PAGE_EL || !APP) return;
 const HTML = document.documentElement, BASE_TITLE = document.title;
-const PAGES = { dashboard: "Dashboard", expenses: "Expenses", email: "Email tests", clients: "Clients", perf: "Client performance", weekly: "Weekly analysis", todos: "To-dos" };
+const PAGES = { dashboard: "Dashboard", expenses: "Expenses", email: "Email tests", clients: "Clients", perf: "Client performance", weekly: "Weekly analysis", todos: "To-dos", slack: "Slack" };
 const K_NAV = "beju-crm-nav";
 let PAGE = "dashboard", ME = null, CACHE = {}, TIMER = null, CH = null, DRAG = null, SEQ = 0, EDIT = null, ON = false;
 const sb = () => window.BEJU_CRM_SB;
@@ -96,7 +96,7 @@ const param = k => new URLSearchParams(location.search).get(k);
 function go(p, extra = {}, replace = false) {
   const u = new URL(location.href);
   p === "dashboard" ? u.searchParams.delete("p") : u.searchParams.set("p", p);
-  if (p !== "clients") u.searchParams.delete("c"); if (p !== "expenses") u.searchParams.delete("m"); if (p !== "perf") u.searchParams.delete("k");
+  if (p !== "clients") u.searchParams.delete("c"); if (p !== "expenses") u.searchParams.delete("m"); if (p !== "perf") u.searchParams.delete("k"); if (p !== "slack") u.searchParams.delete("ts");
   Object.entries(extra).forEach(([k, v]) => v == null ? u.searchParams.delete(k) : u.searchParams.set(k, v));
   if (u.href !== location.href) history[replace ? "replaceState" : "pushState"]({ p }, "", u);
   show(p);
@@ -113,8 +113,9 @@ function show(p) {
   const was = PAGE; PAGE = p; EDIT = null; if (p !== "expenses") EXM = null;
   $$("a[data-nav]", NAV).forEach(a => a.dataset.nav === p && !a.classList.contains("sn-brand") ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
   HTML.classList.toggle("paged", p !== "dashboard"); PAGE_EL.hidden = p === "dashboard";
-  document.title = p === "dashboard" ? BASE_TITLE : `${PAGES[p]} · BEJÚ`;
+  document.title = (document.title.match(/^\(\d+\+?\) /) || [""])[0] + (p === "dashboard" ? BASE_TITLE : `${PAGES[p]} · BEJÚ`);   // keeps the bell's unread count in front
   if (p !== "dashboard") { renderPage(); startTimer(); } else { stopTimer(); PAGE_EL.innerHTML = ""; }
+  slackLive(p === "slack");
   if (was !== p) scrollTo(0, 0);
 }
 function startTimer() { stopTimer(); TIMER = setInterval(() => { if (!document.hidden && PAGE !== "dashboard" && !DRAG && !EDIT) { delete CACHE[PAGE]; renderPage(true); } }, 5 * 60000); }
@@ -134,7 +135,7 @@ document.addEventListener("keydown", ev => {
 function syncApp() {
   ON = !APP.hidden; NAV.hidden = !ON; applyRail();
   if (ON) { show(pageFromUrl()); startRealtime(); todoBadge(); }
-  else { stopTimer(); stopRealtime(); CACHE = {}; ME = null; drawer(false); PAGE_EL.hidden = true; }
+  else { stopTimer(); stopRealtime(); slackLive(false); CACHE = {}; ME = null; drawer(false); PAGE_EL.hidden = true; }
 }
 
 async function me() {
@@ -147,8 +148,8 @@ async function me() {
 }
 
 /* ---------------- pages ---------------- */
-const LOAD = { expenses: loadExpenses, email: loadEmail, clients: loadClients, perf: loadPerf, weekly: loadWeekly, todos: loadTodos };
-const VIEW = { expenses: viewExpenses, email: viewEmail, clients: viewClients, perf: viewPerf, weekly: viewWeekly, todos: viewTodos };
+const LOAD = { expenses: loadExpenses, email: loadEmail, clients: loadClients, perf: loadPerf, weekly: loadWeekly, todos: loadTodos, slack: loadSlack };
+const VIEW = { expenses: viewExpenses, email: viewEmail, clients: viewClients, perf: viewPerf, weekly: viewWeekly, todos: viewTodos, slack: viewSlack };
 const HEAD = {
   expenses: ["Expenses <em class=\"sf\">&amp; profit</em>", "Tick what's paid this month and see the profit that's left."],
   email: ["Email <em class=\"sf\">tests</em>", "Which variant wins in each campaign, and whether the change has been made."],
@@ -156,6 +157,7 @@ const HEAD = {
   perf: ["Client <em class=\"sf\">performance</em>", "Monthly clients' YouTube, TikTok and Instagram: views and trend, which of our Shorts they posted, what works."],
   weekly: ["Weekly <em class=\"sf\">business review</em>", "Health line, money, funnel, campaigns, A/B tests, engine, sales, clients and what we changed: this week against last week and the 4 weeks before."],
   todos: ["To-<em class=\"sf\">dos</em>", "The founders' board. Drag cards between columns; both of you see changes live."],
+  slack: ["Slack <em class=\"sf\">channels</em>", "#claude-sync and #red-alert, newest first. Messages that mention you are marked."],
 };
 function srcOf(p, d) {
   if (p === "expenses") return d ? ["Beju Finance sheet + Stripe", d.updated_at] : null;
@@ -178,7 +180,7 @@ async function renderPage(quiet) {
     const d = CACHE[p] || (CACHE[p] = await LOAD[p]());
     if (seq !== SEQ || p !== PAGE) return;
     PAGE_EL.innerHTML = header(p, d) + VIEW[p](d);
-    applyVars(PAGE_EL); if (p === "todos") wireBoard(); if (p === "clients") wireClients(); if (p === "perf") wirePerf(); if (p === "weekly") wireWeekly(); if (p === "expenses") wireExpenses(); if (p === "email") wireEmail(); countUps(PAGE_EL);
+    applyVars(PAGE_EL); if (p === "todos") wireBoard(); if (p === "clients") wireClients(); if (p === "perf") wirePerf(); if (p === "weekly") wireWeekly(); if (p === "expenses") wireExpenses(); if (p === "email") wireEmail(); if (p === "slack") wireSlack(); countUps(PAGE_EL);
   } catch (e) {
     if (seq !== SEQ) return; delete CACHE[p];
     PAGE_EL.innerHTML = `${header(p, null)}<p class="sp-err">Couldn't load this page. ${esc(String(e && e.message || e).slice(0, 160))}</p><div><button type="button" class="act" id="sp-retry">${ic("refresh")}Try again</button></div>`;
@@ -1170,6 +1172,60 @@ function dragEnd(ev) {
 }
 document.addEventListener("touchmove", ev => { if (DRAG && DRAG.on) ev.preventDefault(); }, { passive: false });
 document.addEventListener("contextmenu", ev => { if (DRAG && ev.target.closest && ev.target.closest(".sd-card")) ev.preventDefault(); });
+
+/* 7. Slack (11-21, SIMAS: "we need to implement slack into the crm"): the latest #claude-sync and #red-alert messages from
+   public.slack_messages, text escaped, links through webUrl. The post box shows only when crm.js's probe of the edge
+   function slack-post succeeded (window.BEJU_CRM_SLACK.ok). A Slack notification opens this page at its message (?ts=). */
+const SLCH = ["claude-sync", "red-alert"], chOf = m => String(m.channel_name || "").replace(/^#/, "");
+let SLF = "all";
+const webUrl = u => { try { const x = new URL(String(u).trim()); return /^https?:$/.test(x.protocol) ? x.href : ""; } catch { return ""; } };
+const hm = t => new Date(t).toLocaleTimeString("en-GB", { timeZone: TZ, hour: "2-digit", minute: "2-digit" });
+const whenS = t => !t ? "" : dayOf(t) === dayOf(Date.now()) ? hm(t) : `${dLabel(dayOf(t))}, ${hm(t)}`;
+async function loadSlack() {
+  await me();
+  const cols = "ts,channel_id,channel_name,user_name,text,at,thread_ts,permalink,mentions", ts = param("ts");
+  const msgs = await must(sb().from("slack_messages").select(cols).in("channel_name", [...SLCH, ...SLCH.map(c => "#" + c)]).order("at", { ascending: false }).limit(200)).catch(() => null);
+  if (msgs && ts && !msgs.some(m => m.ts === ts)) { const one = await must(sb().from("slack_messages").select(cols).eq("ts", ts).limit(1)).catch(() => []); msgs.push(...one); }   // an older message a notification points at
+  return { msgs };
+}
+function slackHtml(t, who) {   // Slack markup -> safe HTML: <url|label> and bare links become links, everything else is escaped
+  t = String(t || "").replace(/<@([A-Z0-9]+)(?:\|([^>]+))?>/g, (m0, id, nm) => "@" + (nm || id)).replace(/<!(here|channel|everyone)[^>]*>/g, "@$1");
+  const un = x => x.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&"), me = who && who !== "Both" ? new RegExp(`@${who}\\b`, "gi") : null;
+  const txt = x => { const h = esc(un(x)); return me ? h.replace(me, w => `<b class="sl-at">${w}</b>`) : h; };
+  const re = /<(https?:\/\/[^|>\s]+)(?:\|([^>]+))?>|(https?:\/\/[^\s<>"')\]]+)/g; let out = "", last = 0, m;
+  while ((m = re.exec(t))) { out += txt(t.slice(last, m.index)); const u = webUrl(un(m[1] || m[3])); out += u ? `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(un(m[2] || m[1] || m[3]).slice(0, 80))}</a>` : esc(un(m[0])); last = re.lastIndex; }
+  return out + txt(t.slice(last));
+}
+const slackRow = (m, who) => { const mine = !!who && who !== "Both" && ((m.mentions || []).some(x => lc(String(x).replace(/^@/, "")) === lc(who)) || new RegExp(`@${who}\\b`, "i").test(m.text || "")), u = webUrl(m.permalink), ch = chOf(m);
+  return `<article class="tile sl-m${mine ? " me" : ""}" data-ts="${esc(m.ts)}"><div class="sl-h"><b>${esc(m.user_name || "Someone")}</b><span class="chip${ch === "red-alert" ? " r" : ""}">#${esc(ch)}</span><time class="mut" datetime="${esc(m.at || "")}">${esc(whenS(m.at))}</time>${u ? `<a class="sl-o" href="${esc(u)}" target="_blank" rel="noopener noreferrer">Open in Slack ${ic("link")}</a>` : ""}</div><p class="sl-t">${slackHtml(m.text, who)}</p></article>`; };
+function viewSlack(d) {
+  const S = window.BEJU_CRM_SLACK, can = !!(S && S.ok), who = ME ? ME.who : "", list = (d.msgs || []).filter(m => SLF === "all" || chOf(m) === SLF);
+  const post = can ? `<form class="card sp-card sl-post" id="sl-post" novalidate><label class="fld sl-pr"><span>Channel</span><select name="channel">${SLCH.map(c => `<option value="${c}"${c === SLF ? " selected" : ""}>#${c}</option>`).join("")}</select></label>
+    <label class="fld"><span>Message</span><textarea name="text" rows="3" maxlength="3000"></textarea></label><p class="sp-err" hidden></p><div class="row"><button type="submit" class="act go">${ic("send")}Post</button></div></form>` : "";
+  if (!d.msgs) return post + empty("Slack messages are not in the CRM yet. They show here once the Slack sync runs.");
+  const seg = `<div class="seg sl-f" role="group" aria-label="Channel">${[["all", "Both"], ...SLCH.map(c => [c, "#" + c])].map(([k, l]) => `<button type="button" data-slf="${k}" class="${SLF === k ? "on" : ""}" aria-pressed="${SLF === k}">${esc(l)}</button>`).join("")}</div>`;
+  return `${post}${seg}<section class="card sp-card sl-list">${list.map(m => slackRow(m, who)).join("") || empty("No message in this channel yet.")}</section>`;
+}
+function wireSlack() {
+  $$("[data-slf]", PAGE_EL).forEach(b => b.addEventListener("click", () => { SLF = b.dataset.slf; renderPage(true); }));
+  const f = $("#sl-post");
+  if (f) f.addEventListener("submit", async ev => { ev.preventDefault();
+    const t = String(f.elements.text.value || "").trim(), ch = f.elements.channel.value, err = $(".sp-err", f), go2 = $('button[type="submit"]', f);
+    if (!t) { err.hidden = false; err.textContent = "Write the message first."; return; }
+    go2.disabled = true; err.hidden = true;
+    try { await window.BEJU_CRM_SLACK.post(ch, t); toast(`Posted to #${ch}`); f.elements.text.value = ""; delete CACHE.slack; renderPage(true); }
+    catch (e) { err.hidden = false; err.textContent = `Couldn't post: ${String(e && e.message || e).slice(0, 140)}`; go2.disabled = false; } });
+  const ts = param("ts"), el = ts ? $(`[data-ts="${CSS.escape(ts)}"]`, PAGE_EL) : null;
+  if (el) { el.scrollIntoView({ block: "center", behavior: RM ? "auto" : "smooth" }); el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash"); const u = new URL(location.href); u.searchParams.delete("ts"); history.replaceState(history.state, "", u); }
+}
+/* new Slack messages / the probe result: redraw, unless a founder is writing in the post box */
+document.addEventListener("beju-crm-slack", () => { if (!ON || PAGE !== "slack") return; const ta = $("#sl-post textarea"); if (ta && (document.activeElement === ta || ta.value.trim())) return; delete CACHE.slack; renderPage(true); });
+let SL_CH = null, SL_T = null;   // live while the Slack page is open (its own channel, so the To-dos channel is never affected)
+function slackLive(on) {
+  if (on && !SL_CH && sb()) { try { SL_CH = sb().channel("side-slack").on("postgres_changes", { event: "INSERT", schema: "public", table: "slack_messages" }, () => { clearTimeout(SL_T); SL_T = setTimeout(() => document.dispatchEvent(new CustomEvent("beju-crm-slack")), 600); }).subscribe(); } catch { SL_CH = null; } }
+  else if (!on && SL_CH) { try { sb().removeChannel(SL_CH); } catch {} SL_CH = null; }
+}
+window.BEJU_CRM_PAGE = (p, extra = {}) => { if (!ON || !PAGES[p]) return; if (p === "slack" && extra.ts) SLF = "all"; delete CACHE[p]; go(p, extra); };
 
 /* live updates from the other founder (board + the menu badge) */
 let RT_T = null;

@@ -1012,3 +1012,33 @@ html[data-motion="calm"] .ticker-t{animation:none;white-space:normal;flex-wrap:w
 .kpi b .dl,.trio b .dl,.tgrid .dl,.kv .dl{display:block;margin:3px 0 0;white-space:normal;line-height:1.3} .kv .dl{text-align:right}
 .big .dl{display:block;font-size:12px;margin:4px 0 0;letter-spacing:0}
 .hero-sub .dl{font-size:13px;margin-left:0}
+
+/* ---------- 11-21: notification bell + panel + action toasts, touch form, touchpoints, Pipeline card (existing tokens only) ---------- */
+.nt-btn{position:relative}
+.nt-btn[hidden]{display:none}
+.nt-n{position:absolute;top:-4px;right:-5px;min-width:17px;height:17px;border-radius:99px;background:var(--red);color:var(--on-accent);font:600 10px/17px var(--mono);font-style:normal;text-align:center;padding:0 4px;pointer-events:none}
+.nt-n[hidden]{display:none}
+.nt-tools{margin-bottom:2px}
+.nt .row-end{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--mute)}
+.nt.rd .row-main b{font-weight:500;color:var(--ink-2)}
+.nt-dot{width:8px;height:8px;border-radius:50%;background:var(--blue);flex:none}
+.nt-x{display:grid;gap:12px;padding:0 12px 12px 59px}
+.nt-x .dr-txt{font-size:14px}
+.nt-toast{align-items:flex-start;padding-right:6px}
+.nt-tm{flex:1;min-width:0;display:grid;gap:9px}
+.nt-tm .acts{margin:0}
+.nt-tx{width:30px;height:30px;flex:none;display:grid;place-items:center;border-radius:9px;color:var(--mute)}
+.nt-tx:hover{color:var(--ink);background:var(--panel)}
+.nt-tx svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.tform,.sform{background:var(--tile);border:1px solid var(--line);border-radius:14px;padding:12px}
+#dr-tf .tform{margin-top:12px}
+.tf2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tform .fld input{padding:10px 12px;font-size:14.5px}
+.fe.tl{padding:6px 2px}
+.fe.tl .fe-m b{white-space:normal;font-weight:500;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.fe.tl.cx .fe-m b{text-decoration:line-through;color:var(--mute)}
+.tgrid.q4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.tgrid.q4 .tc{border-bottom:0;border-left:1px solid var(--line)}
+.tgrid.q4 .tc:first-child{border-left:0;padding-left:2px}
+/* phones: the bell takes the account icon's place (Account stays in the ≡ menu, the same no-doubles rule as the rail) */
+@media (max-width:600px){.top-tools .nt-btn:not([hidden]) ~ [data-k="me"]{display:none} .nt-x{padding-left:12px} .nt-tx{width:44px;height:44px} .tform .fld input{font-size:16px}}

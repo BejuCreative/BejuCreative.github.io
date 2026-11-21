@@ -20,8 +20,8 @@
 <link rel="preload" href="fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/geist-mono.woff2" as="font" type="font/woff2" crossorigin>
 <script src="theme.js?v=20261112p3"></script>
-<link rel="stylesheet" href="crm.css?v=20261121d2">
-<link rel="stylesheet" href="side.css?v=20261121g1">
+<link rel="stylesheet" href="crm.css?v=20261121n1">
+<link rel="stylesheet" href="side.css?v=20261121n1">
 </head>
 <body>
 <svg width="0" height="0" class="sprite" aria-hidden="true" focusable="false">
@@ -55,6 +55,8 @@
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></symbol>
   <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15zM10 20.5a2 2 0 0 0 4 0"/></symbol>
+  <symbol id="i-hash" viewBox="0 0 24 24"><path d="M10 4 8 20M16 4l-2 16M4.5 9h15M4 15h15"/></symbol>
   <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
 </svg>
 
@@ -99,6 +101,7 @@
     <div class="top-tools">
       <button type="button" class="pal-btn" data-act="palette" aria-label="Search or jump (Command K)" title="Search leads, jump to a card, run an action"><svg aria-hidden="true"><use href="#i-search"/></svg><span>Search or jump</span><kbd class="kbd">⌘K</kbd></button>
       <button type="button" class="stat" id="stat" data-act="drill" data-k="sync" data-a=""><i class="pulse" id="stat-p"></i><b id="stat-t">Live</b><small id="stat-s"></small></button>
+      <button type="button" class="icon-btn nt-btn" id="nt-btn" data-act="notifs" aria-label="Notifications" title="Notifications  (N)" hidden><svg aria-hidden="true"><use href="#i-bell"/></svg><i class="nt-n" id="nt-n" hidden></i></button>
       <button type="button" class="icon-btn hide-ph" data-act="drill" data-k="look" data-a="" aria-label="Look: colour theme and motion" title="Look"><svg><use href="#i-sun"/></svg></button>
       <button type="button" class="icon-btn hide-ph" data-act="refresh" aria-label="Refresh now" title="Refresh now"><svg><use href="#i-refresh"/></svg></button>
       <button type="button" class="icon-btn" data-act="drill" data-k="me" data-a="" aria-label="Your account: website, client portal, look, motion, password, sign out" title="Account"><svg><use href="#i-user"/></svg></button>
@@ -110,7 +113,7 @@
   <div id="grid" class="grid" aria-live="off"></div>
   <h2 class="zone-h" id="zone-portal">Client <em class="sf">portal</em><span id="zone-sub"></span></h2>
   <div id="grid2" class="grid"></div>
-  <p class="foot">Numbers come from the BEJÚ CRM database. Changes arrive live, and everything refreshes every minute. Only the client-portal actions write anything. <kbd class="kbd">⌘K</kbd> search · <kbd class="kbd">/</kbd> leads · <kbd class="kbd">W</kbd> wall mode</p>
+  <p class="foot">Numbers come from the BEJÚ CRM database. Changes arrive live, and everything refreshes every minute. Only the client-portal actions write anything. <kbd class="kbd">⌘K</kbd> search · <kbd class="kbd">/</kbd> leads · <kbd class="kbd">W</kbd> wall mode · <kbd class="kbd">N</kbd> notifications</p>
 </div>
 
 <nav class="tabs" id="tabs" aria-label="Sections" hidden>
@@ -165,6 +168,7 @@
     <li><a href="?p=perf" data-nav="perf" data-tip="Client performance"><svg aria-hidden="true"><use href="#i-bolt"/></svg><span class="sn-lbl">Performance</span></a></li>
     <li><a href="?p=weekly" data-nav="weekly" data-tip="Weekly analysis"><svg aria-hidden="true"><use href="#i-chart"/></svg><span class="sn-lbl">Weekly analysis</span></a></li>
     <li><a href="?p=todos" data-nav="todos" data-tip="To-dos"><svg aria-hidden="true"><use href="#i-board"/></svg><span class="sn-lbl">To-dos</span><i class="sn-badge" id="sn-todo-n" hidden></i></a></li>
+    <li><a href="?p=slack" data-nav="slack" data-tip="Slack"><svg aria-hidden="true"><use href="#i-hash"/></svg><span class="sn-lbl">Slack</span></a></li>
   </ul>
   <div class="sn-sp"></div>
   <ul class="sn-list sn-foot">
@@ -184,7 +188,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="config.js?v=20261112p3"></script>
-<script src="crm.js?v=20261121d2"></script>
-<script src="side.js?v=20261121g1"></script>
+<script src="crm.js?v=20261121n1"></script>
+<script src="side.js?v=20261121n1"></script>
 </body>
 </html>
