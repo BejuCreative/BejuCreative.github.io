@@ -22,6 +22,7 @@ const cut = (s, n) => { s = String(s ?? "").replace(/\s+/g, " ").trim(); return 
 const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
 const ON_SITE = /(^|\.)bejucreative\.digital$/i.test(location.hostname);
 const SITE = ON_SITE ? "/" : "https://bejucreative.digital/", PORTAL_HOME = ON_SITE ? "/portal/" : "https://bejucreative.digital/portal/", PORTAL = PORTAL_HOME + "?view=portal";   // ?view=portal: the portal sends a founder to /crm/ unless the founder asks for the portal
+const PORTAL_ON = false;   // 11-21 (founders): client portal hidden in the CRM (top bar, account menu, ⌘K, wait screen); code kept, true brings the links back
 /* looks: id, name, mode, browser bar colour, one-line description. theme.js applies the saved one before the first paint. */
 const THEMES = [["frost", "Frost", "light", "#eef1f8", "Bright white glass"], ["graphite", "Graphite", "dark", "#0b0c0e", "Neutral dark glass"], ["forest", "Forest", "dark", "#070805", "BEJÚ brand green"], ["ocean", "Ocean", "dark", "#041226", "Deep blue glass"], ["sunset", "Sunset", "dark", "#1a0e16", "Warm peach and rose"]];
 const lookOf = () => THEMES.find(t => t[0] === document.documentElement.dataset.theme) || THEMES[0];
@@ -791,7 +792,6 @@ function paintStatus() {
 function jump(id) {
   const el = $("#c-" + id); if (!el) return;
   if (PHONE.matches) { if (el.dataset.tab === "none") return; setTab(el.dataset.tab, true); }
-  else if (el.offsetParent === null && el.dataset.tab !== "none") setTab(el.dataset.tab, true);   // desktop: a stats card lives in its tab
   el.scrollIntoView({ block: "center", behavior: RM ? "auto" : "smooth" }); el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
   const f = $("button,input,[tabindex]", el); if (f) f.focus({ preventScroll: true });
 }
@@ -898,7 +898,7 @@ const DR = {
   me() { return { title: ME ? (ME.name || ME.email) : "You", sub: ME ? ME.email : "", html: `${facts([["Role", "Founder"], ["Connection", RT === "live" ? "Live" : "Polling"], ["Look", `<span data-look-name>${lookOf()[1]}</span>`]])}
       ${lookBox()}
       ${grp("Shortcuts")}<div class="stack">${[["⌘K / Ctrl K", "Search leads and clients, jump to a card, run an action"], ["/", "Search leads"], ["← →", "In a chart: move through the days. In a lead: previous and next lead of the list"], ["Enter", "Open what is selected"], ["Esc", "Close the top layer"], ["W", "Wall mode"]].map(x => `<div class="tile row"><span class="kbd">${x[0]}</span><span class="row-main"><small>${x[1]}</small></span></div>`).join("")}</div>
-      <div class="acts sp"><a class="act" href="${esc(PORTAL)}">${ic("link")}Client portal</a><a class="act" href="${esc(SITE)}">${ic("link")}Website</a>${dB("look", "", ic("sun") + "All looks", "act")}<button type="button" class="act" data-act="refresh">${ic("refresh")}Refresh now</button><button type="button" class="act" data-act="chpw">${ic("user")}Change password</button><button type="button" class="act" data-act="mfa">${ic("check")}2-step login</button><button type="button" class="act no" data-act="signout">${ic("out")}Sign out</button></div>` }; },
+      <div class="acts sp">${PORTAL_ON ? `<a class="act" href="${esc(PORTAL)}">${ic("link")}Client portal</a>` : ""}<a class="act" href="${esc(SITE)}">${ic("link")}Website</a>${dB("look", "", ic("sun") + "All looks", "act")}<button type="button" class="act" data-act="refresh">${ic("refresh")}Refresh now</button><button type="button" class="act" data-act="chpw">${ic("user")}Change password</button><button type="button" class="act" data-act="mfa">${ic("check")}2-step login</button><button type="button" class="act no" data-act="signout">${ic("out")}Sign out</button></div>` }; },
   look(a) { const first = a === "first"; return { title: first ? "Pick your look" : "Look", sub: first ? "Five kinds of glass. Change it any time from the account menu." : "Saved on this device", html:
     `<div class="thg" role="group" aria-label="Colour theme">${THEMES.map(t => `<button type="button" class="thp" data-act="look" data-t="${t[0]}" aria-pressed="${t[0] === lookOf()[0]}"><span class="thsw" data-th="${t[0]}" aria-hidden="true"><i></i><i></i><i></i></span><b>${t[1]}</b><small>${t[4]}</small></button>`).join("")}</div>${motionRow()}${first ? `<div class="acts sp"><button type="button" class="act go" data-act="mclose">Done</button></div>` : ""}` }; },
   todaylist() { const I = { call: ["phone", "c-blue"], payment_failed: ["alert", "c-red"], action: ["check", "c-green"], partner: ["flag", "c-orange"] };
@@ -988,8 +988,8 @@ async function openLead(email, opener, keepNav) {
   // 11-21 (BENAS): the top says where the deal stands: stage, the next step with its owner, the deal (plan / size); then the conversation
   body.innerHTML = `<div class="dr-sec dr-sum"><div class="dt"><span class="dt-l">Stage</span><div class="dt-v">${st ? stageChip(st) : `<span class="mut">No stage yet</span>`}${st && st.evidence ? `<small>${esc(cut(st.evidence, 220))}</small>` : ""}</div></div>
       ${nextSec(email, p)}${dealRow(email, st, null, null)}
-      <div class="acts sp"><button type="button" class="act" data-act="copy" data-t="${esc(email)}">${ic("copy")}Copy email</button>${link ? `<a class="act" href="${esc(link)}" target="_blank" rel="noopener noreferrer">${ic("link")}Open sample</a>` : ""}${acct ? dB("client", "e:" + email, `${ic("user")}Portal account`, "act") : ""}${p && isBuyer(p) ? dB("client", "e:" + email, `${ic("cash")}Payments`, "act") : ""}<button type="button" class="act" data-act="tlog" aria-expanded="false">${ic("edit")}Log a touch</button></div>
-      ${NAV.length > 1 ? `<div class="dr-navr"><button type="button" class="act" data-act="nav" data-d="-1" ${at <= 0 ? "disabled" : ""} aria-label="Previous lead in the list">←</button><span class="mut mono">${at + 1} / ${NAV.length}</span><button type="button" class="act" data-act="nav" data-d="1" ${at >= NAV.length - 1 ? "disabled" : ""} aria-label="Next lead in the list">→</button><span class="mut">arrow keys move through the list</span></div>` : ""}<div id="dr-tf"></div></div>
+      <div class="acts sp"><button type="button" class="act" data-act="copy" data-t="${esc(email)}">${ic("copy")}Copy email</button>${link ? `<a class="act" href="${esc(link)}" target="_blank" rel="noopener noreferrer">${ic("link")}Open sample</a>` : ""}${acct ? dB("client", "e:" + email, `${ic("user")}Portal account`, "act") : ""}${p && isBuyer(p) ? dB("client", "e:" + email, `${ic("cash")}Payments`, "act") : ""}</div>
+      ${NAV.length > 1 ? `<div class="dr-navr"><button type="button" class="act" data-act="nav" data-d="-1" ${at <= 0 ? "disabled" : ""} aria-label="Previous lead in the list">←</button><span class="mut mono">${at + 1} / ${NAV.length}</span><button type="button" class="act" data-act="nav" data-d="1" ${at >= NAV.length - 1 ? "disabled" : ""} aria-label="Next lead in the list">→</button><span class="mut">arrow keys move through the list</span></div>` : ""}</div>
     <div class="dr-sec" id="dr-conv"><h3>Conversation</h3><div class="boot-in"><span class="spin"></span> Loading the thread…</div></div>
     ${p ? `<div class="dr-sec"><div class="dr-chips"><span class="chip b">${esc(p.status || "—")}</span>${cvChip(D.tc[email] || 0)}${dB("mood", m, esc(MOOD_LABEL[m] || m), "chip", "Open every lead with this mood")}${p.inbox ? `<span class="chip">${esc(p.inbox)}</span>` : ""}${f && f.touches_total ? `<span class="chip">follow-ups ${f.touches_done || 0}/${f.touches_total}</span>` : ""}</div></div>
     <div class="dr-sec"><h3>Timeline</h3><div class="kv"><span>Said yes</span><span>${fDT(p.yes_at)}</span></div><div class="kv"><span>Sample delivered</span><span>${fDT(p.delivered_at)}</span></div><div class="kv"><span>Last reply</span><span>${fDT(p.last_reply_at)}</span></div>${p.paid ? `<div class="kv"><span>Paid</span><span class="up">${esc(cut(p.paid, 40))}</span></div>` : ""}</div>
@@ -1044,8 +1044,8 @@ function confetti() {
   requestAnimationFrame(step);
 }
 
-/* ---------------- 11-21: touchpoints in the lead drawer (public.lead_timeline, public.lead_next_step, insert into public.touches) ----------------
-   Founders: "Log every touchpoint ... so context is never lost". The form writes one touches row as the founder (RLS: founders add). */
+/* ---------------- 11-21: touchpoints in the lead drawer (public.lead_timeline, public.lead_next_step) ----------------
+   Read-only. The "Log a touch" form was cut (founders 11-21); calls are logged through "Add call notes" below. */
 let DR_EMS = [], TL = { rows: null, all: false };
 const TL_IC = { email: "mail", call: "phone", meeting: "user", payment: "cash", stage: "chev", note: "edit", promise: "flag", hold: "alert", production: "film", delivery: "film", dm: "send", loom: "play", decision: "check", other: "clock" };
 const loadTl = ems => ems.length ? must(sb.from("lead_timeline").select("*").in("email", ems).order("at", { ascending: false }).limit(400)).catch(() => null) : Promise.resolve(null);
@@ -1076,32 +1076,14 @@ function dealRow(email, st, opps, scopes) {
   const none = paid ? `Packs · paid ${usd(paid)} so far` : `<span class="mut">No plan yet</span>`;
   return `<div class="dt" id="dr-deal"><span class="dt-l">Deal</span><div class="dt-v">${lines.length ? lines.map(l => `<p>${l}</p>`).join("") + (paid ? `<small>paid ${usd(paid)} so far</small>` : "") : none}</div></div>`;
 }
-async function drReload(email) {   // after a touch is logged: fresh touchpoints + next step
+async function drReload(email) {   // after call notes are saved: fresh touchpoints + next step
   const [tl, ns] = await Promise.all([loadTl(DR_EMS), must(sb.from("lead_next_step").select("*").eq("email", email).maybeSingle()).catch(() => undefined)]);
   if ($("#drawer").dataset.email !== email) return;
   if (ns !== undefined && RAW.nextSteps) { RAW.nextSteps = RAW.nextSteps.filter(x => lc(x.email) !== email).concat(ns ? [ns] : []); const el = $("#dr-next"); if (el) el.outerHTML = nextSec(email, RAW.pipeline.find(x => lc(x.email) === email)); }
   if (tl) { TL.rows = tl; const el = $("#dr-tl"); if (el) el.outerHTML = tlSec(); }
 }
 const founderName = () => { const s = `${ME && ME.name || ""} ${ME && ME.email || ""}`; return /simas/i.test(s) ? "Simas" : /benas/i.test(s) ? "Benas" : (ME && (ME.name || ME.email)) || "Founder"; };
-const TKINDS = [["call", "Call"], ["meeting", "Meeting"], ["email", "Email"], ["dm", "DM"], ["loom", "Loom"], ["delivery", "Delivery"], ["decision", "Decision"], ["note", "Note"], ["other", "Other"]];
-const touchForm = (email, ctx) => `<form class="tform dlg" data-email="${esc(email)}" data-ctx="${ctx}" novalidate>
-  <div class="tf2"><label class="fld"><span>Kind</span><select name="kind">${TKINDS.map(([k, l]) => `<option value="${k}">${l}</option>`).join("")}</select></label><label class="fld"><span>Next step date</span><input type="date" name="next_at"></label></div>
-  <label class="fld"><span>What happened</span><textarea name="summary" maxlength="1000" rows="3" required></textarea></label>
-  <label class="fld"><span>Next step</span><input type="text" name="next_step" maxlength="300" autocomplete="off"></label>
-  <p class="dlg-err" hidden></p><div class="acts"><button type="button" class="act" data-act="tcancel">Cancel</button><button type="submit" class="act go">${ic("check")}Log the touch</button></div></form>`;
 const tzAt = (day, h) => { const g = Date.parse(`${day}T${String(h).padStart(2, "0")}:00:00Z`), p = parts(g); return new Date(g - (Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute) - g)).toISOString(); };   // day + hour in Vilnius -> ISO
-async function logTouch(f) {
-  const g = n => (f.elements[n] ? String(f.elements[n].value || "").trim() : ""), summary = g("summary"), err = $(".dlg-err", f), go = $('button[type="submit"]', f), email = lc(f.dataset.email);
-  if (!summary) { err.hidden = false; err.textContent = "Write what happened."; f.elements.summary.focus(); return; }
-  const kind = g("kind"), d = g("next_at"), row = { lead_email: email, kind, direction: /^(note|decision)$/.test(kind) ? "internal" : "out", at: nowIso(), summary, next_step: g("next_step") || null, next_at: /^\d{4}-\d{2}-\d{2}$/.test(d) ? tzAt(d, 9) : null, actor: founderName(), source: "crm" };
-  go.disabled = true; err.hidden = true;
-  try {
-    await must(sb.from("touches").insert(row));
-    toast("Touch logged", "check", "c-green", nameOf(email));
-    if (f.dataset.ctx === "nt") { NTS.form = null; ntRender(true); }
-    else { const box = $("#dr-tf"); if (box) box.innerHTML = ""; const b = $('#drawer [data-act="tlog"]'); if (b) b.setAttribute("aria-expanded", "false"); drReload(email).catch(() => {}); }
-  } catch (e) { err.hidden = false; err.textContent = `Couldn't save: ${cut(e && e.message || e, 140)}`; go.disabled = false; }
-}
 
 /* ---------------- 11-21 (SIMAS): call notes at the bottom of the client / lead profile, no separate tab ----------------
    "short summaries of the call and key takeaways and next tasks that we have to do for them". A call = a cal.com booking
@@ -1202,8 +1184,8 @@ const slackForm = x => `<form class="sform dlg" data-id="${esc(String(x.id))}" n
 function ntItem(x) {
   const id = String(x.id), open = NTS.open === id, un = ntUnread(x), canOpen = !!(x.lead_email || webUrl(x.link) || x.kind === "slack");
   return `<div class="tile nt${un ? "" : " rd"}" data-nt="${esc(id)}"><button type="button" class="row" data-act="nt" data-op="toggle" data-id="${esc(id)}" aria-expanded="${open}"><span class="it ${SEV[x.severity] || SEV.info}"><svg><use href="#i-${KICON[x.kind] || "bell"}"/></svg></span><span class="row-main"><b>${esc(cut(x.title, 120))}</b></span><span class="row-end">${un ? `<i class="nt-dot" aria-label="unread"></i>` : ""}${esc(rel(+new Date(x.at)))}</span></button>
-    ${open ? `<div class="nt-x">${x.body ? `<p class="dr-txt">${esc(cut(x.body, 700))}</p>` : ""}<div class="acts">${canOpen ? ntBtn(x, "open", "Open", "go") : ""}${un ? ntBtn(x, "read", "Mark read", "", "check") : ""}${ntBtn(x, "snooze1", "Snooze 1 h", "", "clock")}${ntBtn(x, "snooze9", "Tomorrow 09:00", "", "clock")}${ntBtn(x, "done", "Done", "", "check")}${x.lead_email ? ntBtn(x, "touch", "Log a touch", "", "edit") : ""}${SLACK.ok ? ntBtn(x, "slack", "Post to Slack", "", "send") : ""}</div>
-      ${NTS.form === "touch" && x.lead_email ? touchForm(x.lead_email, "nt") : NTS.form === "slack" && SLACK.ok ? slackForm(x) : ""}</div>` : ""}</div>`;
+    ${open ? `<div class="nt-x">${x.body ? `<p class="dr-txt">${esc(cut(x.body, 700))}</p>` : ""}<div class="acts">${canOpen ? ntBtn(x, "open", "Open", "go") : ""}${un ? ntBtn(x, "read", "Mark read", "", "check") : ""}${ntBtn(x, "snooze1", "Snooze 1 h", "", "clock")}${ntBtn(x, "snooze9", "Tomorrow 09:00", "", "clock")}${ntBtn(x, "done", "Done", "", "check")}${SLACK.ok ? ntBtn(x, "slack", "Post to Slack", "", "send") : ""}</div>
+      ${NTS.form === "slack" && SLACK.ok ? slackForm(x) : ""}</div>` : ""}</div>`;
 }
 const deskOk = () => "Notification" in window && window.isSecureContext !== false && !COARSE;   // desktop only: phones can't show these from a page
 const deskOn = () => deskOk() && Notification.permission === "granted" && store.get(DESK) === "1";
@@ -1255,7 +1237,7 @@ async function ntOp(op, id, btn) {
   if (op === "snooze1" || op === "snooze9") { const until = op === "snooze1" ? new Date(Date.now() + 36e5).toISOString() : tzAt(addDays(today(), 1), 9);
     toast(op === "snooze1" ? "Snoozed for 1 hour" : "Snoozed until tomorrow 09:00", "clock", "c-blue", cut(x.title, 70)); return ntSet([x], { snoozed_until: until, read_at: null }); }
   if (op === "done") return ntSet([x], { done_at: nowIso(), read_at: x.read_at || nowIso() });
-  if (op === "touch" || op === "slack") { NTS.open = String(x.id); NTS.form = NTS.form === op ? null : op; ntRender(true); const f = $(`#m-body [data-nt="${CSS.escape(String(x.id))}"] ${op === "touch" ? "textarea" : "textarea"}`); if (f && NTS.form) f.focus(); else ntFocus(x.id); }
+  if (op === "slack") { NTS.open = String(x.id); NTS.form = NTS.form === op ? null : op; ntRender(true); const f = $(`#m-body [data-nt="${CSS.escape(String(x.id))}"] textarea`); if (f && NTS.form) f.focus(); else ntFocus(x.id); }
 }
 function ntToast(x) {   // hot / money / alert: a toast with Open + Snooze (replaces the plain toast about the same lead)
   const box = $("#toasts"), keys = [x.lead_email ? lc(x.lead_email) : "", "k:" + x.kind].filter(Boolean), id = esc(String(x.id));
@@ -1388,10 +1370,10 @@ function palItems(q) {
   const cmds = [cmd("Refresh now", "", "refresh", () => refresh(true)), ...THEMES.map(t => cmd(`Look: ${t[1]}`, t[4] + (t[0] === lookOf()[0] ? " · on now" : ""), "sun", () => setTheme(t[0], true))), cmd(motionFull() ? "Motion: switch to Calm" : "Motion: switch to Full", "ambient motion", "bolt", () => setMotion(motionFull() ? "calm" : "full", true)), cmd("Pick a look", "all five", "sun", () => openDrill("look", "")),
     ...["All", "Simas", "Benas"].map(o => cmd(o === "All" ? "Show everyone's leads" : `Show only ${o}'s leads`, "owner filter", "user", () => { STATE.owner = o; STATE.att = ""; renderAll(); })),
     ...Object.keys(PER).map(p => cmd(`Period: ${PER[p][0]}`, "hero, money, outreach", "clock", () => setPeriod(p))),
-    cmd("Open the website", "new tab", "link", () => window.open(SITE, "_blank", "noopener")), cmd("Open the client portal", "new tab", "link", () => window.open(PORTAL, "_blank", "noopener")),
+    cmd("Open the website", "new tab", "link", () => window.open(SITE, "_blank", "noopener")), ...(PORTAL_ON ? [cmd("Open the client portal", "new tab", "link", () => window.open(PORTAL, "_blank", "noopener"))] : []),
     ...(NT ? [cmd("Notifications", "N", "bell", () => openDrill("notifs", ""))] : []), cmd("Slack", "#claude-sync · #red-alert", "hash", () => goPage("slack")),
     cmd("Wall mode on / off", "W", "expand", toggleWall), cmd("Celebrate", "confetti", "bolt", confetti), cmd("Sign out", "", "out", signOut)];
-  const jumps = CARDS.filter(c => c.title && !(PHONE.matches && TABOF[c.id] === "none")).map(c => ({ g: "Jump to", label: c.title, hint: c.grid === 2 ? "client portal" : "card", icon: "chev", run: () => jump(c.id) }));
+  const jumps = CARDS.filter(c => c.title && !(PHONE.matches && TABOF[c.id] === "none") && !(!PHONE.matches && STATS_TAB_ONLY.has(c.id))).map(c => ({ g: "Jump to", label: c.title, hint: c.grid === 2 ? "client portal" : "card", icon: "chev", run: () => jump(c.id) }));
   const leads = q ? RAW.pipeline.filter(p => [p.name, p.show, p.email].some(v => lc(v).includes(q))).slice(0, 7).map(p => ({ g: "Leads", label: p.name || p.email, hint: cut(p.show || p.email, 40), icon: "user", run: () => openLead(p.email) })) : [];
   const cls = q ? D.pClients.filter(c => [c.name, c.email].some(v => lc(v).includes(q))).slice(0, 4).map(c => ({ g: "Portal clients", label: c.name || c.email, hint: c.email, icon: "user", run: () => openDrill("client", "e:" + lc(c.email)) })) : [];
   const f = x => !q || lc(x.label + " " + x.hint).includes(q);
@@ -1533,13 +1515,11 @@ document.addEventListener("click", ev => {
   else if (a === "nav") navLead(+b.dataset.d);
   else if (a === "notifs") openDrill("notifs", "", b);
   else if (a === "nt") ntOp(b.dataset.op, b.dataset.id, b);
-  else if (a === "tlog") { const box = $("#dr-tf"), dr = $("#drawer"); if (!box) return; const on = !box.innerHTML; box.innerHTML = on ? touchForm(dr.dataset.email, "dr") : ""; b.setAttribute("aria-expanded", on); if (on) $("textarea", box).focus(); }
-  else if (a === "tcancel") { const f = b.closest("form"); if (f && f.dataset.ctx === "nt") { NTS.form = null; ntRender(true); if (NTS.open) ntFocus(NTS.open); } else { const box = $("#dr-tf"); if (box) box.innerHTML = ""; const t = $('#drawer [data-act="tlog"]'); if (t) { t.setAttribute("aria-expanded", "false"); t.focus(); } } }
   else if (a === "tlall") { TL.all = !TL.all; const el = $("#dr-tl"); if (el) el.outerHTML = tlSec(); const nb = $('#dr-tl [data-act="tlall"]'); if (nb) nb.focus(); }
   else if (a === "copy") { const t = b.dataset.t; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast("Email copied", "copy", "c-green", t)).catch(() => toast("Copy did not work here", "alert", "c-red", t)); }
 });
 $("#dlg-form").addEventListener("submit", ev => { ev.preventDefault(); askSubmit(); });
-document.addEventListener("submit", ev => { const f = ev.target; if (!f.classList) return; if (f.classList.contains("tform")) { ev.preventDefault(); logTouch(f); } else if (f.classList.contains("cnform")) { ev.preventDefault(); saveCallNotes(f); } else if (f.classList.contains("sform")) { ev.preventDefault(); postSlackForm(f); } });   // 11-21: touch + Slack forms
+document.addEventListener("submit", ev => { const f = ev.target; if (!f.classList) return; if (f.classList.contains("cnform")) { ev.preventDefault(); saveCallNotes(f); } else if (f.classList.contains("sform")) { ev.preventDefault(); postSlackForm(f); } });   // 11-21: call-notes + Slack forms
 $("#dlg").addEventListener("change", ev => { if (ev.target.dataset.k === "pack") { const p = PACKS.find(x => x[0] === ev.target.value); if (p) { $('[data-k="videos"]', $("#dlg")).value = p[2]; $('[data-k="amount"]', $("#dlg")).value = p[3]; } } });
 /* charts: hover, tap and arrow keys all go through PLOT[id] */
 function plotAt(box, ev, go) {
@@ -1714,14 +1694,14 @@ async function enter(user) {
   ME = { ...p, email: user.email || p.email };
   try { if (!(await mfaGate())) return; }   // 2-step login before any founder data loads
   catch (e) { ME = null; show("gate"); msg("The 2-step login check didn't work. Check your connection and log in again."); return; }
-  $("#nav-site").href = $("#nav-web").href = SITE; $("#nav-portal").href = PORTAL;
+  $("#nav-site").href = $("#nav-web").href = SITE; $("#nav-portal").href = PORTAL; $("#nav-portal").hidden = !PORTAL_ON;
   show("boot"); build(); mountHero();
   try { await refresh(); show("app"); startLoop(); startRealtime(); slackProbe(); requestAnimationFrame(() => CARDS.forEach(c => fit(c.el))); measureFx();
     if (FIRST_LOOK && !store.get("beju-crm-look")) { store.set("beju-crm-look", lookOf()[0]); openDrill("look", "first"); } }
   catch (e) { show("gate"); msg("Couldn't load the CRM data. Check your connection and log in again."); }
 }
 async function signOut() { stopLoop(); stopRealtime(); closePal(); if (ASK) ASK.done(null); closeLead(); closeDrill(); try { await sb.auth.signOut(); } catch {} ME = RAW = D = null; NT = null; NTS.open = NTS.form = null; NTS.all = false; TOASTED.clear(); clearTimeout(NT_SN); paintBell(); PREV.clear(); feedSeen.clear(); $("#grid").innerHTML = $("#grid2").innerHTML = $("#hero").innerHTML = ""; setMode("in"); show("gate"); }
-$("#wait-out").addEventListener("click", signOut); $("#wait-portal").href = PORTAL_HOME;
+$("#wait-out").addEventListener("click", signOut); $("#wait-portal").href = PORTAL_HOME; $("#wait-portal").hidden = !PORTAL_ON;
 $("#wait-check").addEventListener("click", async () => { const { data } = await sb.auth.getSession(); if (data.session) enter(data.session.user).catch(() => {}); else show("gate"); });
 
 /* ---------------- boot ---------------- */

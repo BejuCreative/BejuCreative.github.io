@@ -20,7 +20,7 @@
 <link rel="preload" href="fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/geist-mono.woff2" as="font" type="font/woff2" crossorigin>
 <script src="theme.js?v=20261112p3"></script>
-<link rel="stylesheet" href="crm.css?v=20261121z1">
+<link rel="stylesheet" href="crm.css?v=20261121za">
 <link rel="stylesheet" href="side.css?v=20261121r1">
 </head>
 <body>
@@ -69,7 +69,7 @@
     <label class="fld"><span>Password</span><input id="g-pass" type="password" autocomplete="current-password" minlength="8" required></label>
     <p class="gate-msg" id="gate-msg" role="alert" hidden></p>
     <button class="btn-go mag" id="gate-go" type="submit"><span id="gate-go-t">Log in</span></button>
-    <p class="gate-foot">Founders only. The same login works in the client portal.</p>
+    <p class="gate-foot">Founders only.</p>
   </form>
 </main>
 
@@ -81,9 +81,9 @@
   <div class="gate-card">
     <div class="brandrow"><span class="logo"><img src="../beju-mark-sm.png" alt="" width="34" height="20"></span><div><b>Beju Creative</b><small>Founder <em class="sf">CRM</em></small></div></div>
     <h1 class="wait-h">This area is for the BEJÚ founders.</h1>
-    <p class="wait-p">Ask Simas to approve your account. Until then this page shows nothing. Your videos and orders are in the client portal.</p>
+    <p class="wait-p">Ask Simas to approve your account. Until then this page shows nothing.</p>
     <div class="tile wait-me"><span class="mut">Signed in as</span><b id="wait-email"></b></div>
-    <div class="wait-row"><a class="btn-go" id="wait-portal" href="https://bejucreative.digital/portal/">Go to the client portal</a><button class="btn-ghost" id="wait-check" type="button">Check again</button><button class="btn-ghost" id="wait-out" type="button">Sign out</button></div>
+    <div class="wait-row"><a class="btn-go" id="wait-portal" href="https://bejucreative.digital/portal/" hidden>Go to the client portal</a><button class="btn-ghost" id="wait-check" type="button">Check again</button><button class="btn-ghost" id="wait-out" type="button">Sign out</button></div>
   </div>
 </main>
 
@@ -94,7 +94,7 @@
     <a class="top-brand" id="nav-site" href="https://bejucreative.digital/" title="Beju Creative website"><span class="logo"><img src="../beju-mark-sm.png" alt="" width="34" height="20"></span><span>Beju Creative</span></a>
     <nav class="top-nav" aria-label="Beju Creative">
       <a id="nav-web" href="https://bejucreative.digital/">Website</a>
-      <a id="nav-portal" href="https://bejucreative.digital/portal/">Client portal</a>
+      <a id="nav-portal" href="https://bejucreative.digital/portal/" hidden>Client portal</a>
       <a class="on" href="./" aria-current="page">Founder CRM</a>
     </nav>
     <div class="seg ownr" id="top-owner" role="group" aria-label="Whose leads"><button type="button" data-act="owner" data-o="All">All</button><button type="button" data-act="owner" data-o="Simas">Simas</button><button type="button" data-act="owner" data-o="Benas">Benas</button></div>
@@ -104,7 +104,7 @@
       <button type="button" class="icon-btn nt-btn" id="nt-btn" data-act="notifs" aria-label="Notifications" title="Notifications  (N)" hidden><svg aria-hidden="true"><use href="#i-bell"/></svg><i class="nt-n" id="nt-n" hidden></i></button>
       <button type="button" class="icon-btn hide-ph" data-act="drill" data-k="look" data-a="" aria-label="Look: colour theme and motion" title="Look"><svg><use href="#i-sun"/></svg></button>
       <button type="button" class="icon-btn hide-ph" data-act="refresh" aria-label="Refresh now" title="Refresh now"><svg><use href="#i-refresh"/></svg></button>
-      <button type="button" class="icon-btn" data-act="drill" data-k="me" data-a="" aria-label="Your account: website, client portal, look, motion, password, sign out" title="Account"><svg><use href="#i-user"/></svg></button>
+      <button type="button" class="icon-btn" data-act="drill" data-k="me" data-a="" aria-label="Your account: website, look, motion, password, sign out" title="Account"><svg><use href="#i-user"/></svg></button>
       <button type="button" class="icon-btn hide-ph" data-act="signout" aria-label="Sign out" title="Sign out"><svg><use href="#i-out"/></svg></button>
     </div>
   </header>
@@ -188,7 +188,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="config.js?v=20261112p3"></script>
-<script src="crm.js?v=20261121z1"></script>
-<script src="side.js?v=20261121z1"></script>
+<script src="crm.js?v=20261121za"></script>
+<script src="side.js?v=20261121za"></script>
 </body>
 </html>
