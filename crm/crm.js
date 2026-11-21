@@ -324,16 +324,13 @@ function derive() {
   Object.entries(adds).forEach(([day, x]) => ev.push({ t: Math.min(Date.now() - 1000, +new Date(day + "T16:00:00Z")), dateOnly: true, icon: "bolt", c: "c-ink", title: `${nf0.format(x.n)} new leads loaded`, sub: x.tabs.join(" · "), k: "day", a: day }));
   d.feed = ev.filter(e => e.t > 0).sort((a, b) => b.t - a.t).slice(0, 80);
 
-  /* ---- v2: heatmap (8 weeks), reply clock, scoreboard ---- */
+  /* ---- v2: heatmap (8 weeks), reply clock ---- */
   const hs = addDays(wk, -49), serBy = Object.fromEntries(d.series.map(x => [x.day, x]));
   d.heat = { rows: [], max: 1, weeks: [] };
   for (let w = 0; w < 8; w++) d.heat.weeks.push(addDays(hs, w * 7));
   for (let r = 0; r < 7; r++) { const row = []; for (let w = 0; w < 8; w++) { const day = addDays(hs, w * 7 + r), x = serBy[day]; row.push({ day, n: x ? x.nw : 0, fut: day > t }); d.heat.max = Math.max(d.heat.max, x ? x.nw : 0); } d.heat.rows.push(row); }
   const hrsN = Array(24).fill(0); R.replies.filter(r => r.kind === "REAL").forEach(r => { hrsN[hourOf(r.received_at)]++; });
   d.clock = { h: hrsN, max: Math.max(1, ...hrsN), total: sum(hrsN, x => x), peak: hrsN.indexOf(Math.max(...hrsN)) };
-  const of = o => R.pipeline.filter(p => p.owner === o), cnt = (o, f) => of(o).filter(f).length, wait = o => R.attention.filter(a => a.kind === "reply" && a.owner === o).length;
-  d.score = [["Hot leads", "hot", p => (p.status || "").toUpperCase() === "HOT"], ["Samples delivered", "samples", p => !!p.delivered_at], ["Buyers", "buyers", isBuyer]].map(([label, k, f]) => ({ label, k, a: cnt("Simas", f), b: cnt("Benas", f) }))
-    .concat([{ label: "Replies waiting", k: "waiting", a: wait("Simas"), b: wait("Benas") }]);
 
   /* ---- v2: conversations (message counts) + speed to reply (an estimate: threads do not say which inbound mails are auto-replies, the reply queue does for the last 60 days) ---- */
   const byLead = {}; R.tlite.forEach(m => { (byLead[lc(m.lead_email)] || (byLead[lc(m.lead_email)] = [])).push(m); });
@@ -541,6 +538,9 @@ const priceFor = n => { const P = PRICE_PTS, L = P[P.length - 1]; let v; if (n >
 const nf1 = new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 });
 
 /* ---------------- cards ---------------- */
+/* 11-21 (BENAS): hidden, code kept. moneypage: crm/money.html is 404 on the live site. Client portal zone: videos,
+   sample_requests, purchases, video_notes, video_versions all have 0 rows. Take an id out of this set to show it again. */
+const HIDDEN = new Set(["moneypage", "portal", "psamples", "pvideos", "pnotes", "pclients"]);
 const CARDS = [
 { id: "brand", cls: "brand", title: "Status", mount(el) {
     el.innerHTML = `<div class="brand-top"><button type="button" class="brandrow" data-act="drill" data-k="me" data-a="" title="Your login and the shortcuts"><span class="logo"><img src="../beju-mark-sm.png" alt="" width="34" height="20"></span><span class="bt"><b>BEJÚ</b><small>Founder CRM</small></span></button>
@@ -597,8 +597,6 @@ const CARDS = [
       <span class="ring-mid"><span><b>${C.med == null ? "—" : Number.isInteger(C.med) ? N(C.med) : C.med.toFixed(1)}</b><small>emails, typical</small></span></span>`, "ring", "Ring: share of paying clients who paid within 5 of our emails. Middle: the typical (median) number of emails we sent before a client's first payment. Open the list.")}
     ${kv("Paid within 5 emails", C.in5 == null ? "—" : N(C.in5, "pct"), "close", "")}<hr>
     ${kv("Average", C.avg == null ? "—" : C.avg.toFixed(1), "close", "")}`; } },
-{ id: "owner", cls: "bare", title: "Owner filter", mount(el) { el.innerHTML = `<div class="seg" role="group" aria-label="Whose leads">${["All", "Simas", "Benas"].map(o => `<button type="button" data-act="owner" data-o="${o}">${o}</button>`).join("")}</div>`; },
-  update() { $$("#c-owner button").forEach(b => { const on = b.dataset.o === STATE.owner; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); }); } },
 { id: "hot", title: "Hot leads", focus: ["hotlist", ""], render: d => { const list = STATE.hotAll ? d.hot : d.hot.slice(0, 6);
     return `${head("Hot leads", sortB("hotSort", STATE.hotSort, { wait: "waiting on us", next: "next action", reply: "last reply" }), true)}<div class="stack">${list.map(({ p, us }) => leadBtn(p.email, `<span class="av${us ? " hot" : ""}" title="${esc(cut(p.show || "", 80))}">${esc(initials(p))}</span><span class="row-main"><b>${esc(p.name || p.email)}</b></span>`)).join("") || empty("No hot leads right now.")}</div>
     ${d.hot.length > 6 ? `<button type="button" class="more" data-act="hotall">${STATE.hotAll ? "Show fewer" : `Show all ${d.hot.length}`}</button>` : ""}`; } },
@@ -607,8 +605,6 @@ const CARDS = [
 { id: "moods", title: "Buyer moods", render: d => `${head("Buyer moods")}
     <div class="tile row-pad"><div class="segbar">${d.moods.map(m => `<button type="button" class="${m.c}" data-act="drill" data-k="mood" data-a="${m.k}" data-v="g:${m.n}" title="${m.label}: ${m.n}" aria-label="${m.label}: ${m.n} leads. Open them."></button>`).join("")}</div>
     <div class="legend">${d.moods.map(m => dB("mood", m.k, `<i class="dot ${m.c}"></i><span>${m.label}</span><b>${m.n}</b>`, "lg")).join("") || empty("No leads.")}</div></div>` },
-{ id: "score", title: "Scoreboard", render: d => `${head("Scoreboard")}<div class="vs"><button type="button" data-act="owner" data-o="Simas" title="Show only Simas's leads">Simas</button><span>vs</span><button type="button" data-act="owner" data-o="Benas" title="Show only Benas's leads">Benas</button></div><div class="sc">${d.score.map(s => { const m = Math.max(1, s.a, s.b);
-      return `<div class="sc-r"><div class="sc-l">${dB("owner", "Simas|" + s.k, N(s.a), "scb", `Simas, ${s.label}: ${s.a}. Open them.`)}<span>${s.label}</span>${dB("owner", "Benas|" + s.k, N(s.b), "scb r", `Benas, ${s.label}: ${s.b}. Open them.`)}</div><div class="sc-b"><span><i data-v="w:${(s.a / m * 100).toFixed(1)}%"></i></span><span><i data-v="w:${(s.b / m * 100).toFixed(1)}%"></i></span></div></div>`; }).join("")}</div>` },
 { id: "attention", title: "Needs attention", render: d => { const K = { reply: ["Replies waiting", "mail", "c-blue"], followup: ["Follow-ups due", "clock", "c-orange"], overdue: ["Overdue actions", "alert", "c-red"], paid_waiting: ["Paid, not delivered", "cash", "c-green"], promises: ["Promises past due", "flag", "c-ink"], brief: ["Said yes, no brief", "film", "c-purple"], followup_done: ["Finished, park", "check", "c-grey"] };
     const kinds = Object.keys(K).filter(k => d.att[k]?.length).concat(Object.keys(d.att).filter(k => !K[k]));
     return `${head("Needs attention", dB("att", "all", d.attTotal, `chip ${d.attTotal ? "o" : "g"}`, "Open everything that needs attention"), true)}<div class="stack">${kinds.map(k => { const [label, icon, c] = K[k] || [k, "alert", "c-grey"], list = d.att[k], open = STATE.att === k;
@@ -675,12 +671,9 @@ const CARDS = [
 { id: "videos", title: "Videos delivered", render: d => { const max = Math.max(1, ...d.vid.weeks.map(w => w.n));
     return `${head("Videos delivered")}${big("vids", "all", N(d.vid.total), "Open the delivered videos")}
     <div class="wk mini">${d.vid.weeks.map((w, i) => `<button type="button" class="${i === 7 ? "on" : ""}" data-act="drill" data-k="vids" data-a="${w.s}" data-v="h:${(w.n / max * 100).toFixed(1)}%;k:${i}" title="Week of ${dLabel(w.s)}: ${w.n} videos" aria-label="Week of ${dLabel(w.s)}: ${w.n} videos. Open them."></button>`).join("")}</div>`; } },
-{ id: "search", cls: "bare", title: "Search leads", mount(el) { el.innerHTML = `<div class="tile"><label class="search">${ic("search")}<input id="q" type="search" placeholder="Search leads" autocomplete="off" spellcheck="false" aria-label="Search leads" aria-controls="res"><span class="kbd" aria-hidden="true">/</span></label><div class="res" id="res" role="listbox" aria-label="Results"></div></div>`; }, update() { renderSearch(); } },
-{ id: "theme", title: "Look", mount(el) { el.innerHTML = `${head("Look", `<span class="chip" data-look-name></span>${dB("look", "", ic("expand"), "xp", "All looks")}`)}<div class="looks" role="group" aria-label="Colour theme">${THEMES.map(t => `<button type="button" class="lkb" data-act="look" data-t="${t[0]}" aria-pressed="false" aria-label="${t[1]} look" title="${t[1]}"><span class="thsw" data-th="${t[0]}"></span></button>`).join("")}</div><div class="swrow"><span><b>Motion: <span data-motion-l></span></b></span><button type="button" class="sw" role="switch" data-act="motion" aria-checked="true" aria-label="Ambient motion"></button></div>`; }, update() { syncLook(); } },
 { id: "portal", title: "Client portal numbers", render: d => `${head("Client portal", `<button type="button" class="chip ${d.pOpen ? "o" : ""}" data-act="jump" data-id="psamples" title="Jump to the portal queues">${d.pOpen} open</button>`)}<button type="button" class="big tapn" data-act="jump" data-id="pclients" title="Jump to the portal sign-ups">${N(d.portal.signups)}<small>sign-ups</small></button>
     <div class="stack sp"><button type="button" class="kv" data-act="jump" data-id="psamples"><span>Sample requests</span><span>${N(d.portal.req)}</span></button><button type="button" class="kv" data-act="jump" data-id="pvideos"><span>Videos in edit</span><span>${N(d.portal.edit)}</span></button><button type="button" class="kv" data-act="jump" data-id="pvideos"><span>Videos ready</span><span>${N(d.portal.ready)}</span></button></div>` },
 { id: "sync", title: "Sync status", render: d => `<div class="stack">${d.sync.map(s => dB("sync", s.name, `<span class="it ${s.ok ? "c-ink" : "c-red"}"><svg><use href="#i-${s.ok ? "check" : "alert"}"/></svg></span><span class="row-main"><b>${esc({ instantly: "Sending", replies: "Replies", sheet: "Samples" }[s.name] || s.name)}</b></span><span class="row-end"><small>${ago(s.ran_at)}</small></span>`, "tile row")).join("") || empty("No sync info.")}</div>` },
-{ id: "export", title: "Export", mount(el) { el.innerHTML = `<button type="button" class="export mag" id="export" data-act="export"><i></i><span id="export-t"><svg><use href="#i-down"/></svg>Export leads CSV</span></button>`; }, update() {} },
 { id: "moneypage", title: "Money page", mount(el) { el.innerHTML = `${head("💰 Money")}<div class="acts sp"><a class="act go" href="money.html">${ic("cash")}Open the Money page</a></div>`; }, update() {} },
 { id: "price", title: "Price calculator", mount(el) {   // 11-18 (Simas): drag to N Shorts a month, see the monthly retainer. Reads and writes nothing.
     el.innerHTML = `${head("Price calculator")}<div class="big" id="calc-p"></div><p class="sub" id="calc-per"></p>
@@ -705,11 +698,11 @@ const CARDS = [
 { id: "pvideos", grid: 2, cls: "w2", title: "Portal: video requests", focus: ["pvideos", ""], render: d => `${head("Video requests", dB("pvideos", "", d.pVideos.length, `chip ${d.pVideos.some(v => /^(received|revision)$/.test(v.status)) ? "o" : ""}`, "Open every video request"), true)}<div class="stack two">${d.pVideos.slice(0, 4).map(videoTile).join("") || empty("No video request yet. Paid clients send footage links from their portal and they show up here.")}</div>${d.pVideos.length > 4 ? dB("pvideos", "", `Show all ${d.pVideos.length}`, "more") : ""}` },
 { id: "pnotes", grid: 2, title: "Portal: change requests", focus: ["pnotes", ""], render: d => `${head("Change requests", dB("pnotes", "", sum(d.pNotes, g => g.notes.length), `chip ${d.pNotes.length ? "r" : ""}`, "Open every change request"), true)}<div class="stack">${d.pNotes.slice(0, 3).map(noteTile).join("") || empty("No open change request.")}</div>${d.pNotes.length > 3 ? dB("pnotes", "", `Show all ${d.pNotes.length}`, "more") : ""}` },
 { id: "pclients", grid: 2, title: "Portal: sign-ups", focus: ["pclients", ""], render: d => `${head("Sign-ups", "", true)}<div class="stack">${d.pClients.slice(0, 3).map(clientTile).join("") || empty("No client has signed up yet.")}</div>${d.pClients.length > 3 ? dB("pclients", "", `Show all ${d.pClients.length}`, "more") : ""}` },
-];
+].filter(c => !HIDDEN.has(c.id));
 const byId = id => CARDS.find(c => c.id === id);
 /* phone: five tabs, each shows only its cards (the desktop keeps the whole bento) */
-const TABS = { home: ["next", "today", "paidc", "retainers", "holds", "prod", "hot", "activity", "followups"], money: ["close", "buyers", "topc", "alltime", "moneypage", "price"], leads: ["attention", "moods", "samples", "turn", "speed", "clock", "score", "away", "pipeline", "funnel", "search", "export"],
-  outreach: ["outreach", "total", "heat", "rate", "camps", "deliv", "inboxes", "sync"], clients: ["portal", "psamples", "pvideos", "pnotes", "pclients", "videos"], none: ["brand", "owner", "theme"] };
+const TABS = { home: ["next", "today", "paidc", "retainers", "holds", "prod", "hot", "activity", "followups"], money: ["close", "buyers", "topc", "alltime", "moneypage", "price"], leads: ["attention", "moods", "samples", "turn", "speed", "clock", "away", "pipeline", "funnel"],
+  outreach: ["outreach", "total", "heat", "rate", "camps", "deliv", "inboxes", "sync"], clients: ["portal", "psamples", "pvideos", "pnotes", "pclients", "videos"], none: ["brand"] };
 const TABOF = {}; Object.entries(TABS).forEach(([t, ids]) => ids.forEach(id => { TABOF[id] = t; }));
 
 /* ---------------- chart painters (hover, tap and arrow keys share them) ---------------- */
@@ -784,14 +777,6 @@ function renderAll(fromData) {
   });
   updateHero(D); paintStatus(); syncChrome(); Object.values(PLOT).forEach(p => { try { p.paint(clamp(p.i, 0, p.n - 1)); } catch {} }); refreshDrill();
   $("#zone-sub").textContent = D.pOpen ? `${D.pOpen} open request${D.pOpen === 1 ? "" : "s"} · what you do here shows in the client's portal at once` : "What you do here shows in the client's portal at once.";
-}
-function renderSearch() {
-  const box = $("#res"); if (!box || !RAW) return;
-  const q = STATE.q.trim().toLowerCase();
-  if (!q) { box.innerHTML = ""; return; }
-  const hits = RAW.pipeline.filter(p => [p.name, p.show, p.email].some(v => (v || "").toLowerCase().includes(q))).slice(0, 6);
-  STATE.sel = clamp(STATE.sel, 0, Math.max(0, hits.length - 1));
-  box.innerHTML = hits.map((p, i) => `<button type="button" role="option" aria-selected="${i === STATE.sel}" class="${i === STATE.sel ? "sel" : ""}" data-act="lead" data-email="${esc(p.email)}"><span>${esc(p.name || p.email)} <span class="mut">· ${esc(cut(p.show || p.email, 26))}</span></span><span>${esc(MOOD_LABEL[mood(p)])}</span></button>`).join("") || empty(`No lead matches “${esc(cut(STATE.q, 30))}”.`);
 }
 function paintStatus() {
   const t = $("#stat-t"); if (!t || !D) return;
@@ -888,13 +873,14 @@ const DR = {
     const dels = cl ? RAW.deliveries.filter(x => x.client_id === cl.id).sort((x, y) => String(y.delivered_at || "").localeCompare(String(x.delivered_at || ""))) : [];
     const acct = D.pClients.find(c => emails.has(lc(c.email))), leads = RAW.pipeline.filter(p => emails.has(lc(p.email)));
     const name = (cl && cl.name) || (acct && acct.name) || (pays[0] && pays[0].payer_name) || (leads[0] && leads[0].name) || email || "Client";
-    const msgs = await loadConv([...emails]), ig = cl && cl.instagram ? String(cl.instagram).replace(/^https?:\/\/(www\.)?instagram\.com\//i, "@").replace(/\/$/, "") : "";
+    const [msgs, calls] = await Promise.all([loadConv([...emails]), loadCalls([...emails]).catch(() => [])]), ig = cl && cl.instagram ? String(cl.instagram).replace(/^https?:\/\/(www\.)?instagram\.com\//i, "@").replace(/\/$/, "") : "";
     return { title: name, sub: [...emails].join(" · ") || "No email on file", html: `${facts([["Paid in total", usd(sum(pays, p => p.amount))], ["Payments", pays.length], ["Videos delivered", dels.length]])}
       ${grp("Conversation", emails.size > 1 ? `${emails.size} addresses merged` : "")}${convBlock(msgs, "m", emails.size ? `No email conversation synced for ${emails.size > 1 ? "these addresses" : "this address"} yet.${ig ? ` Conversation is on Instagram (${ig}).` : ""}` : `No email on file for this client, so no conversation can be matched.${ig ? ` Conversation is on Instagram (${ig}).` : ""}`)}
       ${grp("Client portal account")}${acct ? clientTile(acct) + (acct.vids.length ? `<div class="stack sp">${acct.vids.map(x => videoTile(D.pVideos.find(z => z.id === x.id) || { ...x, who: acct, open: 0 })).join("")}</div>` : "") : empty("No portal account with this email yet.")}
       ${leads.length ? grp("In the samples pipeline") + `<div class="stack">${leads.map(p => lrow(p, [p.status, p.show, p.next_action].filter(Boolean).join(" · "))).join("")}</div>` : ""}
       ${grp("Payments", usd(sum(pays, p => p.amount)))}${stackOf(pays.map(p => `<div class="tile row"><span class="it c-green"><svg><use href="#i-cash"/></svg></span><span class="row-main"><b>${esc(PACK[p.package] || p.package || "Custom payment")}</b><small>${fDT(p.paid_at)}${p.email ? " · " + esc(p.email) : ""}</small></span><span class="row-end up">+${usd(p.amount)}</span></div>`), "No payment matched to this client.")}
-      ${grp("Videos delivered", dels.length)}${stackOf(dels.slice(0, 40).map(x => `<div class="tile row"><span class="it c-orange"><svg><use href="#i-film"/></svg></span><span class="row-main"><b>${esc(cut(x.title || "Video", 70))}</b><small>${x.delivered_at ? dLong(String(x.delivered_at).slice(0, 10)) : "no date"}</small></span></div>`), cl ? "No delivery indexed for this client." : "Deliveries are matched through the clients list; this email is not on it.")}${dels.length > 40 ? `<p class="sub">+${dels.length - 40} older videos.</p>` : ""}` }; },
+      ${grp("Videos delivered", dels.length)}${stackOf(dels.slice(0, 40).map(x => `<div class="tile row"><span class="it c-orange"><svg><use href="#i-film"/></svg></span><span class="row-main"><b>${esc(cut(x.title || "Video", 70))}</b><small>${x.delivered_at ? dLong(String(x.delivered_at).slice(0, 10)) : "no date"}</small></span></div>`), cl ? "No delivery indexed for this client." : "Deliveries are matched through the clients list; this email is not on it.")}${dels.length > 40 ? `<p class="sub">+${dels.length - 40} older videos.</p>` : ""}
+      ${calls.length ? grp("Calls") + callsList(calls) : ""}` }; },
   owner(a) { const [o, k] = a.split("|"), F = { hot: p => (p.status || "").toUpperCase() === "HOT", samples: p => !!p.delivered_at, buyers: isBuyer }, L = { hot: "hot leads", samples: "samples delivered", buyers: "buyers", waiting: "replies waiting" };
     if (k === "waiting") { const list = RAW.attention.filter(x => x.kind === "reply" && x.owner === o); return { title: `${o}: replies waiting`, sub: `${list.length} lead${list.length === 1 ? "" : "s"}`, html: stackOf(list.map(x => lrow({ email: x.lead_email, name: x.name || x.lead_email }, x.detail || "")), "Nobody is waiting on a reply.") }; }
     const list = RAW.pipeline.filter(p => p.owner === o && F[k](p)); return { title: `${o}: ${L[k]}`, sub: `${list.length} lead${list.length === 1 ? "" : "s"}`, html: leadList(list) }; },
@@ -994,30 +980,37 @@ async function openLead(email, opener, keepNav) {
   $("#dr-name").textContent = p ? (p.name || p.email) : email; $("#dr-sub").textContent = p ? [p.show, p.email].filter(Boolean).join(" · ") : "Not in the samples pipeline";
   const m = p ? mood(p) : "", link = p ? safeUrl(p.drive_link) : "", at = NAV.indexOf(email), st = stageOf(email);
   const body = $("#dr-body");
-  body.innerHTML = `<div class="dr-sec"><div class="acts"><button type="button" class="act" data-act="copy" data-t="${esc(email)}">${ic("copy")}Copy email</button><a class="act" href="mailto:${encodeURIComponent(email).replace(/%40/g, "@")}">${ic("mail")}Write email</a>${link ? `<a class="act" href="${esc(link)}" target="_blank" rel="noopener noreferrer">${ic("link")}Open sample</a>` : ""}${acct ? dB("client", "e:" + email, `${ic("user")}Portal account`, "act") : ""}${p && isBuyer(p) ? dB("client", "e:" + email, `${ic("cash")}Payments`, "act") : ""}<button type="button" class="act" data-act="tlog" aria-expanded="false">${ic("edit")}Log a touch</button></div>
+  // 11-21 (BENAS): the top says where the deal stands: stage, the next step with its owner, the deal (plan / size); then the conversation
+  body.innerHTML = `<div class="dr-sec dr-sum"><div class="dt"><span class="dt-l">Stage</span><div class="dt-v">${st ? stageChip(st) : `<span class="mut">No stage yet</span>`}${st && st.evidence ? `<small>${esc(cut(st.evidence, 220))}</small>` : ""}</div></div>
+      ${nextSec(email, p)}${dealRow(email, st, null, null)}
+      <div class="acts sp"><button type="button" class="act" data-act="copy" data-t="${esc(email)}">${ic("copy")}Copy email</button>${link ? `<a class="act" href="${esc(link)}" target="_blank" rel="noopener noreferrer">${ic("link")}Open sample</a>` : ""}${acct ? dB("client", "e:" + email, `${ic("user")}Portal account`, "act") : ""}${p && isBuyer(p) ? dB("client", "e:" + email, `${ic("cash")}Payments`, "act") : ""}<button type="button" class="act" data-act="tlog" aria-expanded="false">${ic("edit")}Log a touch</button></div>
       ${NAV.length > 1 ? `<div class="dr-navr"><button type="button" class="act" data-act="nav" data-d="-1" ${at <= 0 ? "disabled" : ""} aria-label="Previous lead in the list">←</button><span class="mut mono">${at + 1} / ${NAV.length}</span><button type="button" class="act" data-act="nav" data-d="1" ${at >= NAV.length - 1 ? "disabled" : ""} aria-label="Next lead in the list">→</button><span class="mut">arrow keys move through the list</span></div>` : ""}<div id="dr-tf"></div></div>
-    ${p ? `<div class="dr-sec"><div class="dr-chips">${st ? stageChip(st) : ""}<span class="chip b">${esc(p.status || "—")}</span>${cvChip(D.tc[email] || 0)}${dB("mood", m, esc(MOOD_LABEL[m] || m), "chip", "Open every lead with this mood")}${p.owner ? `<span class="chip">${esc(p.owner)}</span>` : ""}${p.inbox ? `<span class="chip">${esc(p.inbox)}</span>` : ""}${f && f.touches_total ? `<span class="chip">follow-ups ${f.touches_done || 0}/${f.touches_total}</span>` : ""}</div>${st && st.evidence ? `<p class="dr-txt sp">${esc(st.evidence)}</p>` : ""}</div>
-    ${nextSec(email, p)}
+    <div class="dr-sec" id="dr-conv"><h3>Conversation</h3><div class="boot-in"><span class="spin"></span> Loading the thread…</div></div>
+    ${p ? `<div class="dr-sec"><div class="dr-chips"><span class="chip b">${esc(p.status || "—")}</span>${cvChip(D.tc[email] || 0)}${dB("mood", m, esc(MOOD_LABEL[m] || m), "chip", "Open every lead with this mood")}${p.inbox ? `<span class="chip">${esc(p.inbox)}</span>` : ""}${f && f.touches_total ? `<span class="chip">follow-ups ${f.touches_done || 0}/${f.touches_total}</span>` : ""}</div></div>
     <div class="dr-sec"><h3>Timeline</h3><div class="kv"><span>Said yes</span><span>${fDT(p.yes_at)}</span></div><div class="kv"><span>Sample delivered</span><span>${fDT(p.delivered_at)}</span></div><div class="kv"><span>Last reply</span><span>${fDT(p.last_reply_at)}</span></div>${p.paid ? `<div class="kv"><span>Paid</span><span class="up">${esc(cut(p.paid, 40))}</span></div>` : ""}</div>
-    ${p.notes ? `<div class="dr-sec"><h3>Notes</h3><p class="dr-txt">${esc(cut(p.notes, 900))}</p></div>` : ""}` : `${st ? `<div class="dr-sec"><div class="dr-chips">${stageChip(st)}</div>${st.evidence ? `<p class="dr-txt sp">${esc(st.evidence)}</p>` : ""}</div>` : ""}${nextSec(email, null)}`}
-    <div class="dr-sec" id="dr-more"><div class="boot-in"><span class="spin"></span> Loading the thread…</div></div>`;
+    ${p.notes ? `<div class="dr-sec"><h3>Notes</h3><p class="dr-txt">${esc(cut(p.notes, 900))}</p></div>` : ""}` : ""}
+    <div id="dr-more"></div>`;
   const dr = $("#drawer"), sc = $("#scrim"); dr.hidden = sc.hidden = false; dr.dataset.email = email;
   requestAnimationFrame(() => { dr.classList.add("on"); sc.classList.add("on"); if (!keepNav) $("#dr-close").focus(); });
   const ems = [...new Set([email, p ? lc(p.email) : "", ...(((RAW.clients.find(c => (c.emails || []).some(e => lc(e) === email)) || {}).emails) || []).map(lc)].filter(Boolean))]; DR_EMS = ems; TL = { rows: null, all: false };
   try {
-    const [prom, notes, msgs, tl] = await Promise.all([
+    const [prom, notes, msgs, tl, calls, opps, scopes] = await Promise.all([
       must(sb.from("promises").select("promise,due_at,status,owner").eq("lead_email", email).eq("status", "open").order("due_at")),
       must(sb.from("client_notes").select("kind,note,created_at").eq("lead_email", email).order("created_at", { ascending: false }).limit(5)),
       loadConv([email, p ? p.email : "", ...(((RAW.clients.find(c => (c.emails || []).some(e => lc(e) === email)) || {}).emails) || [])]),   // a buyer with several addresses: one merged conversation
       loadTl(ems),
+      loadCalls(ems).catch(() => []),
+      must(sb.from("opportunities").select("what,value_usd,monthly,stage,owner").in("email", ems).is("closed_at", null)).catch(() => []),
+      must(sb.from("scopes").select("offer,amount,monthly,status,sent_at").in("email", ems)).catch(() => []),
     ]);
     if (dr.dataset.email !== email) return;
     TL.rows = tl;
+    const dl = $("#dr-deal"); if (dl) dl.outerHTML = dealRow(email, st, opps, scopes);
+    $("#dr-conv").innerHTML = `<h3>Conversation</h3>${convBlock(msgs, "dr", `No email conversation synced for this address yet.${igOf(email) ? ` Conversation is on Instagram (${igOf(email)}).` : ""}`)}`;
     $("#dr-more").outerHTML = `${tlSec()}${prom.length ? `<div class="dr-sec"><h3>Open promises</h3><div class="stack">${prom.map(x => `<div class="tile note"><small>${esc(x.owner || "")} · due ${fDT(x.due_at)}</small>${esc(cut(x.promise, 300))}</div>`).join("")}</div></div>` : ""}
       ${notes.length ? `<div class="dr-sec"><h3>Client notes</h3><div class="stack">${notes.map(x => `<div class="tile note"><small>${esc(x.kind || "note")} · ${dLabel(dayOf(x.created_at))}</small>${esc(cut(x.note, 400))}</div>`).join("")}</div></div>` : ""}
-      <div class="dr-sec"><h3>Conversation</h3>${convBlock(msgs, "dr", `No email conversation synced for this address yet.${igOf(email) ? ` Conversation is on Instagram (${igOf(email)}).` : ""}`)}</div>`;
-    if (PHONE.matches) { const bd = $("#dr-body"); bd.scrollTop = bd.scrollHeight; }
-  } catch (e) { const m2 = $("#dr-more"); if (m2) m2.innerHTML = empty("Couldn't load the thread. Try again."); }
+      ${calls.length ? `<div class="dr-sec" id="dr-calls"><h3>Calls</h3>${callsList(calls)}</div>` : ""}`;
+  } catch (e) { const c2 = $("#dr-conv"); if (c2) c2.innerHTML = `<h3>Conversation</h3>${empty("Couldn't load the thread. Try again.")}`; }
 }
 const igOf = email => { const c = RAW.clients.find(x => (x.emails || []).some(e => lc(e) === lc(email))); return c && c.instagram ? String(c.instagram).replace(/^https?:\/\/(www\.)?instagram\.com\//i, "@").replace(/\/$/, "") : ""; };
 function navLead(dir) { const dr = $("#drawer"); if (dr.hidden) return; const i = NAV.indexOf(dr.dataset.email) + dir; if (i >= 0 && i < NAV.length) openLead(NAV[i], null, true); }
@@ -1059,10 +1052,24 @@ function tlSec() {
   const show = TL.all ? R : R.slice(0, 15);
   return `<div class="dr-sec" id="dr-tl"><h3>Touchpoints</h3>${R.length ? `<div class="feed">${show.map(tlRow).join("")}</div>${R.length > 15 ? `<button type="button" class="more" data-act="tlall">${TL.all ? "Show fewer" : `Show all ${R.length}`}</button>` : ""}` : empty("Nothing logged for this lead yet.")}</div>`;
 }
+const whoOf = x => /simas/i.test(x || "") ? "Simas" : /benas/i.test(x || "") ? "Benas" : /both/i.test(x || "") ? "Both" : x || "";
 function nextSec(email, p) {
-  const n = nextOf(email), txt = n ? n.next_step : p && p.next_action, at = n ? n.next_at : p && p.next_action_at, late = n ? !!n.overdue : !!(at && new Date(at) < Date.now());
-  if (!n && !p) return `<div id="dr-next" hidden></div>`;
-  return `<div class="dr-sec" id="dr-next"><h3>Next step${at ? ` · <span class="${late ? "dn" : ""}">${fDT(at)}</span>` : ""}</h3><p class="dr-txt">${esc(txt || "None set")}</p></div>`;
+  const n = nextOf(email), st = stageOf(email), txt = n ? n.next_step : p && p.next_action, at = n ? n.next_at : p && p.next_action_at, late = n ? !!n.overdue : !!(at && new Date(at) < Date.now());
+  const own = whoOf((st && st.owner) || (p && p.owner) || (n && n.actor));
+  return `<div class="dt" id="dr-next"><span class="dt-l">Next step</span><div class="dt-v">${own || at ? `<b>${esc(own || "No owner")}</b>${at ? ` · <span class="${late ? "dn" : ""}">${fDT(at)}</span>` : ""}` : ""}<p class="dr-txt">${esc(txt || "None set")}</p></div></div>`;
+}
+/* the deal: a live retainer, an open opportunity (plan + size), else the latest scope; plus what they paid so far */
+function dealRow(email, st, opps, scopes) {
+  const ems = DR_EMS.length && DR_EMS.includes(email) ? DR_EMS : [email], has = e => ems.includes(lc(e)), per = (v, mo) => `${usd(v)}${mo ? "/mo" : ""}`;
+  const ret = (RAW.retainers || []).find(r => has(r.email) && /^(active|trialing|past_due)$/i.test(r.status || "")), opp = (opps || [])[0];
+  const sc = (scopes || []).filter(x => x.offer || x.amount).sort((a, b) => String(b.sent_at || "").localeCompare(String(a.sent_at || "")))[0];
+  const cl = RAW.clients.find(c => (c.emails || []).some(has)), paid = sum(D.pays.filter(x => (x.email && has(x.email)) || (cl && x.client_id === cl.id)), x => x.amount), lines = [];
+  if (ret) lines.push(`Retainer ${per(ret.amount, ret.interval === "month")}${ret.cancel_at_period_end ? " · ends at period end" : ""}`);
+  if (opp) lines.push(`${ret ? "Offer: " : ""}${esc(cut(opp.what || "Deal", 110))} · ${opp.value_usd ? per(opp.value_usd, opp.monthly) : "size not set"}${opp.stage ? " · " + esc(opp.stage) : ""}`);
+  else if (sc && !ret) lines.push(`${esc(sc.offer || "Scope")}${sc.amount ? " · " + per(sc.amount, sc.monthly) : ""} · scope ${esc(sc.status || "")}`);
+  else if (!ret && st && +st.opp_value) lines.push(per(st.opp_value));
+  const none = paid ? `Packs · paid ${usd(paid)} so far` : `<span class="mut">No plan yet</span>`;
+  return `<div class="dt" id="dr-deal"><span class="dt-l">Deal</span><div class="dt-v">${lines.length ? lines.map(l => `<p>${l}</p>`).join("") + (paid ? `<small>paid ${usd(paid)} so far</small>` : "") : none}</div></div>`;
 }
 async function drReload(email) {   // after a touch is logged: fresh touchpoints + next step
   const [tl, ns] = await Promise.all([loadTl(DR_EMS), must(sb.from("lead_next_step").select("*").eq("email", email).maybeSingle()).catch(() => undefined)]);
@@ -1090,6 +1097,69 @@ async function logTouch(f) {
     else { const box = $("#dr-tf"); if (box) box.innerHTML = ""; const b = $('#drawer [data-act="tlog"]'); if (b) b.setAttribute("aria-expanded", "false"); drReload(email).catch(() => {}); }
   } catch (e) { err.hidden = false; err.textContent = `Couldn't save: ${cut(e && e.message || e, 140)}`; go.disabled = false; }
 }
+
+/* ---------------- 11-21 (SIMAS): call notes at the bottom of the client / lead profile, no separate tab ----------------
+   "short summaries of the call and key takeaways and next tasks that we have to do for them". A call = a cal.com booking
+   (public.calls); its notes = the touches row with call_uid = calls.uid (summary, takeaways, recording_url); its next tasks =
+   public.call_tasks (owner Simas / Benas / Both, due, done tick). Notes come in through scripts/crm.py touch(call_uid=...)
+   (crm-api touch gets the same fields later). The only write here: ticking a task (call_tasks.done_at / done_by). */
+const CALL_TITLE = /^free brand content analysis between beju creative and\s*/i;
+async function loadCalls(ems) {
+  ems = [...new Set(ems.map(lc).filter(Boolean))]; if (!ems.length) return [];
+  const calls = (await must(sb.from("calls").select("uid,name,email,title,start_at,end_at,status,organizer").in("email", ems).order("start_at", { ascending: false }))).filter(c => !/cancel/i.test(c.status || ""));
+  if (!calls.length) return [];
+  const notes = await must(sb.from("touches").select("id,call_uid,summary,takeaways,recording_url").in("call_uid", calls.map(c => c.uid)));
+  const tasks = notes.length ? await must(sb.from("call_tasks").select("id,touch_id,text,owner,due_at,done_at").in("touch_id", notes.map(n => n.id)).order("id")) : [];
+  return calls.map(c => { const n = notes.find(x => x.call_uid === c.uid) || null; return { c, n, tasks: n ? tasks.filter(t => t.touch_id === n.id) : [] }; });
+}
+const ctMeta = t => `${esc(t.owner)} · ${t.done_at ? `done ${dLabel(dayOf(t.done_at))}` : t.due_at ? `<span class="${new Date(t.due_at) < Date.now() ? "dn" : ""}">due ${dLabel(dayOf(t.due_at))}</span>` : "no date"}`;
+const callTask = t => `<li class="ctask${t.done_at ? " done" : ""}" data-owner="${esc(t.owner)}" data-due="${esc(t.due_at || "")}"><button type="button" class="ctick" data-act="ctdone" data-id="${t.id}" aria-pressed="${!!t.done_at}" aria-label="Done: ${esc(t.text)}">${ic("check")}</button><span class="ct-t">${esc(t.text)}</span><small class="ct-m">${ctMeta(t)}</small></li>`;
+const callCard = ({ c, n, tasks }) => {
+  const who = cut(String(c.title || "").replace(CALL_TITLE, "").trim() || c.name || c.email || "Call", 60), rec = n && n.recording_url ? safeUrl(n.recording_url) : "";
+  const missing = !n && +new Date(c.end_at || c.start_at) < Date.now() - 2 * 36e5;   // ended over 2 h ago, nothing written
+  const add = !n && +new Date(c.start_at) <= Date.now() ? `<button type="button" class="act cc-add" data-act="cnadd" data-uid="${esc(c.uid)}" data-email="${esc(lc(c.email))}">${ic("edit")}Add call notes</button>` : "";
+  return `<div class="tile ccall" data-uid="${esc(c.uid)}"><div class="cc-h"><b>${dLong(dayOf(c.start_at))} · ${timeOf(c.start_at)}</b><small>${esc([who, c.organizer ? `organizer ${c.organizer}` : ""].filter(Boolean).join(" · "))}</small></div>${n ? `<p class="dr-txt">${esc(n.summary)}</p>${(n.takeaways || []).length ? `<p class="cc-l">Key takeaways</p><ul class="cc-ul">${n.takeaways.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}${tasks.length ? `<p class="cc-l">Next tasks</p><ul class="cc-tasks">${tasks.map(callTask).join("")}</ul>` : ""}${rec ? `<a class="lk cc-rec" href="${esc(rec)}" target="_blank" rel="noopener noreferrer">${ic("play")}Recording</a>` : ""}` : `${missing ? `<p class="cc-miss">Notes missing</p>` : ""}${add}`}</div>`;
+};
+const callsList = rows => rows.length ? `<div class="stack">${rows.map(callCard).join("")}</div>` : "";
+async function ctDone(id, btn) {   // tick / untick one call task
+  const li = btn.closest(".ctask"), on = btn.getAttribute("aria-pressed") !== "true";
+  btn.disabled = true;
+  try {
+    await upd("call_tasks", +id, on ? { done_at: nowIso(), done_by: founderName() } : { done_at: null, done_by: null });
+    li.classList.toggle("done", on); btn.setAttribute("aria-pressed", on);
+    $(".ct-m", li).innerHTML = ctMeta({ owner: li.dataset.owner, due_at: li.dataset.due || null, done_at: on ? nowIso() : null });
+    toast(on ? "Task done" : "Task open again", "check", "c-green");
+  } catch (e) { toast("Couldn't save the tick", "alert", "c-red", cut(e && e.message || e, 120)); }
+  btn.disabled = false;
+}
+const CN_OWN = ["Simas", "Benas", "Both"];
+const callNotesForm = (uid, email) => { const me = founderName(); return `<form class="cnform dlg sp" data-uid="${esc(uid)}" data-email="${esc(email)}" novalidate>
+  <label class="fld"><span>Summary, 2-3 short lines</span><textarea name="summary" rows="3" maxlength="600" required></textarea></label>
+  <label class="fld"><span>Key takeaways, one per line (up to 5)</span><textarea name="takeaways" rows="4" maxlength="1500"></textarea></label>
+  <div class="fld"><span>Next tasks</span>${[0, 1, 2].map(i => `<div class="cn-t"><input type="text" name="t${i}" maxlength="300" autocomplete="off" placeholder="Task" aria-label="Task ${i + 1}"><select name="o${i}" aria-label="Owner of task ${i + 1}">${CN_OWN.map(o => `<option${o === me ? " selected" : ""}>${o}</option>`).join("")}</select><input type="date" name="d${i}" aria-label="Due date of task ${i + 1}"></div>`).join("")}</div>
+  <label class="fld"><span>Recording or transcript link</span><input type="url" name="rec" maxlength="1000" autocomplete="off" placeholder="https://"></label>
+  <p class="dlg-err" hidden></p><div class="acts"><button type="button" class="act" data-act="cncancel">Cancel</button><button type="submit" class="act go">${ic("check")}Save call notes</button></div></form>`; };
+async function saveCallNotes(f) {
+  const g = n => (f.elements[n] ? String(f.elements[n].value || "").trim() : ""), err = $(".dlg-err", f), go = $('button[type="submit"]', f), email = lc(f.dataset.email), uid = f.dataset.uid;
+  const say = t => { err.hidden = false; err.textContent = t; }, summary = g("summary"), rec = g("rec");
+  const takeaways = g("takeaways").split("\n").map(x => x.replace(/^\s*[-•*]\s*/, "").trim()).filter(Boolean);
+  const tasks = [0, 1, 2].map(i => ({ text: g("t" + i), owner: g("o" + i), day: g("d" + i) })).filter(t => t.text);
+  if (!summary) { say("Write a short summary."); f.elements.summary.focus(); return; }
+  if (takeaways.length > 5) { say("Keep it to 5 takeaways."); return; }
+  if (rec && !safeUrl(rec)) { say("The link must start with https://"); return; }
+  if (tasks.some(t => !CN_OWN.includes(t.owner))) { say("Pick an owner for each task."); return; }
+  go.disabled = true; err.hidden = true;
+  let t0;
+  try { [t0] = await must(sb.from("touches").insert({ lead_email: email, kind: "call", direction: "out", at: nowIso(), summary, takeaways: takeaways.length ? takeaways : null, recording_url: rec ? safeUrl(rec) : null, call_uid: uid, actor: founderName(), source: "crm" }).select("id")); }
+  catch (e) { say(/duplicate|unique/i.test(e && e.message || "") ? "This call already has notes. Close and reopen the profile to see them." : `Couldn't save: ${cut(e && e.message || e, 140)}`); go.disabled = false; return; }
+  let bad = "";
+  if (tasks.length) try { await must(sb.from("call_tasks").insert(tasks.map(t => ({ touch_id: t0.id, lead_email: email, text: t.text, owner: t.owner, due_at: /^\d{4}-\d{2}-\d{2}$/.test(t.day) ? tzAt(t.day, 12) : null })))); } catch (e) { bad = cut(e && e.message || e, 120); }
+  toast(bad ? "Notes saved, tasks not saved" : "Call notes saved", bad ? "alert" : "check", bad ? "c-red" : "c-green", bad || nameOf(email));
+  const card = f.closest(".ccall"), row = (await loadCalls([email]).catch(() => [])).find(r => r.c.uid === uid);
+  if (card && card.isConnected && row) card.outerHTML = callCard(row);
+  if ($("#drawer").dataset.email === email) drReload(email).catch(() => {});
+}
+window.BEJU_CRM_CALLS = async ems => callsList(await loadCalls(ems || []));   // side.js: the same section on the Clients page
 
 /* ---------------- 11-21: notification centre (public.crm_inbox = crm_events + MY crm_event_state) ----------------
    Founders: "add greater notifications in the crm, make them interactive also". The bell shows only once crm_inbox answers.
@@ -1313,7 +1383,7 @@ function palItems(q) {
   const cmds = [cmd("Refresh now", "", "refresh", () => refresh(true)), ...THEMES.map(t => cmd(`Look: ${t[1]}`, t[4] + (t[0] === lookOf()[0] ? " · on now" : ""), "sun", () => setTheme(t[0], true))), cmd(motionFull() ? "Motion: switch to Calm" : "Motion: switch to Full", "ambient motion", "bolt", () => setMotion(motionFull() ? "calm" : "full", true)), cmd("Pick a look", "all five", "sun", () => openDrill("look", "")),
     ...["All", "Simas", "Benas"].map(o => cmd(o === "All" ? "Show everyone's leads" : `Show only ${o}'s leads`, "owner filter", "user", () => { STATE.owner = o; STATE.att = ""; renderAll(); })),
     ...Object.keys(PER).map(p => cmd(`Period: ${PER[p][0]}`, "hero, money, outreach", "clock", () => setPeriod(p))),
-    cmd("Export leads CSV", "download", "down", () => { jump("export"); exportCsv(); }), cmd("Open the website", "new tab", "link", () => window.open(SITE, "_blank", "noopener")), cmd("Open the client portal", "new tab", "link", () => window.open(PORTAL, "_blank", "noopener")),
+    cmd("Open the website", "new tab", "link", () => window.open(SITE, "_blank", "noopener")), cmd("Open the client portal", "new tab", "link", () => window.open(PORTAL, "_blank", "noopener")),
     ...(NT ? [cmd("Notifications", "N", "bell", () => openDrill("notifs", ""))] : []), cmd("Slack", "#claude-sync · #red-alert", "hash", () => goPage("slack")),
     cmd("Wall mode on / off", "W", "expand", toggleWall), cmd("Celebrate", "confetti", "bolt", confetti), cmd("Sign out", "", "out", signOut)];
   const jumps = CARDS.filter(c => c.title && !(PHONE.matches && TABOF[c.id] === "none")).map(c => ({ g: "Jump to", label: c.title, hint: c.grid === 2 ? "client portal" : "card", icon: "chev", run: () => jump(c.id) }));
@@ -1330,21 +1400,6 @@ function closePal() { if (!PAL) return; const prev = PAL.prev; PAL = null; $("#p
 function palRun(i) { const x = PAL && PAL.items[i]; if (!x) return; PAL.prev = null; closePal(); try { x.run(); } catch {} }
 
 /* ---------------- export ---------------- */
-function exportCsv() {
-  const btn = $("#export"); if (!D || btn.classList.contains("busy")) return;
-  const cols = ["email", "name", "show", "owner", "status", "mood", "fu_stage", "yes_at", "delivered_at", "last_reply_at", "next_action", "next_action_at", "paid", "source", "campaign"];
-  const cell = v => { let s = String(v ?? "").replace(/\r?\n/g, " "); if (/^[=+\-@\t]/.test(s)) s = "'" + s; return /[",]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
-  const rows = D.pipe.map(p => cols.map(c => cell(c === "mood" ? MOOD_LABEL[mood(p)] : p[c])).join(","));
-  const csv = "﻿" + cols.join(",") + "\n" + rows.join("\n") + "\n", label = $("#export-t"), t0 = performance.now(), dur = RM ? 1 : 900;
-  btn.classList.add("busy");
-  const tick = now => { const k = clamp((now - t0) / dur, 0, 1); btn.style.setProperty("--p", k); label.textContent = `Exporting ${Math.round(k * 100)}%`;
-    if (k < 1) return requestAnimationFrame(tick);
-    const a = document.createElement("a"), url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-    a.href = url; a.download = `beju-leads-${STATE.owner.toLowerCase()}-${D.t}.csv`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000);
-    btn.classList.replace("busy", "done"); label.textContent = `Exported ${rows.length} leads`;
-    setTimeout(() => { btn.classList.remove("done"); btn.style.setProperty("--p", 0); label.innerHTML = `<svg><use href="#i-down"/></svg>Export leads CSV`; }, 2200); };
-  requestAnimationFrame(tick);
-}
 
 /* ---------------- refresh loop + realtime ---------------- */
 function offline(on) { let el = $("#offline"); if (on && !el) { el = document.createElement("div"); el.id = "offline"; el.className = "offline"; el.setAttribute("role", "status"); el.textContent = "Offline, retrying…"; document.body.appendChild(el); } else if (!on && el) el.remove(); }
@@ -1458,9 +1513,11 @@ document.addEventListener("click", ev => {
   else if (a === "hotall") { STATE.hotAll = !STATE.hotAll; renderAll(); }
   else if (a === "todayall") { STATE.todayAll = !STATE.todayAll; renderAll(); }
   else if (a === "ftdone") ftDone(b.dataset.id, b);
+  else if (a === "ctdone") ctDone(b.dataset.id, b);
+  else if (a === "cnadd") { b.hidden = true; b.insertAdjacentHTML("afterend", callNotesForm(b.dataset.uid, b.dataset.email)); const t = b.nextElementSibling && $("textarea", b.nextElementSibling); if (t) t.focus(); }
+  else if (a === "cncancel") { const f = b.closest("form"), add = f && f.previousElementSibling; if (f) f.remove(); if (add && add.dataset.act === "cnadd") { add.hidden = false; add.focus(); } }
   else if (a === "look") setTheme(b.dataset.t, true);
   else if (a === "motion") setMotion(motionFull() ? "calm" : "full", true);
-  else if (a === "export") exportCsv();
   else if (a === "refresh") refresh(true).catch(() => {});
   else if (a === "signout") signOut();
   else if (a === "jump") jump(b.dataset.id);
@@ -1477,7 +1534,7 @@ document.addEventListener("click", ev => {
   else if (a === "copy") { const t = b.dataset.t; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast("Email copied", "copy", "c-green", t)).catch(() => toast("Copy did not work here", "alert", "c-red", t)); }
 });
 $("#dlg-form").addEventListener("submit", ev => { ev.preventDefault(); askSubmit(); });
-document.addEventListener("submit", ev => { const f = ev.target; if (!f.classList) return; if (f.classList.contains("tform")) { ev.preventDefault(); logTouch(f); } else if (f.classList.contains("sform")) { ev.preventDefault(); postSlackForm(f); } });   // 11-21: touch + Slack forms
+document.addEventListener("submit", ev => { const f = ev.target; if (!f.classList) return; if (f.classList.contains("tform")) { ev.preventDefault(); logTouch(f); } else if (f.classList.contains("cnform")) { ev.preventDefault(); saveCallNotes(f); } else if (f.classList.contains("sform")) { ev.preventDefault(); postSlackForm(f); } });   // 11-21: touch + Slack forms
 $("#dlg").addEventListener("change", ev => { if (ev.target.dataset.k === "pack") { const p = PACKS.find(x => x[0] === ev.target.value); if (p) { $('[data-k="videos"]', $("#dlg")).value = p[2]; $('[data-k="amount"]', $("#dlg")).value = p[3]; } } });
 /* charts: hover, tap and arrow keys all go through PLOT[id] */
 function plotAt(box, ev, go) {
@@ -1501,11 +1558,11 @@ document.addEventListener("focusin", ev => { const pl = ev.target.classList && e
 document.addEventListener("focusout", ev => { if (ev.target.classList && ev.target.classList.contains("plot")) ev.target.classList.remove("hov"); });
 document.addEventListener("input", ev => { if (ev.target.classList && ev.target.classList.contains("cv-q")) { const w = ev.target.closest(".cvw"), ms = w && CONVS.get(w.dataset.cv); if (ms) $(".conv", w).innerHTML = convMsgs(ms, ev.target.value); return; }
   if (ev.target.classList && ev.target.classList.contains("pg-q")) { STATE.pq[ev.target.dataset.k] = ev.target.value; const q = lc(ev.target.value); $$("#m-body [data-q]").forEach(el => { el.hidden = !!q && !el.dataset.q.includes(q); }); return; }
-  if (ev.target.id === "q") { STATE.q = ev.target.value; STATE.sel = 0; renderSearch(); } else if (ev.target.id === "pal-q" && PAL) { PAL.sel = 0; palRender(); } });
+  if (ev.target.id === "pal-q" && PAL) { PAL.sel = 0; palRender(); } });
 document.addEventListener("keydown", ev => {
   const ae = document.activeElement, typing = /^(INPUT|TEXTAREA|SELECT)$/.test(ae?.tagName || ""), L = layer();
   if ((ev.metaKey || ev.ctrlKey) && lc(ev.key) === "k") { ev.preventDefault(); if (!$("#app").hidden) PAL ? closePal() : openPal(); return; }
-  if (ev.key === "Escape") { if (PAL) return closePal(); if (ASK) return ASK.done(null); if (!$("#drawer").hidden) return closeLead(); if (!$("#veil").hidden) return closeDrill(); if (ae && ae.id === "q") { STATE.q = ae.value = ""; renderSearch(); } return; }
+  if (ev.key === "Escape") { if (PAL) return closePal(); if (ASK) return ASK.done(null); if (!$("#drawer").hidden) return closeLead(); if (!$("#veil").hidden) return closeDrill(); return; }
   if (PAL) { if (ev.key === "ArrowDown" || ev.key === "ArrowUp") { ev.preventDefault(); PAL.sel = clamp(PAL.sel + (ev.key === "ArrowDown" ? 1 : -1), 0, Math.max(0, PAL.items.length - 1)); palRender(); } else if (ev.key === "Enter") { ev.preventDefault(); palRun(PAL.sel); } else if (ev.key === "Tab") ev.preventDefault(); return; }
   if (ev.key === "Tab" && L) { const f = $$('button:not([disabled]),a[href],input,select,textarea,[tabindex="0"]', L).filter(x => x.offsetParent !== null); if (!f.length) return; const first = f[0], last = f[f.length - 1];
     if (!L.contains(ae)) { ev.preventDefault(); first.focus(); } else if (ev.shiftKey && ae === first) { ev.preventDefault(); last.focus(); } else if (!ev.shiftKey && ae === last) { ev.preventDefault(); first.focus(); } return; }
@@ -1513,14 +1570,9 @@ document.addEventListener("keydown", ev => {
       if (step) { ev.preventDefault(); P.i = ae.dataset.plot === "clock" ? (P.i + step + P.n) % P.n : clamp(P.i + step * jmp, 0, P.n - 1); P.paint(P.i); ae.classList.add("hov"); return; } if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); P.drill(P.i); return; } } }
   if (!$("#drawer").hidden && !typing && !ASK && (ev.key === "ArrowRight" || ev.key === "ArrowLeft")) { ev.preventDefault(); return navLead(ev.key === "ArrowRight" ? 1 : -1); }
   if (!typing && !L && !ev.metaKey && !ev.ctrlKey && !ev.altKey && !$("#app").hidden) {
-    if (ev.key === "/") { ev.preventDefault(); const q = $("#q"); if (q) { q.focus(); q.scrollIntoView({ block: "center", behavior: RM ? "auto" : "smooth" }); } return; }
+    if (ev.key === "/") { ev.preventDefault(); return openPal(); }
     if (lc(ev.key) === "w") return toggleWall();
     if (lc(ev.key) === "n" && NT) { ev.preventDefault(); return openDrill("notifs", "", $("#nt-btn")); }
-  }
-  if (ae && ae.id === "q") {
-    const opts = $$("#res button");
-    if (ev.key === "ArrowDown" || ev.key === "ArrowUp") { ev.preventDefault(); STATE.sel = clamp(STATE.sel + (ev.key === "ArrowDown" ? 1 : -1), 0, Math.max(0, opts.length - 1)); renderSearch(); }
-    else if (ev.key === "Enter" && opts[STATE.sel]) { ev.preventDefault(); openLead(opts[STATE.sel].dataset.email, ae); }
   }
 });
 $("#dr-close").addEventListener("click", closeLead);
