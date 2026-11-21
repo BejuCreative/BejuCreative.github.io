@@ -196,7 +196,7 @@ function derive() {
   d.camps = R.camps.filter(c => newest - +new Date(c.updated_at || 0) < 3 * 36e5).sort(STATE.campSort === "rate" ? (a, b) => rr(b) - rr(a) : (a, b) => (b.emails_sent || 0) - (a.emails_sent || 0));
   d.campsOld = R.camps.length - d.camps.length;
   /* inboxes */
-  d.inb = { n: R.inboxes.filter(i => i.status === 1).length, total: R.inboxes.length, cap: sum(R.inboxes, i => i.daily_limit), sent: sum(R.inboxes, i => i.sent_today), warm: R.inboxes.length ? sum(R.inboxes, i => i.warmup_score) / R.inboxes.length : null };
+  d.inb = { n: R.inboxes.filter(i => i.status === 1).length, total: R.inboxes.length, cap: sum(R.inboxes, i => i.daily_limit), capOn: sum(R.inboxes.filter(i => i.status === 1), i => i.daily_limit), sent: sum(R.inboxes, i => i.sent_today), warm: R.inboxes.length ? sum(R.inboxes, i => i.warmup_score) / R.inboxes.length : null };
   /* pipeline */
   const pipe = R.pipeline.filter(own); d.pipe = pipe;
   const counts = {}; pipe.forEach(p => { const m = mood(p); counts[m] = (counts[m] || 0) + 1; });
@@ -560,6 +560,7 @@ const CARDS = [
     return `${head(`Today <em class="sf">${esc(dLabel(d.t))}</em>`, T.stuck ? `<span class="tchips">${dB("todaylist", "", `${T.stuck} money stuck`, "chip r", "Payments that failed today")}</span>` : "", true)}
     ${big("day", d.t, `${N(d.todayNew)}<small>/ ${nf0.format(d.target)} new leads today</small>${dl(pctChg(d.todayNew, d.yNew), "vs yesterday", part)}`, "Open today's split per campaign")}
     ${dB("day", d.t, bar(pct, pct >= 100 ? "c-green" : ""), "barb", `${pct}% of today's target of ${nf0.format(d.target)} new leads`)}
+    ${kv("Sending today", `up to ${N(d.inb.capOn)}`, "sending", "", "sp")}${dB("sending", "", bar(d.inb.capOn ? d.todaySent / d.inb.capOn * 100 : 0), "barb", `${nf0.format(d.todaySent)} of up to ${nf0.format(d.inb.capOn)} sent today`)}
     <div class="tgrid">${cell("Sent", N(d.todaySent), "day", d.t, dl(pctChg(d.todaySent, d.yd.sent), "vs yesterday", part))}${cell("Replies", N(T.rep), "replies", "", dl(pctChg(T.rep, d.yd.rep), "vs yesterday", part))}${cell("Money", N(T.money, "usd"), "pays", d.t, dl(pctChg(T.money, d.yd.money), "vs yesterday", { tip: "Today so far against yesterday up to the same time" }))}${cell("Videos", N(T.vids), "vids", d.t)}${cell("Samples", N(T.samples), "samples", "week")}${cell("Calls", N(T.calls), "todaylist", "")}</div>
     <div class="stack sp">${list.map(x => { const [icon, c] = I[x.kind] || ["clock", "c-grey"]; const inner = `<span class="it ${c}"><svg><use href="#i-${icon}"/></svg></span><span class="row-main"><b>${esc(cut(x.title, 60))}</b></span>${x.kind === "call" && x.at ? `<span class="row-end">${timeOf(x.at)}</span>` : ""}`;
       return x.lead_email ? leadBtn(x.lead_email, inner) : dB("item", x.id, inner, "tile row"); }).join("") || empty("Nothing else on today's list.")}</div>
@@ -930,6 +931,11 @@ const DR = {
     return { title: a === "overdue" ? "Overdue in their stage" : a ? STAGE_L[a] || a : "Open pipeline", sub: `${list.length} lead${list.length === 1 ? "" : "s"}${STATE.owner === "All" ? "" : ` · ${STATE.owner}`} · stage from evidence · days in the stage on the right`,
       html: Object.entries(by).map(([k, xs]) => `${grp(esc(STAGE_L[k] || k), xs.length)}${stackOf(xs.slice(0, 300).map(x => lrow({ email: x.email, name: x.name || x.email }, x.evidence || "", `<span class="row-end">${x.overdue ? `<span class="chip o">${stDays(x)}</span>` : stDays(x)}</span>`)))}`).join("") || empty("No lead in this stage.") }; },
   notifs() { return ntDrill(); },
+  sending() { const on = RAW.inboxes.filter(i => i.status === 1), lim = [...new Set(on.map(i => +i.daily_limit || 0))];   // 11-21 (Simas: "how much will we be sending out today")
+    return { title: "Sending today", sub: `${nf0.format(D.todaySent)} sent so far, up to ${nf0.format(D.inb.capOn)} today`,
+      html: `${facts([["Up to", nf0.format(D.inb.capOn)], ["Sent so far", nf0.format(D.todaySent)], ["Active inboxes", nf0.format(on.length)]])}
+        <p class="sub">Up to = the daily limits of the active inboxes added up${lim.length === 1 ? ` (${on.length} × ${lim[0]})` : ""}. Sent so far = today's sends from the campaigns, the same number as the Sent tile${D.inb.sent !== D.todaySent ? `; the inboxes report ${nf0.format(D.inb.sent)} (they sync at a different moment)` : ""}. There is no forecast on purpose: the synced data has the new leads queued per campaign but not the follow-ups due today, so the real total lands somewhere under the limit.</p>
+        <div class="acts sp">${dB("inboxes", "", "Open the inboxes", "act")}${dB("day", D.t, "Today per campaign", "act")}</div>` }; },
   psamples() { return { title: "Free sample requests", sub: "One free sample per person, ever. Check the badges before accepting.", html: stackOf(D.pSamples.map(sampleTile), "No sample request yet.") }; },
   pvideos() { return { title: "Video requests", sub: "Deliver = the next numbered version; open change requests are marked done", html: stackOf(D.pVideos.map(videoTile), "No video request yet.") }; },
   pnotes() { return { title: "Change requests", sub: "Open notes, grouped by video and round", html: stackOf(D.pNotes.map(noteTile), "No open change request.") }; },
