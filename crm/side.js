@@ -33,7 +33,7 @@ const initials = s => { const w = String(s || "?").replace(/[^\p{L}\p{N} ]/gu, "
 const NAV = $("#snav"), PAGE_EL = $("#spage"), APP = $("#app"), TIP = $("#sn-tip"), SCRIM = $("#sn-scrim"), MENU = $("#sn-menu"), TOG = $("#sn-tog");
 if (!NAV || !PAGE_EL || !APP) return;
 const HTML = document.documentElement, BASE_TITLE = document.title;
-const PAGES = { dashboard: "Dashboard", expenses: "Expenses", email: "Email tests", clients: "Clients", perf: "Client performance", weekly: "Weekly analysis", todos: "To-dos" };
+const PAGES = { dashboard: "Dashboard", leads: "Leads", expenses: "Expenses", email: "Email tests", clients: "Clients", perf: "Client performance", weekly: "Weekly analysis", todos: "To-dos" };
 const K_NAV = "beju-crm-nav";
 let PAGE = "dashboard", ME = null, CACHE = {}, TIMER = null, CH = null, DRAG = null, SEQ = 0, EDIT = null, ON = false;
 const sb = () => window.BEJU_CRM_SB;
@@ -43,6 +43,17 @@ async function all(table, cols, mod) {   // REST returns at most 1,000 rows per 
   for (let i = 0; ; i += 1000) { let q = sb().from(table).select(cols).range(i, i + 999); if (mod) q = mod(q); const rows = await must(q); out.push(...rows); if (rows.length < 1000) return out; }
 }
 const panel = id => must(sb().from("crm_panels").select("data,updated_at").eq("id", id).maybeSingle());
+/* v7 (11-21, tracking check): Instantly's daily "unique opportunities" counts a lead again on every day it is active, so sums over
+   several days ran up to 1.9x too high (Course Creators: 13 by day vs 7 real). Positives per day now come from interested_leads:
+   one row per lead, on the day Instantly marked it interested. All-time totals then match Instantly exactly. */
+function fixOpp(cd, il) {
+  if (!Array.isArray(il) || !il.length) return cd;
+  const m = {}, lo = cd.reduce((a, r) => (r.day < a ? r.day : a), "9999"), seen = new Set();
+  il.forEach(x => { const d = dayOf(x.interest_changed_at || x.last_reply_at || x.created_at); if (!d || !x.campaign_id) return; const k = x.campaign_id + "|" + d; m[k] = (m[k] || 0) + 1; });
+  cd.forEach(r => { const k = r.campaign_id + "|" + r.day; seen.add(k); r.opportunities = m[k] || 0; });
+  Object.entries(m).forEach(([k, n]) => { const [campaign_id, day] = k.split("|"); if (!seen.has(k) && day >= lo) cd.push({ campaign_id, day, sent: 0, new_leads: 0, replies: 0, replies_auto: 0, opportunities: n }); });
+  return cd;
+}
 function toast(t) { const box = $("#toasts"); if (!box) return; const el = document.createElement("div"); el.className = "toast"; el.innerHTML = `<div><b>${esc(t)}</b></div>`; box.append(el); setTimeout(() => el.remove(), 4200); }
 
 /* ---------------- rail: expanded / collapsed ---------------- */
@@ -136,15 +147,16 @@ async function me() {
 }
 
 /* ---------------- pages ---------------- */
-const LOAD = { expenses: loadExpenses, email: loadEmail, clients: loadClients, perf: loadPerf, weekly: loadWeekly, todos: loadTodos };
-const VIEW = { expenses: viewExpenses, email: viewEmail, clients: viewClients, perf: viewPerf, weekly: viewWeekly, todos: viewTodos };
+const LOAD = { leads: loadLeads, expenses: loadExpenses, email: loadEmail, clients: loadClients, perf: loadPerf, weekly: loadWeekly, todos: loadTodos };
+const VIEW = { leads: viewLeads, expenses: viewExpenses, email: viewEmail, clients: viewClients, perf: viewPerf, weekly: viewWeekly, todos: viewTodos };
 const HEAD = {
   expenses: ["Expenses <em class=\"sf\">&amp; profit</em>", "Tick what's paid this month and see the profit that's left."],
   email: ["Email <em class=\"sf\">tests</em>", "Which variant wins in each campaign, and whether the change has been made."],
   clients: ["Clients <em class=\"sf\">&amp; videos</em>", "Everyone who paid or got videos from us, and every video we delivered."],
   perf: ["Client <em class=\"sf\">performance</em>", "Monthly clients' YouTube, TikTok and Instagram: views and trend, which of our Shorts they posted, what works."],
-  weekly: ["Weekly <em class=\"sf\">business review</em>", "Health line, money, funnel, campaigns, A/B tests, engine, sales, clients and what we changed: this week against last week and the 4 weeks before."],
-  todos: ["To-<em class=\"sf\">dos</em>", "The founders' board. Drag cards between columns; both of you see changes live."],
+  weekly: ["Weekly <em class=\"sf\">analysis</em>", "The winner, the biggest moves and what to do next. Every detail is one tap away."],
+  todos: ["To-<em class=\"sf\">dos</em>", "Big tasks on top, the board under them. Both of you see changes live."],
+  leads: ["Leads <em class=\"sf\">&amp; opportunities</em>", "Who needs an answer, who is hot, and who could buy bigger work."],
 };
 function srcOf(p, d) {
   if (p === "expenses") return d ? ["Beju Finance sheet + Stripe", d.updated_at] : null;
@@ -153,11 +165,12 @@ function srcOf(p, d) {
   if (p === "perf") return d ? ["YouTube API, TikTok, Instagram (public)", d.synced] : null;
   if (p === "weekly") return d ? ["Instantly API, Stripe, Samples tab, client scans, CRM", d.synced] : null;
   if (p === "todos") return ["Live board", null];
+  if (p === "leads") return d ? ["Samples tab, Instantly, CRM", d.synced] : null;
   return null;
 }
 function header(p, d) {
-  const [h, sub] = HEAD[p], s = srcOf(p, d), old = s && (/expired/.test(s[0]) || (s[1] && Date.now() - new Date(s[1]) > 3 * 36e5));
-  return `<header class="sp-h"><div><h1>${h}</h1><p>${esc(sub)}</p></div>${s ? `<span class="sp-src${old ? " old" : ""}"${old ? ' title="Older than 3 hours: the numbers may be out of date"' : ""}><i></i>${esc(s[0])}${s[1] ? ` · synced ${esc(ago(s[1]))}${old ? " · may be out of date" : ""}` : " · live"}</span>` : ""}</header>`;
+  const [h, sub] = HEAD[p], s = srcOf(p, d), lim = p === "perf" ? 30 : 3, old = s && (/expired/.test(s[0]) || (s[1] && Date.now() - new Date(s[1]) > lim * 36e5));
+  return `<header class="sp-h"><div><h1>${h}</h1><p>${esc(sub)}</p></div>${s ? `<span class="sp-src${old ? " old" : ""}"${old ? ' title="Older than ${lim} hours: the numbers may be out of date"' : ""}><i></i>${esc(s[0])}${s[1] ? ` · synced ${esc(ago(s[1]))}${old ? " · may be out of date" : ""}` : " · live"}</span>` : ""}</header>`;
 }
 async function renderPage(quiet) {
   const p = PAGE; if (p === "dashboard" || !sb()) return;
@@ -167,7 +180,7 @@ async function renderPage(quiet) {
     const d = CACHE[p] || (CACHE[p] = await LOAD[p]());
     if (seq !== SEQ || p !== PAGE) return;
     PAGE_EL.innerHTML = header(p, d) + VIEW[p](d);
-    applyVars(PAGE_EL); if (p === "todos") wireBoard(); if (p === "clients") wireClients(); if (p === "perf") wirePerf(); if (p === "weekly") wireWeekly(); if (p === "expenses") wireExpenses(); if (p === "email") wireEmail(); countUps(PAGE_EL);
+    applyVars(PAGE_EL); if (p === "todos") wireBoard(); if (p === "clients") wireClients(); if (p === "perf") wirePerf(); if (p === "weekly") wireWeekly(); if (p === "expenses") wireExpenses(); if (p === "email") wireEmail(); if (p === "leads") wireLeads(); countUps(PAGE_EL);
   } catch (e) {
     if (seq !== SEQ) return; delete CACHE[p];
     PAGE_EL.innerHTML = `${header(p, null)}<p class="sp-err">Couldn't load this page. ${esc(String(e && e.message || e).slice(0, 160))}</p><div><button type="button" class="act" id="sp-retry">${ic("refresh")}Try again</button></div>`;
@@ -363,9 +376,9 @@ function wireExpenses() {
 /* 2. email tests (SIMAS 11-19 18:5x: "show the winner, highlight the winner. And also say the changes are done or not") */
 async function loadEmail() {
   await me();
-  const [ab, m, acts, arms, cd] = await Promise.all([panel("ab_tests"), panel("metrics").catch(() => null), all("ab_actions", "*", q => q.order("id", { ascending: false })).catch(() => []), panel("arms").catch(() => null),
-    all("campaign_daily", "campaign_id,day,sent,new_leads,replies,opportunities", q => q.gte("day", addDays(dayOf(Date.now()), -13))).catch(() => [])]);
-  return { ab, m, acts, arms, cd };
+  const [ab, m, acts, arms, cd, il] = await Promise.all([panel("ab_tests"), panel("metrics").catch(() => null), all("ab_actions", "*", q => q.order("id", { ascending: false })).catch(() => []), panel("arms").catch(() => null),
+    all("campaign_daily", "campaign_id,day,sent,new_leads,replies,opportunities", q => q.gte("day", addDays(dayOf(Date.now()), -13))).catch(() => []), all("interested_leads", "campaign_id,interest_changed_at,last_reply_at,created_at").catch(() => [])]);
+  return { ab, m, acts, arms, cd: fixOpp(cd, il) };
 }
 const abAct = (acts, key, step) => acts.find(a => a.campaign === key && a.step === step) || null;   // newest first
 function abStatus(c, s, acts) {
@@ -404,12 +417,12 @@ function viewEmail(x) {
       <div class="ab-pair">${vcard(c, s, "A")}${vcard(c, s, "B")}</div>
       <div class="ab-st"><span class="${st.chip}">${st.k === "done" ? "Change done" : st.k === "due" ? "Change due" : "No change yet"}</span><span class="grow">${esc(st.text)}</span>${st.k === "due" ? `<button type="button" class="act go" data-abdone="${esc(c.key)}|${esc(s.step)}">${ic("check")}Mark change done</button>` : st.k === "done" ? `<button type="button" class="act" data-abundo="${st.a.id}">Undo</button>` : `<button type="button" class="act" data-abdone="${esc(c.key)}|${esc(s.step)}" title="Use this if you swapped a variant by hand before a winner was called">Log a change</button>`}</div></div>`; };
   const smp = c => c.sample ? `<details class="ab-txt"><summary>What A and B say <small>one real lead's emails</small></summary><div class="ab-pair">${["A", "B"].map(v => `<div class="ab-copy"><span class="sp-tag">${v}</span><b>${esc(c.sample[v].subject || "(no subject)")}</b><p>${esc(c.sample[v].body || "")}</p><small>Follow-up: ${esc((c.sample[v].fu || "").slice(0, 260))}</small></div>`).join("")}</div></details>` : "";
-  const camps = M && Array.isArray(M.campaigns) ? M.campaigns.filter(c => c.contacted >= 30) : [], rmx = Math.max(1, ...camps.map(c => c.reply_rate || 0));
+  const camps = M && Array.isArray(M.campaigns) ? M.campaigns.filter(c => c.contacted >= 30).sort((a, b) => (b.pos_rate || 0) - (a.pos_rate || 0)) : [], rmx = Math.max(1, ...camps.map(c => c.pos_rate || 0));
   const part = x.arms && x.arms.data ? (x.arms.data.arms || []).filter(a => (a.campaigns || []).some(n => /PARTNER/i.test(n))) : null, pmx = part ? Math.max(1, ...part.map(a => a.reply_rate || 0)) : 1;
   const done = acts.filter(a => a.done_at);
   /* SIMAS 11-20: highlight campaigns by state. violet = A/B test running (A and B both sending; wins over green), green = active, plain + dimmed = paused/finished */
   const abOn = c => !!c && (c.steps || []).some(s => s.in_test !== false && s.A && s.B && s.A.sent > 0 && s.B.sent > 0), abByName = Object.fromEntries(d.campaigns.filter(c => c.campaign).map(c => [c.campaign, c]));
-  const cst = (status, ab) => ab ? "ab" : status === 1 ? "on" : "off", CSL = { ab: "A/B testing", on: "Active", off: "Paused" }, mSt = c => cst(c.status, abOn(abByName[c.name]));
+  const cst = (status, ab) => ab ? "ab" : status === 1 ? "on" : "off", CSL = { ab: "Testing all variants", on: "One variant only", off: "Paused" }, mSt = c => cst(c.status, abOn(abByName[c.name]));
   const cName = n => String(n || "").replace(/ — test\b/, " (test)").replace(/^TEST — /, "Test: ").replace(/ — V1 Batch 1$/, "").replace(/ \(\d\d-\d\d\)$/, "").replace(/^ARM (T\d) — /, "$1 · ").replace(/ — /g, " · ");
   const cTag = c => { const k = mSt(c); return `<em class="cs-tag ${k}">${k === "off" ? esc((c.status_label || "paused").replace(/^./, x => x.toUpperCase())) : CSL[k]}</em>`; };
   /* coordinator 11-20 (Simas: "I don't see any numbers there at all, only minus"): A/B counts restarted at the split, so every campaign also shows its real numbers */
@@ -419,15 +432,21 @@ function viewEmail(x) {
   const nline = (lab, o) => `<div class="ab-num"><span class="mut">${lab}</span><b>${int(o.sent)}</b><small>sent</small><b>${int(o.nl)}</b><small>new leads</small><b>${int(o.rep)}</b><small>replies · ${pc(o.rep, o.nl)}</small><b>${int(o.opp)}</b><small>positive · ${pc(o.opp, o.nl)}</small></div>`;
   const cstats = c => { const id = idByName[c.campaign]; return id ? `<div class="ab-nums" title="From Instantly's daily numbers. Replies leave out auto-replies.">${nline("This week", cnum(id, w0e))}${nline("Last 14 days", cnum(id, d14))}</div>` : ""; };
   const reset = `<p class="ab-reset">${ic("refresh")}<span>A/B counts restarted ${esc(vt(d.split_since))} when we fixed the 50/50 split; each day's sends start ~16:00 Vilnius. The real numbers per campaign are on each card below.</span></p>`;
-  const legend = `<p class="camp-legend" aria-label="Campaign colours"><span><i class="cs on"></i>Active</span><span><i class="cs ab"></i>A/B testing</span><span><i class="cs off"></i>Paused</span><small class="mut">A/B testing = A and B have both sent since the split; it wins over Active.</small></p>`;
-  return `${reset}<div class="sp-kpis">${kpi("Tests running", cu(running, "int", "ab-run"), waiting ? `${waiting} more waiting for first sends since the split` : "A and B both sending")}${kpi("Winners found", cu(tests.filter(t => t.s.state === "winner").length, "int", "ab-win"), `needs ${MIN}+ sends per side and ${r.min_pos || 8}+ positives`)}${kpi("Changes due", cu(tests.filter(t => t.st.k === "due").length, "int", "ab-due"), "loser to drop, new challenger to write")}${kpi("Changes done", cu(done.length, "int", "ab-done"), done[0] ? `last ${esc(dLabel(dayOf(done[0].done_at)))}` : "none yet")}</div>
+  /* v7 (SIMAS 11-21): green = the campaign is testing ALL its variants (A and B both sending), purple = only ONE variant is sending, gold = the winner */
+  const legend = `<p class="camp-legend" aria-label="Campaign colours"><span><i class="cs ab"></i>Testing all variants</span><span><i class="cs on"></i>One variant only</span><span><i class="cs win"></i>Winner</span><span><i class="cs off"></i>Paused</span></p>`;
+  const elig = ((M && M.campaigns) || []).filter(c => c.contacted >= 100 && c.pos_rate != null).sort((a, b) => b.pos_rate - a.pos_rate || b.contacted - a.contacted), LEADC = elig[0] || null, WINC = LEADC && LEADC.pos_rate >= 2 ? LEADC : null, isWin = n => !!WINC && n === WINC.name;
+  const winCard = `<section class="card sp-card win-card${WINC ? "" : " none"}"><span class="win-k">${WINC ? "Winner" : "No winner yet"}</span>${WINC ? `<h2 class="win-n">${esc(cName(WINC.name))}</h2><div class="win-big"><b>${WINC.pos_rate.toFixed(1)}%</b><span>positive replies<small>${int(WINC.opportunities)} of ${int(WINC.contacted)} leads · ${WINC.reply_rate == null ? "0" : WINC.reply_rate.toFixed(1)}% replied${WINC.status === 1 ? "" : " · paused now"}</small></span></div>${elig[1] ? `<p class="win-r">Next: ${esc(cName(elig[1].name))} at ${elig[1].pos_rate.toFixed(1)}%${elig[2] ? ` · then ${esc(cName(elig[2].name))} at ${elig[2].pos_rate.toFixed(1)}%` : ""}</p>` : ""}` : `<h2 class="win-n">${LEADC ? `${esc(cName(LEADC.name))} leads at ${LEADC.pos_rate.toFixed(1)}%` : "No campaign has 100 leads yet"}</h2>`}
+    <p class="sp-note">Rule: the best positive-reply rate among campaigns with 100+ leads contacted, and at least 2% positive. All time, from Instantly.</p></section>`;
+  return `${winCard}${reset}<div class="sp-kpis">${kpi("Tests running", cu(running, "int", "ab-run"), waiting ? `${waiting} more waiting for first sends since the split` : "A and B both sending")}${kpi("Winners found", cu(tests.filter(t => t.s.state === "winner").length, "int", "ab-win"), `needs ${MIN}+ sends per side and ${r.min_pos || 8}+ positives`)}${kpi("Changes due", cu(tests.filter(t => t.st.k === "due").length, "int", "ab-due"), "loser to drop, new challenger to write")}${kpi("Changes done", cu(done.length, "int", "ab-done"), done[0] ? `last ${esc(dLabel(dayOf(done[0].done_at)))}` : "none yet")}</div>
   <p class="sp-note ab-split"><b>Split 50/50 by lead since ${esc(vt(d.split_since))}</b> · each lead keeps one version per email, and A vs B is counted by that version, not by Instantly's variant numbers.</p>
   ${legend}${subjCard(d.subjects, vt)}
-  <div class="ab-grid">${d.campaigns.map(c => { const k = cst(c.status, abOn(c)); return `<section class="card sp-card ab-card camp-st st-${k}"><h2><span>${esc(c.name)} <em class="cs-tag ${k}">${CSL[k]}</em></span> <small>${c.since ? `split since ${esc(vt(c.since))}` : "not split yet"}</small></h2>${cstats(c)}${(c.steps || []).map(s => test(c, s)).join("")}${smp(c)}</section>`; }).join("")}</div>
+  <div class="ab-grid">${d.campaigns.map(c => { const k = cst(c.status, abOn(c)); return `<section class="card sp-card ab-card camp-st st-${k}${isWin(c.campaign) ? " st-win" : ""}"><h2><span>${esc(c.name)} ${isWin(c.campaign) ? `<em class="cs-tag win">Winner</em> ` : ""}<em class="cs-tag ${k}">${CSL[k]}</em></span> <small>${c.since ? `split since ${esc(vt(c.since))}` : "not split yet"}</small></h2>${cstats(c)}${(() => { /* v7: the A/B detail folds away unless a test needs a founder (a winner, a leader, or a change that is due) */
+      const S = c.steps || [], eyes = S.some(s => s.state === "winner" || s.state === "leading" || abStatus(c, s, acts).k === "due"), word = s => !c.since ? "not split yet" : s.in_test === false ? "not in this test" : s.state === "winner" ? `winner ${s.lead}` : s.state === "leading" ? `${s.lead} leading` : `too early (${int(Math.min(s.A.sent, s.B.sent))} / ${MIN} sends)`;
+      return `<details class="ab-fold"${eyes ? " open" : ""}><summary><span>A/B tests</span><small>${S.map(s => `${esc(s.step)}: ${esc(word(s))}`).join(" · ")}</small></summary>${S.map(s => test(c, s)).join("")}${smp(c)}</details>`; })()}</section>`; }).join("")}</div>
   <section class="card sp-card"><h2>Partner campaigns <small>arms are tags, not Instantly variants</small></h2>${part && part.length ? `<div class="sp-bars">${part.map(a => `<div class="sp-bar"><span>${esc(a.arm)} <small class="mut">${esc((a.campaigns || []).filter(n => /PARTNER/i.test(n)).map(n => n.replace(/^PARTNER\s*/i, "")).join(", "))}</small></span><span class="v">${a.reply_rate == null ? "0% replied" : a.reply_rate.toFixed(1) + "% replied"} · ${int(a.positive)} positive · ${int(a.contacted)} contacted</span><div class="bar"><i data-v="w:${Math.max(2, Math.round(100 * (a.reply_rate || 0) / pmx))}%"></i></div></div>`).join("")}</div><p class="sp-note">Too early for a winner: every partner arm is under 100 leads contacted.</p>` : empty("No data yet: no partner-campaign leads are tagged in the arms sync.")}</section>
-  <section class="card sp-card"><h2>Reply rate by campaign <small>all time · Instantly API${x.m ? ` · synced ${esc(ago(x.m.updated_at))}` : ""}</small></h2>${camps.length ? `<div class="sp-bars">${camps.map(c => `<div class="sp-bar camp-st st-${mSt(c)}"><span title="${esc(c.name)}">${esc(cName(c.name))} ${cTag(c)}</span><span class="v">${c.reply_rate == null ? "0%" : c.reply_rate.toFixed(1) + "%"} replied · ${c.pos_rate == null ? "0%" : c.pos_rate.toFixed(1) + "%"} positive</span><div class="bar"><i data-v="w:${Math.max(2, Math.round(100 * (c.reply_rate || 0) / rmx))}%"></i></div></div>`).join("")}</div>
-    <details class="ab-txt"><summary>Details <small>table</small></summary><div class="sp-scroll"><table class="sp-tbl"><thead><tr><th>Campaign</th><th class="num">Sent</th><th class="num">Contacted</th><th class="num">Replies</th><th class="num">Reply rate</th><th class="num">Positive</th><th class="num">Positive rate</th><th class="num">Bounced</th><th>Opens</th></tr></thead><tbody>${M.campaigns.map(c => `<tr class="camp-st st-${mSt(c)}"><td>${esc(c.name)}</td><td class="num">${int(c.sent)}</td><td class="num">${int(c.contacted)}</td><td class="num">${int(c.replies)}</td><td class="num">${c.reply_rate == null ? "n/a" : c.reply_rate.toFixed(1) + "%"}</td><td class="num">${int(c.opportunities)}</td><td class="num">${c.pos_rate == null ? "n/a" : c.pos_rate.toFixed(1) + "%"}</td><td class="num">${c.bounce_rate == null ? "n/a" : c.bounce_rate.toFixed(1) + "%"}</td><td class="mut">not tracked (plain text)</td></tr>`).join("")}</tbody></table></div></details>
-    <p class="sp-note">Reply rate = unique human replies ÷ leads contacted. Opens aren't tracked: the emails are plain text with open tracking off. That doesn't affect reply rate.</p>` : empty("No data yet.")}</section>
+  <section class="card sp-card"><h2>Positive replies by campaign <small>all time · best first${x.m ? ` · synced ${esc(ago(x.m.updated_at))}` : ""}</small></h2>${camps.length ? `<div class="sp-bars">${camps.map(c => `<div class="sp-bar camp-st st-${mSt(c)}${isWin(c.name) ? " st-win" : ""}"><span title="${esc(c.name)}">${esc(cName(c.name))} ${isWin(c.name) ? `<em class="cs-tag win">Winner</em> ` : ""}${cTag(c)}</span><span class="v"><b>${c.pos_rate == null ? "0%" : c.pos_rate.toFixed(1) + "%"} positive</b> · ${int(c.contacted)} leads</span><div class="bar"><i data-v="w:${Math.max(2, Math.round(100 * (c.pos_rate || 0) / rmx))}%"></i></div></div>`).join("")}</div>
+    <details class="ab-txt"><summary>Details <small>table</small></summary><div class="sp-scroll"><table class="sp-tbl"><thead><tr><th>Campaign</th><th class="num">Sent</th><th class="num">Contacted</th><th class="num">Replies</th><th class="num">Reply rate</th><th class="num">Positive</th><th class="num">Positive rate</th><th class="num">Bounced</th><th>Opens</th></tr></thead><tbody>${M.campaigns.map(c => `<tr class="camp-st st-${mSt(c)}${isWin(c.name) ? " st-win" : ""}"><td>${esc(c.name)}</td><td class="num">${int(c.sent)}</td><td class="num">${int(c.contacted)}</td><td class="num">${int(c.replies)}</td><td class="num">${c.reply_rate == null ? "n/a" : c.reply_rate.toFixed(1) + "%"}</td><td class="num">${int(c.opportunities)}</td><td class="num">${c.pos_rate == null ? "n/a" : c.pos_rate.toFixed(1) + "%"}</td><td class="num">${c.bounce_rate == null ? "n/a" : c.bounce_rate.toFixed(1) + "%"}</td><td class="mut">not tracked (plain text)</td></tr>`).join("")}</tbody></table></div></details>
+    <p class="sp-note">Positive = leads Instantly marks as interested ÷ leads contacted. Campaigns under 30 leads are in the table only.</p>` : empty("No data yet.")}</section>
   <section class="card sp-card"><h2>Past changes <small>history</small></h2>${done.length ? `<div class="wk-log">${done.map(a => `<div class="wk-ch"><span class="mono">${esc(dLabel(dayOf(a.done_at)))}</span><span class="chip g">${esc(a.campaign)}</span><span class="w">${esc(a.step)}: ${esc(a.action || `kept ${a.winner || "?"}, dropped ${a.loser || "?"}`)}${a.note ? ` · ${esc(a.note)}` : ""}</span><span class="mut">${esc(a.done_by || "")}</span></div>`).join("")}</div>` : empty("No test has been decided yet. The 50/50 split by lead started on Nov 19; the first verdicts come once each side has 300 sends.")}</section>`;
 }
 function wireEmail() {
@@ -610,11 +629,15 @@ async function loadPerf() {
     const plat = ["youtube", "tiktok", "instagram"].map(pl => { const sh = P.filter(p => p.platform === pl && p.is_short && p.views != null && p.posted_at), weeks = [];
       for (let w = 5; w >= 0; w--) { const v = sh.filter(p => age(p) >= 7 * w && age(p) < 7 * (w + 1)).map(p => +p.views); weeks.push({ w, n: v.length, med: medn(v) }); }
       const in28 = sh.filter(p => age(p) < 28).sort((a, b) => b.views - a.views);
-      return { pl, acct: A.find(a => a.platform === pl) || null, sh, weeks, last: medn(sh.filter(p => age(p) < 7).map(p => +p.views)), prev: medn(sh.filter(p => age(p) >= 7 && age(p) < 28).map(p => +p.views)), best: in28.slice(0, 3), worst: in28.slice(3).slice(-2).reverse() };
-    }).filter(x => x.acct || x.sh.length);
-    const posted = new Set(P.filter(p => p.ours && p.our_ref).map(p => p.our_ref)), main = plat.filter(x => x.sh.length).sort((a, b) => b.sh.filter(p => age(p) < 60).length - a.sh.filter(p => age(p) < 60).length || (b.pl === "youtube") - (a.pl === "youtube"))[0] || null;
+      /* v7 (SIMAS 11-21 "the other two clients aren't working"): those clients post long videos and photo posts, no Shorts, so a
+         Shorts-only view was empty. Every platform now also carries its latest posts of any kind. */
+      const any = P.filter(p => p.platform === pl && p.posted_at), any28 = any.filter(p => age(p) < 28);
+      return { pl, acct: A.find(a => a.platform === pl) || null, sh, weeks, last: medn(sh.filter(p => age(p) < 7).map(p => +p.views)), prev: medn(sh.filter(p => age(p) >= 7 && age(p) < 28).map(p => +p.views)), best: in28.slice(0, 3), worst: in28.slice(3).slice(-2).reverse(),
+        any28, lastAny: any[0] || null, recent: sh.filter(p => age(p) < 42).length, mv: medn(any28.filter(p => p.views != null).map(p => +p.views)), ml: medn(any28.filter(p => p.likes != null).map(p => +p.likes)) };
+    }).filter(x => x.acct || x.sh.length || x.any28.length);
+    const posted = new Set(P.filter(p => p.ours && p.our_ref).map(p => p.our_ref)), alt = plat.filter(x => x.any28.length).sort((a, b) => b.any28.length - a.any28.length)[0] || null, quiet = !plat.some(x => x.recent), main = plat.filter(x => x.recent).sort((a, b) => b.sh.filter(p => age(p) < 60).length - a.sh.filter(p => age(p) < 60).length || (b.pl === "youtube") - (a.pl === "youtube"))[0] || null;
     const yt = A.find(a => a.platform === "youtube"), handle = (yt && yt.handle) || (A[0] && A[0].handle) || "";
-    return { key: e, r, cl, web: (cl && cl.website) || "", name: (A.find(a => a.name) || {}).name || (cl && cl.show) || r.name || (cl && cl.name) || e, handle, A, P, plat, main, ours, planOurs, sDay,
+    return { key: e, r, cl, alt, quiet, web: (cl && cl.website) || "", name: (A.find(a => a.name) || {}).name || (cl && cl.show) || r.name || (cl && cl.name) || e, handle, A, P, plat, main, ours, planOurs, sDay,
       monthN: ours.filter(o => sDay && o.at && String(o.at).slice(0, 10) >= sDay).length, planN: latest ? +((/^(\d+)\s*Shorts/i.exec(latest.order) || [])[1]) || null : null,
       postedN: planOurs.filter(o => posted.has("Short " + o.n)).length, scan: A.reduce((m, a) => (a.updated_at && a.updated_at > m ? a.updated_at : m), ""), reps: reps.filter(x => lc(x.email) === e) };
   }).sort((a, b) => (+b.r.amount || 0) - (+a.r.amount || 0));
@@ -626,8 +649,11 @@ const pfAccts = c => c.A.slice().sort((a, b) => PORD.indexOf(a.platform) - PORD.
 const pfLinks = c => { const L = pfAccts(c).map(a => ({ k: a.platform, url: a.url, name: PL[a.platform] ? PL[a.platform][0] : a.platform, ab: PL[a.platform] ? PL[a.platform][1] : "", h: hAt(a.handle), f: a.followers }));
   if (c.web) L.push({ k: "website", url: c.web, name: "Website", ab: "W", h: host(c.web), f: null });
   return L.length ? `<div class="pf-links">${L.map(x => `<a class="pf-ln ${x.k}" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer" title="Open ${esc(x.name)}"><i>${esc(x.ab)}</i><span>${esc(x.name)} <b>${esc(x.h)}</b></span>${x.f != null ? `<small>${kf(x.f)}</small>` : ""}${ic("link")}</a>`).join("")}</div>` : ""; };
-const pfPost = p => `<a class="vid" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer" title="Open on ${esc((PL[p.platform] || [p.platform])[0])}"><span class="pl">${ic("play")}${p.ours ? `<em class="vt">Ours · ${esc(p.our_ref)}</em>` : ""}</span><b>${esc(p.title || "Post")}</b><small><span class="mono">${kf(p.views)} views</span> · ${esc((PL[p.platform] || [p.platform])[0])} · ${esc(dLabel(dayOf(p.posted_at)))}</small></a>`;
+const pfPost = p => `<a class="vid" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer" title="Open on ${esc((PL[p.platform] || [p.platform])[0])}"><span class="pl">${ic("play")}${p.ours ? `<em class="vt">Ours · ${esc(p.our_ref)}</em>` : ""}</span><b>${esc(p.title || "Post")}</b><small><span class="mono">${p.views != null ? kf(p.views) + " views" : p.likes != null ? kf(p.likes) + " likes" : "no count"}</span> · ${esc((PL[p.platform] || [p.platform])[0])} · ${esc(dLabel(dayOf(p.posted_at)))}</small></a>`;
 function pfTrend(p) {
+  if (!p.recent) { const n = p.any28.length, kind = p.pl === "youtube" ? "video" : "post";
+    return `<div class="pf-pl"><div class="pf-h"><b>${PL[p.pl][0]}</b><small>${p.acct ? `${kf(p.acct.followers)} followers` : ""}</small><span class="pf-d">${n ? `${n} ${kind}${n === 1 ? "" : "s"} in 28 days${p.mv != null ? ` · median <b class="mono">${kf(p.mv)}</b> views` : p.ml != null ? ` · median <b class="mono">${kf(p.ml)}</b> likes` : ""}` : `nothing posted in 28 days${p.lastAny ? ` · last post ${esc(dLabel(dayOf(p.lastAny.posted_at)))}` : ""}`}</span></div>
+      <p class="sp-note">No Shorts here in the last 6 weeks, so there is no Shorts trend yet.${n ? " Their latest posts:" : ""}</p>${n ? `<div class="vid-grid">${p.any28.slice(0, 3).map(pfPost).join("")}</div>` : ""}</div>`; }
   if (p.pl === "instagram" && !p.sh.length) return `<div class="pf-pl"><div class="pf-h"><b>Instagram</b><small>${p.acct ? `${kf(p.acct.followers)} followers · ${kf(p.acct.posts_count)} posts` : ""}</small></div><p class="sp-note">Reel views need Meta access. Without a login, Instagram shows only the account numbers.</p></div>`;
   const max = Math.max(1, ...p.weeks.map(w => w.med || 0));
   return `<div class="pf-pl"><div class="pf-h"><b>${PL[p.pl][0]}</b><small>${p.acct ? `${kf(p.acct.followers)} followers` : ""}</small><span class="pf-d">last 7 days <b class="mono">${kf(p.last)}</b> ${pfDelta(p.last, p.prev)} <span class="mut">vs ${kf(p.prev)} the 3 weeks before</span></span></div>
@@ -637,27 +663,28 @@ function pfTrend(p) {
 function perfDetail(c) {
   if (!c) return empty("Pick a client on the left.");
   const end = c.r.current_period_end, left = end ? Math.max(0, Math.ceil((new Date(end) - Date.now()) / 864e5)) : null, waiting = c.planOurs.length - c.postedN;
-  const top = c.P.filter(p => p.is_short && p.views != null && (Date.now() - new Date(p.posted_at)) / 864e5 < 60).sort((a, b) => b.views - a.views).slice(0, 6);
+  const d60 = p => (Date.now() - new Date(p.posted_at)) / 864e5 < 60, topS = c.P.filter(p => p.is_short && p.views != null && d60(p)).sort((a, b) => b.views - a.views).slice(0, 6);
+  const top = topS.length ? topS : c.P.filter(p => p.posted_at && d60(p) && (p.views != null || p.likes != null)).sort((a, b) => (b.views ?? b.likes ?? 0) - (a.views ?? a.likes ?? 0)).slice(0, 6);
   return `<div class="cl-head"><div><h2>${esc(c.name)}</h2><p>${esc([c.handle, c.key, `last scan ${ago(c.scan)}`].filter(Boolean).join(" · "))}</p></div>
     <div class="cl-chips"><span class="chip acc">${usd(c.r.amount)} / month</span>${c.planN ? `<span class="chip">${c.monthN} / ${c.planN} Shorts this month</span>` : ""}${left != null ? `<span class="chip">renews in ${left} d · ${esc(dLabel(dayOf(end)))}</span>` : ""}<span class="chip ${c.postedN ? "g" : "o"}">ours posted ${c.postedN} / ${c.planOurs.length}</span></div></div>
-    ${pfLinks(c)}
+    ${pfLinks(c)}${c.quiet ? `<p class="pf-quiet"><b>No Shorts posted in the last 6 weeks.</b> This client posts long videos and photo posts, so the numbers below are for those. The Shorts trend starts when they post Shorts, ours or their own.</p>` : ""}
     <div class="cl-plan"><b class="cl-ph">Views and trend</b><p class="sp-note">Median views per Short, by the week it was posted (last 6 weeks). Under each bar: weeks ago · Shorts posted that week. The newest week is still growing.</p>${c.plat.map(pfTrend).join("") || empty("No account scanned yet. Add this client to scripts/data/client_perf/accounts.json.")}</div>
     ${c.plat.filter(p => p.best.length).map(p => `<div class="cl-ord">${esc(PL[p.pl][0])} · best Shorts, last 28 days</div><div class="vid-grid">${p.best.map(pfPost).join("")}</div>${p.worst.length ? `<div class="cl-ord">${esc(PL[p.pl][0])} · lowest, last 28 days</div><div class="vid-grid">${p.worst.map(pfPost).join("")}</div>` : ""}`).join("")}
     <div class="cl-plan"><b class="cl-ph">Did they post ours · ${c.postedN} posted · ${waiting} waiting</b><p class="sp-note">Matched by length and title words against their public YouTube and TikTok posts. Instagram is matched by caption words only (Meta doesn't share video length), so check those by eye.</p>
       ${c.ours.length ? `<div class="tblw"><table class="tbl pf-tbl"><thead><tr><th>Short</th><th>Title</th><th>Delivered</th><th>Posted</th></tr></thead><tbody>${c.ours.map(o => `<tr><td>${o.n}</td><td>${esc(o.title)}</td><td>${esc(dLabel(String(o.at || "").slice(0, 10)))}${o.plan ? "" : ` <small class="mut">earlier pack</small>`}</td><td>${o.posts.length ? o.posts.map(p => `<a class="chip g" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">${esc(PL[p.platform][0])} ${esc(dLabel(dayOf(p.posted_at)))}</a>`).join(" ") : `<span class="chip">not yet</span>`}</td></tr>`).join("")}</tbody></table></div>` : empty("No delivered Short indexed for this client yet.")}</div>
-    <div class="cl-ord">What works · top Shorts, last 60 days</div>${top.length ? `<div class="vid-grid">${top.map(pfPost).join("")}</div>` : empty("No Shorts in the last 60 days.")}
+    <div class="cl-ord">What works · top ${topS.length ? "Shorts" : "posts"}, last 60 days</div>${top.length ? `<div class="vid-grid">${top.map(pfPost).join("")}</div>` : empty("Nothing posted in the last 60 days.")}
     <div class="cl-plan"><b class="cl-ph">Weekly reports</b>${c.reps.length ? c.reps.map(x => { const dd = x.data || {}; return `<div class="cl-pr"><span class="grow"><b>Week of ${esc(dLabel(String(x.week).slice(0, 10)))}</b> ${esc(dd.summary || dd.headline || "")}</span>${x.page_url ? `<a class="chip lkc" href="${esc(x.page_url)}" target="_blank" rel="noopener noreferrer">Page ↗</a>` : ""}<span class="chip ${x.status === "sent" ? "g" : ""}">${esc(x.status)}${x.sent_at ? " " + esc(dLabel(dayOf(x.sent_at))) : ""}</span></div>`; }).join("") : empty("First report from week 2, once our Shorts are posted and have views.")}</div>
     <div class="cl-plan"><b class="cl-ph">Account and plan</b>${c.A.map(a => `<div class="cl-pr"><span class="grow"><b>${esc(PL[a.platform] ? PL[a.platform][0] : a.platform)}</b> <a href="${esc(a.url)}" target="_blank" rel="noopener noreferrer">${esc(a.handle || a.url)} ↗</a></span><span class="mono">${kf(a.followers)} followers · ${kf(a.posts_count)} posts</span></div>`).join("") || empty("No accounts on file.")}
       <div class="cl-pr"><span class="grow">Plan</span><span class="mono">${usd(c.r.amount)} / month${c.planN ? ` · ${c.planN} Shorts` : ""} · since ${esc(dLabel(dayOf(c.r.started_at)))}</span></div>
       <div class="cl-pr"><span class="grow">Delivered this billing month</span><span class="mono">${c.monthN}${c.planN ? ` / ${c.planN}` : ""}${c.sDay ? ` · since ${esc(dLabel(c.sDay))}` : ""}</span></div></div>`;
 }
 const perfRow = (c, sel) => { const m = c.main;
-  return `<a class="cl-item" href="?p=perf&amp;k=${encodeURIComponent(c.key)}" data-pf="${esc(c.key)}"${sel && c.key === sel.key ? ' aria-current="true"' : ""}><span class="av">${esc(initials(c.name))}</span><span class="grow"><span class="t">${esc(c.name)}</span><span class="s">${esc([`${usd(c.r.amount)}/mo`, ...pfAccts(c).map(a => `${PL[a.platform] ? PL[a.platform][1] : a.platform} ${hAt(a.handle)} ${kf(a.followers)}`), c.web ? host(c.web) : ""].filter(Boolean).join(" · "))}</span></span><span class="n">${c.postedN}/${c.planOurs.length}</span><span class="cl-ch">${m ? `<span class="chip">${PL[m.pl][1]} 7 d ${kf(m.last)} ${pfDelta(m.last, m.prev)}</span>` : `<span class="chip">no Shorts data</span>`}</span></a>`; };
+  return `<a class="cl-item" href="?p=perf&amp;k=${encodeURIComponent(c.key)}" data-pf="${esc(c.key)}"${sel && c.key === sel.key ? ' aria-current="true"' : ""}><span class="av">${esc(initials(c.name))}</span><span class="grow"><span class="t">${esc(c.name)}</span><span class="s">${esc([`${usd(c.r.amount)}/mo`, ...pfAccts(c).map(a => `${PL[a.platform] ? PL[a.platform][1] : a.platform} ${hAt(a.handle)} ${kf(a.followers)}`), c.web ? host(c.web) : ""].filter(Boolean).join(" · "))}</span></span><span class="n">${c.postedN}/${c.planOurs.length}</span><span class="cl-ch">${m ? `<span class="chip">${PL[m.pl][1]} 7 d ${kf(m.last)} ${pfDelta(m.last, m.prev)}</span>` : c.alt ? `<span class="chip">${PL[c.alt.pl][1]} · ${c.alt.any28.length} post${c.alt.any28.length === 1 ? "" : "s"} in 28 d · no Shorts</span>` : `<span class="chip">nothing posted in 28 d</span>`}</span></a>`; };
 function viewPerf(d) {
   if (!d.list.length) return empty("No monthly client yet. Retainer clients show here.");
   const sel = d.list.find(c => c.key === lc(param("k") || "")) || d.list[0], all3 = d.list.reduce((s, c) => s + c.planOurs.length, 0), postedAll = d.list.reduce((s, c) => s + c.postedN, 0);
   const best = d.list.flatMap(c => c.P.filter(p => p.is_short && p.views != null && (Date.now() - new Date(p.posted_at)) / 864e5 < 7).map(p => ({ p, c }))).sort((a, b) => b.p.views - a.p.views)[0];
-  return `<div class="sp-kpis">${kpi("Monthly clients", int(d.list.length), usd(d.list.reduce((s, c) => s + (+c.r.amount || 0), 0)) + " a month")}${kpi("Our Shorts posted", `${int(postedAll)} / ${int(all3)}`, all3 - postedAll ? `${all3 - postedAll} delivered, not posted yet` : "all posted")}${kpi("Best Short this week", best ? kf(best.p.views) : "—", best ? `${esc(best.c.name)} · ${esc((PL[best.p.platform] || [""])[0])}` : "no Short posted in 7 days")}${kpi("Last scan", esc(ago(d.synced)), "runs every Sunday 10:00")}</div>
+  return `<div class="sp-kpis">${kpi("Monthly clients", int(d.list.length), usd(d.list.reduce((s, c) => s + (+c.r.amount || 0), 0)) + " a month")}${kpi("Our Shorts posted", `${int(postedAll)} / ${int(all3)}`, all3 - postedAll ? `${all3 - postedAll} delivered, not posted yet` : "all posted")}${kpi("Best Short this week", best ? kf(best.p.views) : "—", best ? `${esc(best.c.name)} · ${esc((PL[best.p.platform] || [""])[0])}` : "no Short posted in 7 days")}${kpi("Last scan", esc(ago(d.synced)), "numbers refresh once a day")}</div>
   <div class="cl-wrap"><section class="card sp-card"><div class="cl-list" id="pf-list">${d.list.map(c => perfRow(c, sel)).join("")}</div></section>
     <section class="card sp-card" id="pf-detail">${perfDetail(sel)}</section></div>`;
 }
@@ -680,7 +707,7 @@ async function loadWeekly() {
   const [m, arms, ab, daily, interested, pipe, payments, retainers, deliveries, promises, fu, scopes, changes, threads, snaps, clients, lostLog] = await Promise.all([
     opt(panel("metrics")), opt(panel("arms")), opt(panel("ab_tests")),
     all("campaign_daily", "day,opportunities", q => q.gte("day", from)),
-    all("interested_leads", "email,first_name,company,interest_changed_at,last_reply_at"),
+    all("interested_leads", "email,first_name,company,campaign_id,interest_changed_at,last_reply_at,created_at"),
     all("pipeline", "email,name,status,yes_at,delivered_at,last_reply_at,paid,fu_stage,fu_day0,notes,updated_at"),
     all("payments", "client_id,email,payer_name,amount,refunded,paid_at"),
     optL(all("retainers", "id,email,name,amount,interval,status,started_at,current_period_end,canceled_at")),
@@ -766,7 +793,7 @@ async function loadWeekly() {
     optL(all("client_reports", "email,week,status,sent_at")),
     optL(all("client_accounts", "email,name")),
   ]);
-  const cd = cdR || [], clv = clR || [], idl = idlR || [], cpo = cpoR || [], crp = crpR || [], cacc = caccR || [];
+  const cd = fixOpp(cdR || [], interested), clv = clR || [], idl = idlR || [], cpo = cpoR || [], crp = crpR || [], cacc = caccR || [];
   const sumBy = (rows, f) => rows.reduce((a, r) => a + (+f(r) || 0), 0), rt = (a, b) => b ? 100 * a / b : null;
   const aggC = rows => ({ nl: sumBy(rows, r => r.new_leads), rep: sumBy(rows, r => r.replies), opp: sumBy(rows, r => r.opportunities), sent: sumBy(rows, r => r.sent) });
   const aggI = rows => ({ sent: sumBy(rows, r => r.sent), bnc: sumBy(rows, r => r.bounced), rep: sumBy(rows, r => r.replies) });
@@ -887,18 +914,17 @@ function viewWeekly(d) {
   if (WKSEL && WKSEL !== d.w0) { const sn = d.snaps.find(s => s.week === WKSEL); if (sn) return viewSnap(WKSEL, sn.data || {}, d); }
   const W = d.W, DOT = { g: "At or above target", a: "Within 20% of target", r: "Below target", x: "Too early: small sample" };
   const dot = s => `<i class="wbr-dot ${s}" title="${DOT[s]}"></i>`, f1 = v => v == null || !isFinite(v) ? "—" : v.toFixed(1) + "%";
-  const sec = (n, title, s, say, body, next, cls = "") => `<section class="card sp-card wbr-sec ${cls}"><h2><span><em class="wk-n">${n}</em>${title}</span>${s ? dot(s) : ""}</h2>${say ? `<p class="wbr-say">${say}</p>` : ""}${body}${next ? `<p class="wbr-next"><b>Do next</b><span>${next}</span></p>` : ""}</section>`;
+  const sec = (n, title, s, say, body, next, cls = "") => `<details class="card sp-card wbr-sec wbr-d ${cls}"><summary><h2><span>${title}</span>${s ? dot(s) : ""}</h2>${say ? `<p class="wbr-say">${say}</p>` : ""}<span class="wbr-more" aria-hidden="true"></span></summary><div class="wbr-in">${body}</div></details>`;
   const stat = (label, val, sub, tip) => `<div class="wk-stat"${tip ? ` title="${esc(tip)}"` : ""}><span>${esc(label)}</span><b>${val}</b>${sub ? `<small>${sub}</small>` : ""}</div>`;
   const spark = s => { const mx = Math.max(1e-9, ...s.map(x => x.v || 0)); return `<div class="wbr-spark" aria-hidden="true">${s.map((x, i) => `<i class="${x.now ? "now" : ""}" data-v="h:${Math.max(4, Math.round(100 * (x.v || 0) / mx))}%;k:${i}"></i>`).join("")}</div>`; };
   const arr = (c, p) => c == null || p == null ? "" : ` <span class="${c >= p ? "sd-up" : "sd-dn"}" title="vs the same days last week: ${f1(p)}">${c >= p ? "▲" : "▼"}</span>`;
   /* 1. health line */
-  const V = W.VERD, tiles = `<div class="wbr-tiles">${W.TILES.map(x => `<div class="wbr-tile st-${x.st}" title="${esc(x.tip)}"><span class="l">${dot(x.st)}${esc(x.label)}</span><b>${x.v == null || !isFinite(x.v) ? "—" : x.f(x.v)}</b><small>${x.sub}</small>${spark(x.spark)}<span class="wbr-tl">last 8 weeks · faded bar = this week so far</span></div>`).join("")}</div>`;
+  const V = W.VERD, tiles = `<div class="wbr-tiles">${W.TILES.map(x => `<div class="wbr-tile st-${x.st}" title="${esc(x.tip)}"><span class="l">${dot(x.st)}${esc(x.label)}</span><b>${x.v == null || !isFinite(x.v) ? "—" : x.f(x.v)}</b><small>${x.sub}</small>${spark(x.spark)}</div>`).join("")}</div><p class="sp-note wbr-cap">Bars = the last 8 weeks. The faded bar is this week so far.</p>`;
   const hero = `<section class="card sp-card wbr-hero st-${V.st}"><div class="wbr-hl">${dot(V.st)}<b>${V.word}</b><span>because ${esc(V.why)}.</span></div>
-    <div class="wbr-legend"><span>${dot("g")}at or above target</span><span>${dot("a")}within 20%</span><span>${dot("r")}below target</span><span>${dot("x")}too early (small sample)</span><span class="mut">Hover any number for how it's counted.</span></div>${tiles}</section>`;
+    ${tiles}<div class="wbr-legend"><span>${dot("g")}at or above target</span><span>${dot("a")}within 20%</span><span>${dot("r")}below target</span><span>${dot("x")}too early</span></div></section>`;
   /* 2. $10k bridge */
-  const B = W.BR, bridge = sec(2, "The $10k bridge", B.st, `${usd(B.total)} collected so far: ${usd(B.gap)} short of $10k, ${B.total >= B.pace ? "ahead of" : "behind"} the ${usd(B.pace)} pace for day ${W.k}.`,
-    `<div class="wk-stats">${stat("Monthly plans", usd(B.monthly), "subscription payments this week")}${stat("Packs and one-offs", usd(B.packs), `${int(B.n)} payment${B.n === 1 ? "" : "s"} this week in total`)}${stat("From new clients", usd(B.fromNew), "first payment this week")}${stat("From repeat clients", usd(B.fromRepeat), "paid before")}${stat("New MRR", usd(B.mrrNew), B.churned.length ? `<span class="sd-dn">churned: ${esc(B.churned.join(", "))}</span>` : "no churn this week")}</div>
-     <p class="sp-note">Renewals in the next 14 days: ${B.renew14.map(r => `${esc(r.name)} ${esc(dLabel(r.day))} (${usd(r.amount)})`).join(" · ") || "none"}.</p>`,
+  const B = W.BR, bridge = sec(2, "Money: the $10k bridge", B.st, `${usd(B.total)} collected so far: ${usd(B.gap)} short of $10k, ${B.total >= B.pace ? "ahead of" : "behind"} the ${usd(B.pace)} pace for day ${W.k}.`,
+    `<div class="wk-stats">${stat("Monthly plans", usd(B.monthly), "subscription payments this week")}${stat("Packs and one-offs", usd(B.packs), `${int(B.n)} payment${B.n === 1 ? "" : "s"} this week in total`)}${stat("From new clients", usd(B.fromNew), "first payment this week")}${stat("From repeat clients", usd(B.fromRepeat), "paid before")}</div>`,
     "Close the leads already waiting on a price or a scope first: they are one step from paying.");
   /* 3. funnel leak finder */
   const fmx = Math.max(1, ...W.FL.map(s => s.now || 0)), C = W.con ? W.FL[W.con.i] : null;
@@ -915,13 +941,13 @@ function viewWeekly(d) {
   const armT = A.length ? `<div class="sp-scroll"><table class="sp-tbl"><thead><tr><th>Source / arm tag</th><th class="num">Contacted</th><th class="num">Positive %</th><th class="num">Last 14 d contacted</th><th class="num">Positive % 14 d</th></tr></thead><tbody>${A.map(a => `<tr><td>${esc(a.arm)}<span class="sub">${esc((a.campaigns || []).join(", "))}</span></td><td class="num">${int(a.contacted)}</td><td class="num">${f1(a.pos_rate)}</td><td class="num">${int(a.contacted_14d)}</td><td class="num">${f1(a.pos_rate_14d)}</td></tr>`).join("")}</tbody></table></div><p class="sp-note">All-time, 100+ leads contacted. ${esc(d.arms.note || "")}</p>` : empty("No source tags with 100+ leads yet.");
   const league = sec(4, "Campaign league", nS ? "g" : nK ? "r" : "a", `${nS} campaign${nS === 1 ? "" : "s"} ready to scale, ${nK} under 1%, ${nE} still too early to judge.${top ? ` Best over 28 days: <b>${esc(top.name)}</b> at ${f1(top.pos28)}.` : ""}`,
     main.length ? `<div class="sp-scroll"><table class="sp-tbl wbr-lg">${thead}<tbody>${main.map(lrow).join("")}</tbody></table></div>` : empty("No campaign has 100+ new leads in the last 28 days yet."),
-    `${esc(W.NEXT[1].t)} ${W.NEXT[2].o !== "—" ? esc(W.NEXT[2].t) : ""}`) .replace("</section>", `<details class="ab-txt"><summary>All campaigns <small>${W.LEAGUE.length} · sorted by 28-day volume</small></summary><div class="sp-scroll"><table class="sp-tbl wbr-lg">${thead}<tbody>${[...main, ...rest].map(lrow).join("")}</tbody></table></div></details><details class="ab-txt"><summary>By source / arm tag <small>all time</small></summary>${armT}</details></section>`);
+    "").replace(/<\/div><\/details>$/, `<details class="ab-txt"><summary>All campaigns <small>${W.LEAGUE.length} · sorted by 28-day volume</small></summary><div class="sp-scroll"><table class="sp-tbl wbr-lg">${thead}<tbody>${[...main, ...rest].map(lrow).join("")}</tbody></table></div></details><details class="ab-txt"><summary>By source / arm tag <small>all time</small></summary>${armT}</details></div></details>`);
   /* 5. A/B tests */
   const abS = W.AB.filter(x => x.sending), wins = W.AB.filter(x => /wins/.test(x.status)).length;
   const abT = abS.length ? `<div class="sp-scroll"><table class="sp-tbl"><thead><tr><th>Test</th><th class="num">A sends</th><th class="num">A positive</th><th class="num">B sends</th><th class="num">B positive</th><th class="num" title="B's positive rate vs A's">Lift</th><th title="How sure we can be, from a two-proportion test (shown in words)">Confidence</th><th>Status</th></tr></thead><tbody>${abS.map(x => `<tr><td>${esc(x.camp)}<span class="sub">${esc(x.step)}</span></td><td class="num">${int(x.A.sent)}</td><td class="num">${f1(x.pa)}</td><td class="num">${int(x.B.sent)}</td><td class="num">${f1(x.pb)}</td><td class="num">${x.lift == null || !isFinite(x.lift) ? "—" : (x.lift > 0 ? "+" : "") + Math.round(x.lift * 100) + "%"}</td><td>${esc(x.conf)}</td><td><span class="chip${/wins/.test(x.status) ? " g" : /leading/.test(x.status) ? " b" : ""}">${esc(x.status)}</span></td></tr>`).join("")}</tbody></table></div>` : empty("No test has sent both A and B since the 50/50 split started.");
   const subj = W.SUBJ.map(g => `<div class="wbr-subj"><b>Subject lines · ${esc(g.name)}</b>${(g.arms || []).map(a => `<span class="chip">${esc(a.label)} · ${int(a.sent)} sent · ${a.pos_rate == null ? "—" : (+a.pos_rate).toFixed(1) + "%"}</span>`).join("")}<small class="mut">${esc(g.verdict || "")}</small></div>`).join("");
   const abSec = sec(5, "A/B tests", wins ? "g" : "x", `${W.AB.length} tests set up, ${abS.length} sending both sides, ${wins} winner${wins === 1 ? "" : "s"}. A winner needs ${int(W.minS)}+ sends per side and a clear gap.`,
-    `<p class="sp-note">${esc(W.ABW.A ? "A: " + W.ABW.A : "")} ${esc(W.ABW.B ? "B: " + W.ABW.B : "")}</p>${abT}${subj}<p class="sp-note"><a class="lk" href="?p=email" data-go="email">Open Email tests</a> for the winner cards and whether each change was made.</p>`,
+    `${abT}<p class="sp-note"><a class="lk" href="?p=email" data-go="email">Open Email tests</a> for what A and B say, the subject lines and whether each change was made.</p>`,
     wins ? "Roll each winner out to its campaign and log the change below." : "Keep the split running and don't change copy mid-test, or the result resets.");
   /* 6. engine + deliverability */
   const E = W.ENG, emx = Math.max(1, ...E.lanes.map(x => x.cur.nl));
@@ -950,9 +976,16 @@ function viewWeekly(d) {
      <details class="ab-txt"><summary>Full change log <small>every change, newest first</small></summary><div class="wk-log" id="wk-log">${logHtml(d.changes)}</div></details>`,
     "Log every new rule here the day it starts, so the page can measure whether it worked.");
   /* 10. next week */
-  const next = sec(10, "Next week: 3 actions", "", "", `<ol class="wbr-acts">${W.NEXT.map(x => `<li><span>${esc(x.t)}<small>Owner: ${esc(x.o)}</small></span></li>`).join("")}</ol>`, "");
+  const next = `<section class="card sp-card wbr-do"><h2>Do next <small>3 actions</small></h2><ol class="wbr-acts">${W.NEXT.filter(x => x.o !== "—").map(x => `<li><span>${esc(x.t)}<small>Owner: ${esc(x.o)}</small></span></li>`).join("")}</ol></section>`;
+  /* v7 (SIMAS 11-21: "showcase the winner ... cooler, more informative, no repeated info"): winner in gold, then the biggest moves */
+  const win = main.find(x => x.verdict === "scale") || null, runner = win ? main.filter(x => x !== win)[0] || null : main[1] || null, lose = W.LEAGUE.filter(x => x.verdict === "kill").sort((a, b) => a.pos28 - b.pos28)[0] || null, abW = W.AB.find(x => /wins/.test(x.status)) || null;
+  const winner = `<section class="card sp-card win-card${win ? "" : " none"}"><span class="win-k">${win ? "Winner of the week" : "No winner yet"}</span>
+    ${win ? `<h2 class="win-n">${esc(win.name)}</h2><div class="win-big"><b>${f1(win.pos28)}</b><span>positive replies, last 28 days<small>${int(win.d28.nl)} leads · this week ${int(win.cur.nl)} new leads</small></span></div>` : `<h2 class="win-n">${top ? `${esc(top.name)} is closest, at ${f1(top.pos28)}` : "No campaign has 100 new leads in 28 days yet"}</h2>`}
+    <div class="win-rows">${runner ? `<p><b>Runner-up</b><span>${esc(runner.name)} · ${f1(runner.pos28)}</span></p>` : ""}${lose ? `<p><b>Weakest</b><span>${esc(lose.name)} · ${f1(lose.pos28)} over ${int(lose.d28.nl)} leads</span></p>` : ""}<p><b>A/B tests</b><span>${abW ? `${esc(abW.camp)}, ${esc(abW.step)}: ${esc(abW.status)}` : `no test winner yet · ${abS.length} test${abS.length === 1 ? "" : "s"} sending both sides`}</span></p></div>
+    <p class="sp-note">Rule: the best 28-day positive rate among the main campaigns, with 100+ new leads and at least 2%.</p></section>`;
+  const moves = `<section class="card sp-card wbr-moves"><h2>Biggest moves <small>this week vs last</small></h2>${(d.heads || []).length ? `<ul>${d.heads.map(h => `<li class="${h.good ? "up" : "dn"}"><i>${h.good ? "▲" : "▼"}</i><span>${esc(h.text)}</span></li>`).join("")}</ul>` : empty("No big change yet this week.")}</section>`;
   return `<div class="wk-tools"><span class="mut">Week of ${esc(dLabel(d.w0))} · day ${d.k} of 7 · compared with the same ${d.k} day${d.k === 1 ? "" : "s"} last week and the 4 weeks before</span>${wkPick(d)}</div>
-  ${hero}${bridge}${funnelS}${league}${abSec}<div class="sp-2b">${engine}${sales}</div>${clients}${chg}${next}
+  ${hero}<div class="sp-2b wbr-top">${winner}${moves}</div>${next}<h3 class="wbr-dh">The details <small>tap a section to open it</small></h3>${bridge}${funnelS}${league}${abSec}${engine}${sales}${clients}${chg}
   <details class="card sp-card ab-txt wbr-notes"><summary>Data notes <small>read before trusting a number</small></summary><ul class="wk-miss">${d.missing.map(x => `<li>${esc(x)}</li>`).join("")}</ul></details>`;
 }
 const logHtml = rows => rows.length ? rows.map(c => `<div class="wk-ch"><span class="mono">${esc(dLabel(c.day))}</span><span class="chip">${esc(c.area)}</span><span class="w">${esc(c.what)}</span><span class="mut">${esc(c.who || "")}</span></div>`).join("") : empty("No changes logged yet.");
@@ -972,6 +1005,81 @@ function wireWeekly() {
       CACHE.weekly.changes.unshift(row); CACHE.weekly.changes.sort((a, b) => String(b.day).localeCompare(String(a.day)) || b.id - a.id); $("#wk-log").innerHTML = logHtml(CACHE.weekly.changes); f.what.value = ""; toast("Change logged"); }
     catch (e) { toast("Couldn't save that line. Check your connection."); }
   });
+}
+
+/* 6. leads + opportunities (v7, SIMAS 11-21: "a separate tab for leads, managing leads" + "opportunities ... build a website, run their socials").
+   Reads pipeline, fu_state, needs_attention, interested_leads. Writes: pipeline.fu_stage / fu_day0 / fu_note (the same three fields
+   scripts/crm.py set_stage writes; the sheet sync never touches them) and public.opportunities. */
+const LSTG = [["asked_price", "Asked price"], ["said_yes", "Said yes"], ["sample_sent", "Sample sent"], ["thinking", "Thinking"], ["parked", "Parked"], ["none", "No follow-up"]];
+const OSTG = ["spotted", "talking", "scope ready", "scope sent", "won", "lost"], OKIND = ["website", "socials", "funnels", "emails", "long-form", "system", "other"];
+let LDF = "act", LDO = "All", LDQ = "", LDOPEN = null, OPADD = false;
+async function loadLeads() {
+  await me();
+  const [pipe, fu, na, opps, il, st] = await Promise.all([
+    all("pipeline", "email,name,show,owner,inbox,status,last_reply_at,next_action,next_action_at,paid,fu_stage,fu_note,delivered_at,updated_at"),
+    all("fu_state", "email,state,due_at,touches_done,touches_total").catch(() => []), all("needs_attention", "kind,lead_email,due_at,detail").catch(() => []),
+    all("opportunities", "*", q => q.order("created_at")).catch(() => []), all("interested_leads", "email,first_name,company,campaign,inbox,last_reply_at").catch(() => []), all("sync_status", "name,ran_at").catch(() => [])]);
+  const now = Date.now(), t = dayOf(now), fuBy = Object.fromEntries(fu.map(f => [lc(f.email), f])), naBy = {}; na.forEach(x => { (naBy[lc(x.lead_email)] = naBy[lc(x.lead_email)] || []).push(x); });
+  const hotSet = new Set(il.map(x => lc(x.email))), seen = new Set();
+  const grp = p => { const s = (p.status || "").toUpperCase(), f = p.fu_stage || ""; return (p.paid && String(p.paid).trim()) || /^(WON|DONE)$/.test(s) ? "client" : s === "LOST" ? "lost" : s === "HOLD" ? "hold" : f === "parked" ? "parked" : s === "HOT" || f === "said_yes" || f === "asked_price" || hotSet.has(lc(p.email)) ? "hot" : f === "thinking" || s === "REPLIED" ? "thinking" : f === "sample_sent" || /^(DELIVERED|FU1|FU2|PUBLIC|BUILT|CLAIMED|YES)$/.test(s) ? "sample" : "other"; };
+  const rows = pipe.map(p => { const e = lc(p.email), f = fuBy[e], n = naBy[e] || []; seen.add(e);
+    const wait = n.some(x => x.kind === "reply"), due = !!(f && f.state === "active" && f.due_at && dayOf(f.due_at) <= t), late = !!(p.next_action_at && new Date(p.next_action_at) < now), g = grp(p);
+    return { ...p, e, g, wait, due, late, act: wait || due || (late && g !== "client" && g !== "lost" && g !== "parked"), fuDue: f && f.due_at, name: p.name || p.email }; });
+  il.forEach(x => { const e = lc(x.email); if (!seen.has(e)) rows.push({ email: x.email, e, name: x.first_name || x.company || x.email, show: [x.company, x.campaign].filter(Boolean).join(" · "), owner: /^(simas|simon|team|editor|studio)@/i.test(x.inbox || "") ? "Simas" : "Benas", inbox: x.inbox, status: "INTERESTED", last_reply_at: x.last_reply_at, g: "hot", wait: (naBy[e] || []).some(z => z.kind === "reply"), due: false, late: false, act: (naBy[e] || []).some(z => z.kind === "reply"), fresh: true }); });
+  return { rows, opps, synced: (st.find(s => s.name === "sheet") || {}).ran_at || null };
+}
+const LGRP = [["act", "Needs action"], ["hot", "Hot"], ["sample", "Sample sent"], ["thinking", "Thinking"], ["parked", "Parked"], ["client", "Clients"], ["lost", "Lost"], ["all", "Everyone"]];
+const ldIn = (r, k) => k === "all" ? true : k === "act" ? r.act : r.g === k;
+const ldShow = d => d.rows.filter(r => ldIn(r, LDF) && (LDO === "All" || r.owner === LDO) && (!LDQ || lc([r.name, r.email, r.show].join(" ")).includes(LDQ)))
+  .sort((a, b) => (b.wait - a.wait) || (b.due - a.due) || (b.late - a.late) || String(b.last_reply_at || "").localeCompare(String(a.last_reply_at || "")));
+const GCH = { hot: ["Hot", "r"], sample: ["Sample sent", "b"], thinking: ["Thinking", ""], parked: ["Parked", ""], client: ["Client", "g"], lost: ["Lost", ""], hold: ["On hold", "o"], other: ["New", ""] };
+function leadRow(r) {
+  const why = r.wait ? `<span class="chip r">Waiting on us</span>` : r.due ? `<span class="chip o">Follow-up due</span>` : r.late ? `<span class="chip o">Next step late</span>` : "", g = GCH[r.g] || GCH.other, open = LDOPEN === r.e;
+  return `<div class="ld-row${open ? " open" : ""}" data-ld="${esc(r.e)}"><button type="button" class="ld-main" data-act="lead" data-email="${esc(r.email)}" title="Open the conversation"><span class="av">${esc(initials(r.name))}</span><span class="grow"><b>${esc(r.name)}</b><small>${esc(r.next_action ? String(r.next_action).slice(0, 110) : r.show || r.email)}</small></span></button>
+    <span class="ld-ch">${why}<span class="chip ${g[1]}">${g[0]}</span><span class="chip">${esc(r.owner || "?")}</span></span>${r.fresh ? "" : `<button type="button" class="mini ld-more" data-ldopen="${esc(r.e)}" aria-expanded="${open}" aria-label="Manage ${esc(r.name)}" title="Manage">${ic("edit")}</button>`}
+    ${open ? `<form class="ld-man" data-ldform="${esc(r.e)}"><label><span>Follow-up stage</span><select name="stage">${LSTG.map(([k, l]) => `<option value="${k}"${(r.fu_stage || "none") === k ? " selected" : ""}>${l}</option>`).join("")}</select></label><label class="grow"><span>Note</span><input name="note" type="text" maxlength="400" value="${esc(r.fu_note || "")}" placeholder="What they said, what comes next"></label><button type="submit" class="act go">Save</button><button type="button" class="act" data-ldtask="${esc(r.e)}">${ic("plus")}Big task</button>
+      <p class="sp-note">${esc([r.email, r.inbox ? "via " + r.inbox : "", r.last_reply_at ? "last reply " + dLabel(dayOf(r.last_reply_at)) : "", r.next_action_at ? "next step " + dLabel(dayOf(r.next_action_at)) : ""].filter(Boolean).join(" · "))}</p></form>` : ""}</div>`;
+}
+const oppVal = o => o.value_usd == null ? "value not set" : usd(o.value_usd) + (o.monthly ? " / month" : " one time");
+function oppCard(o) { const cls = o.stage === "won" ? "g" : o.stage === "lost" ? "" : o.stage === "scope sent" || o.stage === "scope ready" ? "o" : "b";
+  return `<div class="tile op-card${o.closed_at ? " closed" : ""}" data-op="${o.id}"><div class="op-top"><b>${esc(o.client)}</b><span class="op-v">${esc(oppVal(o))}</span></div><p class="op-w">${esc(o.what)}</p>${(o.kinds || []).length ? `<div class="op-k">${o.kinds.map(k => `<span class="chip">${esc(k)}</span>`).join("")}</div>` : ""}
+    ${o.next_step ? `<p class="op-n"><b>Next</b> ${esc(o.next_step)}</p>` : ""}<div class="op-ft"><label class="op-st"><span class="chip ${cls}">Stage</span><select data-opstage="${o.id}" aria-label="Stage of ${esc(o.client)}">${OSTG.map(s => `<option${s === o.stage ? " selected" : ""}>${s}</option>`).join("")}</select></label><span class="chip">${esc(o.owner)}</span>${o.link && /^https?:\/\//.test(o.link) ? `<a class="chip lkc" href="${esc(o.link)}" target="_blank" rel="noopener noreferrer">Scope ↗</a>` : ""}</div></div>`; }
+function oppsHtml(d) { const open = d.opps.filter(o => !o.closed_at), closed = d.opps.filter(o => o.closed_at), mo = open.filter(o => o.monthly).reduce((a, o) => a + (+o.value_usd || 0), 0), once = open.filter(o => !o.monthly).reduce((a, o) => a + (+o.value_usd || 0), 0);
+  return `<section class="card sp-card op-sec" id="op-sec"><h2>Opportunities <small>bigger work than Shorts · ${open.length} open${mo ? ` · ${usd(mo)}/month` : ""}${once ? ` · ${usd(once)} one time` : ""}</small></h2>
+    <div class="op-grid">${open.map(oppCard).join("") || `<p class="empty">No open opportunity. Add one when a lead asks for a website, their socials or more.</p>`}</div>
+    ${OPADD ? `<form class="op-form" id="op-form"><input name="client" type="text" maxlength="200" placeholder="Who" required><input name="what" type="text" maxlength="600" placeholder="The bigger work: build their website, run their socials…" required><input name="value" type="number" min="0" step="1" placeholder="Value in $"><label class="op-chk"><input name="monthly" type="checkbox"> a month</label><select name="owner" aria-label="Owner">${OWNERS.map(o => `<option>${o}</option>`).join("")}</select><input name="next" type="text" maxlength="600" placeholder="Next step"><div class="op-kinds">${OKIND.map(k => `<label><input type="checkbox" name="kind" value="${k}"> ${k}</label>`).join("")}</div><div class="row"><button type="button" class="act" data-opcancel>Cancel</button><button type="submit" class="act go">Add opportunity</button></div></form>` : `<button type="button" class="sd-add" data-opadd>${ic("plus")}Add an opportunity</button>`}
+    ${closed.length ? `<details class="ab-txt"><summary>Closed <small>${closed.length}</small></summary><div class="op-grid">${closed.map(oppCard).join("")}</div></details>` : ""}</section>`; }
+function ldList(d) { const L = ldShow(d), cut = L.slice(0, 40);
+  return `${cut.map(leadRow).join("") || `<p class="empty">${LDF === "act" ? "Nobody needs an action right now." : "No lead here."}</p>`}${L.length > cut.length ? `<p class="sp-note">Showing 40 of ${L.length}. Type a name to find the rest.</p>` : ""}`; }
+function ldTools(d) { const n = k => d.rows.filter(r => ldIn(r, k) && (LDO === "All" || r.owner === LDO)).length;
+  return `<div class="ld-chips" role="group" aria-label="Which leads">${LGRP.map(([k, l]) => `<button type="button" class="chip${LDF === k ? " b" : ""}" data-ldf="${k}" aria-pressed="${LDF === k}">${l} · ${n(k)}</button>`).join("")}</div>
+    <div class="ld-tools2"><input class="cl-q" id="ld-q" type="search" placeholder="Find a lead" value="${esc(LDQ)}" aria-label="Find a lead"><div class="seg" role="group" aria-label="Whose leads">${["All", "Simas", "Benas"].map(o => `<button type="button" data-ldo="${o}" class="${LDO === o ? "on" : ""}" aria-pressed="${LDO === o}">${o}</button>`).join("")}</div></div>`; }
+function viewLeads(d) {
+  const A = d.rows.filter(r => LDO === "All" || r.owner === LDO), open = d.opps.filter(o => !o.closed_at), mo = open.filter(o => o.monthly).reduce((a, o) => a + (+o.value_usd || 0), 0);
+  return `<div class="sp-kpis">${kpi("Waiting on us", int(A.filter(r => r.wait).length), "replies with no answer yet")}${kpi("Follow-ups due", int(A.filter(r => r.due).length), "today or earlier")}${kpi("Hot leads", int(A.filter(r => r.g === "hot").length), "said yes, asked the price or marked interested")}${kpi("Opportunities", int(open.length), mo ? `${usd(mo)} a month if they close` : "bigger work than Shorts")}</div>
+  ${oppsHtml(d)}
+  <section class="card sp-card ld-sec"><h2>Leads <small>tap a name for the conversation · the pencil changes the stage</small></h2><div id="ld-tools">${ldTools(d)}</div><div class="ld-list" id="ld-list">${ldList(d)}</div></section>`;
+}
+function wireLeads() {
+  const d = CACHE.leads, rer = full => { if (full) { const y = scrollY; PAGE_EL.innerHTML = header("leads", d) + viewLeads(d); wireLeads(); scrollTo(0, y); return; } $("#ld-tools").innerHTML = ldTools(d); $("#ld-list").innerHTML = ldList(d); const q = $("#ld-q"); if (q && LDQ) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); } };
+  const who = () => (ME && ME.who !== "Both" ? ME.who : (ME && ME.name)) || null, sec = $(".ld-sec"), ops = $("#op-sec");
+  sec.addEventListener("input", ev => { if (ev.target.id === "ld-q") { LDQ = lc(ev.target.value); $("#ld-list").innerHTML = ldList(d); } });
+  sec.addEventListener("click", ev => { const t = ev.target.closest("button"); if (!t) return;
+    if (t.dataset.ldf) { LDF = t.dataset.ldf; LDOPEN = null; rer(); } else if (t.dataset.ldo) { LDO = t.dataset.ldo; rer(true); }
+    else if (t.dataset.ldopen) { LDOPEN = LDOPEN === t.dataset.ldopen ? null : t.dataset.ldopen; $("#ld-list").innerHTML = ldList(d); }
+    else if (t.dataset.ldtask) { const r = d.rows.find(x => x.e === t.dataset.ldtask); if (!r) return; const title = prompt("Big task for this lead", `Reply to ${r.name}`); if (!title) return;
+      must(sb().from("todo_cards").insert({ title: title.slice(0, 300), detail: r.email, owner: /^(Simas|Benas)$/.test(r.owner || "") ? r.owner : "Both", col: "todo", big: true, pos: Date.now() / 1e6, created_by: (ME && ME.name) || null })).then(() => { delete CACHE.todos; todoBadge(); toast("Added to Big tasks"); }, () => toast("Couldn't add that task.")); } });
+  sec.addEventListener("submit", async ev => { ev.preventDefault(); const f = ev.target, e = f.dataset.ldform, r = d.rows.find(x => x.e === e); if (!r) return;
+    const stage = f.stage.value, note = f.note.value.trim() || null, patch = { fu_stage: stage, fu_note: note, ...(stage !== (r.fu_stage || "none") ? { fu_day0: stage === "none" ? null : new Date(Date.now() + (stage === "parked" ? 30 * 864e5 : 0)).toISOString() } : {}) };   // parked = look again in 30 days (the follow-up clock starts at day0)
+    try { await must(sb().from("pipeline").update(patch).eq("email", r.email)); Object.assign(r, { fu_stage: stage, fu_note: note }); LDOPEN = null; delete CACHE.leads; CACHE.leads = await loadLeads(); toast("Saved"); if (PAGE === "leads") { PAGE_EL.innerHTML = header("leads", CACHE.leads) + viewLeads(CACHE.leads); wireLeads(); } } catch (e2) { toast("Couldn't save that. Check your connection."); } });
+  if (!ops) return;
+  ops.addEventListener("click", ev => { const t = ev.target.closest("button"); if (!t) return; if (t.hasAttribute("data-opadd")) { OPADD = true; rer(true); $("#op-form input")?.focus(); } else if (t.hasAttribute("data-opcancel")) { OPADD = false; rer(true); } });
+  ops.addEventListener("change", async ev => { const s = ev.target.closest("[data-opstage]"); if (!s) return; const id = +s.dataset.opstage, o = d.opps.find(x => x.id === id), stage = s.value, closed = stage === "won" || stage === "lost";
+    try { const row = await must(sb().from("opportunities").update({ stage, closed_at: closed ? new Date().toISOString() : null }).eq("id", id).select().single()); Object.assign(o, row); rer(true); toast(closed ? `Closed as ${stage}` : "Stage saved"); } catch (e) { toast("Couldn't save that."); rer(true); } });
+  ops.addEventListener("submit", async ev => { ev.preventDefault(); const f = ev.target; if (f.id !== "op-form") return;
+    const row = { client: f.client.value.trim(), what: f.what.value.trim(), value_usd: f.value.value === "" ? null : +f.value.value, monthly: f.monthly.checked, owner: f.owner.value, next_step: f.next.value.trim() || null, kinds: $$('input[name="kind"]:checked', f).map(x => x.value), created_by: who() };
+    if (!row.client || !row.what) return;
+    try { const ins = await must(sb().from("opportunities").insert(row).select().single()); d.opps.push(ins); OPADD = false; rer(true); toast("Opportunity added"); } catch (e) { toast("Couldn't add that. Check your connection."); } });
 }
 
 /* 5. to-do board */
@@ -995,6 +1103,7 @@ function cardHtml(c) {
     <div class="ft"><span class="${oc}">${esc(c.owner)}</span>${c.due ? `<span class="chip${c.col !== "done" && overdue(c.due) ? " r" : ""}">${c.col !== "done" && overdue(c.due) ? "overdue · " : "due "}${esc(dLabel(c.due))}</span>` : ""}<span class="sp"></span>
       <button type="button" class="mini" data-mv="-1" aria-label="Move left" title="Move left"><svg aria-hidden="true"><use href="#i-back"/></svg></button>
       <button type="button" class="mini" data-mv="1" aria-label="Move right" title="Move right"><svg aria-hidden="true"><use href="#i-chev"/></svg></button>
+      <button type="button" class="mini" data-mkbig aria-label="Make it a big task" title="Make it a big task"><svg aria-hidden="true"><use href="#i-flag"/></svg></button>
       <button type="button" class="mini" data-ed aria-label="Edit" title="Edit"><svg aria-hidden="true"><use href="#i-edit"/></svg></button></div></div>`;
 }
 function formHtml(c) {
@@ -1020,12 +1129,20 @@ function boardHtml(list) {
 function toolsHtml(list) { const n = o => list.filter(c => c.col !== "done" && (o === "All" || c.owner === o)).length;
   return `<div class="seg sd-view" role="group" aria-label="View">${[["board", "Board"], ["founder", "By founder"]].map(([k, l]) => `<button type="button" data-tv="${k}" class="${TVIEW === k ? "on" : ""}" aria-pressed="${TVIEW === k}">${l}</button>`).join("")}</div>
     ${TVIEW === "board" ? `<span class="sd-chips" role="group" aria-label="Owner">${["All", ...OWNERS].map(o => `<button type="button" class="chip${OWNF === o ? " b" : ""}" data-of="${o}" aria-pressed="${OWNF === o}">${o} · ${n(o)}</button>`).join("")}</span>` : `<span class="mut">Drag a card to another lane to change its owner.</span>`}`; }
-function promsHtml() { return PROMS.length ? `<section class="card sp-card sd-proms"><h2>Promised to clients <small>${PROMS.length} open · from the CRM, read-only</small></h2><div class="sd-pr">${PROMS.map(q => { const late = q.due_at && new Date(q.due_at) < new Date(); return `<div class="tile sd-pc${late ? " late" : ""}"><div class="tt">${esc(q.promise)}</div><div class="ft"><span class="chip">${esc(q.owner || "?")}</span><span class="chip${late ? " r" : ""}">${q.due_at ? (late ? "overdue · " : "due ") + esc(dLabel(dayOf(q.due_at))) : "no date"}</span><span class="sp"></span><small class="mut">${esc(q.lead_email)}</small></div></div>`; }).join("")}</div></section>` : ""; }
-function viewTodos(list) { return `${promsHtml()}<div class="sd-tools" id="sd-tools">${toolsHtml(list)}</div><div class="sd-board${TVIEW === "founder" ? " lanes" : ""}" id="sd-board">${boardHtml(list)}</div>`; }
+function bigHtml(list) {   /* v7 (SIMAS 11-21: "big tasks ... we'll also write tasks there for us") */
+  const B = list.filter(c => c.big && c.col !== "done").sort((a, b) => (a.due || "9999").localeCompare(b.due || "9999") || a.id - b.id), doneN = list.filter(c => c.big && c.col === "done").length, mine = (ME && ME.who && ME.who !== "Both" ? ME.who : "Both");
+  return `<section class="card sp-card sd-big"><h2>Big tasks <small>${B.length} open${doneN ? ` · ${doneN} done` : ""}</small></h2>
+    <form class="sd-bigadd" id="sd-bigadd"><input name="title" type="text" maxlength="300" placeholder="Write a big task: reply to a client, film a Loom…" aria-label="New big task" required><select name="owner" aria-label="Who">${OWNERS.map(o => `<option${o === mine ? " selected" : ""}>${o}</option>`).join("")}</select><input name="due" type="date" aria-label="Due date"><button type="submit" class="act go">${ic("plus")}Add</button></form>
+    <div class="sd-bigl">${B.map(c => `<div class="sd-bt${overdue(c.due) ? " late" : ""}"><button type="button" class="sd-ck" data-bigdone="${c.id}" aria-label="Mark done: ${esc(c.title)}" title="Mark done">${ic("check")}</button><div class="grow"><b>${esc(c.title)}</b>${c.detail ? `<p>${esc(c.detail)}</p>` : ""}</div><span class="chip ${c.owner === "Simas" ? "b" : c.owner === "Benas" ? "o" : ""}">${esc(c.owner)}</span>${c.due ? `<span class="chip${overdue(c.due) ? " r" : ""}">${overdue(c.due) ? "overdue · " : "due "}${esc(dLabel(c.due))}</span>` : ""}<button type="button" class="mini" data-bigoff="${c.id}" title="Move it to the board as a normal card" aria-label="Move to the board">${ic("board")}</button></div>`).join("") || `<p class="empty">No big task yet. Write the first one above.</p>`}</div></section>`;
+}
+function promsHtml() { const late = PROMS.filter(q => q.due_at && new Date(q.due_at) < new Date()).length; return PROMS.length ? `<details class="card sp-card sd-proms"${late ? " open" : ""}><summary><h2>Promised to clients <small>${PROMS.length} open${late ? ` · <span class="sd-dn">${late} overdue</span>` : ""} · from the CRM, read-only</small></h2></summary><div class="sd-pr">${PROMS.map(q => { const late = q.due_at && new Date(q.due_at) < new Date(); return `<div class="tile sd-pc${late ? " late" : ""}"><div class="tt">${esc(q.promise)}</div><div class="ft"><span class="chip">${esc(q.owner || "?")}</span><span class="chip${late ? " r" : ""}">${q.due_at ? (late ? "overdue · " : "due ") + esc(dLabel(dayOf(q.due_at))) : "no date"}</span><span class="sp"></span><small class="mut">${esc(q.lead_email)}</small></div></div>`; }).join("")}</div></details>` : ""; }
+const small = list => list.filter(c => !c.big);
+function viewTodos(list) { return `<div id="sd-bigw">${bigHtml(list)}</div>${promsHtml()}<h3 class="wbr-dh">The board <small>smaller cards</small></h3><div class="sd-tools" id="sd-tools">${toolsHtml(small(list))}</div><div class="sd-board${TVIEW === "founder" ? " lanes" : ""}" id="sd-board">${boardHtml(small(list))}</div>`; }
 function renderTodos() {
   const bd = $("#sd-board"); if (PAGE !== "todos" || !CACHE.todos || !bd) return;
   const sx = bd.scrollLeft, openD = new Set($$("details.sd-done[open]", bd).map(x => x.closest("[data-lane]").dataset.lane));
-  bd.classList.toggle("lanes", TVIEW === "founder"); bd.innerHTML = boardHtml(CACHE.todos); bd.scrollLeft = sx; $("#sd-tools").innerHTML = toolsHtml(CACHE.todos);
+  bd.classList.toggle("lanes", TVIEW === "founder"); bd.innerHTML = boardHtml(small(CACHE.todos)); bd.scrollLeft = sx; $("#sd-tools").innerHTML = toolsHtml(small(CACHE.todos));
+  const bw = $("#sd-bigw"); if (bw && !(document.activeElement && bw.contains(document.activeElement) && document.activeElement.value)) bw.innerHTML = bigHtml(CACHE.todos);
   $$("details.sd-done", bd).forEach(x => { if (openD.has(x.closest("[data-lane]").dataset.lane)) x.open = true; });
   const f = $(".sd-form textarea", bd); if (f) { f.focus(); f.setSelectionRange(f.value.length, f.value.length); }
   todoBadge();
@@ -1043,6 +1160,16 @@ function dropCard(id, col, owner, prevId, nextId) {   // position from the neigh
 }
 function wireBoard() {
   const board = $("#sd-board"); if (!board) return;
+  const bw = $("#sd-bigw");
+  if (bw) {
+    bw.addEventListener("submit", async ev => { ev.preventDefault(); const f = ev.target, title = f.title.value.trim(); if (!title) return;
+      const row = { title, owner: f.owner.value, due: f.due.value || null, col: "todo", big: true, pos: posBetween(CACHE.todos, "todo", 0), created_by: (ME && ME.name) || null };
+      f.title.value = "";
+      try { const ins = await must(sb().from("todo_cards").insert(row).select().single()); CACHE.todos.push(ins); renderTodos(); toast("Big task added"); } catch (e) { f.title.value = title; toast("Couldn't add that task. Check your connection."); } });
+    bw.addEventListener("click", async ev => { const t = ev.target.closest("button"); if (!t) return;
+      if (t.dataset.bigdone) { await saveCard(+t.dataset.bigdone, { col: "done" }); toast("Done"); }
+      else if (t.dataset.bigoff) await saveCard(+t.dataset.bigoff, { big: false }); });
+  }
   board.addEventListener("click", async ev => {
     const t = ev.target.closest("button"); if (!t) return;
     const card = t.closest("[data-card]"), id = card ? +card.dataset.card : null, list = CACHE.todos;
@@ -1057,6 +1184,7 @@ function wireBoard() {
       return;
     }
     if (id && t.hasAttribute("data-ed")) { EDIT = { id, col: list.find(x => x.id === id).col }; renderTodos(); return; }
+    if (id && t.hasAttribute("data-mkbig")) { await saveCard(id, { big: true, col: list.find(x => x.id === id).col === "done" ? "todo" : list.find(x => x.id === id).col }); toast("Moved to Big tasks"); return; }
     if (id && t.dataset.mv) { const c = list.find(x => x.id === id), i = COLS.findIndex(x => x[0] === c.col) + +t.dataset.mv; if (COLS[i]) await moveCard(id, COLS[i][0], 0); }
   });
   board.addEventListener("submit", async ev => {

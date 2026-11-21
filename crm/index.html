@@ -20,8 +20,8 @@
 <link rel="preload" href="fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/geist-mono.woff2" as="font" type="font/woff2" crossorigin>
 <script src="theme.js?v=20261112p3"></script>
-<link rel="stylesheet" href="crm.css?v=20261119n19">
-<link rel="stylesheet" href="side.css?v=20261120wbr7">
+<link rel="stylesheet" href="crm.css?v=20261121v7b">
+<link rel="stylesheet" href="side.css?v=20261121v7b">
 </head>
 <body>
 <svg width="0" height="0" class="sprite" aria-hidden="true" focusable="false">
@@ -107,6 +107,7 @@
   </header>
   <main id="spage" class="spage" hidden aria-live="polite"></main>
   <section class="hero tilt" id="hero" aria-label="This month against the goal"></section>
+  <div id="fc-bar" class="fc-bar"><div class="seg" role="group" aria-label="How much to show"><button type="button" data-fcv="1">Focus</button><button type="button" data-fcv="0">Everything</button></div><span class="mut">Focus shows the cards you act on every day.</span></div>
   <div id="grid" class="grid" aria-live="off"></div>
   <h2 class="zone-h" id="zone-portal">Client <em class="sf">portal</em><span id="zone-sub"></span></h2>
   <div id="grid2" class="grid"></div>
@@ -159,6 +160,7 @@
   <span class="sn-cap"><span class="sn-lbl">Menu</span></span>
   <ul class="sn-list">
     <li><a href="./" data-nav="dashboard" data-tip="Dashboard"><svg aria-hidden="true"><use href="#i-home"/></svg><span class="sn-lbl">Dashboard</span></a></li>
+    <li><a href="?p=leads" data-nav="leads" data-tip="Leads"><svg aria-hidden="true"><use href="#i-user"/></svg><span class="sn-lbl">Leads</span></a></li>
     <li><a href="?p=expenses" data-nav="expenses" data-tip="Expenses"><svg aria-hidden="true"><use href="#i-cash"/></svg><span class="sn-lbl">Expenses</span></a></li>
     <li><a href="?p=email" data-nav="email" data-tip="Email tests"><svg aria-hidden="true"><use href="#i-mail"/></svg><span class="sn-lbl">Email tests</span></a></li>
     <li><a href="?p=clients" data-nav="clients" data-tip="Clients"><svg aria-hidden="true"><use href="#i-film"/></svg><span class="sn-lbl">Clients</span></a></li>
@@ -184,7 +186,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="config.js?v=20261112p3"></script>
-<script src="crm.js?v=20261121d1"></script>
-<script src="side.js?v=20261120wbr7"></script>
+<script src="crm.js?v=20261121v7b"></script>
+<script src="side.js?v=20261121v7b"></script>
 </body>
 </html>

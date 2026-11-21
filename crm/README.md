@@ -77,6 +77,23 @@ Every action shows a confirm sheet that says what the client will see. Links mus
 
 Five bottom tabs (Home · Money · Leads · Outreach · Clients), each with its own cards; the last tab is remembered. Compact header with the owner switch, search, live dot and account menu. Lead drawers and lists are bottom sheets (drag the handle down to close); a conversation opens at the latest message. Charts: first tap shows the value, second tap opens it. On phones that report tilt without asking (Android), the hero highlight follows the device; the page never asks for that permission. `manifest.webmanifest` + Apple meta tags make it installable ("Add to Home Screen"); there is no service worker, so it needs a connection.
 
+## Money page (`money.html`, 2026-11-14)
+
+The "💰 Money" card (bottom of the bento, phone tab Money) opens `money.html`: alerts, this month's income / costs / profit, Stripe balance, bills for the next 45 days, payouts per founder, transfers and the 50/50 position (display only; the split is manual).
+
+- Data: one row in `finance_snapshot` (id `current`), written by `scripts/finance.py --sync` in the Dashboard repo (service role). SQL: `supabase/finance1.sql` (founders read via `is_admin()`, no anon access).
+- Gate: same rules as `index.html` (no session or not a founder → `./`; 2-step login set up but not done → `./`). The page writes nothing.
+- `money.html?demo=1` renders `money-demo.json` (a copy of a real snapshot) without Supabase; `&look=forest` previews a look. The demo file is git-ignored: it holds real numbers and this repo is the public site, so never commit or deploy it.
+- Files: `money.html`, `money.js`, `money.css` (loaded after `crm.css`). Bump their `?v=` strings in `money.html` after a change.
+
+## Paid clients and Hot leads pages (2026-11-16)
+
+Both open in the drill-down sheet, with a search box (filters as you type) and the All / Simas / Benas switch.
+
+- **Paid clients** (card "Paid clients" at the end of the bento, phone tab Clients): everyone who paid (a payment, `pipeline.paid` or status WON/DONE, or a portal pack), newest payment first. Per client: owner, inbox, what they bought (`pipeline.paid`, else the latest payment), what is still owed (a sentence with "owed / owe / remaining…" in next action, `fu_note` or notes), the next step with its time (late = red), open promises, the latest five `client_notes` and the last email date. A payer email is matched to its pipeline lead when it is the same address, is named in `paid` / `notes`, or shares a company domain.
+- **Hot leads** (the Hot leads card's expand button or count): every hot lead. Hot = status HOT, said yes / asked price, Instantly "Interested", thinking or replied after the sample (not buyers), minus `fu_stage` parked / none and blocklisted replies. Order: waiting on us first, then next action. Per lead: stage, the offer (latest `client_notes` price note, else `fu_note`), their last words (newest inbound `threads` snippet or reply-queue snippet), last touch, next step, a "$ money" badge when an amount is involved.
+- `client_notes` is filled from `docs/clients/*.md` by `scripts/client_notes_sync.py` (Dashboard repo, hourly inside `crm_sync.py`) and by `client_notes.py add`. SQL: `supabase/crm_ops5.sql` + `crm_ops8.sql` (`noted_at`, `name`).
+
 ## Config (`config.js`)
 
 `supabaseUrl`, `supabaseAnonKey` (public by design; never put the service-role key or any secret here), `monthlyGoal` (10000), `timezone` (`Europe/Vilnius`).
@@ -88,3 +105,16 @@ Five bottom tabs (Home · Money · Leads · Outreach · Clients), each with its 
 - `pipeline.source` and `pipeline.campaign` are empty, so there is no "which lane buys" card yet.
 - Chart marks narrower than 44px on a phone (8-week mini bars, inbox bars, mood segments) keep their size; the number or legend row beside each opens the same list.
 - A few synced message bodies arrive HTML-escaped (`&#x27;`); the page decodes them for display. The stored text is unchanged.
+
+## v7 (2026-11-21, Simas: tracking check, minimal screens, Leads, opportunities, big tasks)
+
+- **Positive replies are counted per lead.** `campaign_daily.opportunities` (Instantly's daily "unique opportunities") counts a lead again on every day it is active, so sums over several days ran up to 1.9× too high. `crm.js` (after `fetchAll`) and `side.js` (`fixOpp`) now take each day's positives from `interested_leads` (one row per lead, the day it was marked interested). All-time totals match Instantly.
+- **Paused campaigns stay in `campaign_live`.** The cloud job writes active campaigns only; `scripts/crm_panels_sync.py campaigns_paused()` (Dashboard repo, every 15 min) writes the paused and finished ones, with `updated_at` 6 hours old so the dashboard still reads them as not live.
+- **Dashboard: Focus / Everything** (switch above the cards, saved per device as `beju-crm-focus`, desktop only). Focus shows eight cards: Do next, Today, Opportunities, Hot leads, On hold, In production, Follow-ups, Retainers.
+- **Opportunities** (`public.opportunities`, `supabase/crm_v7.sql`): bigger work than Shorts. Card on the dashboard (read-only); add, change stage and close on the Leads page.
+- **Leads page (`?p=leads`)**: who needs action, by stage and owner; a row opens the conversation; the pencil changes the follow-up stage and note (`pipeline.fu_stage`, `fu_day0`, `fu_note`, the same fields `crm.py set_stage` writes; "parked" sets day0 30 days ahead) or adds a big task for that lead.
+- **To-dos: Big tasks** on top (`todo_cards.big`), written by the founders; a tick marks one done. "Promised to clients" folds away unless something is overdue.
+- **Email tests**: green = testing all variants (A and B both sending), purple = one variant only, gold = the winner (best positive rate among campaigns with 100+ leads contacted and at least 2%, all time). The per-campaign A/B detail folds away unless a test needs a founder.
+- **Weekly analysis**: winner of the week (28-day positive rate, 100+ new leads, 2%+), biggest moves, three actions; the eight detail sections fold. MRR and renewals appear once (Clients), "Do next" once (top).
+- **Client performance**: a client who posts no Shorts now shows their latest posts (long videos, photo posts) with views or likes. The numbers scan once a day (`crm_panels_sync.py` → `client_metrics.scan()`), plus the Sunday review.
+- **Type floor**: nothing under 13 px; reading text 15–16 px; 44 px tap targets on phones (end of `side.css`).
