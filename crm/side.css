@@ -643,3 +643,11 @@ tr.camp-st.st-win>td{background:var(--gold7-soft)} tr.camp-st.st-win>td:first-ch
 .sl-t a{color:var(--blue)}
 .sl-at{color:var(--blue);background:var(--blue-soft);border-radius:5px;padding:0 3px;font-weight:600}
 @media (max-width:600px){.sl-pr,.sl-f{max-width:none} .sl-post .fld select,.sl-post .fld textarea{font-size:16px} .sl-o{min-height:44px}}
+
+/* ---------- 11-21: revenue per campaign (Email tests) ---------- */
+.ab-rev{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+.ab-rev b{font-family:var(--mono);font-size:28px;font-weight:500;letter-spacing:-.03em;line-height:1.1}
+.ab-rev span{font-size:14px;color:var(--ink-2)} .ab-rev small{font-size:12.5px;color:var(--mute)}
+.rev-sort{max-width:320px;margin:0 0 12px}
+.rev-un{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:14px;color:var(--ink-2)} .rev-un b{font-family:var(--mono);font-weight:500;color:var(--ink)}
+@media (max-width:600px){.rev-sort{max-width:none} .sp-bar.camp-st{grid-template-columns:minmax(0,1fr)}}   /* phones: the longer value line (now with revenue) goes under the name instead of squeezing it */
