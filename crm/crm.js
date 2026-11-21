@@ -1,6 +1,8 @@
 /* BEJÚ founder CRM: bento dashboard v2 (2026-11-12, Simas).
    Reads the CRM database; the ONLY writes are the client-portal actions in pOp() (sample_requests, videos,
    video_versions, video_notes.done_at, purchases), the same writes scripts/portal_ops.py makes. Nothing else is written.
+   11-21 (BENAS, PR #9): plus the founder's decision on a lane-3 draft (public.drafts: status, body, founder_note, approved_sha256) in draftOp();
+   the drafts_guard trigger enforces every rule (2-step founder session, approve only the exact text shown, nothing while sending).
    Data is protected by row-level security (is_admin() on every CRM table); the sign-in gate here is only UX.
    CSP forbids inline styles, so every dynamic size goes through data-v="name:value" -> style.setProperty. */
 (() => {
@@ -100,7 +102,7 @@ function feedX() {
 }
 async function fetchAll() {
   const t = today(), since60 = new Date(Date.now() - 60 * 864e5).toISOString();
-  const [pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk, stages, nextSteps, forecast, fx] = await Promise.all([
+  const [pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk, stages, nextSteps, forecast, fx, deals, drafts, dismiss] = await Promise.all([
     all("pipeline", "*", q => q.order("email")),
     all("payments", "id,client_id,email,payer_name,amount,currency,package,refunded,paid_at", q => q.order("paid_at", { ascending: false })),
     all("campaign_daily", "campaign_id,day,sent,new_leads,replies,replies_auto,opportunities", q => q.gte("day", addDays(t, -75)).order("day").order("campaign_id")),
@@ -128,6 +130,9 @@ async function fetchAll() {
     all("lead_next_step", "*").catch(() => null),   // 11-21: one next step per lead (drawer)
     must(sb.from("pipeline_forecast").select("*").order("ord")).catch(() => null),   // 11-21: leads and weighted $ per stage (Pipeline card)
     feedX(),   // 11-21: CRM changes, calls and to-dos for the Activity feed
+    all("big_deals", "*").catch(() => null),   // 11-21 (BENAS, main page): open deals worth $300+/mo, stale first, then value (PR #12)
+    all("drafts_waiting", "*").catch(() => null),   // 11-21 (BENAS): lane-3 drafts for a founder (PR #9). Not live yet = null = the card hides
+    all("reply_dismissals", "lead_email,received_at").catch(() => []),   // 11-21: "no reply needed" marks (Do next; needs_attention misses one stamped to the minute)
   ]);
   /* 11-21 (tracking check, from v7): Instantly's daily "unique opportunities" counts a lead again on each day it is active, so sums over days
      ran up to 1.9x too high. Positives per day come from interested_leads: one row per lead, on the day it was marked interested. */
@@ -135,7 +140,7 @@ async function fetchAll() {
     interested.forEach(x => { const dd = dayOf(x.interest_changed_at || x.last_reply_at || x.created_at); if (!dd || !x.campaign_id) return; const k = x.campaign_id + "|" + dd; m[k] = (m[k] || 0) + 1; });
     if (interested.length) { daily.forEach(r => { const k = r.campaign_id + "|" + r.day; seen.add(k); r.opportunities = m[k] || 0; });
       Object.entries(m).forEach(([k, n]) => { const [campaign_id, day] = k.split("|"); if (!seen.has(k) && day >= lo) daily.push({ campaign_id, day, sent: 0, new_leads: 0, replies: 0, replies_auto: 0, opportunities: n }); }); } }
-  return { pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk, stages, nextSteps, forecast, fx };
+  return { pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk, stages, nextSteps, forecast, fx, deals, drafts, dismiss };
 }
 
 /* ---------------- derive ---------------- */
@@ -162,6 +167,16 @@ const PACK = { monthly_30_300: "30 Shorts a month", short_5: "5 Shorts", short_3
 const PER = { today: ["Today", 1], "7d": ["Last 7 days", 7], "30d": ["Last 30 days", 30], month: ["This month", 0] };
 const nameOf = e => { const p = RAW && RAW.pipeline.find(x => lc(x.email) === lc(e)); return p && p.name ? p.name : e; };
 const payKey = p => p.client_id ? "c:" + p.client_id : p.email ? "e:" + lc(p.email) : "p:" + p.id;
+/* 11-21 (Do next noise): which waiting replies are real work. HARD_PASS = the send guard's _HARD_PASS (scripts/instantly.py) + "stop" /
+   "unsubscribe" alone. AUTO_TX / YES_TX / HUMAN_TX = the reply sync's classifier (supabase/functions/ops-sync). AUTO_MORE = auto-replies it
+   still files as REAL (11-21 data: "received your message", "landed safe", "my working hours", "only check this email", "thanks for writing in"). */
+const HARD_PASS = /\b(?:going to|gonna|will|'ll|have to|must|i|we)\s+pass\b(?!\s+(?:this|it|that|them|your|you|the|along|on to|on your|on the))|\bpass(?:ing)? on (?:this|it|that|the offer|your offer)\b|\bno,?\s+thanks?\b|\bno thank you\b|\bnot interested\b|\bnot for (?:us|me)\b|\bplease (?:don'?t|do not) (?:follow up|contact|email|reach out|send)|^\W*(?:stop|unsubscribe|remove me)\b/i;
+const AUTO_TX = /out of (the )?office|\bOOO\b|on (vacation|holiday|leave|maternity)|auto(matic)?[- ]?reply|thank(s| you)( so much| very much)? for (your (email|message|e-mail|inquiry|enquiry|note)|reaching|getting|emailing|contacting)|your (message|email) has been (received|forwarded)|you will receive a (response|reply)|vielen dank f|(reply|respond|get back)[^.]{0,40}(upon|on|after) my return|away at a conference|reply above this line|your request (\(#?\d+\) )?has been received|we strive to respond within|limited access to (my )?e-?mails?|for (the )?fastest (assistance|response)|we (aim to )?(respond|reply) to (all )?e-?mails? within|in the meantime, here are|view (this email )?in (your )?browser|unsubscribe/i;
+const HUMAN_TX = /sorry for the (late|delayed|slow) (reply|response)|\bi was (out|away|travell?ing)\b|\b(adding|looping in|cc'?ing|copying in)\b|\bi'?ve (now )?(reviewed|watched|looked)|\b(aren'?t|are not|am not|i'?m not|not) (currently )?(looking for|interested)|\bno,? thank(s| you)\b|\b(just|i'?ve|we'?ve|i|we) (just )?paid\b|looking forward to working (together|with)/i;
+const YES_TX = /\b(yes|yeah|sure|interested|go ahead|send it|please do|sounds good|let'?s do|i'?d (like|love|be happy)|take you up on)\b/i;
+const AUTO_MORE = /\b(we('ve)?|i('ve)?|team has) received your (message|e-?mail|inquiry|enquiry|note)\b|\b(has|have) landed (safe|safely)\b|\bmy working hours\b|\bonly check (this|my) (e-?mail|inbox)\b|\bthanks? (so much )?for writing in\b|\byour (request|ticket)\b[^.]{0,30}\bhas been received\b/i;
+const ownWords = t => String(t || "").split(/\bFrom: |\bOn .{5,120}?wrote:|-----Original Message-----|\bSent from my\b/)[0];   // the lead's own words, not the quoted thread
+const autoText = w => /\bautomated (e-?mail |email )?(response|reply|message)\b/i.test(w) || ((AUTO_TX.test(w) || AUTO_MORE.test(w)) && !YES_TX.test(w) && !HUMAN_TX.test(w));
 
 function derive() {
   const R = RAW, t = today(), own = r => STATE.owner === "All" || (r.owner || "") === STATE.owner, ownLoose = r => STATE.owner === "All" || !r.owner || r.owner === STATE.owner;
@@ -481,27 +496,42 @@ function derive() {
   d.paidHot = d.paidC.filter(c => c.tier === "very hot").length; d.paidVal = d.paidC.filter(c => c.valuable || c.tier === "valuable").length;
   d.paidLate = live.filter(c => c.p.next_action_at && new Date(c.p.next_action_at) < new Date()).length; d.paidNoNext = live.filter(c => !c.p.next_action).length; d.paidProm = sum(live, c => c.prom.length);
 
-  /* ---- 11-16 (Simas): "Do next" = only what a FOUNDER must do ("reply to Kiid Coffee is your task, so we don't have to step a foot
-     in there"). Founder tasks (founder_tasks table, added by the Claudes), calls, portal decisions. Replies, follow-ups, deliveries and
-     promises are Claude's queue: one line under the card, open it to watch. ---- */
-  const nx = [], cq = [], seenN = new Set(), push = (L, x) => { const k = (x.email || x.k || x.task) + "|" + x.title; if (!seenN.has(k)) { seenN.add(k); L.push(x); } };
-  (R.ftasks || []).filter(x => STATE.owner === "All" || !x.who || x.who === STATE.owner).forEach(x => { const du = dueIn(x.due_at); push(nx, { w: du && du.late ? 100 : 96, icon: "flag", c: "c-red", title: x.title, sub: [x.who || "Either of you", du ? du.txt : "", x.detail || ""].filter(Boolean).join(" · "), task: x.id, email: x.lead_email || "" }); });
-  d.callsUp.forEach(x => push(nx, { w: 98, icon: "phone", c: "c-blue", title: `Call ${x.name || x.email}`, sub: `${dayOf(x.start_at) === t ? "Today" : dLabel(dayOf(x.start_at))} ${timeOf(x.start_at)} · booked on cal.com`, email: x.email || "" }));
-  d.pSamples.filter(s => s.status === "requested").forEach(s => push(nx, { w: 80, icon: "film", c: "c-purple", title: `Answer ${s.who.name}'s sample request`, sub: "Accept or decline it in the portal queue", k: "psamples", a: "" }));
-  d.nextAll = nx.sort((x, y) => y.w - x.w); d.next = d.nextAll.slice(0, 5); d.nextN = nx.length;
-  (att.paid_waiting || []).filter(x => !gone.has(lc(x.email))).forEach(x => push(cq, { q: "deliver", w: 100, icon: "cash", c: "c-green", title: `Deliver to ${x.name}`, sub: x.detail || "Paid and still waiting for the videos", email: x.email }));
-  d.pVideos.filter(v => /^(received|revision)$/.test(v.status)).forEach(v => { const du = dueIn(v.due_at); push(cq, { q: "deliver", w: du && du.late ? 97 : 82, icon: "play", c: "c-purple", title: `${v.status === "revision" ? "Changes asked" : "New video request"}: ${v.title || "Untitled"}`, sub: `${v.who.name}${du ? " · " + du.txt : ""}`, k: "pvideos", a: "" }); });
-  (att.promises || []).filter(x => !gone.has(lc(x.email))).forEach(x => push(cq, { q: "promise", w: 92, icon: "flag", c: "c-ink", title: `Keep the promise to ${nameOf(x.email)}`, sub: x.detail || "", email: x.email }));
-  d.hot.filter(h => h.us).forEach(h => push(cq, { q: "reply", w: 90, icon: "mail", c: "c-red", title: `Reply to ${h.p.name || h.p.email}`, sub: `Hot lead waiting on us · ${h.tag[0]}`, email: h.p.email }));
-  (att.reply || []).filter(x => !gone.has(lc(x.email))).forEach(x => push(cq, { q: "reply", w: 70, icon: "mail", c: "c-blue", title: `Reply to ${x.name}`, sub: x.detail || "A reply is waiting", email: x.email }));
-  (att.overdue || []).filter(x => !gone.has(lc(x.email))).forEach(x => push(cq, { q: "other", w: 60, icon: "alert", c: "c-orange", title: `Overdue: ${x.name}`, sub: x.detail || "", email: x.email }));
-  d.fuDays[0].list.forEach(f => push(cq, { q: "fu", w: 40, icon: "clock", c: "c-grey", title: `Follow up with ${f.name || f.email}`, sub: `touch ${Math.min((f.touches_done || 0) + 1, f.touches_total || 99)} of ${f.touches_total || "?"} · due today`, email: f.email }));
+  /* ---- 11-21 (BENAS, main page): Big deals = public.big_deals (open deals worth $300+/mo; the view sorts stale first, then value).
+     Waiting for approval = public.drafts_waiting (PR #9): approved / sending drafts are in the sender's hands, the rest wait on a founder.
+     null = the view isn't there (yet): the card says so or hides. ---- */
+  d.deals = R.deals ? R.deals.filter(ownLoose) : null;
+  d.drafts = R.drafts ? R.drafts.filter(x => /^(pending|held|unknown|failed|stale)$/.test(x.status || "") && ownLoose({ owner: ownerOfInbox(x.inbox) })).sort((a, b) => +new Date(a.created_at) - +new Date(b.created_at)) : null;
+  /* ---- 11-21 (BENAS): "Do next" = ONE ranked list, one row per lead (its most urgent reason wins):
+     1 approvals > 2 replies waiting (oldest first) > 3 calls today > 4 deliveries, promises and to-dos due > 5 follow-ups due > 6 hot leads with no next step.
+     A founder to-do (founder_tasks) always keeps its own row and Done button; it still takes its lead's place for the lower rows. ---- */
+  const todoC = [], age = x => x ? rel(+new Date(x)) : "", ms = x => x ? +new Date(x) : 0, dueT = x => { const u = dueIn(x); return u ? u.txt : ""; };
+  const c0 = (r, at, key, x) => { if (key && !/^t:/.test(key) && gone.has(key)) return; todoC.push({ ...x, r, at, key }); };
+  (d.drafts || []).forEach(x => c0(1, ms(x.created_at), lc(x.lead_email), { icon: "check", c: "c-purple", title: `Approve the reply to ${nm(x.lead_email)}`, sub: `${DRAFT_L[x.category] || words(x.category)}${x.status === "pending" ? "" : " · " + x.status}`, end: age(x.created_at), k: "draft", a: String(x.id) }));
+  const outAt = {}; R.tlite.forEach(m => { if (m.direction === "out") { const k = lc(m.lead_email), x = ms(m.at); if (!(outAt[k] >= x)) outAt[k] = x; } });
+  const hotBy = Object.fromEntries(d.hot.map(h => [lc(h.p.email), h]));
+  const dsm = {}; (R.dismiss || []).forEach(x => { const k = lc(x.lead_email), v = ms(x.received_at); if (!(dsm[k] >= v)) dsm[k] = v; });   // a mark covers its reply even when stamped to the minute
+  (att.reply || []).filter(x => { const w = ownWords(x.detail), at = ms(x.due), k = lc(x.email); return !(outAt[k] > at) && !(dsm[k] >= at - 6e4) && !HARD_PASS.test(w) && !autoText(w); })
+    .forEach(x => { const h = hotBy[lc(x.email)]; c0(2, ms(x.due), lc(x.email), { icon: "mail", c: h ? "c-red" : "c-blue", title: `Reply to ${nm(x.email)}`, sub: `${h ? `Hot lead, ${h.tag[0]} · ` : ""}${x.detail || "A reply is waiting"}`, end: age(x.due), email: x.email }); });
+  d.callsUp.filter(x => dayOf(x.start_at) === t).forEach(x => c0(3, ms(x.start_at), x.email ? lc(x.email) : "cal:" + x.uid, { icon: "phone", c: "c-blue", title: `Call ${x.name || x.email}`, sub: `Today ${timeOf(x.start_at)} · booked on cal.com`, end: timeOf(x.start_at), email: x.email || "", k: "todaylist", a: "" }));
+  (R.ftasks || []).filter(x => STATE.owner === "All" || !x.who || x.who === STATE.owner).forEach(x => c0(4, ms(x.due_at || x.created_at), "t:" + x.id, { icon: "flag", c: "c-red", title: x.title, sub: [x.who || "Either of you", dueT(x.due_at), x.detail || ""].filter(Boolean).join(" · "), task: x.id, lead: lc(x.lead_email || ""), email: x.lead_email || "" }));
+  (att.paid_waiting || []).forEach(x => c0(4, ms(x.due), lc(x.email), { icon: "cash", c: "c-green", title: `Deliver to ${x.name}`, sub: x.detail || "Paid and still waiting for the videos", end: age(x.due), email: x.email }));
+  d.pVideos.filter(v => /^(received|revision)$/.test(v.status)).forEach(v => c0(4, ms(v.due_at || v.created_at), "pv:" + v.id, { icon: "play", c: "c-purple", title: `${v.status === "revision" ? "Changes asked" : "New video request"}: ${v.title || "Untitled"}`, sub: `${v.who.name}${v.due_at ? " · " + dueT(v.due_at) : ""}`, end: dueT(v.due_at), k: "pvideos", a: "" }));
+  d.pSamples.filter(s => s.status === "requested").forEach(s => c0(4, ms(s.created_at), "ps:" + s.id, { icon: "film", c: "c-purple", title: `Answer ${s.who.name}'s sample request`, sub: "Accept or decline it in the portal queue", k: "psamples", a: "" }));
+  [...(att.promise || []), ...(att.promises || [])].forEach(x => c0(4, ms(x.due), lc(x.email), { icon: "flag", c: "c-ink", title: `Keep the promise to ${nm(x.email)}`, sub: x.detail || "", end: dueT(x.due), email: x.email }));
+  (att.overdue || []).forEach(x => c0(4, ms(x.due), lc(x.email), { icon: "alert", c: "c-orange", title: `Next step overdue: ${nm(x.email)}`, sub: x.detail || "", end: dueT(x.due), email: x.email }));
+  [...d.fuOver, ...d.fuDays[0].list].forEach(f => c0(5, ms(f.due_at), lc(f.email), { icon: "clock", c: "c-grey", title: `Follow up with ${f.name || nm(f.email)}`, sub: `touch ${Math.min((f.touches_done || 0) + 1, f.touches_total || 99)} of ${f.touches_total || "?"} · ${f.day < t ? "overdue" : "due today"}`, end: f.day < t ? dLabel(f.day) : "today", email: f.email }));
+  const hasNext = new Set((R.nextSteps || []).filter(x => String(x.next_step || "").trim()).map(x => lc(x.email)));
+  const valOf = {}; (R.stages || []).forEach(x => { valOf[lc(x.email)] = Math.max(+x.deal_value_usd || 0, +x.opp_value || 0); }); (R.deals || []).forEach(x => { const k = lc(x.email); valOf[k] = Math.max(valOf[k] || 0, +x.value_usd || 0); });
+  d.hot.filter(h => !String(h.p.next_action || "").trim() && !hasNext.has(lc(h.p.email))).sort((a, b) => (valOf[lc(b.p.email)] || 0) - (valOf[lc(a.p.email)] || 0) || (b.lr || 0) - (a.lr || 0))
+    .forEach((h, i) => { const v = valOf[lc(h.p.email)] || 0; c0(6, i, lc(h.p.email), { icon: "bolt", c: "c-orange", title: `Hot lead: ${h.p.name || nm(h.p.email)}`, sub: `No next step set · ${h.tag[0]}${v ? ` · worth ${usd(v)}` : ""}`, end: h.lr ? age(h.lr) : "", email: h.p.email }); });
+  const seenT = new Set(); d.todo = []; d.todoMore = [];
+  todoC.sort((x, y) => x.r - y.r || x.at - y.at).forEach(x => { if (x.task) { d.todo.push(x); if (x.lead) seenT.add(x.lead); return; } if (seenT.has(x.key)) return; seenT.add(x.key);
+    (x.r === 6 && d.todo.filter(y => y.r === 6).length >= 8 ? d.todoMore : d.todo).push(x); });
+  d.todoN = d.todo.length;
   /* 11-21 Pipeline card: pipeline_forecast for everyone; with the owner switch on, the same sums from lead_stage */
   { const F = (R.forecast || []).filter(x => x.is_open).sort((a, b) => a.ord - b.ord), L = (R.stages || []).filter(x => x.is_open && STATE.owner !== "All" && own(x));
     d.fc = !F.length ? null : STATE.owner === "All" ? { open: F.map(x => ({ stage: x.stage, leads: +x.leads || 0 })), overdue: sum(F, x => x.overdue), weighted: sum(F, x => x.weighted_usd) }
       : { open: F.map(x => ({ stage: x.stage, leads: L.filter(y => y.stage === x.stage).length })), overdue: L.filter(y => y.overdue).length, weighted: Math.round(sum(L, y => (+y.deal_value_usd || 0) * (+y.probability || 0))) }; }
-  d.claudeQ = cq.sort((x, y) => y.w - x.w);
-  d.claudeSum = [["replies", "reply"], ["follow-ups", "fu"], ["deliveries", "deliver"], ["promises", "promise"], ["other", "other"]].map(([l, k]) => [l, cq.filter(x => x.q === k).length]).filter(x => x[1]).map(x => `${x[1]} ${x[0]}`).join(" · ");
   return d;
 }
 
@@ -536,6 +566,30 @@ const STAGE_L = { replied: "Replied", engaged: "Engaged", proposal: "Proposal", 
 const stageOf = e => ((RAW && RAW.stages) || []).find(x => lc(x.email) === e) || null;
 const nextOf = e => ((RAW && RAW.nextSteps) || []).find(x => lc(x.email) === e) || null;
 const stDays = x => `${Math.max(0, Math.round(+x.days_in_stage || 0))} d`;
+/* 11-21 (BENAS, main page): Big deals rows (public.big_deals) and the drafts that wait for a founder (public.drafts_waiting, PR #9) */
+const DRAFT_L = { big_deal: "Big deal", client_problem: "Client problem", new_terms: "New terms", big_name: "Big name", other: "Other" };
+const quietD = x => `<span class="${x.stale ? "dn" : ""}">quiet ${Math.max(0, Math.round(+x.days_in_stage || 0))} d</span>`;
+const bigRow = x => leadBtn(x.email, `<span class="av">${esc(initials(x))}</span><span class="row-main"><b>${esc(x.name || x.email)}</b><small>${esc(STAGE_L[x.stage] || x.stage)} · ${quietD(x)} · ${esc(x.owner || "No owner")}</small><small>${esc(cut(x.next_step || "No next step set", 140))}</small></span><span class="row-end">${usd(x.value_usd)}/mo</span>`);
+const dealTile = x => `<div class="tile pt"><div class="pt-top">${leadBtn(x.email, `<span class="av">${esc(initials(x))}</span><span class="row-main"><b>${esc(x.name || x.email)}</b><small>${esc(x.email)}</small></span>`, "row np0")}<span class="chip g">${usd(x.value_usd)}/mo</span></div>
+  <div class="pt-meta"><span class="chip b">${esc(STAGE_L[x.stage] || x.stage)}</span><span class="chip ${x.stale ? "r" : ""}" title="Days in this stage${x.max_quiet_days ? `; the limit for this stage is ${x.max_quiet_days} d` : ""}">quiet ${Math.max(0, Math.round(+x.days_in_stage || 0))} d</span><span class="chip">${esc(x.owner || "No owner")}</span></div>
+  <div class="pt-lines"><span><b>Next</b> ${esc(x.next_step || "none set")}${x.next_at ? ` · ${fDT(x.next_at)} ${dueChip(x.next_at)}` : ""}</span>${x.last_quote_at ? `<span><b>Last quote</b> ${x.quoted_monthly_usd ? usd(x.quoted_monthly_usd) + "/mo · " : ""}${fDT(x.last_quote_at)}</span>` : ""}<span><b>Last contact</b> ${x.last_contact_at ? fDT(x.last_contact_at) : "—"}</span></div></div>`;
+const draftRow = x => dB("draft", x.id, `<span class="it c-purple"><svg><use href="#i-check"/></svg></span><span class="row-main"><b>${esc(nameOf(x.lead_email))}</b><small>${esc(DRAFT_L[x.category] || x.category)}${x.status === "pending" ? "" : " · " + esc(x.status)} · to ${esc(x.to_email)}${(x.cc_list || []).length ? ` +${x.cc_list.length} cc` : ""}</small></span><span class="row-end"><small>${esc(rel(+new Date(x.created_at)))}</small></span>`, "tile row", `Open the draft to ${nameOf(x.lead_email)}`);
+/* the sheet: their last message, the exact text, who it goes to, flags, and the founder's four buttons (what each status allows = the trigger's rules) */
+const DRAFT_OPS = { pending: ["approve", "edit", "hold", "reject"], held: ["approve", "edit", "reject"], failed: ["approve", "hold", "reject"], stale: ["approve", "hold", "reject"], unknown: ["reject"] };
+function draftSheet(id) {
+  const x = (D.drafts || []).find(z => String(z.id) === String(id)); if (!x) return { title: "Draft", html: empty("This draft is no longer waiting: it was decided or sent.") };
+  const ops = DRAFT_OPS[x.status] || [], L = { approve: ["Approve and send", " go"], edit: ["Edit", ""], hold: ["Hold", ""], reject: [x.status === "unknown" ? "Close it (checked Instantly)" : "Reject", " no"] };
+  const why = { held: "On hold. Approve it, change it or reject it.", failed: `Not sent${x.error ? `: ${x.error}` : ""}. Approve to try again.`, stale: "Not sent: the lead wrote again after this was drafted. Read the thread, then approve, change or reject.", unknown: "This may have gone out. Check the thread in Instantly first; it can't be approved again." }[x.status] || "";
+  return { title: `Reply to ${nameOf(x.lead_email)}`, sub: `${DRAFT_L[x.category] || x.category} · ${x.status} · written by ${x.created_by || "Claude"} ${relA(+new Date(x.created_at))}`,
+    html: `${why ? `<p class="warn dft-why">${esc(why)}</p>` : ""}${x.reason ? `<p class="sub">${esc(x.reason)}</p>` : ""}
+      ${grp("They wrote")}<div class="tile note">${esc(x.lead_last_snippet || "—")}</div>
+      ${grp("Our draft", esc(`from ${x.inbox}`))}<div class="tile note dft-to"><small>To</small>${esc(x.to_email)}${(x.cc_list || []).length ? `<small>Cc</small>${esc(x.cc_list.join(", "))}` : ""}</div>
+      <div class="tile note draft-body">${esc(x.body)}</div>
+      <div class="draft-ed" hidden><textarea class="draft-ta" maxlength="8000" aria-label="The reply text"></textarea><div class="acts sp"><button type="button" class="act go" data-act="dft" data-op="save" data-id="${esc(x.id)}">Save the new text</button><button type="button" class="act" data-act="dft" data-op="cancel" data-id="${esc(x.id)}">Cancel</button></div></div>
+      ${(x.warnings || []).length ? `<div class="pt-meta sp">${x.warnings.map(w => `<span class="chip o">${esc(w)}</span>`).join("")}</div>` : ""}${x.founder_note ? `<p class="sub">Founder note: ${esc(x.founder_note)}</p>` : ""}
+      <p class="dlg-err" id="dft-err" role="alert" hidden></p>
+      <div class="acts sp" id="dft-acts">${ops.map(o => `<button type="button" class="act${L[o][1]}" data-act="dft" data-op="${o}" data-id="${esc(x.id)}">${L[o][0]}</button>`).join("")}<button type="button" class="act" data-act="lead" data-email="${esc(x.lead_email)}">${ic("user")}Open the lead</button></div>` };
+}
 const stageChip = x => `<span class="chip ${x.overdue ? "o" : "b"}" title="${x.overdue ? "Longer in this stage than its limit" : "Days in this stage"}">${esc(STAGE_L[x.stage] || x.stage)} · ${stDays(x)}</span>`;
 /* 11-21: On hold + In production cards (public.desk_items) */
 const STG = { founder_check: ["Waits on a founder", "o", "c-orange"], ready: ["Ready to send", "g", "c-green"], review: ["Our check", "b", "c-purple"], building: ["Building", "b", "c-blue"], client_check: ["Waits on the client", "w", "c-grey"], queued: ["Queued", "", "c-grey"] };
@@ -601,9 +655,9 @@ const paidTile = c => { const p = c.p, inner = `<span class="av">${esc(initials(
     <div class="pt-lines"><span><b>Bought</b> ${bought}${c.n > 1 ? ` · ${c.n} payments, ${usd(c.total)} in total` : ""}</span>${c.plan ? `<span><b>Plan</b> ${esc(cut(c.plan.note, 220))} · ${nDay(c.plan)}</span>` : ""}${c.toClose ? `<span><b>Emails to close</b> ${c.toClose} sent before the first payment</span>` : ""}<span><b>Videos</b> ${c.vids ? `${c.vids} delivered${c.lastVid ? ` · last ${dLabel(c.lastVid.slice(0, 10))}` : ""}` : "none indexed yet"}</span>${c.why ? `<span><b>Priority</b> ${esc(cut(c.why, 160))}</span>` : ""}${c.owed ? `<span><b>Owed</b> ${esc(cut(c.owed, 220))}</span>` : ""}${p.email ? nextLine(p) : `<span><b>Next</b> not in the samples pipeline</span>`}${c.prom.map(x => `<span><b>Promise</b> ${esc(cut(x.promise, 200))} ${dueChip(x.due_at)}</span>`).join("")}${c.notes.filter(n => n !== c.plan && n.kind !== "priority").slice(0, 5).map(n => `<span><b>${KIND[n.kind] || esc(n.kind)}</b> ${esc(cut(n.note, 220))} · ${nDay(n)}</span>`).join("")}<span><b>Last email</b> ${c.lastEmail ? fDT(c.lastEmail) : "none synced"}</span></div>`); };
 
 /* Do next rows: a founder task gets a Done button (founders tick it); other rows open the lead or the list behind them */
-const nextRow = (x, i, long) => { const inner = `<span class="it ${x.c}"><svg><use href="#i-${x.icon}"/></svg></span><span class="row-main"><b>${esc(cut(x.title, long ? 90 : 48))}</b>${long ? `<small>${esc(cut(x.sub, 160))}</small>` : ""}</span>`;
+const nextRow = (x, i, long) => { const inner = `<span class="it ${x.c}"><svg><use href="#i-${x.icon}"/></svg></span><span class="row-main"><b>${esc(cut(x.title, long ? 90 : 64))}</b>${long ? `<small>${esc(cut(x.sub, 160))}</small>` : ""}</span>`;
   if (x.task) return `<div class="tile row">${inner}<span class="row-end"><button type="button" class="act go" data-act="ftdone" data-id="${esc(x.task)}" aria-label="Mark “${esc(cut(x.title, 60))}” done">Done</button></span></div>`;
-  const end = long ? `<span class="row-end"><small>#${i + 1}</small></span>` : ""; return x.email ? leadBtn(x.email, inner + end) : dB(x.k, x.a, inner + end, "tile row"); };
+  const end = long || x.end ? `<span class="row-end">${x.end ? `<small>${esc(x.end)}</small>` : ""}${long ? `<small>#${i + 1}</small>` : ""}</span>` : ""; return x.email ? leadBtn(x.email, inner + end) : dB(x.k, x.a, inner + end, "tile row"); };
 
 /* price calculator (11-18, Simas): our quoted prices, Shorts a month -> USD a month. Straight lines between the points, +$10 a Short above 80, rounded to $5. */
 const PRICE_PTS = [[1, 50], [5, 150], [15, 300], [30, 500], [40, 600], [60, 840], [80, 1040]];
@@ -627,7 +681,21 @@ const CARDS = [
     $("#b-pulse").classList.toggle("off", !d.syncOk || Date.now() - d.syncAt > 45 * 6e4);
     $("#b-me").textContent = ME ? (ME.name || ME.email) : ""; $("#b-date").textContent = dLong(d.t); $("#b-date").dataset.a = d.t;
   } },
-{ id: "next", title: "Do next", focus: ["next", ""], render: d => `${head(`Do <em class="sf">next</em>`, dB("next", "", d.nextN ? `${d.nextN} for you` : "all clear", `chip ${d.nextN ? "o" : "g"}`, "Open everything that needs a founder"), true)}<div class="stack">${d.next.map((x, i) => nextRow(x, i)).join("") || empty("Nothing needs you right now.")}</div>` },
+/* 11-21 (BENAS, main page = one goal number + a work queue): the $ hero, then these four, top to bottom. Everything else lives in its tab. */
+{ id: "bigdeals", title: "Big deals", focus: ["deals", ""], render: d => { const B = d.deals;   // source: public.big_deals (fetchAll)
+    if (!B) return `${head(`Big <em class="sf">deals</em>`, "", true)}${empty("The big-deals list isn't there yet.")}`;
+    const st = B.filter(x => x.stale).length;
+    return `${head(`Big <em class="sf">deals</em>`, dB("deals", "", st ? `${st} gone quiet` : `${B.length} open`, `chip ${st ? "r" : "g"}`, "Open every big deal: stage, days quiet, next step"), true)}<div class="stack">${B.slice(0, 6).map(bigRow).join("") || empty("No open deal worth $300+ a month.")}</div>
+    ${B.length > 6 ? dB("deals", "", `Show all ${B.length}`, "more") : ""}`; } },
+{ id: "approvals", title: "Waiting for approval", focus: ["approvals", ""], render: d => { const A = d.drafts;   // nothing waiting (or no view) = "" = no card at all
+    if (!A || !A.length) return "";
+    return `${head(`Waiting for <em class="sf">approval</em>`, dB("approvals", "", `${A.length} waiting`, "chip o", "Open every draft that waits for a founder"), true)}<div class="stack">${A.slice(0, 5).map(draftRow).join("")}</div>
+    ${A.length > 5 ? dB("approvals", "", `Show all ${A.length}`, "more") : ""}`; } },
+{ id: "next", title: "Do next", focus: ["next", ""], render: d => `${head(`Do <em class="sf">next</em>`, dB("next", "", d.todoN ? `${d.todoN} to do` : "all clear", `chip ${d.todoN ? "o" : "g"}`, "Open the whole list, most urgent first"), true)}<div class="stack">${d.todo.slice(0, 8).map((x, i) => nextRow(x, i)).join("") || empty("Nothing needs you right now.")}</div>
+    ${d.todoN > 8 || d.todoMore.length ? dB("next", "", "Show all", "more") : ""}` },
+/* 11-21 (SIMAS: "a square that says action"; BENAS: lower on the main page, under Do next) */
+{ id: "activity", title: "Activity", focus: ["feed", ""], render: d => { const list = d.feed.filter(e => !e.quiet).slice(0, 9), html = `${head("Activity", "", true)}<div class="feed">${list.map(e => feedRow(e, feedSeen.size > 0 && !feedSeen.has(e.t + e.title), true)).join("") || empty("Nothing has happened yet.")}</div>`;
+    d.feed.forEach(e => feedSeen.add(e.t + e.title)); return html; } },
 { id: "today", title: "Today", render: d => { const T = d.td, I = { call: ["phone", "c-blue"], payment_failed: ["alert", "c-red"], action: ["check", "c-green"], partner: ["flag", "c-orange"], sample_due: ["film", "c-purple"], followup: ["clock", "c-grey"] }, items = d.todayItems, list = STATE.todayAll ? items : items.slice(0, 4), pct = d.target ? Math.round(d.todayNew / d.target * 100) : 0;
     /* 11-19 (Simas: "looks ugly w this structure"): one clean 3x2 grid, label on top, one value; 11-21: a ▲/▼ chip on the valuable ones instead of sub-lines */
     const cell = (label, val, k, a, chg = "") => dB(k, a, `<span class="tl">${label}</span><b>${val}</b>${chg}`, "tc", `${label}: open the list`), part = { part: true, tip: "Today so far against yesterday's full day" };
@@ -650,9 +718,6 @@ const CARDS = [
 { id: "prod", title: "In production", focus: ["prod", ""], render: d => { const w = d.prod.filter(x => x.stage === "founder_check").length;
     return `${head(`In <em class="sf">production</em>`, dB("prod", "", `${d.prod.length} open`, `chip ${w ? "o" : ""}`, "Open every piece of client work: stage, who builds it, the file"), true)}<div class="stack">${d.prod.slice(0, 6).map(prodRow).join("") || empty("Nothing is in production.")}</div>
     ${d.prod.length > 6 ? dB("prod", "", `Show all ${d.prod.length}`, "more") : ""}`; } },
-/* 11-21 (SIMAS: "a square that says action"): right after the action cards on Main; on phones under the $ hero (crm.css) */
-{ id: "activity", title: "Activity", focus: ["feed", ""], render: d => { const list = d.feed.filter(e => !e.quiet).slice(0, 9), html = `${head("Activity", "", true)}<div class="feed">${list.map(e => feedRow(e, feedSeen.size > 0 && !feedSeen.has(e.t + e.title), true)).join("") || empty("Nothing has happened yet.")}</div>`;
-    d.feed.forEach(e => feedSeen.add(e.t + e.title)); return html; } },
 { id: "outreach", cls: "w2 chart-card", title: "Outreach", focus: ["days", ""], render: d => {
     const OR = d.M && d.M.periods ? d.M.periods[STATE.range + "d"] : null, OQ = OR ? d.M.periods[{ 7: "prev_7d", 30: "prev_30d" }[STATE.range]] : null, days = d.series.slice(-STATE.range), was = d.series.slice(-2 * STATE.range, -STATE.range),
       cmp = (k, pk) => dl(OR && OQ ? pctChg(OR[pk], OQ[pk]) : pctChg(sum(days, x => x[k]), sum(was, x => x[k])), `vs prior ${STATE.range} d`, { tip: `The last ${STATE.range} days against the ${STATE.range} days before` }), W = 600, H = 200, pad = 10, max = Math.max(1, ...days.map(x => Math.max(STATE.sa ? x.sent : 0, STATE.sb ? x.nw : 0)));
@@ -775,15 +840,13 @@ const CARDS = [
 { id: "pclients", grid: 2, title: "Portal: sign-ups", focus: ["pclients", ""], render: d => `${head("Sign-ups", "", true)}<div class="stack">${d.pClients.slice(0, 3).map(clientTile).join("") || empty("No client has signed up yet.")}</div>${d.pClients.length > 3 ? dB("pclients", "", `Show all ${d.pClients.length}`, "more") : ""}` },
 ].filter(c => !HIDDEN.has(c.id));
 const byId = id => CARDS.find(c => c.id === id);
-/* phone: five tabs, each shows only its cards (the desktop keeps the whole bento) */
-// BENAS 11-21: stats cards live in their category; Main keeps the action cards plus Reply rate + Funnel.
-// On phones every card shows only in its tab (as before). On desktop, Main shows everything except STATS_TAB_ONLY,
-// and the other tabs show their own cards, so the stats are one click away instead of filling the main page.
-const TABS = { home: ["next", "today", "paidc", "retainers", "holds", "prod", "hot", "activity", "followups", "rate", "funnel"], money: ["close", "buyers", "topc", "alltime", "moneypage", "price", "videos"], leads: ["attention", "moods", "samples", "turn", "speed", "away", "pipeline"],
-  outreach: ["outreach", "total", "heat", "clock", "camps", "deliv", "inboxes", "sync"], clients: ["portal", "psamples", "pvideos", "pnotes", "pclients"], none: ["brand"] };
-// phone pass 11-21: the bottom "Clients" tab opens the Clients page (portal cards are hidden), so Videos delivered sits under Money.
+/* tabs: each shows only its cards, on phones (bottom bar) and on the desktop (Money / Leads / Outreach in the side menu).
+   BENAS 11-21 19:2x (pro-CRM main page, supersedes "Main keeps Reply rate + Funnel"): Main = the $ hero + Big deals, Waiting for approval,
+   Do next, Activity. Charts and lists live in their tab. "clients" cards (On hold, In production) sit on top of the Clients page (crm.css);
+   the bottom "Clients" tab opens that page. Paid clients + Retainers go to Money: the Clients page already counts clients and retainers. */
+const TABS = { home: ["bigdeals", "approvals", "next", "activity"], money: ["close", "buyers", "topc", "alltime", "moneypage", "price", "videos", "paidc", "retainers"], leads: ["attention", "hot", "followups", "moods", "samples", "turn", "speed", "away", "pipeline"],
+  outreach: ["today", "outreach", "rate", "funnel", "total", "heat", "clock", "camps", "deliv", "inboxes", "sync"], clients: ["holds", "prod", "portal", "psamples", "pvideos", "pnotes", "pclients"], none: ["brand"] };
 const TABOF = {}; Object.entries(TABS).forEach(([t, ids]) => ids.forEach(id => { TABOF[id] = t; }));
-const STATS_TAB_ONLY = new Set(["moods", "heat", "clock", "speed", "turn", "total", "alltime", "topc", "away"]);   // off the desktop Main page
 
 /* ---------------- chart painters (hover, tap and arrow keys share them) ---------------- */
 function paintOut(days, max, H, pad, i) {
@@ -843,7 +906,7 @@ function build() {
   const g1 = $("#grid"), g2 = $("#grid2"); g1.innerHTML = g2.innerHTML = ""; IO.disconnect();
   const ro = new ResizeObserver(es => es.forEach(e => fit(e.target)));
   CARDS.forEach((c, i) => {
-    const el = document.createElement("section"); el.id = "c-" + c.id; el.className = "card " + (c.cls || ""); el.dataset.tab = TABOF[c.id] || "home"; if (STATS_TAB_ONLY.has(c.id)) el.dataset.stat = "1"; el.style.setProperty("--i", c.grid === 2 ? i - 30 : i); el.setAttribute("aria-label", c.title || c.id);
+    const el = document.createElement("section"); el.id = "c-" + c.id; el.className = "card " + (c.cls || ""); el.dataset.tab = TABOF[c.id] || "home"; el.style.setProperty("--i", c.grid === 2 ? i - 30 : i); el.setAttribute("aria-label", c.title || c.id);
     el.style.setProperty("--j", i % 8); c.sh = document.createElement("i"); c.sh.className = "sheen"; c.sh.setAttribute("aria-hidden", "true");
     c.el = el; c.last = null; if (c.mount) c.mount(el); el.appendChild(c.sh); (c.grid === 2 ? g2 : g1).appendChild(el); ro.observe(el); IO.observe(el);
   });
@@ -852,7 +915,7 @@ function fit(el) { el.style.gridRowEnd = "span " + Math.ceil((el.offsetHeight + 
 function renderAll(fromData) {
   D = derive();
   CARDS.forEach(c => {
-    if (c.render) { const html = c.render(D); if (html !== c.last) { c.last = html; c.el.innerHTML = html; c.el.appendChild(c.sh); if (c.focus) { const h = $(".ch", c.el); if (h) h.insertAdjacentHTML("beforeend", `<button type="button" class="xp" data-act="drill" data-k="${c.focus[0]}" data-a="${c.focus[1]}" aria-label="Expand ${esc(c.title)}" title="Expand">${ic("expand")}</button>`); } countUp(c); applyVars(c.el);
+    if (c.render) { const html = c.render(D); if (html !== c.last) { c.last = html; c.el.innerHTML = html; c.el.hidden = !html; c.el.appendChild(c.sh); if (c.focus) { const h = $(".ch", c.el); if (h) h.insertAdjacentHTML("beforeend", `<button type="button" class="xp" data-act="drill" data-k="${c.focus[0]}" data-a="${c.focus[1]}" aria-label="Expand ${esc(c.title)}" title="Expand">${ic("expand")}</button>`); } countUp(c); applyVars(c.el);
         const sig = $$(".n[data-n]", c.el).map(x => x.dataset.n).join("|"); if (fromData && c.sig !== undefined && c.sig !== sig && !RM) { c.el.classList.remove("chg"); void c.el.offsetWidth; c.el.classList.add("chg"); } c.sig = sig; } }
     if (c.update) c.update(D);
   });
@@ -866,18 +929,21 @@ function paintStatus() {
   $("#stat-p").classList.toggle("off", RT !== "live" || !D.syncOk);
 }
 function jump(id) {
-  const el = $("#c-" + id); if (!el) return;
-  if (PHONE.matches) { if (el.dataset.tab === "none") return; setTab(el.dataset.tab, true); }
+  const el = $("#c-" + id); if (!el) return; const tb = el.dataset.tab, paged = document.documentElement.classList.contains("paged");
+  if (tb === "none") { if (PHONE.matches) return; }
+  else if (tb === "clients") { const l = $('#snav a[data-nav="clients"]'); if (l && l.getAttribute("aria-current") !== "page") l.click(); }   // these cards sit on the Clients page
+  else { const l = $('#snav a[data-nav="dashboard"]'); if (l && paged) l.click(); setTab(tb, true); }
   el.scrollIntoView({ block: "center", behavior: RM ? "auto" : "smooth" }); el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
   const f = $("button,input,[tabindex]", el); if (f) f.focus({ preventScroll: true });
 }
 function syncChrome() {   // header owner switch + tab badges
   $$("#top-owner button").forEach(b => { const on = b.dataset.o === STATE.owner; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
-  const bd = { home: D.nextN, clients: D.pOpen, leads: D.realWaiting }; $$("#tabs button").forEach(b => { const n = bd[b.dataset.t] || 0, i = $("i", b); i.hidden = !n; i.textContent = n > 99 ? "99+" : n; });
+  const bd = { home: D.todoN, clients: D.pOpen, leads: D.realWaiting }; $$("#tabs button").forEach(b => { const n = bd[b.dataset.t] || 0, i = $("i", b); i.hidden = !n; i.textContent = n > 99 ? "99+" : n; });
 }
 function setTab(t, quiet) {
   if (!TABS[t] || t === "none" || (t === "clients" && !PORTAL_ON)) t = "home"; STATE.tab = t; document.documentElement.dataset.tab = t; store.set("beju-crm-tab", t);
   $$("#tabs button").forEach(b => { const on = b.dataset.t === t; b.classList.toggle("on", on); b.setAttribute("aria-current", on ? "page" : "false"); });
+  $$('#snav button[data-act="tab"]').forEach(b => b.dataset.t === t ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));   // desktop: Money / Leads / Outreach in the side menu
   if (!quiet) scrollTo(0, 0);
   requestAnimationFrame(() => { CARDS.forEach(c => { if (c.el) fit(c.el); }); Object.values(PLOT).forEach(p => { try { p.paint(clamp(p.i, 0, p.n - 1)); } catch {} }); });
 }
@@ -979,13 +1045,17 @@ const DR = {
     `<div class="thg" role="group" aria-label="Colour theme">${THEMES.map(t => `<button type="button" class="thp" data-act="look" data-t="${t[0]}" aria-pressed="${t[0] === lookOf()[0]}"><span class="thsw" data-th="${t[0]}" aria-hidden="true"><i></i><i></i><i></i></span><b>${t[1]}</b><small>${t[4]}</small></button>`).join("")}</div>${motionRow()}${first ? `<div class="acts sp"><button type="button" class="act go" data-act="mclose">Done</button></div>` : ""}` }; },
   todaylist() { const I = { call: ["phone", "c-blue"], payment_failed: ["alert", "c-red"], action: ["check", "c-green"], partner: ["flag", "c-orange"] };
     return { title: `Today, ${dLong(D.t)}`, sub: `${D.todayItems.length} items`, html: stackOf(D.todayItems.map(x => { const [icon, c] = I[x.kind] || ["clock", "c-grey"], inner = `<span class="it ${c}"><svg><use href="#i-${icon}"/></svg></span><span class="row-main"><b>${esc(cut(x.title, 90))}</b><small>${esc(cut(x.detail || x.kind, 160))}</small></span>${x.at ? `<span class="row-end"><small>${timeOf(x.at)}</small></span>` : ""}`; return x.lead_email ? leadBtn(x.lead_email, inner) : dB("item", x.id, inner, "tile row"); }), "Nothing on the list for today.") }; },
-  next() { return { title: "Do next", sub: `${D.nextN} thing${D.nextN === 1 ? "" : "s"} only a founder can do, most urgent first`, html: stackOf(D.nextAll.map((x, i) => nextRow(x, i, true)), "Nothing needs you right now.") + (D.claudeQ.length ? `<div class="acts sp">${dB("claudeq", "", `🤖 Claude is handling ${esc(D.claudeSum)}`, "act", "Open Claude's queue. Nothing to do here, it is only to watch.")}</div>` : "") }; },
+  next() { const G = ["", "Approvals", "Replies waiting", "Calls today", "Due: deliveries, promises, to-dos", "Follow-ups due", "Hot leads with no next step"];   // one ranked list, labelled by reason
+    return { title: "Do next", sub: `${D.todoN} to do, most urgent first · one row per lead`, html: (D.todo.length ? G.map((g, r) => { const xs = D.todo.map((x, i) => [x, i]).filter(([x]) => x.r === r); return xs.length ? grp(g, xs.length) + `<div class="stack">${xs.map(([x, i]) => nextRow(x, i, true)).join("")}</div>` : ""; }).join("") : empty("Nothing needs you right now."))
+      + (D.todoMore.length ? grp("More hot leads with no next step", D.todoMore.length) + `<div class="stack">${D.todoMore.map(x => nextRow({ ...x, end: "" }, 0, false)).join("")}</div>` : "") }; },   // the 8 most valuable are in the list; the rest wait here, not counted
+  deals() { const B = D.deals || []; return { title: "Big deals", sub: `${B.length} open deal${B.length === 1 ? "" : "s"} worth $300+ a month · ${B.filter(x => x.stale).length} quiet past their stage's limit · those first, then by value`, html: stackOf(B.map(dealTile), D.deals ? "No open deal worth $300+ a month." : "The big-deals list isn't there yet.") }; },
+  approvals() { const A = D.drafts || []; return { title: "Waiting for approval", sub: `${A.length} draft${A.length === 1 ? "" : "s"} wait for a founder · oldest first`, html: stackOf(A.map(draftRow), "No draft is waiting for you.") }; },
+  draft(id) { return draftSheet(id); },
   close() { const C = D.close; return { title: "Emails to close", sub: `${C.n} paying client${C.n === 1 ? "" : "s"} · typical ${C.med ?? "—"} · average ${C.avg == null ? "—" : C.avg.toFixed(1)} · fewest first`, html: stackOf(C.list.map(c => { const inner = `<span class="av">${esc(initials({ name: c.name }))}</span><span class="row-main"><b>${esc(c.name)}</b><small>${esc(cut(c.p.show || [...c.emails].join(", "), 80))} · first paid ${c.firstPaid ? fDT(c.firstPaid) : "—"}</small></span><span class="row-end">${c.toClose}<small>email${c.toClose === 1 ? "" : "s"}</small></span>`; return c.p.email ? leadBtn(c.p.email, inner) : dB("client", c.key, inner, "tile row"); }), "No paying client with an email trail yet.") }; },
   retainers() { const R0 = D.ret; return { title: "Retainer clients", sub: `${R0.live.length} live · ${usd(R0.mrr)}/month · ${usd(R0.total)} paid so far${R0.ended ? ` · ${R0.ended} ended` : ""}`, html: stackOf(R0.all.map(r => { const inner = `<span class="av">${esc(initials({ name: r.name || r.email }))}</span><span class="row-main"><b>${esc(r.name || r.email || "Client")}</b><small>${esc(r.status || "")} · since ${r.started_at ? dLabel(dayOf(r.started_at)) : "—"}${r.current_period_end && r.live ? ` · next bill ${dLabel(dayOf(r.current_period_end))}` : ""}${r.canceled_at ? ` · ended ${dLabel(dayOf(r.canceled_at))}` : ""} · ${r.invoices_paid || 0} paid, ${usd(r.paid_total)}</small></span><span class="row-end">${usd(r.amount)}<small>/${esc(r.interval === "month" ? "mo" : r.interval || "")}</small></span>`; return r.e ? dB("client", "e:" + r.e, inner, "tile row", "Open this client") : `<div class="tile row">${inner}</div>`; }), "No retainer yet.") }; },
   holds() { return { title: "On hold", sub: `${D.holds.length} active hold${D.holds.length === 1 ? "" : "s"} · nothing goes out to these people until a founder lifts it`, html: stackOf(D.holds.map(x => `<div class="tile note"><small>Set by ${esc(x.set_by || "a founder")}${(x.emails || []).length ? ` · ${esc(x.emails.join(", "))}` : ""}</small><b>${esc(x.client)}</b><br>${esc(x.title)}${x.detail ? `<br><span class="mut">${esc(x.detail)}</span>` : ""}</div>`), "Nothing is on hold.") + `<p class="sub">To set or lift a hold, tell Claude. It checks this list before every send.</p>` }; },
   prod() { const by = {}; D.prod.forEach(x => { (by[x.client] || (by[x.client] = [])).push(x); });
     return { title: "In production", sub: `${D.prod.length} open piece${D.prod.length === 1 ? "" : "s"} of client work · the stage is the last one Claude logged`, html: Object.keys(by).map(c => grp(esc(c), by[c].length) + stackOf(by[c].map(x => { const s = STG[x.stage] || [x.stage || "Open", ""]; return `<div class="tile note"><small><span class="chip ${s[1]}">${esc(s[0])}</span> ${esc([x.builder, x.set_by && x.stage === "founder_check" ? "waits on " + (x.set_by === "Both" ? "both of you" : x.set_by) : "", "updated " + ago(x.updated_at)].filter(Boolean).join(" · "))}</small><b>${esc(x.title)}</b>${x.detail ? `<br><span class="mut">${esc(x.detail)}</span>` : ""}${x.link && webUrl(x.link) ? `<br>${rich(x.link)}` : ""}</div>`; }))).join("") || empty("Nothing is in production.") }; },
-  claudeq() { return { title: "Claude's queue", sub: `${D.claudeQ.length} item${D.claudeQ.length === 1 ? "" : "s"} Claude is handling · ${D.claudeSum || "none"} · nothing for you to do`, html: stackOf(D.claudeQ.map((x, i) => nextRow(x, i, true)), "Claude's queue is empty.") }; },
   speed(a) { let list = [...D.speed.gaps], title = "Speed to reply";
     if (a === "slow") { list.sort((x, y) => y.g - x.g); title = "Slowest replies"; } else if (a === "fast") { list = list.filter(x => x.g <= 60).sort((x, y) => y.t - x.t); title = "Answered within an hour"; } else if (a === "7") { list = list.filter(x => x.t >= Date.now() - 7 * 864e5).sort((x, y) => y.t - x.t); title = "Replies answered in the last 7 days"; }
     else if (/^\d{4}-/.test(a)) { list = list.filter(x => dayOf(x.t) >= a && dayOf(x.t) < addDays(a, 7)).sort((x, y) => y.t - x.t); title = `Replies answered, week of ${dLabel(a)}`; } else list.sort((x, y) => y.t - x.t);
@@ -1022,7 +1092,7 @@ function openDrill(k, a = "", opener, back) {
   const src = fresh && opener && opener.closest ? opener.closest(".card,.hero") : null;
   if (fresh && document.startViewTransition && !RM) { if (src) src.classList.add("vt-src"); M_SRC = src; document.startViewTransition(() => { if (src) src.classList.remove("vt-src"); run(); }); } else run();
 }
-function refreshDrill() { const s = STATE.drill; if (!s || $("#veil").hidden || s.k === "inbox" || s.k === "client" || s.k === "notifs" || document.activeElement?.classList.contains("pg-q")) return; try { const r = DR[s.k](s.a); if (r && !r.then) showDrill(r, SEQ, true); } catch {} }
+function refreshDrill() { const s = STATE.drill; if (!s || $("#veil").hidden || s.k === "inbox" || s.k === "client" || s.k === "notifs" || document.activeElement?.classList.contains("pg-q") || $("#m-body .draft-ed:not([hidden])")) return; try { const r = DR[s.k](s.a); if (r && !r.then) showDrill(r, SEQ, true); } catch {} }
 function closeDrill() { const veil = $("#veil"); if (veil.hidden) return; const src = M_SRC && M_SRC.isConnected ? M_SRC : null, go = () => { veil.hidden = true; STATE.drill = null; STACK.length = 0; SEQ++; CONVS.delete("m"); if (src) src.classList.add("vt-src"); };
   if (document.startViewTransition && !RM) { const vt = document.startViewTransition(go); const done = () => { if (src) src.classList.remove("vt-src"); }; vt.finished.then(done, done); } else { go(); if (src) src.classList.remove("vt-src"); } M_SRC = null; if (M_OPENER && M_OPENER.isConnected) M_OPENER.focus(); M_OPENER = null; }
 
@@ -1436,6 +1506,33 @@ async function pOp(op, id, btn) {
   finally { if (btn && btn.isConnected) btn.disabled = false; }
 }
 
+/* 11-21 (BENAS, PR #9): a founder decides a lane-3 draft. The drafts_guard trigger checks everything (2-step founder, the exact text,
+   nothing while sending); when it refuses, its own message is shown as it is. Approve sends the sha256 of the text on screen. */
+const sha256hex = async t => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)))].map(b => b.toString(16).padStart(2, "0")).join("");
+async function draftOp(op, id, btn) {
+  const x = (D.drafts || []).find(z => String(z.id) === String(id)), box = $("#m-body"), err = $("#dft-err", box), say = m => { if (err) { err.hidden = false; err.textContent = m; } };
+  if (!x) return; if (err) err.hidden = true;
+  const ed = $(".draft-ed", box), txt = $(".draft-body", box), acts = $("#dft-acts", box);
+  if (op === "edit" || op === "cancel") { const on = op === "edit"; ed.hidden = !on; txt.hidden = on; acts.hidden = on; if (on) { const ta = $(".draft-ta", box); ta.value = x.body; ta.focus(); } else { const eb = $('[data-op="edit"]', box); if (eb) eb.focus(); } return; }
+  let body = null, done = "";
+  if (op === "approve") {
+    const shown = txt.textContent;   // the HTML parser turns \r\n into \n; anything else that differs = the text moved under us
+    if (shown !== x.body.replace(/\r\n?/g, "\n")) return say("The text on screen is not the saved draft any more. Close this and open it again.");
+    const r = await ask({ title: `Send this reply to ${nameOf(x.lead_email)}?`, warn: `It goes out within a minute from ${x.inbox} to ${[x.to_email, ...(x.cc_list || [])].join(", ")}, word for word.`, sees: shown, cta: "Approve and send" }); if (!r) return;
+    body = { status: "approved", approved_sha256: await sha256hex(x.body) }; done = "Approved. It goes out within a minute.";
+  } else if (op === "hold" || op === "reject") {
+    const rj = op === "reject", r = await ask({ title: rj ? (x.status === "unknown" ? "Close this draft" : "Reject this draft") : "Hold this draft", sees: rj ? "Nothing. The draft is closed and never sent." : "Nothing. The draft waits until a founder approves or rejects it.", fields: [{ k: "note", label: "Note for Claude (optional)", type: "area", max: 1000 }], cta: rj ? (x.status === "unknown" ? "Close it" : "Reject") : "Hold", danger: rj }); if (!r) return;
+    body = { status: rj ? "rejected" : "held", ...(r.note ? { founder_note: r.note } : {}) }; done = rj ? "Draft closed. Nothing was sent." : "On hold. Nothing goes out.";
+  } else if (op === "save") {
+    const v = $(".draft-ta", box).value; if (!v.trim()) return say("The reply can't be empty.");
+    body = { body: v, ...(x.status === "pending" ? {} : { status: "pending" }) }; done = "Saved. Read it once more, then approve.";
+  }
+  if (!body) return;
+  if (btn) btn.disabled = true;
+  try { await upd("drafts", +id, body); toast(done, "check", "c-green", nameOf(x.lead_email));
+    if (op === "save") { ed.hidden = true; txt.hidden = false; acts.hidden = false; await refresh(); } else { closeDrill(); await refresh(); } }
+  catch (e) { const m = String(e && e.message || e); say(m); toast("Not saved", "alert", "c-red", cut(m, 140)); if (btn && btn.isConnected) btn.disabled = false; }
+}
 async function ftDone(id, btn) {   // 11-16: a founder ticks a founder task done
   if (btn) btn.disabled = true;
   try { await upd("founder_tasks", +id, { done_at: nowIso() }); toast("Marked done", "check", "c-green", ""); await refresh(); }
@@ -1458,9 +1555,9 @@ function palItems(q) {
     ...["All", "Simas", "Benas"].map(o => cmd(o === "All" ? "Show everyone's leads" : `Show only ${o}'s leads`, "owner filter", "user", () => { STATE.owner = o; STATE.att = ""; renderAll(); })),
     ...Object.keys(PER).map(p => cmd(`Period: ${PER[p][0]}`, "hero, money, outreach", "clock", () => setPeriod(p))),
     cmd("Open the website", "new tab", "link", () => window.open(SITE, "_blank", "noopener")), ...(PORTAL_ON ? [cmd("Open the client portal", "new tab", "link", () => window.open(PORTAL, "_blank", "noopener"))] : []),
-    ...(NT ? [cmd("Notifications", "N", "bell", () => openDrill("notifs", ""))] : []), cmd("Slack", "#claude-sync · #red-alert", "hash", () => goPage("slack")),
+    ...(NT ? [cmd("Notifications", "N", "bell", () => openDrill("notifs", ""))] : []), cmd("Slack", "#claude-sync · #red-alert", "hash", () => goPage("slack")), cmd("Contacts", "everyone we talk to, one row per person", "users", () => goPage("contacts")),
     cmd("Wall mode on / off", "W", "expand", toggleWall), cmd("Celebrate", "confetti", "bolt", confetti), cmd("Sign out", "", "out", signOut)];
-  const jumps = CARDS.filter(c => c.title && !(PHONE.matches && TABOF[c.id] === "none") && !(!PHONE.matches && STATS_TAB_ONLY.has(c.id))).map(c => ({ g: "Jump to", label: c.title, hint: c.grid === 2 ? "client portal" : "card", icon: "chev", run: () => jump(c.id) }));
+  const jumps = CARDS.filter(c => c.title && !(PHONE.matches && TABOF[c.id] === "none")).map(c => ({ g: "Jump to", label: c.title, hint: c.grid === 2 ? "client portal" : "card", icon: "chev", run: () => jump(c.id) }));
   const leads = q ? RAW.pipeline.filter(p => [p.name, p.show, p.email].some(v => lc(v).includes(q))).slice(0, 7).map(p => ({ g: "Leads", label: p.name || p.email, hint: cut(p.show || p.email, 40), icon: "user", run: () => openLead(p.email) })) : [];
   const cls = q ? D.pClients.filter(c => [c.name, c.email].some(v => lc(v).includes(q))).slice(0, 4).map(c => ({ g: "Portal clients", label: c.name || c.email, hint: c.email, icon: "user", run: () => openDrill("client", "e:" + lc(c.email)) })) : [];
   const f = x => !q || lc(x.label + " " + x.hint).includes(q);
@@ -1589,6 +1686,7 @@ document.addEventListener("click", ev => {
   else if (a === "hotall") { STATE.hotAll = !STATE.hotAll; renderAll(); }
   else if (a === "todayall") { STATE.todayAll = !STATE.todayAll; renderAll(); }
   else if (a === "ftdone") ftDone(b.dataset.id, b);
+  else if (a === "dft") draftOp(b.dataset.op, b.dataset.id, b);
   else if (a === "ctdone") ctDone(b.dataset.id, b);
   else if (a === "cnadd") { b.hidden = true; b.insertAdjacentHTML("afterend", callNotesForm(b.dataset.uid, b.dataset.email)); const t = b.nextElementSibling && $("textarea", b.nextElementSibling); if (t) t.focus(); }
   else if (a === "cncancel") { const f = b.closest("form"), add = f && f.previousElementSibling; if (f) f.remove(); if (add && add.dataset.act === "cnadd") { add.hidden = false; add.focus(); } }

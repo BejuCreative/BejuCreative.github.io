@@ -505,8 +505,6 @@ button.fe:hover{background:var(--panel)}
 .feed>.fe .fe-m b{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}   /* 11-21: "who did what to whom" needs two lines on a narrow card */
 .fe-m small{display:block;color:var(--mute);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fe time{font-family:var(--mono);font-size:11px;color:var(--mute);flex:none;padding-top:2px}
-/* 11-21 (SIMAS: "a square that says action"): on the phone home the Activity card sits right under the $ hero (same order, later in the page), above Today and the rest */
-@media (max-width:600px){html[data-tab="home"] #grid>#c-activity{order:5}}
 /* Activity list filter chips (All · Money · Replies · CRM changes · Calls · Deliveries) */
 .ffl{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
 .ffl button{min-height:34px;padding:0 13px;border-radius:999px;border:1px solid var(--line);background:var(--tile);color:var(--mute);font-size:13px;font-weight:500;transition:color .2s,border-color .2s,background-color .2s}
@@ -1084,26 +1082,49 @@ html[data-motion="calm"] .ticker-t{animation:none;white-space:normal;flex-wrap:w
 .dlg .cn-t input,.dlg .cn-t select{padding:9px 10px;font-size:13.5px;border-radius:10px;min-width:0}
 @media (max-width:600px){.cn-t{grid-template-columns:1fr 1fr} .cn-t input[type="text"]{grid-column:1/-1} .cnform .fld input,.cnform .fld textarea,.cnform .fld select{font-size:16px}}
 
-/* Desktop (BENAS 11-21 17:3x): no category tab bar. The dashboard stays one clean page; the stats-only cards
-   (data-stat) are off it until the dashboard redesign. Phones keep their own tabs. */
-@media (min-width:601px){ .card[data-stat]{display:none} }
+/* Main page (BENAS 11-21 19:2x, pro-CRM: one goal number + a work queue). Phones and desktop show the same five, in the same order:
+   the $ hero, Big deals, Waiting for approval, Do next, Activity (their order in CARDS = the page order). Every other card lives in its tab:
+   phones use the bottom bar, the desktop uses Money / Leads / Outreach in the side menu (no category bar on the page, BENAS 17:3x). */
+@media (min-width:601px){
+  html[data-tab="home"] #grid>.card:not([data-tab="home"]),html[data-tab="money"] #grid>.card:not([data-tab="money"]),
+  html[data-tab="leads"] #grid>.card:not([data-tab="leads"]),html[data-tab="outreach"] #grid>.card:not([data-tab="outreach"]){display:none}
+  html:not([data-tab="home"]) .hero{display:none}
+  html[data-tab="home"] #grid{--cols:2}   /* four cards: two wide columns read top to bottom */
+}
+/* side menu: Money / Leads / Outreach are dashboard tabs (buttons); the one that is open looks like the open page. Phones have the bottom bar. */
+:root .snav .sn-list button[data-act="tab"][aria-current="page"]{background:var(--sn-pill);color:var(--sn-pill-ink);box-shadow:var(--sn-pill-glow)}
+:root.paged .snav .sn-list button[data-act="tab"][aria-current="page"]{background:none;color:var(--ink-2);box-shadow:none}
+:root:not([data-tab="home"]):not(.paged) .snav .sn-list a[data-nav="dashboard"][aria-current="page"]{background:none;color:var(--ink-2);box-shadow:none}
+:root:not([data-tab="home"]):not(.paged) .snav .sn-list a[data-nav="dashboard"][aria-current="page"]:hover{background:var(--tile);color:var(--ink)}
+.snav .sn-list .sn-tab button{height:34px;font-size:13.5px} .snav .sn-list .sn-tab svg{width:18px;height:18px}
+html.sn-x .snav .sn-list .sn-tab button{padding-left:24px}   /* under Dashboard: its tabs */
+@media (max-width:600px){ .sn-tab{display:none} }
+.snav>:not(.sn-sp){flex-shrink:0}   /* a short screen scrolls the menu instead of squeezing the logo and the toggle under the first item */
+/* Clients page: the delivery cards (On hold, In production) sit on top of it, above the page itself */
+html.paged:has(#snav a[data-nav="clients"][aria-current="page"]) #app{display:flex;flex-direction:column}
+html.paged:has(#snav a[data-nav="clients"][aria-current="page"]) #app>.top{margin-left:0;margin-right:0}
+html.paged:has(#snav a[data-nav="clients"][aria-current="page"]) #app>#grid{display:grid!important;order:1}
+html.paged:has(#snav a[data-nav="clients"][aria-current="page"]) #app>#spage{order:2}
+html.paged:has(#snav a[data-nav="clients"][aria-current="page"]) #grid>.card{display:none}
+html.paged:has(#snav a[data-nav="clients"][aria-current="page"]) #grid>.card[data-tab="clients"]:not([hidden]){display:block}
+@media (min-width:601px){ html.paged:has(#snav a[data-nav="clients"][aria-current="page"]) #grid{--cols:2} }
+/* Waiting for approval: the draft sheet */
+.draft-body{white-space:pre-wrap;font-size:14px;line-height:1.5}
+.dft-to{margin-bottom:8px} .dft-to small{display:inline;margin:0 6px 0 0} .dft-to small:not(:first-child){margin-left:14px}
+@media (max-width:600px){ .draft-ta{font-size:16px} .draft-body{font-size:15px} }   /* 16 px: iOS does not zoom into the editor */
+.draft-ta{width:100%;min-height:220px;resize:vertical;background:var(--tile);border:1px solid var(--line);border-radius:12px;padding:11px 12px;font:inherit;font-size:14px;line-height:1.5;color:var(--ink);outline:none}
+.draft-ta:focus{border-color:var(--blue)}
+.dft-why{background:var(--orange-soft);color:#8f4a05;border-radius:14px;padding:10px 13px;font-size:13.5px;margin-bottom:10px}
+:root[data-mode="dark"] .dft-why{color:var(--orange)}
+.act:disabled{opacity:.5;cursor:default}
 
 /* ======================================================================
    Phone pass 11-21 (SIMAS "optimise the crm for phone use and fix the layouts"; BENAS "we will also use this on our mobiles").
    Layout only: every card shows the same things; only its place, size and spacing change. Desktop is untouched.
    ====================================================================== */
 @media (max-width:600px){
-  /* phone home (BENAS): Do next, replies waiting, hot leads and the pipeline first; the $ hero under them, then the rest */
+  /* phone home = the main page (BENAS 11-21 19:2x): the $ hero, then Big deals, Waiting for approval, Do next, Activity, in page order */
   .top{margin-left:0;margin-right:0}
-  html[data-tab="home"] .app{display:flex;flex-direction:column}
-  html[data-tab="home"] #grid{display:contents}
-  html[data-tab="home"] #grid>.card{order:6}
-  html[data-tab="home"] #grid>#c-next{order:1}
-  html[data-tab="home"] #grid>#c-attention{order:2;display:block}
-  html[data-tab="home"] #grid>#c-hot{order:3}
-  html[data-tab="home"] #grid>#c-pipeline{order:4;display:block}
-  html[data-tab="home"] .app>.hero{order:5}
-  html[data-tab="home"] .app>.zone-h,html[data-tab="home"] .app>#grid2,html[data-tab="home"] .app>.foot{order:7}
   /* hero numbers: a 3-up and a 2-up grid instead of sideways strips that hid the last numbers off screen */
   .hero-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible;margin:0;padding:0}
   .kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible;margin:8px 0 0;padding:0}

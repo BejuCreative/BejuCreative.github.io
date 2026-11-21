@@ -118,7 +118,7 @@ function show(p) {
   slackLive(p === "slack");
   if (was !== p) scrollTo(0, 0);
 }
-function startTimer() { stopTimer(); TIMER = setInterval(() => { if (!document.hidden && PAGE !== "dashboard" && !DRAG && !EDIT && !$(".cl-oe, .cnform", PAGE_EL)) { delete CACHE[PAGE]; renderPage(true); } }, 5 * 60000); }   // an open Fix / call-notes form is never wiped
+function startTimer() { stopTimer(); TIMER = setInterval(() => { if (!document.hidden && PAGE !== "dashboard" && !DRAG && !EDIT && !$(".cl-oe, .cnform, [data-keep]", PAGE_EL)) { delete CACHE[PAGE]; renderPage(true); } }, 5 * 60000); }   // an open Fix / call-notes form is never wiped
 function stopTimer() { if (TIMER) clearInterval(TIMER); TIMER = null; }
 
 /* keys: [ toggles the rail, Escape closes the phone drawer */
@@ -159,7 +159,13 @@ const HEAD = {
   todos: ["To-<em class=\"sf\">dos</em>", "The founders' board. Drag cards between columns; both of you see changes live."],
   slack: ["Slack <em class=\"sf\">channels</em>", "#claude-sync and #red-alert, newest first. Messages that mention you are marked."],
 };
+/* 11-21: a page can live in its own file (contacts.js). It sets window.BEJU_SIDE_PAGES[id] = { title, head: [h1 html, subline], src(d),
+   load(api), view(d, api), wire(api) } and loads before this file; side.js gives it the shared client and helpers (API). */
+const EXT = window.BEJU_SIDE_PAGES || {};
+const API = { sb, me, all, toast, esc, ic, lc, dayOf, dLabel, usd, initials, get el() { return PAGE_EL; } };
+Object.entries(EXT).forEach(([id, x]) => { PAGES[id] = x.title; HEAD[id] = x.head; LOAD[id] = () => x.load(API); VIEW[id] = d => x.view(d, API); });
 function srcOf(p, d) {
+  if (EXT[p]) return EXT[p].src ? EXT[p].src(d) : null;
   if (p === "expenses") return d ? ["Beju Finance sheet + Stripe", d.updated_at] : null;
   if (p === "email") return d && d.ab ? ["Instantly API", d.ab.updated_at] : null;
   if (p === "clients") return d ? [d.dsOk === false ? "Drive access expired: delivered counts are stale" : "Google Drive + Stripe", d.synced] : null;
@@ -180,7 +186,7 @@ async function renderPage(quiet) {
     const d = CACHE[p] || (CACHE[p] = await LOAD[p]());
     if (seq !== SEQ || p !== PAGE) return;
     PAGE_EL.innerHTML = header(p, d) + VIEW[p](d);
-    applyVars(PAGE_EL); if (p === "todos") wireBoard(); if (p === "clients") wireClients(); if (p === "perf") wirePerf(); if (p === "weekly") wireWeekly(); if (p === "expenses") wireExpenses(); if (p === "email") wireEmail(); if (p === "slack") wireSlack(); countUps(PAGE_EL);
+    applyVars(PAGE_EL); if (p === "todos") wireBoard(); if (p === "clients") wireClients(); if (p === "perf") wirePerf(); if (p === "weekly") wireWeekly(); if (p === "expenses") wireExpenses(); if (p === "email") wireEmail(); if (p === "slack") wireSlack(); if (EXT[p] && EXT[p].wire) EXT[p].wire(API); countUps(PAGE_EL);
   } catch (e) {
     if (seq !== SEQ) return; delete CACHE[p];
     PAGE_EL.innerHTML = `${header(p, null)}<p class="sp-err">Couldn't load this page. ${esc(String(e && e.message || e).slice(0, 160))}</p><div><button type="button" class="act" id="sp-retry">${ic("refresh")}Try again</button></div>`;
