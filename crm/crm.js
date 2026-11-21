@@ -110,6 +110,12 @@ async function fetchAll() {
     all("crm_panels", "id,data,updated_at", q => q.eq("id", "metrics")).catch(() => []),   // 11-19: outreach + money straight from the APIs (scripts/crm_panels_sync.py, every 15 min)
     all("desk_items", "*", q => q.eq("status", "open").order("created_at")).catch(() => []),   // 11-21: founder holds + what is being built right now (scripts/crm_desk.py)
   ]);
+  /* 11-21 (tracking check, from v7): Instantly's daily "unique opportunities" counts a lead again on each day it is active, so sums over days
+     ran up to 1.9x too high. Positives per day come from interested_leads: one row per lead, on the day it was marked interested. */
+  { const m = {}, seen = new Set(), lo = daily.length ? daily[0].day : "9999";
+    interested.forEach(x => { const dd = dayOf(x.interest_changed_at || x.last_reply_at || x.created_at); if (!dd || !x.campaign_id) return; const k = x.campaign_id + "|" + dd; m[k] = (m[k] || 0) + 1; });
+    if (interested.length) { daily.forEach(r => { const k = r.campaign_id + "|" + r.day; seen.add(k); r.opportunities = m[k] || 0; });
+      Object.entries(m).forEach(([k, n]) => { const [campaign_id, day] = k.split("|"); if (!seen.has(k) && day >= lo) daily.push({ campaign_id, day, sent: 0, new_leads: 0, replies: 0, replies_auto: 0, opportunities: n }); }); } }
   return { pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk };
 }
 

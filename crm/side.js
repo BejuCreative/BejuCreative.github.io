@@ -43,6 +43,17 @@ async function all(table, cols, mod) {   // REST returns at most 1,000 rows per 
   for (let i = 0; ; i += 1000) { let q = sb().from(table).select(cols).range(i, i + 999); if (mod) q = mod(q); const rows = await must(q); out.push(...rows); if (rows.length < 1000) return out; }
 }
 const panel = id => must(sb().from("crm_panels").select("data,updated_at").eq("id", id).maybeSingle());
+/* 11-21 (tracking check, from v7): Instantly's daily "unique opportunities" counts a lead again on every day it is active, so sums over
+   several days ran up to 1.9x too high (Course Creators: 13 by day vs 7 real). Positives per day now come from interested_leads:
+   one row per lead, on the day Instantly marked it interested. All-time totals then match Instantly exactly. */
+function fixOpp(cd, il) {
+  if (!Array.isArray(il) || !il.length) return cd;
+  const m = {}, lo = cd.reduce((a, r) => (r.day < a ? r.day : a), "9999"), seen = new Set();
+  il.forEach(x => { const d = dayOf(x.interest_changed_at || x.last_reply_at || x.created_at); if (!d || !x.campaign_id) return; const k = x.campaign_id + "|" + d; m[k] = (m[k] || 0) + 1; });
+  cd.forEach(r => { const k = r.campaign_id + "|" + r.day; seen.add(k); r.opportunities = m[k] || 0; });
+  Object.entries(m).forEach(([k, n]) => { const [campaign_id, day] = k.split("|"); if (!seen.has(k) && day >= lo) cd.push({ campaign_id, day, sent: 0, new_leads: 0, replies: 0, replies_auto: 0, opportunities: n }); });
+  return cd;
+}
 function toast(t) { const box = $("#toasts"); if (!box) return; const el = document.createElement("div"); el.className = "toast"; el.innerHTML = `<div><b>${esc(t)}</b></div>`; box.append(el); setTimeout(() => el.remove(), 4200); }
 
 /* ---------------- rail: expanded / collapsed ---------------- */
@@ -363,9 +374,9 @@ function wireExpenses() {
 /* 2. email tests (SIMAS 11-19 18:5x: "show the winner, highlight the winner. And also say the changes are done or not") */
 async function loadEmail() {
   await me();
-  const [ab, m, acts, arms, cd] = await Promise.all([panel("ab_tests"), panel("metrics").catch(() => null), all("ab_actions", "*", q => q.order("id", { ascending: false })).catch(() => []), panel("arms").catch(() => null),
-    all("campaign_daily", "campaign_id,day,sent,new_leads,replies,opportunities", q => q.gte("day", addDays(dayOf(Date.now()), -13))).catch(() => [])]);
-  return { ab, m, acts, arms, cd };
+  const [ab, m, acts, arms, cd, il] = await Promise.all([panel("ab_tests"), panel("metrics").catch(() => null), all("ab_actions", "*", q => q.order("id", { ascending: false })).catch(() => []), panel("arms").catch(() => null),
+    all("campaign_daily", "campaign_id,day,sent,new_leads,replies,opportunities", q => q.gte("day", addDays(dayOf(Date.now()), -13))).catch(() => []), all("interested_leads", "campaign_id,interest_changed_at,last_reply_at,created_at").catch(() => [])]);
+  return { ab, m, acts, arms, cd: fixOpp(cd, il) };
 }
 const abAct = (acts, key, step) => acts.find(a => a.campaign === key && a.step === step) || null;   // newest first
 function abStatus(c, s, acts) {
@@ -680,7 +691,7 @@ async function loadWeekly() {
   const [m, arms, ab, daily, interested, pipe, payments, retainers, deliveries, promises, fu, scopes, changes, threads, snaps, clients, lostLog] = await Promise.all([
     opt(panel("metrics")), opt(panel("arms")), opt(panel("ab_tests")),
     all("campaign_daily", "day,opportunities", q => q.gte("day", from)),
-    all("interested_leads", "email,first_name,company,interest_changed_at,last_reply_at"),
+    all("interested_leads", "email,first_name,company,campaign_id,interest_changed_at,last_reply_at,created_at"),
     all("pipeline", "email,name,status,yes_at,delivered_at,last_reply_at,paid,fu_stage,fu_day0,notes,updated_at"),
     all("payments", "client_id,email,payer_name,amount,refunded,paid_at"),
     optL(all("retainers", "id,email,name,amount,interval,status,started_at,current_period_end,canceled_at")),
@@ -766,7 +777,7 @@ async function loadWeekly() {
     optL(all("client_reports", "email,week,status,sent_at")),
     optL(all("client_accounts", "email,name")),
   ]);
-  const cd = cdR || [], clv = clR || [], idl = idlR || [], cpo = cpoR || [], crp = crpR || [], cacc = caccR || [];
+  const cd = fixOpp(cdR || [], interested), clv = clR || [], idl = idlR || [], cpo = cpoR || [], crp = crpR || [], cacc = caccR || [];
   const sumBy = (rows, f) => rows.reduce((a, r) => a + (+f(r) || 0), 0), rt = (a, b) => b ? 100 * a / b : null;
   const aggC = rows => ({ nl: sumBy(rows, r => r.new_leads), rep: sumBy(rows, r => r.replies), opp: sumBy(rows, r => r.opportunities), sent: sumBy(rows, r => r.sent) });
   const aggI = rows => ({ sent: sumBy(rows, r => r.sent), bnc: sumBy(rows, r => r.bounced), rep: sumBy(rows, r => r.replies) });
