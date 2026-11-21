@@ -85,7 +85,7 @@ async function all(table, cols = "*", mod) {   // REST caps at 1,000 rows per ca
 }
 async function fetchAll() {
   const t = today(), since60 = new Date(Date.now() - 60 * 864e5).toISOString();
-  const [pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk, opps] = await Promise.all([
+  const [pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk] = await Promise.all([
     all("pipeline", "*", q => q.order("email")),
     all("payments", "id,client_id,email,payer_name,amount,currency,package,refunded,paid_at", q => q.order("paid_at", { ascending: false })),
     all("campaign_daily", "campaign_id,day,sent,new_leads,replies,replies_auto,opportunities", q => q.gte("day", addDays(t, -75)).order("day").order("campaign_id")),
@@ -109,15 +109,8 @@ async function fetchAll() {
     all("calls", "*", q => q.gte("start_at", new Date(Date.now() - 30 * 864e5).toISOString()).order("start_at")).catch(() => []),   // 11-17: cal.com bookings = the only calls
     all("crm_panels", "id,data,updated_at", q => q.eq("id", "metrics")).catch(() => []),   // 11-19: outreach + money straight from the APIs (scripts/crm_panels_sync.py, every 15 min)
     all("desk_items", "*", q => q.eq("status", "open").order("created_at")).catch(() => []),   // 11-21: founder holds + what is being built right now (scripts/crm_desk.py)
-    all("opportunities", "*", q => q.is("closed_at", null).order("created_at")).catch(() => []),   // v7 11-21: bigger work than Shorts (managed on the Leads page)
   ]);
-  /* v7 (11-21, tracking check): Instantly's daily "unique opportunities" counts a lead again on each day it is active, so sums over days
-     ran up to 1.9x too high. Positives per day come from interested_leads: one row per lead, on the day it was marked interested. */
-  { const m = {}, seen = new Set(), lo = daily.length ? daily[0].day : "9999";
-    interested.forEach(x => { const dd = dayOf(x.interest_changed_at || x.last_reply_at || x.created_at); if (!dd || !x.campaign_id) return; const k = x.campaign_id + "|" + dd; m[k] = (m[k] || 0) + 1; });
-    if (interested.length) { daily.forEach(r => { const k = r.campaign_id + "|" + r.day; seen.add(k); r.opportunities = m[k] || 0; });
-      Object.entries(m).forEach(([k, n]) => { const [campaign_id, day] = k.split("|"); if (!seen.has(k) && day >= lo) daily.push({ campaign_id, day, sent: 0, new_leads: 0, replies: 0, replies_auto: 0, opportunities: n }); }); } }
-  return { opps, pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk };
+  return { pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk };
 }
 
 /* ---------------- derive ---------------- */
@@ -254,7 +247,7 @@ function derive() {
   d.calls = (R.calls || []).filter(x => x.status === "booked");
   d.callsUp = d.calls.filter(x => +new Date(x.end_at || x.start_at) >= Date.now() - 15 * 6e4 && +new Date(x.start_at) <= Date.now() + 7 * 864e5);
   /* 11-21 (Simas: "dont send X anything", "have u adjusted her vids"): founder holds and the work in production (public.desk_items) */
-  d.holds = (R.desk || []).filter(x => x.kind === "hold"); d.opps = R.opps || [];
+  d.holds = (R.desk || []).filter(x => x.kind === "hold");
   d.prod = (R.desk || []).filter(x => x.kind === "production").sort((a, b) => STG_ORD.indexOf(a.stage) - STG_ORD.indexOf(b.stage) || String(a.client).localeCompare(String(b.client)));
   /* 11-21: a call that has ended is no longer one of today's calls (same 15-minute grace as callsUp) */
   const calToday = d.calls.filter(x => dayOf(x.start_at) === t && +new Date(x.end_at || x.start_at) >= Date.now() - 15 * 6e4).map(x => ({ id: "cal-" + x.uid, kind: "call", title: x.name || x.email || "Call", detail: "Booked on cal.com", at: x.start_at, lead_email: x.email || "" }));
@@ -450,7 +443,6 @@ const leadBtn = (email, inner, cls = "tile row") => `<button type="button" class
 /* 11-21: On hold + In production cards (public.desk_items) */
 const STG = { founder_check: ["Waits on a founder", "o", "c-orange"], ready: ["Ready to send", "g", "c-green"], review: ["Our check", "b", "c-purple"], building: ["Building", "b", "c-blue"], client_check: ["Waits on the client", "w", "c-grey"], queued: ["Queued", "", "c-grey"] };
 const STG_ORD = Object.keys(STG);
-const oppRow = o => dB("opps", "", `<span class="it c-orange"><svg><use href="#i-bolt"/></svg></span><span class="row-main"><b>${esc(cut(o.client, 40))}</b><small>${esc(cut(o.what, 90))}</small></span><span class="row-end">${o.value_usd != null ? usd(o.value_usd) : "—"}<small>${o.value_usd == null ? "" : o.monthly ? "/mo" : "once"}</small></span>`, "tile row", `${o.client}: ${o.what}`);
 const holdRow = x => dB("holds", "", `<span class="it c-red"><svg><use href="#i-flag"/></svg></span><span class="row-main"><b>${esc(cut(x.client, 40))}</b><small>${esc(cut(x.title, 90))}</small></span><span class="row-end"><small>${esc(x.set_by || "")}</small></span>`, "tile row", `${x.client}: ${x.title}`);
 const prodRow = x => { const s = STG[x.stage] || [x.stage || "Open", "", "c-grey"]; return dB("prod", "", `<span class="it ${s[2]}"><svg><use href="#i-film"/></svg></span><span class="row-main"><b>${esc(cut(x.title, 60))}</b><span class="tagline"><span class="chip ${s[1]}">${esc(s[0])}</span><small>${esc([x.client, x.builder].filter(Boolean).join(" · "))}</small></span></span>`, "tile row", `${x.client}: ${x.title} (${s[0]})`); };
 const lrow = (p, sub, end = "") => leadBtn(p.email || p.lead_email, `<span class="av">${esc(initials(p))}</span><span class="row-main"><b>${esc(p.name || p.email || p.lead_email)}</b><small>${esc(cut(sub, 90))}</small></span>${end}`);
@@ -553,9 +545,6 @@ const CARDS = [
     <div class="stack sp">${R0.live.map(r => dB("retainers", "", `<span class="av">${esc(initials({ name: r.name || r.email }))}</span><span class="row-main"><b>${esc(cut(r.name || r.email || "Client", 40))}</b><small>since ${r.started_at ? dLabel(dayOf(r.started_at)) : "—"}${r.current_period_end ? ` · next bill ${dLabel(dayOf(r.current_period_end))}` : ""}${r.cancel_at_period_end ? " · cancels at period end" : ""}</small></span><span class="row-end">${usd(r.amount)}<small>/${esc(r.interval === "month" ? "mo" : r.interval || "")}</small></span>`, "tile row", "Open the retainers")).join("") || empty("No retainer yet. Monthly plans show here.")}</div>
     ${kv("Paid on retainers so far", usd(R0.total), "retainers", "")}${R0.ended ? kv("Ended retainers", N(R0.ended), "retainers", "") : ""}
     <p class="sub">Only clients on a monthly plan (Stripe subscription). Repeat pack buyers are not counted.</p>`; } },
-{ id: "opps", title: "Opportunities", focus: ["opps", ""], render: d => { const mo = sum(d.opps.filter(o => o.monthly), o => o.value_usd), once = sum(d.opps.filter(o => !o.monthly), o => o.value_usd);
-    return `${head(`Opportu<em class="sf">nities</em>`, dB("opps", "", `${d.opps.length} open`, `chip ${d.opps.length ? "b" : ""}`, "Open every opportunity: the bigger work, what it is worth, the next step"), true)}<div class="stack">${d.opps.slice(0, 4).map(oppRow).join("") || empty("No open opportunity yet.")}</div>
-    ${d.opps.length > 4 ? dB("opps", "", `Show all ${d.opps.length}`, "more") : ""}<p class="sub">${mo || once ? `${[mo ? usd(mo) + " a month" : "", once ? usd(once) + " one time" : ""].filter(Boolean).join(" + ")} if they close. ` : ""}Bigger work than Shorts: a website, their socials, funnels.</p>`; } },
 { id: "holds", title: "On hold", focus: ["holds", ""], render: d => `${head(`On <em class="sf">hold</em>`, dB("holds", "", d.holds.length ? `${d.holds.length} active` : "none", `chip ${d.holds.length ? "r" : "g"}`, "Open every hold: who it covers, the rule, who set it"), true)}<div class="stack">${d.holds.slice(0, 5).map(holdRow).join("") || empty("Nothing is on hold.")}</div>
     ${d.holds.length > 5 ? dB("holds", "", `Show all ${d.holds.length}`, "more") : ""}<p class="sub">Nothing goes out to these people until a founder lifts the hold. Tell Claude to lift one.</p>` },
 { id: "prod", title: "In production", focus: ["prod", ""], render: d => { const n = k => d.prod.filter(x => x.stage === k).length, w = n("founder_check"), r = n("ready");
@@ -700,7 +689,7 @@ const CARDS = [
 ];
 const byId = id => CARDS.find(c => c.id === id);
 /* phone: five tabs, each shows only its cards (the desktop keeps the whole bento) */
-const TABS = { home: ["next", "today", "opps", "paidc", "retainers", "holds", "prod", "hot", "activity", "followups"], money: ["close", "buyers", "topc", "alltime", "moneypage", "price"], leads: ["attention", "moods", "samples", "turn", "speed", "clock", "score", "away", "funnel", "search", "export"],
+const TABS = { home: ["next", "today", "paidc", "retainers", "holds", "prod", "hot", "activity", "followups"], money: ["close", "buyers", "topc", "alltime", "moneypage", "price"], leads: ["attention", "moods", "samples", "turn", "speed", "clock", "score", "away", "funnel", "search", "export"],
   outreach: ["outreach", "total", "heat", "rate", "camps", "deliv", "inboxes", "sync"], clients: ["portal", "psamples", "pvideos", "pnotes", "pclients", "videos"], none: ["brand", "owner", "theme"] };
 const TABOF = {}; Object.entries(TABS).forEach(([t, ids]) => ids.forEach(id => { TABOF[id] = t; }));
 
@@ -764,7 +753,7 @@ const SRC = { hero: ["Money: Stripe · Outreach: Instantly API · Samples: Sampl
   deliv: ["Instantly API", "metrics"], buyers: ["Stripe", "metrics"], topc: ["Stripe", "metrics"], alltime: ["Stripe", "metrics"], funnel: ["Instantly API, Samples tab, Stripe", "metrics"],
   away: ["Instantly replies", "replies"], inboxes: ["Instantly accounts", "instantly"], videos: ["Drive delivery index", "deliveries"], portal: ["Client portal", ""], psamples: ["Client portal", ""],
   pvideos: ["Client portal", ""], pnotes: ["Client portal", ""], pclients: ["Client portal", ""],
-  opps: ["Founders and Claude · live", ""], holds: ["Founder orders, kept by Claude", ""], prod: ["Video tabs and delivery notes, kept by Claude", ""] };
+  holds: ["Founder orders, kept by Claude", ""], prod: ["Video tabs and delivery notes, kept by Claude", ""] };
 function srcHtml(id) {
   const s = SRC[id]; if (!s || !RAW) return "";
   const at = s[1] === "metrics" ? (D && D.mAt) : s[1] ? ((RAW.sync || []).find(x => x.name === s[1]) || {}).ran_at : null, old = at && Date.now() - new Date(at) > 3 * 36e5;
@@ -773,24 +762,15 @@ function srcHtml(id) {
 /* ---------------- render ---------------- */
 const IO = new IntersectionObserver(es => es.forEach(e => e.target.classList.toggle("inview", e.isIntersecting)), { rootMargin: "60px" });   // ambient loops run only on cards in view
 function build() {
-  const g1 = $("#grid"), g2 = $("#grid2"); g1.innerHTML = g2.innerHTML = ""; IO.disconnect(); setFocus(store.get(K_FC) !== "0");
+  const g1 = $("#grid"), g2 = $("#grid2"); g1.innerHTML = g2.innerHTML = ""; IO.disconnect();
   const ro = new ResizeObserver(es => es.forEach(e => fit(e.target)));
   CARDS.forEach((c, i) => {
-    const el = document.createElement("section"); el.id = "c-" + c.id; el.className = "card " + (c.cls || ""); el.dataset.tab = TABOF[c.id] || "home"; el.dataset.fc = FOCUS.has(c.id) ? "1" : "0"; el.style.setProperty("--i", c.grid === 2 ? i - 30 : i); el.setAttribute("aria-label", c.title || c.id);
+    const el = document.createElement("section"); el.id = "c-" + c.id; el.className = "card " + (c.cls || ""); el.dataset.tab = TABOF[c.id] || "home"; el.style.setProperty("--i", c.grid === 2 ? i - 30 : i); el.setAttribute("aria-label", c.title || c.id);
     el.style.setProperty("--j", i % 8); c.sh = document.createElement("i"); c.sh.className = "sheen"; c.sh.setAttribute("aria-hidden", "true");
     c.el = el; c.last = null; if (c.mount) c.mount(el); el.appendChild(c.sh); (c.grid === 2 ? g2 : g1).appendChild(el); ro.observe(el); IO.observe(el);
   });
 }
 function fit(el) { el.style.gridRowEnd = "span " + Math.ceil((el.offsetHeight + 16) / 4); }
-/* v7 (SIMAS + Benas 11-21: "small numbers, small text ... we want to see the minimal things"): Focus = the cards the founders act on
-   every day; Everything = the whole bento. Saved per device. Phones keep their five tabs. */
-const K_FC = "beju-crm-focus", FOCUS = new Set(["next", "today", "opps", "hot", "holds", "prod", "followups", "retainers"]);
-function setFocus(on) {
-  store.set(K_FC, on ? "1" : "0"); document.documentElement.dataset.focus = on ? "1" : "0";
-  $$("#fc-bar [data-fcv]").forEach(b => { const a = (b.dataset.fcv === "1") === on; b.classList.toggle("on", a); b.setAttribute("aria-pressed", a); });
-  requestAnimationFrame(() => CARDS.forEach(c => { if (c.el) fit(c.el); }));
-}
-document.addEventListener("click", ev => { const b = ev.target.closest("#fc-bar [data-fcv]"); if (b) setFocus(b.dataset.fcv === "1"); });
 function renderAll(fromData) {
   D = derive();
   requestAnimationFrame(() => CARDS.forEach(c => { if (!c.el || !c.render) return; const h = srcHtml(c.id), old = $(".src", c.el); if (!h) return; if (old) { if (old.outerHTML !== h) old.outerHTML = h; } else c.el.insertAdjacentHTML("beforeend", h); }));
@@ -932,7 +912,6 @@ const DR = {
   next() { return { title: "Do next", sub: `${D.nextN} thing${D.nextN === 1 ? "" : "s"} only a founder can do, most urgent first`, html: stackOf(D.nextAll.map((x, i) => nextRow(x, i, true)), "Nothing needs you right now.") }; },
   close() { const C = D.close; return { title: "Emails to close", sub: `${C.n} paying client${C.n === 1 ? "" : "s"} · typical ${C.med ?? "—"} · average ${C.avg == null ? "—" : C.avg.toFixed(1)} · fewest first`, html: stackOf(C.list.map(c => { const inner = `<span class="av">${esc(initials({ name: c.name }))}</span><span class="row-main"><b>${esc(c.name)}</b><small>${esc(cut(c.p.show || [...c.emails].join(", "), 80))} · first paid ${c.firstPaid ? fDT(c.firstPaid) : "—"}</small></span><span class="row-end">${c.toClose}<small>email${c.toClose === 1 ? "" : "s"}</small></span>`; return c.p.email ? leadBtn(c.p.email, inner) : dB("client", c.key, inner, "tile row"); }), "No paying client with an email trail yet.") }; },
   retainers() { const R0 = D.ret; return { title: "Retainer clients", sub: `${R0.live.length} live · ${usd(R0.mrr)}/month · ${usd(R0.total)} paid so far${R0.ended ? ` · ${R0.ended} ended` : ""}`, html: stackOf(R0.all.map(r => { const inner = `<span class="av">${esc(initials({ name: r.name || r.email }))}</span><span class="row-main"><b>${esc(r.name || r.email || "Client")}</b><small>${esc(r.status || "")} · since ${r.started_at ? dLabel(dayOf(r.started_at)) : "—"}${r.current_period_end && r.live ? ` · next bill ${dLabel(dayOf(r.current_period_end))}` : ""}${r.canceled_at ? ` · ended ${dLabel(dayOf(r.canceled_at))}` : ""} · ${r.invoices_paid || 0} paid, ${usd(r.paid_total)}</small></span><span class="row-end">${usd(r.amount)}<small>/${esc(r.interval === "month" ? "mo" : r.interval || "")}</small></span>`; return r.e ? dB("client", "e:" + r.e, inner, "tile row", "Open this client") : `<div class="tile row">${inner}</div>`; }), "No retainer yet.") }; },
-  opps() { return { title: "Opportunities", sub: `${D.opps.length} open · bigger work than Shorts`, html: stackOf(D.opps.map(o => `<div class="tile note"><small><span class="chip b">${esc(o.stage)}</span> ${esc(o.owner || "")}${(o.kinds || []).length ? " · " + esc(o.kinds.join(", ")) : ""}</small><b>${esc(o.client)}${o.value_usd != null ? ` · ${usd(o.value_usd)}${o.monthly ? " / month" : " one time"}` : ""}</b><br>${esc(o.what)}${o.next_step ? `<br><span class="mut">Next: ${esc(o.next_step)}</span>` : ""}${o.link && webUrl(o.link) ? `<br>${rich(o.link)}` : ""}</div>`), "No open opportunity.") + `<p class="sub">Add, change or close opportunities on the <a href="?p=leads">Leads page</a>.</p>` }; },
   holds() { return { title: "On hold", sub: `${D.holds.length} active hold${D.holds.length === 1 ? "" : "s"} · nothing goes out to these people until a founder lifts it`, html: stackOf(D.holds.map(x => `<div class="tile note"><small>Set by ${esc(x.set_by || "a founder")}${(x.emails || []).length ? ` · ${esc(x.emails.join(", "))}` : ""}</small><b>${esc(x.client)}</b><br>${esc(x.title)}${x.detail ? `<br><span class="mut">${esc(x.detail)}</span>` : ""}</div>`), "Nothing is on hold.") + `<p class="sub">To set or lift a hold, tell Claude. It checks this list before every send.</p>` }; },
   prod() { const by = {}; D.prod.forEach(x => { (by[x.client] || (by[x.client] = [])).push(x); });
     return { title: "In production", sub: `${D.prod.length} open piece${D.prod.length === 1 ? "" : "s"} of client work · the stage is the last one Claude logged`, html: Object.keys(by).map(c => grp(esc(c), by[c].length) + stackOf(by[c].map(x => { const s = STG[x.stage] || [x.stage || "Open", ""]; return `<div class="tile note"><small><span class="chip ${s[1]}">${esc(s[0])}</span> ${esc([x.builder, x.set_by && x.stage === "founder_check" ? "waits on " + (x.set_by === "Both" ? "both of you" : x.set_by) : "", "updated " + ago(x.updated_at)].filter(Boolean).join(" · "))}</small><b>${esc(x.title)}</b>${x.detail ? `<br><span class="mut">${esc(x.detail)}</span>` : ""}${x.link && webUrl(x.link) ? `<br>${rich(x.link)}` : ""}</div>`; }))).join("") || empty("Nothing is in production.") }; },
