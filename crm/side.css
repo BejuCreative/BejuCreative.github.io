@@ -572,26 +572,26 @@ html.fx-lite .cl-fb{-webkit-backdrop-filter:none;backdrop-filter:none;background
   .wbr-cards{grid-template-columns:minmax(0,1fr)} .pf-ln{font-size:12.5px}}
 .wbr-lg td:first-child{min-width:150px}
 
-/* Email tests: campaigns coloured by state (SIMAS 11-20). Violet = A/B test running (wins over green), green = active, dimmed = paused.
+/* Email tests: campaigns coloured by state (SIMAS 11-20; v7 colours SIMAS 11-21): GREEN = testing all variants (A and B both sending), VIOLET = one variant only, GOLD = the winner, dimmed = paused.
    Own violet variable: the Forest look redefines --purple as olive. */
 :root{--abv:#6a4ce0} :root[data-mode="dark"]{--abv:#b49cff}
 .camp-legend{display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--ink-2);margin:4px 0 14px}
 .camp-legend span{display:inline-flex;align-items:center;gap:7px;font-weight:500} .camp-legend small{font-size:11.5px}
 .cs{display:inline-block;width:10px;height:10px;border-radius:50%;flex:none}
-.cs.on{background:var(--green)} .cs.ab{background:var(--abv)} .cs.off{background:transparent;box-shadow:inset 0 0 0 1.5px var(--mute)}
+.cs.on{background:var(--abv)} .cs.ab{background:var(--green)} .cs.win{background:var(--gold7)} .cs.off{background:transparent;box-shadow:inset 0 0 0 1.5px var(--mute)}
 .cs-tag{font-style:normal;font-size:10.5px;font-weight:600;letter-spacing:.02em;padding:2px 7px;border-radius:999px;vertical-align:middle;white-space:nowrap}
-.cs-tag.on{color:var(--green);background:color-mix(in srgb,var(--green) 14%,transparent)} .cs-tag.ab{color:var(--abv);background:color-mix(in srgb,var(--abv) 16%,transparent)} .cs-tag.off{color:var(--mute);background:var(--panel)}
-.card.camp-st.st-on{background:linear-gradient(100deg,color-mix(in srgb,var(--green) 13%,transparent),color-mix(in srgb,var(--green) 3%,transparent) 65%),var(--card);box-shadow:var(--edge),inset 4px 0 0 var(--green)}
-.card.camp-st.st-ab{background:linear-gradient(100deg,color-mix(in srgb,var(--abv) 16%,transparent),color-mix(in srgb,var(--abv) 4%,transparent) 65%),var(--card);box-shadow:var(--edge),inset 4px 0 0 var(--abv)}
+.cs-tag.on{color:var(--abv);background:color-mix(in srgb,var(--abv) 16%,transparent)} .cs-tag.ab{color:var(--green);background:color-mix(in srgb,var(--green) 14%,transparent)} .cs-tag.win{color:#5b4200;background:var(--gold7)} .cs-tag.off{color:var(--mute);background:var(--panel)}
+.card.camp-st.st-on{background:linear-gradient(100deg,color-mix(in srgb,var(--abv) 16%,transparent),color-mix(in srgb,var(--abv) 4%,transparent) 65%),var(--card);box-shadow:var(--edge),inset 4px 0 0 var(--abv)}
+.card.camp-st.st-ab{background:linear-gradient(100deg,color-mix(in srgb,var(--green) 13%,transparent),color-mix(in srgb,var(--green) 3%,transparent) 65%),var(--card);box-shadow:var(--edge),inset 4px 0 0 var(--green)}
 .card.camp-st.st-off{opacity:.62}
 .sp-bar.camp-st{position:relative;padding:8px 10px 8px 14px;border-radius:12px}
 .sp-bar.camp-st::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:3px;border-radius:3px}
-.sp-bar.camp-st.st-on{background:color-mix(in srgb,var(--green) 9%,transparent)} .sp-bar.camp-st.st-on::before{background:var(--green)}
-.sp-bar.camp-st.st-ab{background:color-mix(in srgb,var(--abv) 11%,transparent)} .sp-bar.camp-st.st-ab::before{background:var(--abv)} .sp-bar.camp-st.st-ab .bar i{background:var(--abv)}
+.sp-bar.camp-st.st-on{background:color-mix(in srgb,var(--abv) 11%,transparent)} .sp-bar.camp-st.st-on::before{background:var(--abv)} .sp-bar.camp-st.st-on .bar i{background:var(--abv)}
+.sp-bar.camp-st.st-ab{background:color-mix(in srgb,var(--green) 9%,transparent)} .sp-bar.camp-st.st-ab::before{background:var(--green)} .sp-bar.camp-st.st-ab .bar i{background:var(--green)}
 .sp-bar.camp-st.st-off{opacity:.58} .sp-bar.camp-st.st-off::before{background:var(--line-2)}
 .sp-bars:has(.camp-st){gap:6px}
-tr.camp-st.st-on>td{background:color-mix(in srgb,var(--green) 8%,transparent)} tr.camp-st.st-on>td:first-child{box-shadow:inset 3px 0 0 var(--green)}
-tr.camp-st.st-ab>td{background:color-mix(in srgb,var(--abv) 10%,transparent)} tr.camp-st.st-ab>td:first-child{box-shadow:inset 3px 0 0 var(--abv)}
+tr.camp-st.st-on>td{background:color-mix(in srgb,var(--abv) 10%,transparent)} tr.camp-st.st-on>td:first-child{box-shadow:inset 3px 0 0 var(--abv)}
+tr.camp-st.st-ab>td{background:color-mix(in srgb,var(--green) 8%,transparent)} tr.camp-st.st-ab>td:first-child{box-shadow:inset 3px 0 0 var(--green)}
 tr.camp-st.st-off>td{opacity:.6}
 /* Email tests: real per-campaign numbers + the split-restart note (coordinator 11-20) */
 .ab-reset{display:flex;gap:10px;align-items:flex-start;margin:0 0 14px;padding:11px 14px;border-radius:13px;background:var(--blue-soft);color:var(--ink);font-size:13.5px;line-height:1.45}
@@ -601,3 +601,20 @@ tr.camp-st.st-off>td{opacity:.6}
 .ab-num>span{min-width:92px;font-size:12px}
 .ab-num b{font-family:var(--mono);font-weight:500;font-size:14px} .ab-num small{color:var(--mute);margin-right:10px}
 .ab-unit{font-size:12px;color:var(--mute);font-family:var(--sans);font-weight:500}
+
+/* ---- from v7 (SIMAS 11-21): gold winner (Email tests + weekly analysis) + client performance for clients without Shorts ---- */
+:root{--gold7:#f5c542;--gold7-ink:#6b4e00;--gold7-soft:rgba(245,197,66,.20)} :root[data-mode="dark"]{--gold7:#ffd35c;--gold7-ink:#ffe9a6;--gold7-soft:rgba(255,211,92,.16)}
+.card.camp-st.st-win{background:linear-gradient(100deg,var(--gold7-soft),transparent 70%),var(--card);box-shadow:var(--edge),inset 4px 0 0 var(--gold7),0 0 0 2px var(--gold7)}
+.sp-bar.camp-st.st-win{background:var(--gold7-soft)} .sp-bar.camp-st.st-win::before{background:var(--gold7)} .sp-bar.camp-st.st-win .bar i{background:var(--gold7)}
+tr.camp-st.st-win>td{background:var(--gold7-soft)} tr.camp-st.st-win>td:first-child{box-shadow:inset 3px 0 0 var(--gold7)}
+.win-card{padding:22px 24px;background:linear-gradient(110deg,var(--gold7-soft),transparent 75%),var(--card);box-shadow:var(--edge),0 0 0 2px var(--gold7)}
+.win-card.none{box-shadow:var(--edge)}
+.win-k{display:inline-block;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold7-ink);background:var(--gold7-soft);border-radius:999px;padding:4px 12px}
+.win-card.none .win-k{color:var(--mute);background:var(--panel)}
+.sp-card h2.win-n{display:block;font-size:26px;font-weight:600;letter-spacing:-.02em;line-height:1.15;margin:12px 0 0}
+.win-big{display:flex;align-items:center;gap:16px;margin-top:10px} .win-big b{font-family:var(--mono);font-size:54px;font-weight:500;letter-spacing:-.04em;line-height:1}
+.win-big span{font-size:18px;font-weight:500} .win-big small{display:block;font-size:14.5px;font-weight:400;color:var(--mute);margin-top:3px}
+.win-r{font-size:15px;color:var(--ink-2);margin-top:12px} .win-card .sp-note{margin-top:10px}
+.win-rows{display:grid;gap:8px;margin-top:16px} .win-rows p{display:flex;gap:12px;font-size:15.5px;line-height:1.4} .win-rows b{flex:0 0 96px;font-weight:600;color:var(--mute)}
+.pf-quiet{font-size:15px;line-height:1.5;color:var(--ink-2);background:var(--tile);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:12px 0 4px} .pf-quiet b{color:var(--ink)}
+@media (max-width:600px){.win-big b{font-size:42px} .sp-card h2.win-n{font-size:22px}}
