@@ -211,7 +211,6 @@ button.tile:hover,.tile.tap:hover{transform:translateY(-2px);box-shadow:0 2px 4p
 .fun .fl span{color:var(--mute)} .fun .fl b{font-family:var(--mono);font-weight:500}
 .fun .fb{height:22px;border-radius:7px;background:var(--line-2);overflow:hidden}
 .fun .fb i{display:block;height:100%;width:var(--w,0%);border-radius:7px;background:var(--c,var(--blue));transition:width 1.1s var(--ease);transition-delay:calc(var(--k,0)*90ms)}
-.fun .fs{font-size:11px;color:var(--mute);font-family:var(--mono)}
 
 /* ---------- ring / gauge / spark ---------- */
 .ring{display:grid;place-items:center;padding:6px 0 2px;position:relative}
@@ -337,7 +336,6 @@ button.tile:hover,.tile.tap:hover{transform:translateY(-2px);box-shadow:0 2px 4p
 /* ---------- small helpers ---------- */
 .row-main .tagline{display:flex;align-items:center;gap:6px;margin-top:3px;overflow:hidden}
 .row-main .tagline small{flex:1;min-width:0}
-.who{width:22px;height:22px;border-radius:50%;background:var(--panel);display:grid;place-items:center;font-size:10.5px;font-weight:600;color:var(--ink-2);flex:none;font-family:var(--sans)}
 .legend{grid-template-columns:minmax(0,1fr)}
 .row-pad{padding:14px}
 .sp{margin-top:12px} .sp2{margin-top:14px}
@@ -647,7 +645,7 @@ button.ring,button.gauge{width:100%;border-radius:18px;transition:transform .35s
 button.ring:hover,button.gauge:hover{transform:scale(1.03)}
 .gauge-mid .sub{display:block;margin-top:0}
 .fun button.fr{width:100%;text-align:left;border-radius:8px}
-.fun .fb{display:block} .fun .fs{display:block}
+.fun .fb{display:block}
 .fun button.fr:hover .fb i{filter:brightness(1.18)} .fun .fb i{transform-origin:left;transition:width 1.1s var(--ease),transform .35s var(--spring),filter .2s}
 .fun button.fr:hover .fb i{transform:scaleY(1.12)}
 .segbar{height:12px}
@@ -699,8 +697,6 @@ button.pips{width:100%} button.spark{display:block;width:100%;border-radius:10px
 button.row.np{width:100%;text-align:left;border-radius:10px}
 button.camp{display:block;padding:0;width:100%;text-align:left} .camp .row{display:flex}
 .tile:active,.act:active,.kpi:active,.hf:active{transform:scale(.985)}
-.heatd{font-family:var(--mono);font-size:10.5px;font-weight:600;border-radius:7px;padding:3px 6px;flex:none;color:var(--on-accent);background:var(--red)}
-.heatd.h1{background:var(--orange)} .heatd.h2{background:var(--faint);color:var(--ink)} .heatd.h3{background:var(--line-2);color:var(--mute)}
 .chip.cvn{font-family:var(--mono);font-size:11px;padding:2px 7px;background:var(--blue-soft);color:var(--blue)} .chip.cvn.z{background:var(--panel);color:var(--mute)}
 .row-end .chip{margin-bottom:2px}
 .act{display:inline-flex;align-items:center;gap:6px;text-decoration:none;white-space:nowrap} .act .ic{width:14px;height:14px}
@@ -918,7 +914,6 @@ html.tilt-on .spec{opacity:1}
 :root[data-mode="light"] .trk .fill{background:linear-gradient(90deg,#2463f0,#7a5cf0)}
 :root[data-mode="light"] button.tile:hover,:root[data-mode="light"] .tile.tap:hover{background:rgba(255,255,255,.86)}
 :root[data-mode="light"] .seg button.on,:root[data-mode="light"] .rng button.on{background:rgba(255,255,255,.92)}
-:root[data-mode="light"] .heatd.h2{color:var(--ink)}
 :root[data-mode="dark"] .chip.b,:root[data-mode="dark"] .chip.cvn{color:var(--blue-2)} :root[data-mode="dark"] .chip.cvn.z{color:var(--ink-2)}
 :root[data-mode="dark"] .chip.r{color:color-mix(in srgb,var(--red) 70%,#fff)}
 /* no blur available, or the page measured slow (crm.js sets .fx-lite): the same pane from tint only. The backdrop is soft already. */
@@ -1007,11 +1002,13 @@ html[data-motion="calm"] .ticker-t{animation:none;white-space:normal;flex-wrap:w
 @media (max-width:600px){.cv-tools .pg-s{flex-basis:100%}}
 
 /* 11-18 Price calculator card: slider + typed number + quick picks; the custom-price tag may wrap */
-#c-price .calc-plan{margin-top:10px} #c-price .calc-plan .chip{white-space:normal;border-radius:10px}
 #c-price .calc-in{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;font-size:13px;color:var(--mute)}
 #c-price .calc-in input{width:76px;background:var(--tile);border:1px solid var(--line);border-radius:10px;padding:6px 9px;font-family:var(--mono);font-size:15px;color:var(--ink);text-align:right;outline:none;transition:border-color .2s,box-shadow .2s}
 #c-price .calc-in input:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
 #c-price input[type=range]{display:block;width:100%;margin:10px 0;accent-color:var(--blue);cursor:pointer}
 #c-price .rng{display:grid;grid-auto-flow:column;grid-auto-columns:1fr}
-#c-price .calc-fn{margin-top:12px}
 @media (max-width:600px){#c-price input[type=range]{height:44px;margin:4px 0} #c-price .calc-in input{font-size:16px;min-height:44px;width:84px}}
+/* 11-21 (Simas: a comparison on the valuable numbers): the ▲/▼ chip sits on its own line under a number in tiles and grid cells */
+.kpi b .dl,.trio b .dl,.tgrid .dl,.kv .dl{display:block;margin:3px 0 0;white-space:normal;line-height:1.3} .kv .dl{text-align:right}
+.big .dl{display:block;font-size:12px;margin:4px 0 0;letter-spacing:0}
+.hero-sub .dl{font-size:13px;margin-left:0}
