@@ -1009,8 +1009,14 @@ function wireWeekly() {
 const COLS = [["todo", "To do"], ["doing", "Doing"], ["done", "Done"]], OWNERS = ["Simas", "Benas", "Both"];
 const K_TV = "beju-crm-todo-view";
 let TVIEW = store.get(K_TV) === "founder" ? "founder" : "board", OWNF = "All";
-let PROMS = [];
-async function loadTodos() { await me(); PROMS = await all("promises", "lead_email,promise,owner,due_at,status", q => q.eq("status", "open").order("due_at")).catch(() => []); return all("todo_cards", "*", q => q.order("pos").order("id")); }
+let PROMS = [], PNAME = {};
+async function promNames() {   // lead / client names for the promise tiles (11-21): a client's name wins, then the lead's
+  const [il, pl, cl] = await Promise.all([all("interested_leads", "email,first_name,company").catch(() => []), all("pipeline", "email,name").catch(() => []), all("clients", "name,emails").catch(() => [])]), m = {};
+  il.forEach(x => { const n = [x.first_name, x.company].map(v => String(v || "").trim()).filter(Boolean).join(" · "); if (x.email && n) m[lc(x.email)] = n; });
+  pl.forEach(x => { if (x.email && x.name) m[lc(x.email)] = x.name; }); cl.forEach(c => (c.emails || []).forEach(e => { if (c.name) m[lc(e)] = c.name; }));
+  return m;
+}
+async function loadTodos() { await me(); [PROMS, PNAME] = await Promise.all([all("promises", "id,lead_email,promise,owner,due_at,status", q => q.eq("status", "open").order("due_at")).catch(() => []), promNames()]); return all("todo_cards", "*", q => q.order("pos").order("id")); }
 const overdue = d => d && d < dayOf(Date.now());
 const cardsIn = (list, col) => list.filter(c => c.col === col).sort((a, b) => a.pos - b.pos || a.id - b.id);
 async function todoBadge() {
@@ -1051,7 +1057,26 @@ function boardHtml(list) {
 function toolsHtml(list) { const n = o => list.filter(c => c.col !== "done" && (o === "All" || c.owner === o)).length;
   return `<div class="seg sd-view" role="group" aria-label="View">${[["board", "Board"], ["founder", "By founder"]].map(([k, l]) => `<button type="button" data-tv="${k}" class="${TVIEW === k ? "on" : ""}" aria-pressed="${TVIEW === k}">${l}</button>`).join("")}</div>
     ${TVIEW === "board" ? `<span class="sd-chips" role="group" aria-label="Owner">${["All", ...OWNERS].map(o => `<button type="button" class="chip${OWNF === o ? " b" : ""}" data-of="${o}" aria-pressed="${OWNF === o}">${o} · ${n(o)}</button>`).join("")}</span>` : `<span class="mut">Drag a card to another lane to change its owner.</span>`}`; }
-function promsHtml() { return PROMS.length ? `<section class="card sp-card sd-proms"><h2>Promised to clients <small>${PROMS.length} open · from the CRM, read-only</small></h2><div class="sd-pr">${PROMS.map(q => { const late = q.due_at && new Date(q.due_at) < new Date(); return `<div class="tile sd-pc${late ? " late" : ""}"><div class="tt">${esc(q.promise)}</div><div class="ft"><span class="chip">${esc(q.owner || "?")}</span><span class="chip${late ? " r" : ""}">${q.due_at ? (late ? "overdue · " : "due ") + esc(dLabel(dayOf(q.due_at))) : "no date"}</span><span class="sp"></span><small class="mut">${esc(q.lead_email)}</small></div></div>`; }).join("")}</div></section>` : ""; }
+/* promises (SIMAS 11-21: "layout is wrong ... structurize it that it will be simple to read"): one tile per promise, scanned top-down:
+   who + when (red overdue, orange today, grey later), the promise in two lines (tap for all of it), then owner and status. Overdue first. */
+const pName = e => PNAME[lc(e)] || String(e || "") || "?";
+function promDue(q) {   // [chip class, label, group 0 overdue / 1 today / 2 later]
+  if (!q.due_at) return ["", "no date", 2];
+  const d = dayOf(q.due_at), n = Math.round((Date.parse(d + "T12:00:00Z") - Date.parse(dayOf(Date.now()) + "T12:00:00Z")) / 864e5);
+  return n < 0 ? ["r", `overdue ${-n} d · ${dLabel(d)}`, 0] : n === 0 ? ["o", `today · ${hm(q.due_at)}`, 1] : ["", `in ${n} d · ${dLabel(d)}`, 2];
+}
+function promsHtml() {
+  if (!PROMS.length) return "";
+  const t = q => (q.due_at ? +new Date(q.due_at) : Infinity), L = PROMS.map(q => ({ q, d: promDue(q) })).sort((a, b) => a.d[2] - b.d[2] || t(a.q) - t(b.q));
+  const tile = ({ q, d }) => { const txt = String(q.promise || ""), st = String(q.status || "open");
+    return `<div class="tile sd-pc${d[2] === 0 ? " late" : ""}"><div class="sd-pt"><b title="${esc(q.lead_email)}">${esc(pName(q.lead_email))}</b><span class="chip${d[0] ? " " + d[0] : ""}">${esc(d[1])}</span></div>
+      ${txt.length > 110 ? `<button type="button" class="tt sd-pw" aria-expanded="false" title="Show the whole promise">${esc(txt)}</button>` : `<p class="tt">${esc(txt)}</p>`}
+      <div class="ft"><span class="chip">${esc(q.owner || "?")}</span><span class="chip">${esc(st.charAt(0).toUpperCase() + st.slice(1))}</span></div></div>`; };
+  const body = L.length > 6 ? [["Overdue", 0], ["Due today", 1], ["Later", 2]].map(([label, k]) => { const xs = L.filter(x => x.d[2] === k); return xs.length ? `<h3 class="sd-pg">${label} <span class="mut">${xs.length}</span></h3><div class="sd-pr">${xs.map(tile).join("")}</div>` : ""; }).join("")
+    : `<div class="sd-pr">${L.map(tile).join("")}</div>`;
+  return `<section class="card sp-card sd-proms"><h2>Promised to clients <small>${PROMS.length} open · from the CRM, read-only</small></h2>${body}</section>`;
+}
+PAGE_EL.addEventListener("click", ev => { const b = ev.target.closest(".sd-pw"); if (!b) return; const on = b.getAttribute("aria-expanded") !== "true"; b.setAttribute("aria-expanded", on); b.classList.toggle("open", on); });
 function viewTodos(list) { return `${promsHtml()}<div class="sd-tools" id="sd-tools">${toolsHtml(list)}</div><div class="sd-board${TVIEW === "founder" ? " lanes" : ""}" id="sd-board">${boardHtml(list)}</div>`; }
 function renderTodos() {
   const bd = $("#sd-board"); if (PAGE !== "todos" || !CACHE.todos || !bd) return;

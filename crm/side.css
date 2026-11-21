@@ -456,9 +456,13 @@ a.lk{color:var(--blue)}
 .cl-pr{display:flex;gap:10px;align-items:center;font-size:13px;padding:6px 0;border-top:1px solid var(--line)} .cl-pr:first-of-type{border-top:0} .cl-pr .grow{flex:1;min-width:0}
 .lkc{text-decoration:none;cursor:pointer}
 /* to-dos */
-.sd-proms .sd-pr{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
-.sd-pc{flex:none;width:260px;padding:12px;display:grid;gap:8px} .sd-pc.late{border-color:var(--red)} .sd-pc .tt{font-size:13.5px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-.sd-pc .ft{display:flex;gap:6px;align-items:center} .sd-pc .ft .sp{flex:1} .sd-pc small{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px}
+.sd-proms .sd-pr{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.sd-pc{min-width:0;padding:12px 14px;display:grid;grid-template-columns:minmax(0,1fr);gap:8px;align-content:start} .sd-pc.late{border-color:var(--red)}
+.sd-pt{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0} .sd-pt b{font-size:15px;font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .sd-pt .chip{flex:none}
+.sd-pc .tt{font-size:14px;line-height:1.45;color:var(--ink-2);text-align:left;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+button.sd-pw{font:inherit;font-size:14px;padding:0;background:none;border:0;cursor:pointer} button.sd-pw.open{display:block;-webkit-line-clamp:unset}
+.sd-pc .ft{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.sd-pg{font-size:12.5px;font-weight:500;color:var(--mute);margin:16px 2px 8px} .sd-proms h2+.sd-pg{margin-top:2px}
 .sd-due{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mute)} .sd-due input{height:32px;width:auto}
 @media (max-width:1100px){.ex-nums{grid-template-columns:1fr 1fr} .ex-nums .op{display:none} .ex-nums .pf{grid-column:1/-1} .ex-form{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:600px){
