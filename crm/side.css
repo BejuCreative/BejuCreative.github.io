@@ -869,3 +869,6 @@ button.clc-m{cursor:pointer} button.clc-m:hover{background:var(--tile)}
 .ex-wd .p small{display:block}
 .ex-wdbar{display:flex;height:10px;border-radius:99px;overflow:hidden;background:var(--line-2);margin:2px 0 10px;gap:2px}
 .ex-wdbar i{display:block;height:100%;width:var(--w,0%);transition:width .8s var(--ease)} .ex-wdbar .s{background:var(--ink-2)} .ex-wdbar .b{background:var(--orange)}
+
+/* 11-22 (SIMAS: "the description disappears" when a card is sent back): the card's text stays readable above the note box */
+.sd-desc-t{white-space:pre-wrap;font-size:13px;line-height:1.5;color:var(--ink-2);background:var(--card-2,rgba(0,0,0,.03));border:1px solid var(--line);border-radius:12px;padding:10px 12px;max-height:38vh;overflow:auto}
