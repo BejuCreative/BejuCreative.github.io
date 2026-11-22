@@ -855,3 +855,7 @@ button.clc-m{cursor:pointer} button.clc-m:hover{background:var(--tile)}
   .sd-links .act{height:44px}
   .sd-notes li p{font-size:15px}
 }
+/* 11-22 SIMAS "add a bracket for needs fixing": make the Needs fixing column unmistakable */
+.sd-col.sd-c-fixing{box-shadow:var(--edge),inset 0 0 0 2px color-mix(in srgb,var(--red) 55%,transparent);background:linear-gradient(180deg,color-mix(in srgb,var(--red) 9%,transparent),transparent 60%),var(--card)}
+.sd-c-fixing .sd-col-h>span:first-child::before{content:"✏️";margin-right:2px}
+.sd-c-fixing .empty::after{content:" Drag a card here and type what to fix.";display:block;margin-top:4px}
