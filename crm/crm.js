@@ -813,20 +813,25 @@ function wofOf(R, paid) {
     what: `Claude's work${x.lead_email ? " · " + nameOf(x.lead_email) : ""}`, at: at(x.created_at), value: 0, paying: !!x.lead_email && pays([lc(x.lead_email)]), owner: founderOf(x.owner), go: { t: "todo", id: x.id } }));
   return rows.sort((a, b) => (b.paying - a.paying) || (b.value - a.value) || (a.at - b.at));
 }
+/* design pass (BENAS 11-23 "more professional, just like the other cards"): the bento list row (.li / .li-n / .li-nm / .li-v) with a sprite line
+   icon; the whole row is one button stretched over it (.wof-b), so "Read the draft" can sit in the row's own meta line. The draft opens in the
+   lead drawer's message bubbles (.conv / .cv-m). */
+const WOF_SPLIT = { reply: ["reply", "replies"], check: ["to approve", "to approve"], deal: ["deal", "deals"], hold: ["hold", "holds"], prod: ["client check", "client checks"] };
 const wofRow = r => { const K = WOF_K[r.kind], x = r.draft, open = !!x && WOF.open.has(r.key), id = "wofd-" + String(x ? x.id : "").replace(/\W/g, "");
-  return `<div class="wof-r${x ? " dr" : ""}"><button type="button" class="wof-b" data-act="wof" data-k="${esc(r.key)}" title="${esc(r.go.t === "lead" ? "Open the lead" : r.go.t === "todo" ? "Open the card on the To-dos page" : "Open it on the Clients page")}">
-    <span class="it ${K[2]}"><svg><use href="#i-${K[1]}"/></svg></span><span class="wof-t"><b>${esc(cut(r.who, 70))}</b><small><span class="wof-kl">${K[0]}</span> · ${esc(cut(r.what, 140))}</small></span>
-    ${r.owner ? `<span class="sd-av ${r.owner === "Simas" ? "s" : "b"}" title="${r.owner} decides">${r.owner[0]}</span>` : ""}<span class="wof-e">${r.value ? `<b>${usd(r.value)}${r.mo ? "/mo" : ""}</b>` : r.paying ? `<b class="wof-cl">client</b>` : ""}<small title="Waiting since ${esc(fDT(r.at))}">${esc(rel(r.at))}</small></span></button>
-    ${x ? `<button type="button" class="wof-x" data-act="wofx" data-k="${esc(r.key)}" aria-expanded="${open}" aria-controls="${id}">${ic("chev")}<span>Draft</span></button>
-    <div class="wof-d" id="${id}"${open ? "" : " hidden"}><p class="wof-dm">${esc(`Our draft · from ${x.inbox || "—"} to ${x.to_email || "—"} · written by ${x.created_by || "Claude"} ${relA(r.at)}`)}</p>
-      ${x.lead_last_snippet ? `<p class="wof-dw"><b>They wrote</b> ${esc(cut(x.lead_last_snippet, 300))}</p>` : ""}<div class="tile note draft-body">${esc(x.body || "")}</div>
-      <div class="acts"><button type="button" class="act" data-act="drill" data-k="draft" data-a="${esc(x.id)}">Open the draft sheet</button></div></div>` : ""}</div>`; };
+  return `<div class="li wof-r${x ? " dr" : ""}">${ic(K[1])}<span class="li-n"><span class="li-nm"><span class="wof-who"><span>${esc(cut(r.who, 70))}</span>${r.paying ? `<span class="chip wof-cl">client</span>` : ""}${r.owner ? `<span class="chip wof-f" title="${r.owner} decides">${r.owner[0]}</span>` : ""}</span>
+    <small class="wof-ask"><span><span class="wof-kl">${K[0]}</span> · ${esc(cut(r.what, 140))}</span>${x ? `<button type="button" class="lk wof-rd" data-act="wofx" data-k="${esc(r.key)}" aria-expanded="${open}" aria-controls="${id}">${open ? "Hide the draft" : "Read the draft"}</button>` : ""}</small></span></span>
+    ${r.value ? `<span class="li-v">${usd(r.value)}${r.mo ? "/mo" : ""}</span>` : ""}<span class="li-v mu" title="Waiting since ${esc(fDT(r.at))}">${esc(rel(r.at))}</span>
+    <button type="button" class="wof-b" data-act="wof" data-k="${esc(r.key)}" aria-label="${esc(`${r.who}: ${K[0]}, ${r.what}. Waiting ${ago(r.at)}. ${r.go.t === "lead" ? "Open the lead" : r.go.t === "todo" ? "Open the card on the To-dos page" : "Open it on the Clients page"}`)}"></button></div>
+    ${x ? `<div class="conv wof-d" id="${id}"${open ? "" : " hidden"}>${x.lead_last_snippet ? `<div class="cv-m in"><div class="cv-meta">them · ${esc(x.lead_email)}</div><div class="cv-t">${esc(cut(x.lead_last_snippet, 400))}</div></div>` : ""}
+      <div class="cv-m out"><div class="cv-meta">${esc(`our draft · from ${x.inbox || "—"} to ${x.to_email || "—"} · written by ${x.created_by || "Claude"} ${relA(r.at)}`)}</div><div class="cv-t">${esc(x.body || "")}</div></div>
+      <div class="acts"><button type="button" class="act" data-act="drill" data-k="draft" data-a="${esc(x.id)}">Open the draft sheet</button></div></div>` : ""}`; };
 function renderWof(d) {
   const rows = d.wof || [], n = rows.length;
   if (!WOF.el) { const el = WOF.el = document.createElement("section"); el.id = "c-wof"; el.className = "card wof"; el.dataset.tab = "home"; el.setAttribute("aria-label", "Waiting on a founder"); el.hidden = true; $("#hero").after(el); }
   WOF.rows = rows; const shown = WOF.all ? rows : rows.slice(0, 6), was = !WOF.el.hidden;
-  const html = n ? `<header class="ch"><h2 class="ct strong"><span>Waiting on <em class="sf">a founder</em></span><span class="wof-n" aria-label="${n} waiting">${n}</span></h2></header>
-    <div class="wof-l">${shown.map(wofRow).join("")}</div>${n > 6 ? `<button type="button" class="more" data-act="wofall" aria-expanded="${WOF.all}">${WOF.all ? "Show fewer" : `Show all (${n})`}</button>` : ""}` : "";
+  const split = Object.keys(WOF_K).map(k => { const c = rows.filter(r => r.kind === k).length; return c ? `<span>${c} ${WOF_SPLIT[k][c === 1 ? 0 : 1]}</span>` : ""; }).join("");
+  const html = n ? `<div class="wof-a"><header class="ch"><h2 class="ct strong">Waiting on <em class="sf">a founder</em></h2></header><p class="odo wof-n" aria-label="${n} waiting">${n}</p><p class="hero-sub">${split}</p></div>
+    <div class="wof-m"><div class="lst wof-l">${shown.map(wofRow).join("")}</div>${n > 6 ? `<button type="button" class="more" data-act="wofall" aria-expanded="${WOF.all}">${WOF.all ? "Show fewer" : `Show all (${n})`}</button>` : ""}</div>` : "";
   if (html !== WOF.html) { WOF.html = html; WOF.el.innerHTML = html; }
   WOF.el.hidden = !n;
   if (n && !was && WOF.prev && !RM) { WOF.el.classList.remove("wof-in"); void WOF.el.offsetWidth; WOF.el.classList.add("wof-in"); }   // an item landed: the card slides in
