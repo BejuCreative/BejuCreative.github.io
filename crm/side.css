@@ -859,3 +859,7 @@ button.clc-m{cursor:pointer} button.clc-m:hover{background:var(--tile)}
 .sd-col.sd-c-fixing{box-shadow:var(--edge),inset 0 0 0 2px color-mix(in srgb,var(--red) 55%,transparent);background:linear-gradient(180deg,color-mix(in srgb,var(--red) 9%,transparent),transparent 60%),var(--card)}
 .sd-c-fixing .sd-col-h>span:first-child::before{content:"✏️";margin-right:2px}
 .sd-c-fixing .empty::after{content:" Drag a card here and type what to fix.";display:block;margin-top:4px}
+
+/* 11-22: the fix note has its own Send button, right under the box */
+.sd-fixgo{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:-4px 0 12px}
+.sd-fixgo .mut{font-size:12px}

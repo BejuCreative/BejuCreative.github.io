@@ -1206,7 +1206,7 @@ function panelHtml() {
     <form class="sd-pform" data-form="${isNew ? "new" : c.id}">
       <div class="sd-pt"><span class="mut">${esc(meta)}</span><button type="button" class="mini" data-close aria-label="Close" title="Close (Esc)"><svg aria-hidden="true"><use href="#i-x"/></svg></button></div>
       ${fix && notes.length ? `<div class="fld sd-notes"><span>Sent back${notes.length > 1 ? ` · ${notes.length} notes` : ""}</span><ol>${notes.map(n => `<li><b>${esc(n.who)} · ${esc(dLabel(n.at.slice(0, 10)))} ${esc(n.at.slice(11))}</b><p>${esc(n.text)}</p></li>`).join("")}</ol></div>` : ""}
-      ${fix ? `<label class="fld sd-fix"><span>What needs fixing</span><textarea name="fix" rows="3" maxlength="1500" placeholder="What is wrong, and what you want instead. Saving pings Simas's Claude."></textarea></label>` : ""}
+      ${fix ? `<label class="fld sd-fix"><span>What needs fixing</span><textarea name="fix" rows="4" maxlength="1500" placeholder="What is wrong, and what you want instead. Then press Send to Claude.">${esc(FIXDRAFT[c.id] || "")}</textarea></label><div class="sd-fixgo"><span class="mut">Closing this panel also sends your note.</span><button type="submit" class="act go">${ic("send")}Send to Claude</button></div>` : ""}
       <label class="fld"><span>To-do</span><textarea name="title" rows="2" maxlength="300" required placeholder="A short, clear next step">${esc(c ? c.title : "")}</textarea></label>
       ${links.length ? `<div class="fld"><span>${c && isCheck(c) ? "Links to check" : "Links"}</span><div class="sd-links">${links.map(l => `<a class="act" href="${esc(l.u)}" target="_blank" rel="noopener noreferrer" title="${esc(l.u)}">${ic("link")}<span>${esc(l.label)}</span></a>`).join("")}</div></div>` : ""}
       <label class="fld"><span>Details</span><textarea name="detail" rows="7" maxlength="4000" placeholder="Anything that helps (optional)">${esc(c && c.detail ? c.detail : "")}</textarea></label>
@@ -1228,7 +1228,9 @@ function renderTodos(panel = false) {
   todoBadge();
 }
 const openPanel = e => { EDIT = e; renderTodos(true); };
-const closePanel = () => { const id = EDIT && EDIT.id; EDIT = null; renderTodos(true); if (id && id !== "new") $(`[data-card="${id}"]`)?.focus(); };
+const FIXDRAFT = {};   // card id -> a typed, not yet sent "What needs fixing" note (survives a re-render)
+const pendingFix = () => { const ta = $("#sd-pan textarea[name=fix]"); return ta && ta.value.trim() ? ta : null; };
+const closePanel = () => { const pf = pendingFix(); if (pf) { pf.form.requestSubmit(); return; } const id = EDIT && EDIT.id; EDIT = null; renderTodos(true); if (id && id !== "new") $(`[data-card="${id}"]`)?.focus(); };
 function posBetween(list, col, idx, skipId) { const cs = cardsIn(list, col).filter(c => c.id !== skipId), a = cs[idx - 1], b = cs[idx]; return a && b ? (a.pos + b.pos) / 2 : a ? a.pos + 1024 : b ? b.pos - 1024 : 1024; }
 async function mirror(c, patch, t) {   // the same change on the old list's row (best effort; the tasks row is the one that counts)
   const has = k => k in patch, nowI = new Date().toISOString(), flip = has("st") && (patch.st === "done") !== (c.st === "done");
@@ -1317,8 +1319,9 @@ function wireBoard() {
       EDIT = null; renderTodos(true);
       try { const ins = await must(sb().from("todo_cards").insert(row).select().single()), t = await must(sb().from("tasks").select(TCOLS).eq("source", "board").eq("source_ref", String(ins.id)).maybeSingle());
         if (t) CACHE.todos.push(tCard(t)); else CACHE.todos = await loadTaskList(); renderTodos(); } catch (e) { renderTodos(); toast("Couldn't add that to-do. Check your connection."); }
-    } else { const id = +f.dataset.form; EDIT = null; renderTodos(true); await saveCard(id, { title, detail, owner, due }); }
+    } else { const id = +f.dataset.form; delete FIXDRAFT[id]; EDIT = null; renderTodos(true); await saveCard(id, { title, detail, owner, due }); if (note) toast("Note sent to Simas's Claude"); }
   });
+  pan.addEventListener("input", ev => { if (ev.target.name === "fix") { const f = ev.target.form, id = f && +f.dataset.form; if (id) FIXDRAFT[id] = ev.target.value; } });
   pan.addEventListener("keydown", ev => {
     if (ev.key === "Escape") { ev.preventDefault(); closePanel(); return; }
     if (ev.target.matches("textarea") && ev.key === "Enter" && (ev.metaKey || ev.ctrlKey || (ev.target.name === "title" && !ev.shiftKey))) { ev.preventDefault(); ev.target.form.requestSubmit(); }
