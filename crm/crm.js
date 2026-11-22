@@ -750,7 +750,7 @@ const liI = (name, val = "", vc = "") => `<span class="li-n">${name}</span>${val
 const liLead = (email, name, val = "", vc = "") => leadBtn(email, liI(name, val, vc), "li");
 const liDr = (k, a, name, val = "", vc = "", label = "") => dB(k, a, liI(name, val, vc), "li", label);
 const quiet = (k, a, txt, label = "") => dB(k, a, txt, "qt", label);
-const PAGE_L = { clients: "Clients", todos: "To-dos", email: "Email tests" };
+const PAGE_L = { clients: "Clients", todos: "To-dos", email: "Email campaigns" };
 const nextLi = x => { const t = esc(cut(x.title, 70));
   if (x.task) return `<div class="li"><span class="li-n">${t}</span><button type="button" class="act go" data-act="ftdone" data-id="${esc(x.task)}" aria-label="Mark “${esc(cut(x.title, 60))}” done">Done</button></div>`;
   return x.email ? liLead(x.email, t, x.end ? esc(x.end) : "", "mu") : liDr(x.k, x.a, t, x.end ? esc(x.end) : "", "mu"); };
