@@ -1242,7 +1242,7 @@ function refreshDrill() { const s = STATE.drill; if (!s || $("#veil").hidden || 
 function closeDrill() { const veil = $("#veil"); if (veil.hidden) return; const h = document.documentElement, src = M_SRC && M_SRC.isConnected && inView(M_SRC) ? M_SRC : null, go = () => { veil.hidden = true; veil.classList.remove("vtm"); STATE.drill = null; STACK.length = 0; SEQ++; CONVS.delete("m"); if (src) src.classList.add("vt-src"); };
   if (VT && !RM) { const cls = src ? "vt-back" : "vt-drop"; h.classList.add(cls); const vt = vtGo(go); const done = () => { if (src) src.classList.remove("vt-src"); h.classList.remove(cls); }; vt.finished.then(done, done); } else { go(); if (src) src.classList.remove("vt-src"); } M_SRC = null; if (M_OPENER && M_OPENER.isConnected) M_OPENER.focus(); M_OPENER = null; }
 
-/* ---------------- conversations: every message of a lead or client, oldest first ---------------- */
+/* ---------------- conversations: every message of a lead or client, newest first (BENAS 11-22) ---------------- */
 const CONVS = new Map();   // "dr" (drawer) / "m" (modal) -> messages
 async function loadConv(emails) {
   const list = [...new Set(emails.flatMap(e => [String(e || "").trim(), lc(e)]).filter(Boolean))]; if (!list.length) return [];
@@ -1251,12 +1251,17 @@ async function loadConv(emails) {
 }
 const unent = t => String(t || "").replace(/&#x27;|&#39;|&apos;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&");   // some synced bodies arrive HTML-escaped; everything is escaped again below
 const rich = t => unent(t).split(/(https?:\/\/[^\s<>"')\]]+)/g).map((s, i) => { if (!(i % 2)) return esc(s); const u = webUrl(s); return u ? `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(cut(s, 70))}</a>` : esc(s); }).join("");
-function convMsgs(msgs, q) {
-  q = lc(q); const shown = q ? msgs.filter(m => lc(`${m.body || m.snippet || ""} ${m.subject || ""} ${m.inbox || ""}`).includes(q)) : msgs; let day = "", subj = "", out = "";
-  shown.forEach((m, i) => { const d0 = dayOf(m.at), sj = String(m.subject || "").replace(/^(\s*(re|fwd?|aw)\s*:\s*)+/i, "").trim(), txt = String(m.body || m.snippet || m.subject || "").trim(), long = txt.length > 700 || (txt.match(/\n/g) || []).length > 8, mine = m.direction === "out";
+/* 11-22 (BENAS "the top of the column is the latest message, scrolling down goes to the old ones"): newest first, the newest fully open
+   and marked "Newest"; past the newest CV_N the rest wait behind "Show older messages (N)" (already loaded, no query). A search runs over all. */
+const CV_N = 10;
+function convMsgs(msgs, q, all) {
+  q = lc(q); const last = msgs[msgs.length - 1], list = [...msgs].reverse(), shown = q ? list.filter(m => lc(`${m.body || m.snippet || ""} ${m.subject || ""} ${m.inbox || ""}`).includes(q)) : list, cap = !q && !all && shown.length > CV_N; let day = "", subj = "", out = "";
+  shown.forEach((m, i) => { const d0 = dayOf(m.at), sj = String(m.subject || "").replace(/^(\s*(re|fwd?|aw)\s*:\s*)+/i, "").trim(), txt = String(m.body || m.snippet || m.subject || "").trim(), long = txt.length > 700 || (txt.match(/\n/g) || []).length > 8, mine = m.direction === "out", top = m === last, cl = long && !top;
+    if (cap && i === CV_N) out += `<div class="cv-older" hidden>`;
     if (d0 !== day) { day = d0; out += `<div class="cv-day"><span>${dLong(d0)}</span></div>`; }
     if (sj && lc(sj) !== lc(subj)) { subj = sj; out += `<div class="cv-subj">${esc(cut(sj, 120))}</div>`; }
-    out += `<div class="cv-m ${mine ? "out" : "in"}"><div class="cv-meta">${mine ? "us" : "them"} · ${esc(mine ? (m.inbox || "") : (m.lead_email || ""))} · ${timeOf(m.at)}${m.source === "gmail" ? " · Gmail" : ""}${m.body ? "" : " · preview only, full text not synced yet"}</div><div class="cv-t${long ? " clamp" : ""}">${rich(txt)}</div>${long ? `<button type="button" class="lk" data-act="msgmore" aria-expanded="false">Show more</button>` : ""}</div>`; });
+    out += `<div class="cv-m ${mine ? "out" : "in"}${top ? " cv-top" : ""}"><div class="cv-meta">${top ? `<span class="cv-new">Newest</span>` : ""}${mine ? "us" : "them"} · ${esc(mine ? (m.inbox || "") : (m.lead_email || ""))} · ${fDT(m.at)}${m.source === "gmail" ? " · Gmail" : ""}${m.body ? "" : " · preview only, full text not synced yet"}</div><div class="cv-t${cl ? " clamp" : ""}">${rich(txt)}</div>${long ? `<button type="button" class="lk" data-act="msgmore" aria-expanded="${!cl}">${cl ? "Show more" : "Show less"}</button>` : ""}</div>`; });
+  if (cap) out += `</div><button type="button" class="act cv-more" data-act="convolder">Show older messages (${shown.length - CV_N})</button>`;
   return out || empty(`No message contains “${esc(cut(q, 30))}”.`);
 }
 function convBlock(msgs, id, none) {
@@ -1265,7 +1270,7 @@ function convBlock(msgs, id, none) {
   const gaps = []; let wait = null; msgs.forEach(m => { if (m.direction !== "out") { if (wait == null) wait = +new Date(m.at); } else if (wait != null) { gaps.push((+new Date(m.at) - wait) / 6e4); wait = null; } });
   const mine = msgs.filter(m => m.direction === "out").length, full = msgs.filter(m => m.body).length;
   return `<div class="cvw" data-cv="${id}"><p class="cv-sum">${msgs.length} message${msgs.length === 1 ? "" : "s"} (${mine} ours, ${msgs.length - mine} theirs) · first contact ${dLabel(dayOf(msgs[0].at))} · last ${dLabel(dayOf(msgs[msgs.length - 1].at))}${gaps.length ? ` · we replied in ${fmtMin(med(gaps))} (median)` : ""}${full < msgs.length ? ` · ${msgs.length - full} shown as previews until the full text is synced` : ""}</p>
-    <div class="cv-tools"><label class="search cv-s">${ic("search")}<input class="cv-q" type="search" placeholder="Find in this conversation" aria-label="Find in this conversation" autocomplete="off" spellcheck="false"></label><button type="button" class="act" data-act="convjump">Jump to latest ↓</button></div>
+    <div class="cv-tools"><label class="search cv-s">${ic("search")}<input class="cv-q" type="search" placeholder="Find in this conversation" aria-label="Find in this conversation" autocomplete="off" spellcheck="false"></label><button type="button" class="act" data-act="convjump">Jump to newest ↑</button></div>
     <div class="conv">${convMsgs(msgs, "")}</div></div>`;
 }
 
@@ -1278,16 +1283,19 @@ async function openLead(email, opener, keepNav) {
   $("#dr-name").textContent = p ? (p.name || p.email) : email; $("#dr-sub").textContent = p ? [p.show, p.email].filter(Boolean).join(" · ") : "Not in the samples pipeline";
   const m = p ? mood(p) : "", link = p ? safeUrl(p.drive_link) : "", at = NAV.indexOf(email), st = stageOf(email);
   const body = $("#dr-body");
-  // 11-21 (BENAS): the top says where the deal stands: stage, the next step with its owner, the deal (plan / size); then the conversation
-  body.innerHTML = `<div class="dr-sec dr-sum"><div class="dt"><span class="dt-l">Stage</span><div class="dt-v">${st ? stageChip(st) : `<span class="mut">No stage yet</span>`}${st && st.evidence ? `<small>${esc(cut(st.evidence, 220))}</small>` : ""}</div></div>
+  // 11-22 (BENAS "status line, then newest message"): one status line (stage · next step · owner), then the conversation newest first;
+  // the 11-21 block (stage, next step with its owner, the deal, the actions) follows the conversation, unchanged
+  body.innerHTML = `${stLine(email, p)}
+    <div class="dr-sec" id="dr-conv"><h3>Conversation</h3><div class="skl-list conv" aria-label="Loading the thread"><i></i><i></i><i></i></div></div>
+    <div class="dr-sec dr-sum"><div class="dt"><span class="dt-l">Stage</span><div class="dt-v">${st ? stageChip(st) : `<span class="mut">No stage yet</span>`}${st && st.evidence ? `<small>${esc(cut(st.evidence, 220))}</small>` : ""}</div></div>
       ${nextSec(email, p)}${dealRow(email, st, null, null)}
       <div class="acts sp"><button type="button" class="act" data-act="copy" data-t="${esc(email)}">${ic("copy")}Copy email</button>${link ? `<a class="act" href="${esc(link)}" target="_blank" rel="noopener noreferrer">${ic("link")}Open sample</a>` : ""}${acct ? dB("client", "e:" + email, `${ic("user")}Portal account`, "act") : ""}${p && isBuyer(p) ? dB("client", "e:" + email, `${ic("cash")}Payments`, "act") : ""}</div>
       ${NAV.length > 1 ? `<div class="dr-navr"><button type="button" class="act" data-act="nav" data-d="-1" ${at <= 0 ? "disabled" : ""} aria-label="Previous lead in the list">←</button><span class="mut mono">${at + 1} / ${NAV.length}</span><button type="button" class="act" data-act="nav" data-d="1" ${at >= NAV.length - 1 ? "disabled" : ""} aria-label="Next lead in the list">→</button><span class="mut">arrow keys move through the list</span></div>` : ""}</div>
-    <div class="dr-sec" id="dr-conv"><h3>Conversation</h3><div class="skl-list conv" aria-label="Loading the thread"><i></i><i></i><i></i></div></div>
     ${p ? `<div class="dr-sec"><div class="dr-chips"><span class="chip b">${esc(p.status || "—")}</span>${cvChip(D.tc[email] || 0)}${dB("mood", m, esc(MOOD_LABEL[m] || m), "chip", "Open every lead with this mood")}${p.inbox ? `<span class="chip">${esc(p.inbox)}</span>` : ""}${f && f.touches_total ? `<span class="chip">follow-ups ${f.touches_done || 0}/${f.touches_total}</span>` : ""}</div></div>
     <div class="dr-sec"><h3>Timeline</h3><div class="kv"><span>Said yes</span><span>${fDT(p.yes_at)}</span></div><div class="kv"><span>Sample delivered</span><span>${fDT(p.delivered_at)}</span></div><div class="kv"><span>Last reply</span><span>${fDT(p.last_reply_at)}</span></div>${p.paid ? `<div class="kv"><span>Paid</span><span class="up">${esc(cut(p.paid, 40))}</span></div>` : ""}</div>
     ${p.notes ? `<div class="dr-sec"><h3>Notes</h3><p class="dr-txt">${esc(cut(p.notes, 900))}</p></div>` : ""}` : ""}
     <div id="dr-more"></div>`;
+  body.scrollTop = 0;
   $("#dr-stage").innerHTML = st ? stageChip(st) : ""; drFoot();
   const dr = $("#drawer"), sc = $("#scrim"); dr.hidden = sc.hidden = false; dr.dataset.email = email;
   requestAnimationFrame(() => { dr.classList.add("on"); sc.classList.add("on"); if (!keepNav) $("#dr-close").focus(); });
@@ -1366,10 +1374,17 @@ function tlSec() {
   return `<div class="dr-sec" id="dr-tl"><h3>Touchpoints</h3>${R.length ? `<div class="feed">${show.map(tlRow).join("")}</div>${R.length > 15 ? `<button type="button" class="more" data-act="tlall">${TL.all ? "Show fewer" : `Show all ${R.length}`}</button>` : ""}` : empty("Nothing logged for this lead yet.")}</div>`;
 }
 const whoOf = x => /simas/i.test(x || "") ? "Simas" : /benas/i.test(x || "") ? "Benas" : /both/i.test(x || "") ? "Both" : x || "";
+const nextInfo = (email, p) => { const n = nextOf(email), st = stageOf(email), at = n ? n.next_at : p && p.next_action_at;
+  return { txt: n ? n.next_step : p && p.next_action, at, late: n ? !!n.overdue : !!(at && new Date(at) < Date.now()), own: whoOf((st && st.owner) || (p && p.owner) || (n && n.actor)) }; };
 function nextSec(email, p) {
-  const n = nextOf(email), st = stageOf(email), txt = n ? n.next_step : p && p.next_action, at = n ? n.next_at : p && p.next_action_at, late = n ? !!n.overdue : !!(at && new Date(at) < Date.now());
-  const own = whoOf((st && st.owner) || (p && p.owner) || (n && n.actor));
+  const { txt, at, late, own } = nextInfo(email, p);
   return `<div class="dt" id="dr-next"><span class="dt-l">Next step</span><div class="dt-v">${own || at ? `<b>${esc(own || "No owner")}</b>${at ? ` · <span class="${late ? "dn" : ""}">${fDT(at)}</span>` : ""}` : ""}<p class="dr-txt">${esc(txt || "None set")}</p></div></div>`;
+}
+/* 11-22 (BENAS): the drawer's top line: stage · next step · owner (with the due day); a missing part is left out, no placeholder */
+function stLine(email, p) {
+  const st = stageOf(email), { txt, at, late, own } = nextInfo(email, p);
+  const parts = [st ? `<span class="dr-st-s">${stageChip(st)}</span>` : "", txt ? `<span class="dr-st-n" title="${esc(txt)}">${esc(txt)}</span>` : "", own || at ? `<span class="dr-st-o">${own ? `<b>${esc(own)}</b>` : ""}${own && at ? " · " : ""}${at ? `<span class="${late ? "dn" : ""}">${dLabel(dayOf(at))}</span>` : ""}</span>` : ""].filter(Boolean);
+  return `<p class="dr-st" id="dr-st" aria-label="Status"${parts.length ? "" : " hidden"}>${parts.join("")}</p>`;
 }
 /* the deal: a live retainer, an open opportunity (plan + size), else the latest scope; plus what they paid so far */
 function dealRow(email, st, opps, scopes) {
@@ -1387,7 +1402,7 @@ function dealRow(email, st, opps, scopes) {
 async function drReload(email) {   // after call notes are saved: fresh touchpoints + next step
   const [tl, ns] = await Promise.all([loadTl(DR_EMS), must(sb.from("lead_next_step").select("*").eq("email", email).maybeSingle()).catch(() => undefined)]);
   if ($("#drawer").dataset.email !== email) return;
-  if (ns !== undefined && RAW.nextSteps) { RAW.nextSteps = RAW.nextSteps.filter(x => lc(x.email) !== email).concat(ns ? [ns] : []); const el = $("#dr-next"); if (el) el.outerHTML = nextSec(email, RAW.pipeline.find(x => lc(x.email) === email)); }
+  if (ns !== undefined && RAW.nextSteps) { RAW.nextSteps = RAW.nextSteps.filter(x => lc(x.email) !== email).concat(ns ? [ns] : []); const el = $("#dr-next"), p = RAW.pipeline.find(x => lc(x.email) === email), sl = $("#dr-st"); if (el) el.outerHTML = nextSec(email, p); if (sl) sl.outerHTML = stLine(email, p); }
   if (tl) { TL.rows = tl; const el = $("#dr-tl"); if (el) el.outerHTML = tlSec(); }
 }
 const founderName = () => { const s = `${ME && ME.name || ""} ${ME && ME.email || ""}`; return /simas/i.test(s) ? "Simas" : /benas/i.test(s) ? "Benas" : (ME && (ME.name || ME.email)) || "Founder"; };
@@ -1895,7 +1910,8 @@ document.addEventListener("click", ev => {
   else if (a === "mfa") mfaManage();
   else if (a === "pernext") { const o = Object.keys(PER); setPeriod(o[(o.indexOf(STATE.period) + 1) % o.length]); const nb = $('[data-act="pernext"]'); if (nb) nb.focus(); }
   else if (a === "msgmore") { const t = b.previousElementSibling, open = t.classList.toggle("clamp") === false; b.textContent = open ? "Show less" : "Show more"; b.setAttribute("aria-expanded", open); }
-  else if (a === "convjump") { const w = b.closest(".cvw"), last = w && $(".conv", w).lastElementChild; if (last) { last.scrollIntoView({ block: "end", behavior: RM ? "auto" : "smooth" }); last.classList.remove("flashm"); void last.offsetWidth; last.classList.add("flashm"); } }
+  else if (a === "convjump") { const w = b.closest(".cvw"), last = w && $(".conv .cv-m", w); if (last) { last.scrollIntoView({ block: "start", behavior: RM ? "auto" : "smooth" }); last.classList.remove("flashm"); void last.offsetWidth; last.classList.add("flashm"); } }   // the newest = the first message
+  else if (a === "convolder") { const w = b.closest(".cvw"), o = w && $(".cv-older", w); if (o) { o.hidden = false; w.dataset.all = "1"; b.remove(); const f = $(".cv-m", o); if (f) { f.tabIndex = -1; f.focus({ preventScroll: true }); } } }
   else if (a === "range") { STATE.range = +b.dataset.r; renderAll(); }
   else if (a === "series") { STATE[b.dataset.s] = !STATE[b.dataset.s]; if (!STATE.sa && !STATE.sb) STATE[b.dataset.s === "sa" ? "sb" : "sa"] = true; renderAll(); }
   else if (a === "sort") { const k = b.dataset.key, o = k === "hotSort" ? ["wait", "next", "reply"] : ["sent", "rate"]; STATE[k] = o[(o.indexOf(STATE[k]) + 1) % o.length]; renderAll(); const nb = $(`[data-act="sort"][data-key="${k}"]`); if (nb) nb.focus(); }
@@ -1946,7 +1962,7 @@ document.addEventListener("pointermove", ev => { PM = ev; if (PMQ) return; PMQ =
 document.addEventListener("pointerdown", ev => { const pl = ev.target.closest && ev.target.closest(".plot"); if (pl) plotAt(pl, ev); });
 document.addEventListener("focusin", ev => { const pl = ev.target.classList && ev.target.classList.contains("plot") ? ev.target : null; if (pl && pl.matches(":focus-visible")) { const P = PLOT[pl.dataset.plot]; if (P) { P.paint(P.i); pl.classList.add("hov"); } } });
 document.addEventListener("focusout", ev => { if (ev.target.classList && ev.target.classList.contains("plot")) ev.target.classList.remove("hov"); });
-document.addEventListener("input", ev => { if (ev.target.classList && ev.target.classList.contains("cv-q")) { const w = ev.target.closest(".cvw"), ms = w && CONVS.get(w.dataset.cv); if (ms) $(".conv", w).innerHTML = convMsgs(ms, ev.target.value); return; }
+document.addEventListener("input", ev => { if (ev.target.classList && ev.target.classList.contains("cv-q")) { const w = ev.target.closest(".cvw"), ms = w && CONVS.get(w.dataset.cv); if (ms) { if (ev.target.value) w.dataset.all = "1"; $(".conv", w).innerHTML = convMsgs(ms, ev.target.value, w.dataset.all === "1"); } return; }   // a search reveals the older messages for good
   if (ev.target.classList && ev.target.classList.contains("pg-q")) { STATE.pq[ev.target.dataset.k] = ev.target.value; const q = lc(ev.target.value); $$("#m-body [data-q]").forEach(el => { el.hidden = !!q && !el.dataset.q.includes(q); }); return; }
   if (ev.target.id === "pal-q" && PAL) { PAL.sel = 0; palRender(); } });
 document.addEventListener("keydown", ev => {
