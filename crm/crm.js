@@ -61,10 +61,10 @@ const N = (v, f = "int") => v == null || !isFinite(v) ? "—" : `<span class="n"
 const PREV = new Map();
 function countUp(card) {
   $$(".n[data-n]", card.el).forEach((el, i) => {
-    const key = card.id + ":" + i, to = +el.dataset.n, f = FMT[el.dataset.f] || FMT.int, from = PREV.has(key) ? PREV.get(key) : 0;
+    const key = card.id + ":" + i, to = +el.dataset.n, f = FMT[el.dataset.f] || FMT.int, had = PREV.has(key), from = had ? PREV.get(key) : 0;
     PREV.set(key, to);
     if (RM || from === to) { el.textContent = f(to); return; }
-    el.textContent = f(from);
+    el.textContent = f(from); if (had) el.classList.add("tick");   // 11-22 motion: a number that changed rolls up into place while it counts
     const t0 = performance.now(), dur = 900;
     const step = now => { const k = clamp((now - t0) / dur, 0, 1), e = 1 - Math.pow(1 - k, 3); el.textContent = f(from + (to - from) * e); if (k < 1 && el.isConnected) requestAnimationFrame(step); };
     requestAnimationFrame(step);
@@ -763,12 +763,12 @@ const CARDS = [
 /* 11-22 (SIMAS 16:4x "home page must track the forms: lots of money sleeping there"; BENAS "Brief responses"): the top card on Home */
 { id: "forms", cls: "w2", title: "Forms: money sleeping", focus: ["forms", ""], render: d => { const F = d.forms;
     if (!F) return `${head(`Forms: <em class="sf">money sleeping</em>`, "", true)}${empty("The forms list isn't there yet.")}`;
-    return `${head(`Forms: <em class="sf">money sleeping</em>`, dB("forms", "", `${usd(d.formsOpen)} open`, `chip ${d.formsOpen ? "o" : "g"}`, `Open every form: stage, value, what they need${d.formsThirty ? ` (${d.formsThirty} post daily: 30/mo candidates)` : ""}`), true)}<div class="stack two">${F.slice(0, 6).map(formRow).join("") || empty("No brief form yet.")}</div>
+    return `${head(`Forms: <em class="sf">money sleeping</em>`, dB("forms", "", `${usd(d.formsOpen)} potential`, `chip ${d.formsOpen ? "o" : "g"}`, `Open every form: stage, value, what they need${d.formsThirty ? ` (${d.formsThirty} post daily: 30/mo candidates)` : ""}`), true)}<div class="stack two">${F.slice(0, 6).map(formRow).join("") || empty("No brief form yet.")}</div>
     ${F.length > 6 ? dB("forms", "", `Show all ${F.length}`, "more") : ""}`; } },
 { id: "bigdeals", title: "Big deals", focus: ["deals", ""], render: d => { const B = d.deals;   // source: public.big_deals_v2 (fetchAll)
     if (!B) return `${head(`Big <em class="sf">deals</em>`, "", true)}${empty("The big-deals list isn't there yet.")}`;
     const st = B.filter(x => !x.on_hold && x.days_quiet >= 7).length;
-    return `${head(`Big <em class="sf">deals</em>`, dB("deals", "", B.length ? `${B.length} open · ${usd(sum(B, x => +x.value_usd || 0))}${st ? ` · ${st} gone quiet` : ""}` : "none", `chip ${st ? "r" : B.length ? "g" : ""}`, "Open every big deal: the quote, their words, their last reply, holds"), true)}<div class="stack">${B.slice(0, 6).map(bigRow).join("") || empty("No real quote of $600+ a month is open. Deals show here from a sent scope, a deal in the CRM, or the lead's own words.")}</div>
+    return `${head(`Big <em class="sf">deals</em>`, dB("deals", "", B.length ? `${B.length} open · ${usd(sum(B, x => +x.value_usd || 0))} quoted${st ? ` · ${st} gone quiet` : ""}` : "none", `chip ${st ? "r" : B.length ? "g" : ""}`, "Open every big deal: the quote, their words, their last reply, holds"), true)}<div class="stack">${B.slice(0, 6).map(bigRow).join("") || empty("No real quote of $600+ a month is open. Deals show here from a sent scope, a deal in the CRM, or the lead's own words.")}</div>
     ${B.length > 6 ? dB("deals", "", `Show all ${B.length}`, "more") : ""}`; } },
 { id: "approvals", title: "Waiting for approval", focus: ["approvals", ""], render: d => { const A = d.drafts;   // nothing waiting (or no view) = "" = no card at all
     if (!A || !A.length) return "";
@@ -928,12 +928,15 @@ const CARDS = [
 { id: "pclients", grid: 2, title: "Portal: sign-ups", focus: ["pclients", ""], render: d => `${head("Sign-ups", "", true)}<div class="stack">${d.pClients.slice(0, 3).map(clientTile).join("") || empty("No client has signed up yet.")}</div>${d.pClients.length > 3 ? dB("pclients", "", `Show all ${d.pClients.length}`, "more") : ""}` },
 ].filter(c => !HIDDEN.has(c.id));
 const byId = id => CARDS.find(c => c.id === id);
-/* tabs: each shows only its cards, on phones (bottom bar) and on the desktop (Money / Leads / Outreach in the side menu).
-   BENAS 11-21 19:2x (pro-CRM main page, supersedes "Main keeps Reply rate + Funnel"): Main = the $ hero + Big deals, Waiting for approval,
-   Do next, Activity. Charts and lists live in their tab. "clients" cards (On hold, In production) sit on top of the Clients page (crm.css);
-   the bottom "Clients" tab opens that page. Paid clients + Retainers go to Money: the Clients page already counts clients and retainers. */
-const TABS = { home: ["forms", "bigdeals", "approvals", "next", "activity"], money: ["close", "buyers", "topc", "alltime", "moneypage", "price", "videos", "paidc", "retainers"], leads: ["attention", "hot", "followups", "moods", "samples", "turn", "speed", "away", "pipeline"],
-  outreach: ["today", "outreach", "rate", "funnel", "total", "heat", "clock", "camps", "deliv", "inboxes", "sync"], clients: ["holds", "prod", "portal", "psamples", "pvideos", "pnotes", "pclients"], none: ["brand"] };
+/* 11-22 (SIMAS, Benas handed the dashboard over; "bento style like it was but updated based on me and Benas"): ONE long Dashboard. The $ hero
+   stays as it is; under it a summary row of the key numbers (updateTiles), then ONE dense bento of mixed card sizes, in the order Work ·
+   Money · Leads · Outreach (no boxed sections). Only the best 12 Money / Leads / Outreach cards, and every
+   number shows once on the page: a card whose number is already in the hero, the summary row or another card is cut ("cut": built but never
+   shown; its lists still open from the summary number or the drill sheets). Money / Leads / Outreach left the side menu and the phone bar.
+   "clients" cards (On hold, In production) still sit on top of the Clients page (crm.css). */
+const SECS = { work: ["forms", "bigdeals", "approvals", "next", "activity"], money: ["buyers", "topc", "paidc", "close"], leads: ["hot", "pipeline", "turn", "followups"], outreach: ["outreach", "funnel", "camps", "inboxes"] };
+const TABS = { home: Object.values(SECS).flat(), clients: ["holds", "prod", "portal", "psamples", "pvideos", "pnotes", "pclients"],
+  cut: ["retainers", "alltime", "rate", "speed", "deliv", "total", "today", "videos", "attention", "moods", "samples", "away", "heat", "clock", "sync", "price", "moneypage"], none: ["brand"] };
 const TABOF = {}; Object.entries(TABS).forEach(([t, ids]) => ids.forEach(id => { TABOF[id] = t; }));
 
 /* ---------------- chart painters (hover, tap and arrow keys share them) ---------------- */
@@ -958,7 +961,7 @@ const HERO = {};
 function setOdo(el, str) {
   const sig = str.replace(/\d/g, "0");
   if (el.dataset.sig !== sig) { el.dataset.sig = sig; el.innerHTML = [...str].map(ch => /\d/.test(ch) ? `<span class="od"><span class="os">${"0123456789".split("").map(x => `<span>${x}</span>`).join("")}</span></span>` : `<span class="oc${ch === "$" ? " u" : ""}">${ch}</span>`).join(""); }
-  const cols = $$(".od", el), digits = str.replace(/\D/g, ""), go = () => cols.forEach((c, i) => c.style.setProperty("--d", digits[i]));
+  const cols = $$(".od", el), digits = str.replace(/\D/g, ""), go = () => cols.forEach((c, i) => { c.style.setProperty("--oi", i); c.style.setProperty("--d", digits[i]); });
   RM ? go() : requestAnimationFrame(() => requestAnimationFrame(go));
 }
 function mountHero() {
@@ -988,20 +991,20 @@ function updateHero(d) {
   $$("#hero .per button").forEach(b => { const on = b.dataset.p === STATE.period; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
 }
 
-/* ---------------- 11-22: Money / Leads / Outreach tiles under the hero (SIMAS: "should be inside the dashboard like it was earlier") ----------------
-   Home only. Every number opens the rows behind it; the tile's name opens the full tab (still in the side menu too). */
+/* ---------------- 11-22: summary row under the hero (SIMAS: key business numbers, each number once on the page) ----------------
+   Only numbers no hero tile and no card shows. Money says paid. Each one opens the rows behind it (the cut cards' lists). */
 let TILES = "";
 function updateTiles(d) {
   const el = $("#mtiles"); if (!el) return;
-  const fuDue = d.fuOver.length + d.fuDays[0].list.length, smM = d.delivered.filter(p => dayOf(p.delivered_at).slice(0, 7) === d.ym).length;
-  const tile = (t, label, icon, bigHtml, rows) => `<div class="mt"><button type="button" class="mt-h" data-act="tab" data-t="${t}" title="Open the whole ${label} tab">${ic(icon)}<span>${label}</span>${ic("chev")}</button>${bigHtml}<div class="mt-rows">${rows.join("")}</div></div>`;
-  const html = tile("money", "Money", "cash", big("pays", "month", `${N(d.month, "usd")}<small>${d.monthName} so far</small>`, `Money in ${d.monthName}. Open the payments.`, "mt-big"),
-      [kv("Monthly clients", `${nf0.format(d.ret.live.length)} · ${usd(d.ret.mrr)}/mo`, "retainers", ""), kv("All time", N(d.allTime, "usd"), "pays", "all")])
-    + tile("leads", "Leads", "user", big("rwait", "", `${N(d.replyWait.length)}<small>replies waiting</small>`, "Replies waiting on us. Open them.", "mt-big"),
-      [kv("Hot leads", N(d.hot.length), "hotlist", ""), kv("Follow-ups due", N(fuDue), "fu", "due"), kv(`Samples · ${d.monthName}`, N(smM), "samples", "m:" + d.ym)])
-    + tile("outreach", "Outreach", "send", big("day", d.t, `${N(d.todayNew)}<small>/ ${nf0.format(d.target)} new leads today</small>`, "Today's new leads per campaign. Open the day.", "mt-big"),
-      [kv("Sent today", N(d.todaySent), "day", d.t), kv("Reply rate", N(d.replyRate, "pct1"), "sent", "rate")]);
+  const cell = (label, tag, k, a, val, sub, title) => `<div class="mt sum"><span class="sum-l">${label}${tag ? ` <span class="chip g">${tag}</span>` : ""}</span>${big(k, a, `${val}${sub ? `<small>${sub}</small>` : ""}`, title, "mt-big")}</div>`;
+  const html = cell("Monthly recurring", "paid", "retainers", "", N(d.ret.mrr, "usd"), "/mo", "Live retainers, per month. Open them.")
+    + cell("All time", "paid", "pays", "all", N(d.allTime, "usd"), "", "Every payment so far. Open them.")
+    + cell("Reply rate", "", "sent", "rate", N(d.replyRate, "pct1"), "all time", "Reply rate per campaign. Open it.")
+    + cell("Speed to reply", "", "speed", "", d.speed.all == null ? "—" : esc(fmtMin(d.speed.all)), "typical", "Every answered reply with its waiting time")
+    + cell("Bounce rate", "", "deliv", "", N(d.deliv.rate, "pct1"), "inbox health", "Bounces per campaign")
+    + cell("Leads queued", "", "queued", "", N(d.queued), "not emailed yet", "Leads loaded but not contacted yet");
   if (TILES !== html) { TILES = html; el.innerHTML = html; countUp({ id: "mtiles", el }); }
+  const asof = LAST_OK ? `as of ${timeOf(LAST_OK)}` : ""; $$("[data-asof]").forEach(x => { x.textContent = asof; });   // Benas: every section says how fresh it is
 }
 
 /* ---------------- render ---------------- */
@@ -1012,14 +1015,16 @@ function build() {
   CARDS.forEach((c, i) => {
     const el = document.createElement("section"); el.id = "c-" + c.id; el.className = "card " + (c.cls || ""); el.dataset.tab = TABOF[c.id] || "home"; el.style.setProperty("--i", c.grid === 2 ? i - 30 : i); el.setAttribute("aria-label", c.title || c.id);
     el.style.setProperty("--j", i % 8); c.sh = document.createElement("i"); c.sh.className = "sheen"; c.sh.setAttribute("aria-hidden", "true");
-    c.el = el; c.last = null; if (c.mount) c.mount(el); el.appendChild(c.sh); (c.grid === 2 ? g2 : g1).appendChild(el); ro.observe(el); IO.observe(el);
+    c.lf = document.createElement("i"); c.lf.className = "lift"; c.lf.setAttribute("aria-hidden", "true");   // 11-22 motion: hover shadow
+    c.el = el; c.last = null; if (c.mount) c.mount(el); el.append(c.sh, c.lf); (c.grid === 2 ? g2 : g1).appendChild(el); ro.observe(el); IO.observe(el);
   });
+  TABS.home.forEach(id => { const c = byId(id); if (c && c.el) g1.appendChild(c.el); });   // 11-22: the bento reads Work, Money, Leads, Outreach
 }
 function fit(el) { el.style.gridRowEnd = "span " + Math.ceil((el.offsetHeight + 16) / 4); }
 function renderAll(fromData) {
   D = derive();
   CARDS.forEach(c => {
-    if (c.render) { const html = c.render(D); if (html !== c.last) { c.last = html; c.el.innerHTML = html; c.el.hidden = !html; c.el.appendChild(c.sh); if (c.focus) { const h = $(".ch", c.el); if (h) h.insertAdjacentHTML("beforeend", `<button type="button" class="xp" data-act="drill" data-k="${c.focus[0]}" data-a="${c.focus[1]}" aria-label="Expand ${esc(c.title)}" title="Expand">${ic("expand")}</button>`); } countUp(c); applyVars(c.el);
+    if (c.render) { const html = c.render(D); if (html !== c.last) { c.last = html; c.el.innerHTML = html; c.el.hidden = !html; c.el.append(c.sh, c.lf); if (c.focus) { const h = $(".ch", c.el); if (h) h.insertAdjacentHTML("beforeend", `<button type="button" class="xp" data-act="drill" data-k="${c.focus[0]}" data-a="${c.focus[1]}" aria-label="Expand ${esc(c.title)}" title="Expand">${ic("expand")}</button>`); } countUp(c); applyVars(c.el);
         const sig = $$(".n[data-n]", c.el).map(x => x.dataset.n).join("|"); if (fromData && c.sig !== undefined && c.sig !== sig && !RM) { c.el.classList.remove("chg"); void c.el.offsetWidth; c.el.classList.add("chg"); } c.sig = sig; } }
     if (c.update) c.update(D);
   });
@@ -1034,6 +1039,7 @@ function paintStatus() {
 }
 function jump(id) {
   const el = $("#c-" + id); if (!el) return; const tb = el.dataset.tab, paged = document.documentElement.classList.contains("paged");
+  if (tb === "cut") { const c = byId(id); if (c && c.focus) openDrill(c.focus[0], c.focus[1]); return; }   // 11-22: cut from the page, its list still opens
   if (tb === "none") { if (PHONE.matches) return; }
   else if (tb === "clients") { const l = $('#snav a[data-nav="clients"]'); if (l && l.getAttribute("aria-current") !== "page") l.click(); }   // these cards sit on the Clients page
   else { const l = $('#snav a[data-nav="dashboard"]'); if (l && paged) l.click(); setTab(tb, true); }
@@ -1042,12 +1048,11 @@ function jump(id) {
 }
 function syncChrome() {   // header owner switch + tab badges
   $$("#top-owner button").forEach(b => { const on = b.dataset.o === STATE.owner; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
-  const bd = { home: D.todoN, clients: D.pOpen, leads: D.realWaiting }; $$("#tabs button").forEach(b => { const n = bd[b.dataset.t] || 0, i = $("i", b); i.hidden = !n; i.textContent = n > 99 ? "99+" : n; });
+  const bd = { home: D.todoN }; $$("#tabs button").forEach(b => { const n = bd[b.dataset.t] || 0, i = $("i", b); i.hidden = !n; i.textContent = n > 99 ? "99+" : n; });   // 11-22: Home · To-dos · Clients (To-dos keeps the menu's own badge)
 }
 function setTab(t, quiet) {
-  if (!TABS[t] || t === "none" || (t === "clients" && !PORTAL_ON)) t = "home"; STATE.tab = t; document.documentElement.dataset.tab = t; store.set("beju-crm-tab", t);
+  if (!TABS[t] || t === "none" || t === "cut" || (t === "clients" && !PORTAL_ON)) t = "home"; STATE.tab = t; document.documentElement.dataset.tab = t; store.set("beju-crm-tab", t);
   $$("#tabs button").forEach(b => { const on = b.dataset.t === t; b.classList.toggle("on", on); b.setAttribute("aria-current", on ? "page" : "false"); });
-  $$('#snav button[data-act="tab"]').forEach(b => b.dataset.t === t ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));   // desktop: Money / Leads / Outreach in the side menu
   if (!quiet) scrollTo(0, 0);
   requestAnimationFrame(() => { CARDS.forEach(c => { if (c.el) fit(c.el); }); Object.values(PLOT).forEach(p => { try { p.paint(clamp(p.i, 0, p.n - 1)); } catch {} }); });
 }
@@ -1202,14 +1207,22 @@ function openDrill(k, a = "", opener, back) {
   if (fresh) { M_OPENER = opener || document.activeElement; STACK.length = 0; }
   if (!back) STACK.push({ k, a }); STATE.drill = { k, a };
   const run = () => { veil.hidden = false; let r; try { r = DR[k](a); } catch (e) { r = { title: "Couldn't open this", html: empty("Something went wrong building this list.") }; }
-    if (r && typeof r.then === "function") { showDrill({ title: "Loading…", html: `<div class="boot-in"><span class="spin"></span> Loading…</div>` }, seq); r.then(x => showDrill(x, seq)).catch(() => showDrill({ title: "Couldn't load this", html: empty("Check your connection and try again.") }, seq)); } else showDrill(r, seq);
+    if (r && typeof r.then === "function") { showDrill({ title: "Loading…", html: `<div class="skl-list" aria-label="Loading"><i></i><i></i><i></i><i></i><i></i></div>` }, seq); r.then(x => showDrill(x, seq)).catch(() => showDrill({ title: "Couldn't load this", html: empty("Check your connection and try again.") }, seq)); } else showDrill(r, seq);
     if (fresh) $("#m-close").focus(); };
-  const src = fresh && opener && opener.closest ? opener.closest(".card,.hero") : null;
-  if (fresh && document.startViewTransition && !RM) { if (src) src.classList.add("vt-src"); M_SRC = src; document.startViewTransition(() => { if (src) src.classList.remove("vt-src"); run(); }); } else run();
+  /* 11-22 motion: the sheet grows out of the tapped pane (View Transitions shared element) and the page behind blurs in; without a pane
+     (top-bar buttons, the palette) or without the API it scales up from the control that opened it. .vtm keeps the sheet's own CSS entrance off. */
+  const src = fresh && opener && opener.closest ? opener.closest(".kpi,.hf,.mt,.card,.hero") : null, h = document.documentElement;
+  if (src && VT && !RM && inView(src)) { M_SRC = src; src.classList.add("vt-src"); veil.classList.add("vtm"); h.classList.add("vt-open");
+    const vt = vtGo(() => { src.classList.remove("vt-src"); run(); }), done = () => h.classList.remove("vt-open"); vt.finished.then(done, done); }
+  else { if (fresh) { M_SRC = null; veil.classList.remove("vtm"); } run(); if (fresh && !RM) growFrom(opener); }
+}
+function growFrom(o) {
+  const m = $("#veil .modal"), ok = o && o.isConnected && o.getBoundingClientRect && !PHONE.matches; if (!ok) { m.style.removeProperty("--ox"); m.style.removeProperty("--oy"); return; }
+  const a = o.getBoundingClientRect(), b = m.getBoundingClientRect(); m.style.setProperty("--ox", Math.round(a.left + a.width / 2 - b.left) + "px"); m.style.setProperty("--oy", Math.round(a.top + a.height / 2 - b.top) + "px");
 }
 function refreshDrill() { const s = STATE.drill; if (!s || $("#veil").hidden || s.k === "inbox" || s.k === "client" || s.k === "notifs" || document.activeElement?.classList.contains("pg-q") || $("#m-body .draft-ed:not([hidden])")) return; try { const r = DR[s.k](s.a); if (r && !r.then) showDrill(r, SEQ, true); } catch {} }
-function closeDrill() { const veil = $("#veil"); if (veil.hidden) return; const src = M_SRC && M_SRC.isConnected ? M_SRC : null, go = () => { veil.hidden = true; STATE.drill = null; STACK.length = 0; SEQ++; CONVS.delete("m"); if (src) src.classList.add("vt-src"); };
-  if (document.startViewTransition && !RM) { const vt = document.startViewTransition(go); const done = () => { if (src) src.classList.remove("vt-src"); }; vt.finished.then(done, done); } else { go(); if (src) src.classList.remove("vt-src"); } M_SRC = null; if (M_OPENER && M_OPENER.isConnected) M_OPENER.focus(); M_OPENER = null; }
+function closeDrill() { const veil = $("#veil"); if (veil.hidden) return; const h = document.documentElement, src = M_SRC && M_SRC.isConnected && inView(M_SRC) ? M_SRC : null, go = () => { veil.hidden = true; veil.classList.remove("vtm"); STATE.drill = null; STACK.length = 0; SEQ++; CONVS.delete("m"); if (src) src.classList.add("vt-src"); };
+  if (VT && !RM) { const cls = src ? "vt-back" : "vt-drop"; h.classList.add(cls); const vt = vtGo(go); const done = () => { if (src) src.classList.remove("vt-src"); h.classList.remove(cls); }; vt.finished.then(done, done); } else { go(); if (src) src.classList.remove("vt-src"); } M_SRC = null; if (M_OPENER && M_OPENER.isConnected) M_OPENER.focus(); M_OPENER = null; }
 
 /* ---------------- conversations: every message of a lead or client, oldest first ---------------- */
 const CONVS = new Map();   // "dr" (drawer) / "m" (modal) -> messages
@@ -1252,7 +1265,7 @@ async function openLead(email, opener, keepNav) {
       ${nextSec(email, p)}${dealRow(email, st, null, null)}
       <div class="acts sp"><button type="button" class="act" data-act="copy" data-t="${esc(email)}">${ic("copy")}Copy email</button>${link ? `<a class="act" href="${esc(link)}" target="_blank" rel="noopener noreferrer">${ic("link")}Open sample</a>` : ""}${acct ? dB("client", "e:" + email, `${ic("user")}Portal account`, "act") : ""}${p && isBuyer(p) ? dB("client", "e:" + email, `${ic("cash")}Payments`, "act") : ""}</div>
       ${NAV.length > 1 ? `<div class="dr-navr"><button type="button" class="act" data-act="nav" data-d="-1" ${at <= 0 ? "disabled" : ""} aria-label="Previous lead in the list">←</button><span class="mut mono">${at + 1} / ${NAV.length}</span><button type="button" class="act" data-act="nav" data-d="1" ${at >= NAV.length - 1 ? "disabled" : ""} aria-label="Next lead in the list">→</button><span class="mut">arrow keys move through the list</span></div>` : ""}</div>
-    <div class="dr-sec" id="dr-conv"><h3>Conversation</h3><div class="boot-in"><span class="spin"></span> Loading the thread…</div></div>
+    <div class="dr-sec" id="dr-conv"><h3>Conversation</h3><div class="skl-list conv" aria-label="Loading the thread"><i></i><i></i><i></i></div></div>
     ${p ? `<div class="dr-sec"><div class="dr-chips"><span class="chip b">${esc(p.status || "—")}</span>${cvChip(D.tc[email] || 0)}${dB("mood", m, esc(MOOD_LABEL[m] || m), "chip", "Open every lead with this mood")}${p.inbox ? `<span class="chip">${esc(p.inbox)}</span>` : ""}${f && f.touches_total ? `<span class="chip">follow-ups ${f.touches_done || 0}/${f.touches_total}</span>` : ""}</div></div>
     <div class="dr-sec"><h3>Timeline</h3><div class="kv"><span>Said yes</span><span>${fDT(p.yes_at)}</span></div><div class="kv"><span>Sample delivered</span><span>${fDT(p.delivered_at)}</span></div><div class="kv"><span>Last reply</span><span>${fDT(p.last_reply_at)}</span></div>${p.paid ? `<div class="kv"><span>Paid</span><span class="up">${esc(cut(p.paid, 40))}</span></div>` : ""}</div>
     ${p.notes ? `<div class="dr-sec"><h3>Notes</h3><p class="dr-txt">${esc(cut(p.notes, 900))}</p></div>` : ""}` : ""}
@@ -1423,7 +1436,7 @@ window.BEJU_CRM_CALLCARD = callCard;   // side.js: the full card under a row of 
 /* ---------------- 11-21: notification centre (public.crm_inbox = crm_events + MY crm_event_state) ----------------
    Founders: "add greater notifications in the crm, make them interactive also". The bell shows only once crm_inbox answers.
    Writes: my own crm_event_state rows (read / snooze / done) and touches. Desktop alerts only after a click, only hot / money / alert. */
-let NT = null, NT_T = null, NT_SN = null;
+let NT = null, NT_T = null, NT_SN = null, BELL = null;
 const NTS = { open: null, form: null, all: false }, TOASTED = new Map(), SLACK = { ok: null }, DESK = "beju-crm-desk";
 const SEV = { hot: "c-orange", money: "c-green", alert: "c-red", info: "c-blue" };
 const KICON = { form: "edit", reply: "mail", hot: "bolt", payment: "cash", booking: "phone", sample: "film", hold: "flag", task: "check", touch: "edit", stage: "chev", slack: "hash", alert: "alert" };
@@ -1446,6 +1459,7 @@ function paintBell() {
   const b = $("#nt-btn"), i = $("#nt-n"); if (!b || !i) return;
   b.hidden = NT == null; const n = NT ? NT.filter(ntUnread).length : 0, t = n > 99 ? "99+" : String(n);
   i.hidden = !n; i.textContent = n ? t : ""; b.setAttribute("aria-label", n ? `Notifications: ${n} unread` : "Notifications");
+  if (NT == null) BELL = null; else { if (BELL != null && n > BELL && !RM) { b.classList.remove("ring"); void b.offsetWidth; b.classList.add("ring"); } BELL = n; }   // 11-22 motion: a new unread item rings the bell once
   const base = document.title.replace(/^\(\d+\+?\) /, ""); document.title = n ? `(${t}) ${base}` : base;
 }
 const ntBtn = (x, op, label, cls = "", icon = "") => `<button type="button" class="act ${cls}" data-act="nt" data-op="${op}" data-id="${esc(String(x.id))}">${icon ? ic(icon) : ""}${label}</button>`;
@@ -1673,7 +1687,7 @@ function palItems(q) {
     cmd("Open the website", "new tab", "link", () => window.open(SITE, "_blank", "noopener")), ...(PORTAL_ON ? [cmd("Open the client portal", "new tab", "link", () => window.open(PORTAL, "_blank", "noopener"))] : []),
     ...(NT ? [cmd("Notifications", "N", "bell", () => openDrill("notifs", ""))] : []), cmd("Slack", "#claude-sync · #red-alert", "hash", () => goPage("slack")), cmd("Contacts", "everyone we talk to, one row per person", "users", () => goPage("contacts")),
     cmd("Wall mode on / off", "W", "expand", toggleWall), cmd("Celebrate", "confetti", "bolt", confetti), cmd("Sign out", "", "out", signOut)];
-  const jumps = CARDS.filter(c => c.title && !(PHONE.matches && TABOF[c.id] === "none")).map(c => ({ g: "Jump to", label: c.title, hint: c.grid === 2 ? "client portal" : "card", icon: "chev", run: () => jump(c.id) }));
+  const jumps = CARDS.filter(c => c.title && !(PHONE.matches && TABOF[c.id] === "none") && !(TABOF[c.id] === "cut" && !c.focus)).map(c => ({ g: "Jump to", label: c.title, hint: c.grid === 2 ? "client portal" : "card", icon: "chev", run: () => jump(c.id) }));
   const leads = q ? RAW.pipeline.filter(p => [p.name, p.show, p.email].some(v => lc(v).includes(q))).slice(0, 7).map(p => ({ g: "Leads", label: p.name || p.email, hint: cut(p.show || p.email, 40), icon: "user", run: () => openLead(p.email) })) : [];
   const cls = q ? D.pClients.filter(c => [c.name, c.email].some(v => lc(v).includes(q))).slice(0, 4).map(c => ({ g: "Portal clients", label: c.name || c.email, hint: c.email, icon: "user", run: () => openDrill("client", "e:" + lc(c.email)) })) : [];
   const f = x => !q || lc(x.label + " " + x.hint).includes(q);
@@ -1713,7 +1727,7 @@ async function refresh(manual) {
   catch (e) { if (!RAW) throw e; offline(true); }
   finally { setTimeout(() => btns.forEach(b => b.classList.remove("spinning")), 500); }
 }
-function startLoop() { stopLoop(); TIMER = setInterval(() => { if (!document.hidden) refresh().catch(() => {}); }, 60000); }
+function startLoop() { stopLoop(); TIMER = setInterval(() => { if (!document.hidden && Date.now() - LAST_OK >= 55000) refresh().catch(() => {}); }, 60000); }   // 11-22 (prod DB overload): skip a tick when a realtime refresh just ran
 function stopLoop() { if (TIMER) clearInterval(TIMER); TIMER = null; }
 document.addEventListener("visibilitychange", () => { if (!document.hidden && RAW && Date.now() - LAST_OK > 60000) refresh().catch(() => {}); });
 function startRealtime() {
@@ -1723,7 +1737,7 @@ function startRealtime() {
     CH.subscribe(st => { RT = st === "SUBSCRIBED" ? "live" : "poll"; if (D) { paintStatus(); const b = byId("brand"); if (b && b.update) b.update(D); } });
   } catch { RT = "poll"; }
 }
-function stopRealtime() { clearTimeout(RT_T); if (CH) { try { sb.removeChannel(CH); } catch {} CH = null; } RT = "off"; }
+function stopRealtime() { clearTimeout(RT_T); RT_T = null; if (CH) { try { sb.removeChannel(CH); } catch {} CH = null; } RT = "off"; }
 function onChange(tb, p) {
   const n = p.new || {}, ins = p.eventType === "INSERT";
   if (tb === "crm_events") { if (ins) ntArrive(n); return; }   // 11-21: the bell
@@ -1735,7 +1749,10 @@ function onChange(tb, p) {
   else if (tb === "videos" && ins) toast(`New video request: ${cut(n.title || "Untitled", 40)}`, "play", "c-purple");
   else if (tb === "videos" && p.eventType === "UPDATE" && n.status === "revision") toast(`Changes asked on “${cut(n.title || "a video", 40)}”`, "alert", "c-red");
   else if (tb === "video_notes" && ins) toast("New change request", "alert", "c-red", cut(n.text, 90));
-  clearTimeout(RT_T); RT_T = setTimeout(() => refresh().catch(() => {}), 1500);   // coalesce bursts into one refresh
+  /* 11-22 (prod DB overload): one full read is ~45 requests, so realtime events no longer each force one. They coalesce into at most one
+     full refresh per 60 s (the toasts above stay instant); only a new payment refreshes at once. */
+  const soon = tb === "payments" && ins, wait = soon ? 1500 : Math.max(1500, 60000 - (Date.now() - LAST_OK));
+  if (RT_T && !soon) return; clearTimeout(RT_T); RT_T = setTimeout(() => { RT_T = null; refresh().catch(() => {}); }, wait);
 }
 
 /* ---------------- look: five glass themes, motion Full / Calm (both saved on this device) ---------------- */
@@ -1771,6 +1788,66 @@ if (COARSE && !RM && "DeviceOrientationEvent" in window) {
     requestAnimationFrame(() => { q = false; const h = $("#hero"); if (!h) return; document.documentElement.classList.add("tilt-on");
       h.style.setProperty("--sx", (clamp(e.gamma / 30, -1, 1) * 30).toFixed(1) + "%"); h.style.setProperty("--sy", (clamp((e.beta - 40) / 30, -1, 1) * 18).toFixed(1) + "%"); }); }, { passive: true });
 }
+
+/* ---------------- 11-22 motion pass (SIMAS "crazy opening animations and transitions, very smooth, very clean, with a WOW effect") ----------------
+   Transform and opacity only (plus a short blur on the logo). Opening: the full sequence once per browser session (sessionStorage), a light fade
+   on later loads. Page switches and drill sheets use the View Transitions API where the browser has it; elsewhere a CSS entrance. Reduced motion:
+   everything instant. The classes on <html> (intro, soft, pg-in, vt-*) only switch the CSS in anim.css on and off; no data logic here. */
+const VT = typeof document.startViewTransition === "function", INTRO = "beju-crm-intro";
+const PG = ["home", "money", "leads", "outreach", "expenses", "email", "clients", "contacts", "perf", "weekly", "todos", "slack"];
+let VT_PASS = false, PG_T = null, SP_T = null, PG_SEQ = 0; const PG_NAMED = [];
+{ const s = store.get("beju-crm-nav"); document.documentElement.dataset.skr = (s ? s === "x" : innerWidth >= 1300) ? "x" : "m"; }   // the loading screen draws the menu rail at its saved width (side.js's rule)
+const vtGo = cb => { const vt = document.startViewTransition(cb); vt.ready.catch(() => {}); return vt; };   // a skipped transition (a new one started, the tab hid) is not an error
+const inView = el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.bottom > 0 && r.top < innerHeight; };
+function order() {   // --n = a pane's place in reading order (top to bottom, then left to right) for the staggered entrances
+  const els = [...$$("#mtiles>.mt"), ...CARDS.map(c => c.el)].filter(el => el && el.offsetParent !== null), r = new Map(els.map(el => [el, el.getBoundingClientRect()]));
+  els.sort((a, b) => (Math.round(r.get(a).top / 8) - Math.round(r.get(b).top / 8)) || (r.get(a).left - r.get(b).left)).forEach((el, i) => el.style.setProperty("--n", Math.min(i, 8)));
+}
+function intro() {
+  if (RM) return; const h = document.documentElement;
+  let seen = false; try { seen = sessionStorage.getItem(INTRO) === "1"; sessionStorage.setItem(INTRO, "1"); } catch {}
+  CARDS.forEach(c => { if (c.el) fit(c.el); }); order();
+  const k = seen ? "soft" : "intro"; h.classList.add(k); setTimeout(() => h.classList.remove(k), seen ? 700 : 1600);
+  if (!seen) requestAnimationFrame(() => {   // the loading screen's BEJÚ mark flies into the menu's logo (phones: it blooms away)
+    const boot = $("#boot"), mk = $(".skl-mark", boot), lg = $("#snav .sn-logo"); if (!mk || !lg || PHONE.matches || !inView(lg) || !boot.classList.contains("out")) return;
+    const b = lg.getBoundingClientRect(), mx = mk.offsetLeft + mk.offsetWidth / 2, my = mk.offsetTop + mk.offsetHeight / 2;   // layout boxes: the entrances' own scaling does not move a centre
+    mk.style.setProperty("--fx", Math.round(b.left + b.width / 2 - mx) + "px"); mk.style.setProperty("--fy", Math.round(b.top + b.height / 2 - my) + "px"); mk.style.setProperty("--fs", (lg.offsetWidth / mk.offsetWidth).toFixed(3));
+    boot.classList.add("fly"); });
+}
+function pageIn() {   // the new page's panes rise in, in reading order
+  if (RM) return; const h = document.documentElement; order(); h.classList.add("pg-in"); clearTimeout(PG_T); PG_T = setTimeout(() => h.classList.remove("pg-in"), 900);
+}
+const pgCur = () => $('#snav .sn-list a[data-nav][aria-current="page"]');   // side.js marks the open page
+const pgNow = () => { const a = pgCur(); return document.documentElement.classList.contains("paged") && a ? a.dataset.nav : STATE.tab || "home"; };
+const pgTo = t => t.dataset.act === "tab" ? t.dataset.t || "home" : t.dataset.act === "page" ? t.dataset.p : t.dataset.nav === "dashboard" ? "home" : t.dataset.nav;
+function pills() {   // the highlighted menu item and phone tab: they slide to their new place during a page switch
+  const p = pgNow(), paged = document.documentElement.classList.contains("paged"), vis = el => el && el.offsetParent !== null ? el : null, ok = PG.includes(p);
+  return [PHONE.matches || !ok ? null : vis(paged ? pgCur() : p === "home" ? $('#snav .sn-list a[data-nav="dashboard"]') : $(`#snav .sn-list button[data-t="${p}"]`)),
+    !ok ? null : vis(paged ? $(`#tabs [data-p="${p}"]`) : $("#tabs button.on"))];
+}
+function pageGo(update) {
+  if (!VT || RM || $("#snav").classList.contains("open")) { update(); pageIn(); return; }   // the phone drawer slides away on its own; a snapshot would freeze it
+  /* the page's content regions leave as their own groups (vt-o*) and the new ones arrive as others (vt-n*): a fade through, so the menu,
+     the top bar and the backdrop stay perfectly still and old and new content never double-expose */
+  const h = document.documentElement, my = ++PG_SEQ, name = (el, n) => { el.style.setProperty("view-transition-name", n); PG_NAMED.push(el); }, untag = () => PG_NAMED.splice(0).forEach(el => el.style.removeProperty("view-transition-name")),
+    tag = pre => { pills().forEach((el, i) => { if (el) name(el, i ? "vt-tpill" : "vt-pill"); }); ["#hero", "#mtiles", "#grid", "#spage", "#app>.foot", "#asof"].forEach((q, i) => { const el = $(q); if (el && el.offsetParent !== null) name(el, pre + i); });
+      [["#snav", "vt-nav"], ["#tabs", "vt-tabs"], ["#toasts", "vt-toasts"], ["#sn-tip", "vt-tip"]].forEach(([q, n]) => { const el = $(q); if (el && el.getClientRects().length) name(el, n); }); };   // fixed overlays keep painting above the content
+  untag(); tag("vt-o"); h.classList.add("vt-pg");   // untag first: a switch clicked during the previous one starts clean
+  const vt = vtGo(() => { untag(); VT_PASS = true; try { update(); } finally { VT_PASS = false; } tag("vt-n"); pageIn(); });
+  const done = () => { if (my !== PG_SEQ) return; h.classList.remove("vt-pg"); untag(); }; vt.finished.then(done, done);   // a newer switch owns the names now
+}
+document.addEventListener("click", ev => {   // capture phase, before side.js and the handlers below: a page switch replays its click inside a view transition
+  if (VT_PASS || !ev.isTrusted || ev.button > 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || $("#app").hidden || !$("#veil").hidden) return;
+  const t = ev.target.closest && ev.target.closest('#snav a[data-nav], [data-act="tab"], [data-act="page"]'); if (!t || pgTo(t) === pgNow()) return;
+  ev.preventDefault(); ev.stopImmediatePropagation(); pageGo(() => t.click());
+}, true);
+addEventListener("popstate", ev => {   // back / forward between pages: the same transition (side.js routes the replayed event)
+  if (VT_PASS || !VT || RM || $("#app").hidden) return;
+  const a = pgCur(), was = a ? a.dataset.nav : "dashboard", to = new URLSearchParams(location.search).get("p") || "dashboard"; if (was === to) return;
+  ev.stopImmediatePropagation(); pageGo(() => dispatchEvent(new PopStateEvent("popstate", { state: ev.state })));
+});
+{ const sp = $("#spage"); let sk = false;   // a side page's skeleton gives way to its content with a short fade
+  new MutationObserver(() => { const now = !!$(".sp-sk", sp); if (sk && !now && !RM) { sp.classList.add("sp-in"); clearTimeout(SP_T); SP_T = setTimeout(() => sp.classList.remove("sp-in"), 800); } sk = now; }).observe(sp, { childList: true }); }
 
 /* ---------------- events ---------------- */
 const layer = () => PAL ? $("#pal") : !$("#dlg").hidden ? $("#dlg") : !$("#drawer").hidden ? $("#drawer") : !$("#veil").hidden ? $("#veil") : null;
@@ -1950,7 +2027,12 @@ async function mfaManage() {
 }
 
 /* ---------------- auth gate ---------------- */
-const show = id => { ["boot", "gate", "wait", "mfa", "app"].forEach(x => { $("#" + x).hidden = x !== id; }); $("#tabs").hidden = id !== "app"; };
+let BOOT_T = null;
+const show = id => { ["gate", "wait", "mfa", "app"].forEach(x => { $("#" + x).hidden = x !== id; }); $("#tabs").hidden = id !== "app";
+  const boot = $("#boot"), was = !boot.hidden && !boot.classList.contains("out"); clearTimeout(BOOT_T);
+  if (id === "boot") { boot.classList.remove("out", "fly"); boot.hidden = false; }
+  else if (id === "app" && was && !RM) { boot.classList.add("out"); BOOT_T = setTimeout(() => { boot.hidden = true; boot.classList.remove("out", "fly"); }, 800); }   // 11-22 motion: the skeleton fades while the dashboard rises in under it
+  else { boot.hidden = true; boot.classList.remove("out", "fly"); } };
 let MODE = "in", JUST_UP = false;
 function setMode(m) {
   MODE = m; $("#tab-in")?.classList.toggle("on", m === "in"); $("#tab-up")?.classList.toggle("on", m === "up");
@@ -1999,7 +2081,7 @@ async function enter(user) {
   catch (e) { ME = null; show("gate"); msg("The 2-step login check didn't work. Check your connection and log in again."); return; }
   $("#nav-site").href = $("#nav-web").href = SITE; $("#nav-portal").href = PORTAL; $("#nav-portal").hidden = !PORTAL_ON;
   show("boot"); build(); mountHero();
-  try { await refresh(); show("app"); startLoop(); startRealtime(); slackProbe(); requestAnimationFrame(() => CARDS.forEach(c => fit(c.el))); measureFx();
+  try { await refresh(); show("app"); intro(); startLoop(); startRealtime(); slackProbe(); requestAnimationFrame(() => CARDS.forEach(c => fit(c.el))); measureFx();
     if (FIRST_LOOK && !store.get("beju-crm-look")) { store.set("beju-crm-look", lookOf()[0]); openDrill("look", "first"); } }
   catch (e) { show("gate"); msg("Couldn't load the CRM data. Check your connection and log in again."); }
 }
