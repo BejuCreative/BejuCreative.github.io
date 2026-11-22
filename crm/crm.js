@@ -102,7 +102,7 @@ function feedX() {
 }
 async function fetchAll() {
   const t = today(), since60 = new Date(Date.now() - 60 * 864e5).toISOString(), since14 = new Date(Date.now() - 14 * 864e5).toISOString();
-  const [pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk, stages, nextSteps, forecast, fx, deals, drafts, dismiss, flags, forms, inb14, scopes] = await Promise.all([
+  const [pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk, stages, nextSteps, forecast, fx, deals, drafts, dismiss, flags, forms, inb14, scopes, briefs] = await Promise.all([
     all("pipeline", "*", q => q.order("email")),
     all("payments", "id,client_id,email,payer_name,amount,currency,package,refunded,paid_at", q => q.order("paid_at", { ascending: false })),
     all("campaign_daily", "campaign_id,day,sent,new_leads,replies,replies_auto,opportunities", q => q.gte("day", addDays(t, -75)).order("day").order("campaign_id")),
@@ -137,6 +137,7 @@ async function fetchAll() {
     all("form_leads_v2", "*").catch(() => null),   // 11-22 (SIMAS "lots of money sleeping there"): brief forms + how far each lead got
     all("threads", "lead_email,at,snippet", q => q.neq("direction", "out").gte("at", since14).order("at", { ascending: false })).catch(() => []),   // 11-22: their words, last 14 days (Hot leads)
     all("scopes", "email,offer,amount,currency,monthly,sent_at,paid_at,status,url", q => q.order("sent_at", { ascending: false })).catch(() => null),   // 11-22 (SIMAS "we should see the scope that u have sent them"): the Forms person sheet
+    all("briefs", "email,busyness,captions,cta,brand,dream_short,part_ts,submitted_at").catch(() => null),   // 11-22 (BENAS, Samples page): the sample brief per lead (graphics level + answers); one small soft read, null = no brief marks
   ]);
   /* 11-21 (tracking check, from v7): Instantly's daily "unique opportunities" counts a lead again on each day it is active, so sums over days
      ran up to 1.9x too high. Positives per day come from interested_leads: one row per lead, on the day it was marked interested. */
@@ -144,7 +145,7 @@ async function fetchAll() {
     interested.forEach(x => { const dd = dayOf(x.interest_changed_at || x.last_reply_at || x.created_at); if (!dd || !x.campaign_id) return; const k = x.campaign_id + "|" + dd; m[k] = (m[k] || 0) + 1; });
     if (interested.length) { daily.forEach(r => { const k = r.campaign_id + "|" + r.day; seen.add(k); r.opportunities = m[k] || 0; });
       Object.entries(m).forEach(([k, n]) => { const [campaign_id, day] = k.split("|"); if (!seen.has(k) && day >= lo) daily.push({ campaign_id, day, sent: 0, new_leads: 0, replies: 0, replies_auto: 0, opportunities: n }); }); } }
-  return { pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk, stages, nextSteps, forecast, fx, deals, drafts, dismiss, flags, forms, inb14, scopes };
+  return { pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk, stages, nextSteps, forecast, fx, deals, drafts, dismiss, flags, forms, inb14, scopes, briefs };
 }
 
 /* ---------------- derive ---------------- */
@@ -765,6 +766,17 @@ const nextLi = x => { const t = esc(cut(x.title, 70));
    sample_requests, purchases, video_notes, video_versions all have 0 rows. Take an id out of this set to show it again. */
 const HIDDEN = new Set(["moneypage", "portal", "psamples", "pvideos", "pnotes", "pclients"]);
 const keyLabel = k => String(k || "").replace(/_/g, " ").replace(/^./, c => c.toUpperCase());   // an attention kind with no label yet reads as words, not a raw key
+/* 11-22 (BENAS: "making the contacts just a card in the main dashboard page, somewhere in the middle"): a search box + the 5 people whose
+   newest message to us is the most recent (threads in + real reply_queue rows), each opening that person (a client: the client sheet; anyone
+   else: the lead drawer); "See all" opens the Contacts page (?p=contacts). No query of its own: pipeline, clients, threads, reply_queue are in RAW. */
+let CTC = { raw: null, list: [] };   // built once per data refresh, not per keystroke
+const ctcPeople = () => { if (CTC.raw === RAW) return CTC.list; const P = new Map(), byE = {}, add = x => { P.set(x.k, x); return x; };
+  RAW.clients.forEach(c => { const x = add({ k: "c:" + c.id, client: c.id, name: c.name || (c.emails || [])[0] || "Client", q: lc([c.name, ...(c.emails || [])].join(" ")), at: 0 }); (c.emails || []).forEach(e => { byE[lc(e)] = x; }); });
+  RAW.pipeline.forEach(p => { const e = lc(p.email); if (!e) return; if (byE[e]) { byE[e].q += " " + lc(`${p.name || ""} ${p.show || ""}`); return; } byE[e] = add({ k: "e:" + e, email: e, name: p.name || e, q: lc(`${p.name || ""} ${p.show || ""} ${e}`), at: 0 }); });
+  const wrote = (e, t) => { e = lc(e); t = +new Date(t) || 0; if (!e || !t) return; const x = byE[e] || (byE[e] = add({ k: "e:" + e, email: e, name: e, q: e, at: 0 })); if (t > x.at) x.at = t; };
+  RAW.tlite.forEach(m => { if (m.direction !== "out") wrote(m.lead_email, m.at); }); RAW.replies.forEach(r => { if (r.kind === "REAL") wrote(r.lead_email, r.received_at); });
+  CTC = { raw: RAW, list: [...P.values()] }; return CTC.list; };
+const ctcRow = x => { const v = x.at ? esc(rel(x.at)) : ""; return x.client ? liDr("client", "c:" + x.client, esc(x.name), v ? `Client · ${v}` : "Client", "mu", `Open ${x.name}: payments, videos, conversation`) : liLead(x.email, esc(x.name), v, "mu"); };
 const CARDS = [
 { id: "brand", cls: "brand", title: "Status", mount(el) {
     el.innerHTML = `<div class="brand-top"><button type="button" class="brandrow" data-act="drill" data-k="me" data-a="" title="Your login and the shortcuts"><span class="logo"><img src="../beju-mark-sm.png" alt="" width="34" height="20"></span><span class="bt"><b>BEJÚ</b><small>Founder CRM</small></span></button>
@@ -900,6 +912,18 @@ const CARDS = [
 { id: "alltime", title: "All-time money", render: d => `${dB("pays", "all", `<span class="it c-blue"><svg><use href="#i-flag"/></svg></span><span class="row-main"><b>Next milestone $${nf0.format(d.nextMs)}</b></span><span class="big sm">${N(d.msPct, "pct")}</span>`, "row np", "Open every payment")}
     ${dB("pays", "all", bar(d.msPct), "barb", "Progress to the next $1,000 milestone")}
     <div class="tile row-pad sp2">${kv("Money generated, all time", N(d.allTime, "usd"), "pays", "all")}${kv("To go", N(d.nextMs - d.allTime, "usd"), "pays", "all")}</div>` },
+{ id: "contacts", title: "Contacts", mount(el) {
+    el.innerHTML = `<header class="ch"><button type="button" class="ct strong go" data-act="page" data-p="contacts" title="Open the Contacts page">Contacts${ic("chev")}</button></header>
+      <label class="search ctc-s">${ic("search")}<input class="ctc-q" type="search" placeholder="Search people" aria-label="Search contacts by name, show or email" autocomplete="off" spellcheck="false"></label>
+      <div class="lst ctc-l" aria-live="polite"></div><a class="more ctc-all" href="?p=contacts" data-act="page" data-p="contacts">See all</a>`;
+    $(".ctc-q", el).addEventListener("input", () => this.update());
+    el.addEventListener("click", ev => { if (!ev.target.closest(".ctc-all")) return; if (ev.metaKey || ev.ctrlKey || ev.shiftKey) ev.stopPropagation(); else ev.preventDefault(); });   // the router moves the page; a modified click opens a new tab
+  }, update() {
+    const el = this.el, L = $(".ctc-l", el); if (!L || !RAW) return; const q = lc($(".ctc-q", el).value).split(/\s+/).filter(Boolean), P = ctcPeople();
+    const rows = (q.length ? P.filter(x => q.every(w => x.q.includes(w))) : P.filter(x => x.at)).sort((a, b) => b.at - a.at).slice(0, 5);
+    const html = rows.map(ctcRow).join("") || empty(q.length ? "No one matches. Try part of a name, a show or an email." : "No one has written to us yet.");
+    if (L.innerHTML !== html) L.innerHTML = html;
+  } },
 { id: "pipeline", title: "Pipeline", focus: ["pipeline", ""], render: d => { const F = d.fc;   // 11-21 (Simas: "clear pipeline stages ... keeping forecasts realistic"); stage counts are in the sheet
     if (!F) return `${head("Pipeline", "", true)}${empty("The stage numbers aren't there yet.")}`;
     return `${head("Pipeline", "", true)}${big("pipeline", "", `${N(F.total)}<small>open leads</small>`, "Leads in an open stage. Open them, stage by stage.")}
@@ -953,7 +977,7 @@ const byId = id => CARDS.find(c => c.id === id);
    number shows once on the page: a card whose number is already in the hero, the summary row or another card is cut ("cut": built but never
    shown; its lists still open from the summary number or the drill sheets). Money / Leads / Outreach left the side menu and the phone bar.
    "clients" cards (On hold, In production) still sit on top of the Clients page (crm.css). */
-const SECS = { work: ["forms", "bigdeals", "approvals", "next", "activity"], money: ["buyers", "topc", "paidc", "close"], leads: ["hot", "pipeline", "turn", "followups"], outreach: ["outreach", "funnel", "camps", "inboxes"] };
+const SECS = { work: ["forms", "bigdeals", "approvals", "next", "activity"], money: ["buyers", "topc", "paidc", "close"], leads: ["hot", "contacts", "pipeline", "turn", "followups"], outreach: ["outreach", "funnel", "camps", "inboxes"] };
 const TABS = { home: Object.values(SECS).flat(), clients: ["holds", "prod", "portal", "psamples", "pvideos", "pnotes", "pclients"],
   cut: ["retainers", "alltime", "rate", "speed", "deliv", "total", "today", "videos", "attention", "moods", "samples", "away", "heat", "clock", "sync", "price", "moneypage"], none: ["brand"] };
 const TABOF = {}; Object.entries(TABS).forEach(([t, ids]) => ids.forEach(id => { TABOF[id] = t; }));
@@ -1339,6 +1363,8 @@ function closeLead() {
 /* 11-22 (BENAS "I can't find the new replies"): read-only handle for the Replies page (replies.js). The same rows and the one replyWait
    list the dashboard counts, so the page's number matches it; no extra query. */
 window.BEJU_CRM_REPLIES = { get raw() { return RAW; }, get d() { return D; }, get at() { return LAST_OK; }, get owner() { return STATE.owner; }, nameOf, ownerOfInbox, auto: s => autoText(ownWords(s)), pass: s => HARD_PASS.test(ownWords(s)) };
+/* 11-22 (BENAS): read-only handle for the Samples page (samples.js): the same rows, the drawer's conversation helpers and the payment confetti. No extra query. */
+window.BEJU_CRM_SAMPLES = { get raw() { return RAW; }, get at() { return LAST_OK; }, ownerOfInbox, loadConv, convBlock, confetti: () => confetti() };
 
 /* ---------------- toasts + confetti ---------------- */
 function toast(title, icon = "check", c = "c-green", sub = "", key = "") {
@@ -1833,7 +1859,7 @@ if (COARSE && !RM && "DeviceOrientationEvent" in window) {
    on later loads. Page switches and drill sheets use the View Transitions API where the browser has it; elsewhere a CSS entrance. Reduced motion:
    everything instant. The classes on <html> (intro, soft, pg-in, vt-*) only switch the CSS in anim.css on and off; no data logic here. */
 const VT = typeof document.startViewTransition === "function", INTRO = "beju-crm-intro";
-const PG = ["home", "money", "leads", "outreach", "expenses", "email", "clients", "contacts", "perf", "weekly", "todos", "slack"];
+const PG = ["home", "money", "leads", "outreach", "expenses", "email", "clients", "samples", "contacts", "perf", "weekly", "todos", "slack"];
 let VT_PASS = false, PG_T = null, SP_T = null, PG_SEQ = 0; const PG_NAMED = [];
 { const s = store.get("beju-crm-nav"); document.documentElement.dataset.skr = (s ? s === "x" : innerWidth >= 1300) ? "x" : "m"; }   // the loading screen draws the menu rail at its saved width (side.js's rule)
 const vtGo = cb => { const vt = document.startViewTransition(cb); vt.ready.catch(() => {}); return vt; };   // a skipped transition (a new one started, the tab hid) is not an error

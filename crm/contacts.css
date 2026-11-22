@@ -80,3 +80,12 @@
   .ct-fb .act{flex:1;height:44px}
   .ct-fb .sp-note{flex-basis:100%;font-size:13px}
 }
+
+/* 11-22 (BENAS): the Dashboard's Contacts card (crm.js card "contacts"): a search box, the 5 people who wrote most recently, "See all" */
+#grid .ctc-s{margin:0 0 4px;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:var(--tile)}
+#grid .ctc-s:focus-within{border-color:var(--focus)}
+#grid .ctc-s input{height:38px;font-size:14px}
+#grid .ctc-l{min-height:205px;align-content:start}
+#grid .ctc-all{display:inline-block;text-decoration:none}
+#grid .ctc-all:hover{text-decoration:underline;text-underline-offset:3px}
+@media (max-width:600px){ #grid .ctc-s input{height:44px;font-size:16px} #grid .ctc-l{min-height:225px} }
