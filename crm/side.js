@@ -127,7 +127,7 @@ document.addEventListener("keydown", ev => {
   if (!ON || layerOpen()) return;
   const ae = document.activeElement, typing = /^(INPUT|TEXTAREA|SELECT)$/.test(ae?.tagName || "") || ae?.isContentEditable;
   if (ev.key === "Escape" && NAV.classList.contains("open")) { ev.stopPropagation(); drawer(false); MENU.focus(); return; }
-  if (ev.key === "Escape" && EDIT) { EDIT = null; renderTodos(); return; }
+  if (ev.key === "Escape" && EDIT && PAGE === "todos") { closePanel(); return; }
   if (!typing && !ev.metaKey && !ev.ctrlKey && !ev.altKey && ev.key === "[" && !PHONE.matches) { ev.preventDefault(); toggleRail(); }
 }, true);
 
@@ -156,7 +156,7 @@ const HEAD = {
   clients: ["Clients <em class=\"sf\">&amp; videos</em>", "Everyone who paid or got videos from us, and every video we delivered."],
   perf: ["Client <em class=\"sf\">performance</em>", "Monthly clients' YouTube, TikTok and Instagram: views and trend, which of our Shorts they posted, what works."],
   weekly: ["Weekly <em class=\"sf\">business review</em>", "Health line, money, funnel, campaigns, A/B tests, engine, sales, clients and what we changed: this week against last week and the 4 weeks before."],
-  todos: ["To-<em class=\"sf\">dos</em>", "The founders' board. Drag cards between columns; both of you see changes live."],
+  todos: ["To-<em class=\"sf\">dos</em>", "Founder to-dos only. Drag a card to move it, click it to open it. You both see changes live."],
   slack: ["Slack <em class=\"sf\">channels</em>", "#claude-sync and #red-alert, newest first. Messages that mention you are marked."],
 };
 /* 11-21: a page can live in its own file (contacts.js). It sets window.BEJU_SIDE_PAGES[id] = { title, head: [h1 html, subline], src(d),
@@ -1117,113 +1117,101 @@ function wireWeekly() {
   });
 }
 
-/* 5. to-do board */
-const COLS = [["todo", "To do"], ["doing", "Doing"], ["done", "Done"]], OWNERS = ["Simas", "Benas", "Both"];
-const K_TV = "beju-crm-todo-view";
-let TVIEW = store.get(K_TV) === "founder" ? "founder" : "board", OWNF = "All";
-let PROMS = [], PNAME = {};
-async function promNames() {   // lead / client names for the promise tiles (11-21): a client's name wins, then the lead's
+/* 5. to-do board (BENAS 11-22 16:0x: "Trello style", "extreme accuracy", founder to-dos ONLY).
+   Columns: To do · Benas, To do · Simas, General (a pool either founder takes from), Waiting (paused), Done (last 30 days).
+   Reads public.tasks straight, founder sources only: founder_tasks, board, deferred, manual (a Claude-written one shows a "suggested" chip).
+   Client work (replies, calls, promises, approvals) lives on its own tabs. A card is a short title + chips; a click opens the side
+   panel, where it is edited, parked in Waiting or ticked Done. Dropping a card sets its owner (founder columns, General = "Both")
+   or its status (Waiting, Done). The old list a card came from (todo_cards, founder_tasks) gets the same change first. */
+const FSRC = ["founder_tasks", "board", "deferred", "manual"];   // BENAS 11-22 16:48: only work a FOUNDER must do; Claude's own tasks (source claude) stay off
+const COLS = [["Benas", "To do · Benas"], ["Simas", "To do · Simas"], ["general", "General"], ["waiting", "Waiting"], ["done", "Done"]];
+const SRCL = { founder_tasks: "Founder to-do", board: "Added on the board", deferred: "Deferred", manual: "Added by hand" };
+const OWNL = o => o === "Both" ? "General" : o;
+let PNAME = {};
+async function promNames() {   // lead / client names for the lead chip: a client's name wins, then the lead's
   const [il, pl, cl] = await Promise.all([all("interested_leads", "email,first_name,company").catch(() => []), all("pipeline", "email,name").catch(() => []), all("clients", "name,emails").catch(() => [])]), m = {};
   il.forEach(x => { const n = [x.first_name, x.company].map(v => String(v || "").trim()).filter(Boolean).join(" · "); if (x.email && n) m[lc(x.email)] = n; });
   pl.forEach(x => { if (x.email && x.name) m[lc(x.email)] = x.name; }); cl.forEach(c => (c.emails || []).forEach(e => { if (c.name) m[lc(e)] = c.name; }));
   return m;
 }
-/* 11-21 (BENAS, one task list): the board reads public.task_queue (open tasks from every list + open promises) and the done tasks of
-   the last 30 days. A move, edit or tick writes the tasks row; the row it came from (todo_cards, call_tasks, founder_tasks) gets the
-   same change first, so the old lists (Do next, call cards, crm-api) agree until they retire. New cards still go in todo_cards: its
-   trigger makes the tasks row, and it is the table realtime watches. */
+const pName = e => PNAME[lc(e)] || String(e || "") || "?";
 const vilNoon = d => { const g = Date.parse(d + "T12:00:00Z"), p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).formatToParts(new Date(g)).map(x => [x.type, x.value]));
   return new Date(g - (Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute) - g)).toISOString(); };   // a day at 12:00 Vilnius -> ISO
-const tCard = (t, ref) => ({ id: +t.id, title: t.title, detail: t.detail || null, owner: t.owner || "Both", col: t.status === "dropped" ? "done" : t.status, due: t.due_at ? dayOf(t.due_at) : null, pos: +t.pos || 0, big: !!t.big, source: t.source, ref: ref ?? null, lead: lc(t.lead_email) });
+const colOf = (st, owner) => st === "done" || st === "dropped" ? "done" : st === "waiting" ? "waiting" : owner === "Both" || !owner ? "general" : owner;
+const tCard = t => ({ id: +t.id, title: t.title, detail: t.detail || null, owner: t.owner || "Both", st: t.status, col: colOf(t.status, t.owner), due: t.due_at ? dayOf(t.due_at) : null,
+  pos: +t.pos || 0, source: t.source, ref: t.source_ref ?? null, lead: lc(t.lead_email), by: t.created_by || null, at: t.created_at || null, done: t.done_at || null });
+const TCOLS = "id,title,detail,owner,status,due_at,lead_email,source,source_ref,pos,created_by,created_at,done_at";
 async function loadTaskList() {
-  const q = await all("task_queue", "*"), open = q.filter(x => x.kind === "task"), since = new Date(Date.now() - 30 * 864e5).toISOString();
-  const [refs, done] = await Promise.all([open.length ? all("tasks", "id,source_ref", r => r.in("id", open.map(x => +x.id))) : [], all("tasks", "id,title,detail,owner,status,due_at,lead_email,source,source_ref,big,pos,done_at", r => r.eq("status", "done").gte("done_at", since))]);
-  const ref = Object.fromEntries(refs.map(r => [+r.id, r.source_ref]));
-  PROMS = q.filter(x => x.kind === "promise").map(x => ({ id: x.id, lead_email: x.lead_email, promise: x.title, owner: x.owner, due_at: x.due_at, status: "open" })).sort((a, b) => String(a.due_at || "9").localeCompare(String(b.due_at || "9")));
-  return open.map(t => tCard(t, ref[+t.id])).concat(done.map(t => tCard(t, t.source_ref)));
+  const since = new Date(Date.now() - 30 * 864e5).toISOString();
+  const [open, done] = await Promise.all([all("tasks", TCOLS, r => r.in("source", FSRC).in("status", ["todo", "doing", "waiting"])),
+    all("tasks", TCOLS, r => r.in("source", FSRC).eq("status", "done").gte("done_at", since))]);
+  return open.concat(done).map(tCard);
 }
-async function loadTodos() { await me(); const [list, pn] = await Promise.all([loadTaskList(), promNames()]); PNAME = pn; return list; }
+async function loadTodos() { EDIT = null; await me(); const [list, pn] = await Promise.all([loadTaskList(), promNames()]); PNAME = pn; return list; }
 const overdue = d => d && d < dayOf(Date.now());
-const cardsIn = (list, col) => list.filter(c => c.col === col).sort((a, b) => a.pos - b.pos || a.id - b.id);
-async function todoBadge() {
-  try { const rows = await must(sb().from("task_queue").select("owner").eq("kind", "task")), n = rows.length, by = o => rows.filter(r => r.owner === o).length;
-    const b = $("#sn-todo-n"), a = $('#snav a[data-nav="todos"]'), tip = n ? `To-dos · Simas ${by("Simas")} · Benas ${by("Benas")}${by("Both") ? ` · Both ${by("Both")}` : ""}` : "To-dos";
+const cardsIn = (list, col) => list.filter(c => c.col === col).sort(col === "done" ? (a, b) => String(b.done || "").localeCompare(String(a.done || "")) : (a, b) => a.pos - b.pos || a.id - b.id);
+async function todoBadge() {   // the menu badge: open founder to-dos (not Waiting), per founder in the tooltip
+  try { const rows = await must(sb().from("tasks").select("owner").in("source", FSRC).in("status", ["todo", "doing"])), n = rows.length, by = o => rows.filter(r => r.owner === o).length;
+    const b = $("#sn-todo-n"), a = $('#snav a[data-nav="todos"]'), tip = n ? `To-dos · Benas ${by("Benas")} · Simas ${by("Simas")} · General ${by("Both")}` : "To-dos";
     if (b) { b.hidden = !n; b.textContent = n || ""; } if (a) { a.dataset.tip = tip; a.title = tip; } } catch {}
 }
+const avatar = o => o === "Simas" || o === "Benas" ? `<span class="sd-av ${o === "Simas" ? "s" : "b"}" title="${o}" aria-hidden="true">${o[0]}</span>` : "";
 function cardHtml(c) {
-  if (EDIT && EDIT.id === c.id) return formHtml(c);
-  const oc = c.owner === "Simas" ? "chip b" : c.owner === "Benas" ? "chip o" : "chip";
-  return `<div class="tile sd-card${c.col === "done" ? " done" : ""}" data-card="${c.id}" tabindex="0" aria-roledescription="draggable card" aria-label="${esc(c.title)}, ${esc(c.owner)}. Alt plus arrow keys move it.">
-    <div class="tt">${esc(c.title)}</div>${c.detail ? `<div class="dd">${esc(c.detail)}</div>` : ""}
-    <div class="ft"><span class="${oc}">${esc(c.owner)}</span>${c.lead ? `<span class="chip sd-lead" title="${esc(c.lead)}">${esc(pName(c.lead))}</span>` : ""}${c.due ? `<span class="chip${c.col !== "done" && overdue(c.due) ? " r" : ""}">${c.col !== "done" && overdue(c.due) ? "overdue · " : "due "}${esc(dLabel(c.due))}</span>` : ""}<span class="sp"></span>
-      <button type="button" class="mini" data-mv="-1" aria-label="Move left" title="Move left"><svg aria-hidden="true"><use href="#i-back"/></svg></button>
-      <button type="button" class="mini" data-mv="1" aria-label="Move right" title="Move right"><svg aria-hidden="true"><use href="#i-chev"/></svg></button>
-      <button type="button" class="mini" data-ed aria-label="Edit" title="Edit"><svg aria-hidden="true"><use href="#i-edit"/></svg></button>${c.col !== "done" ? `<button type="button" class="mini sd-tick" data-tick aria-label="Done" title="Done"><svg aria-hidden="true"><use href="#i-check"/></svg></button>` : ""}</div></div>`;
+  const late = c.col !== "done" && overdue(c.due), sel = EDIT && EDIT.id === c.id;
+  const chips = [avatar(c.col === "Simas" || c.col === "Benas" ? "" : c.owner),
+    c.due ? `<span class="chip${late ? " r" : ""}">${late ? "overdue · " : ""}${esc(dLabel(c.due))}</span>` : "",
+    c.lead ? `<span class="chip sd-lead" title="${esc(c.lead)}">${esc(pName(c.lead))}</span>` : "",
+    /claude/i.test(c.by || "") ? `<span class="chip" title="Suggested by Claude">suggested</span>` : ""].join("");
+  return `<div class="tile sd-card${c.col === "done" ? " done" : ""}${sel ? " sel" : ""}" data-card="${c.id}" tabindex="0" role="button" aria-roledescription="draggable card" aria-label="${esc(c.title)}. ${esc(OWNL(c.owner))}${c.due ? `, due ${esc(dLabel(c.due))}` : ""}. Enter opens it. Alt plus arrow keys move it.">
+    <div class="tt">${esc(c.title)}</div>${chips ? `<div class="ft">${chips}</div>` : ""}</div>`;
 }
-function formHtml(c) {
-  const o = c ? c.owner : (EDIT && EDIT.owner) || (TVIEW === "board" && OWNF !== "All" ? OWNF : "") || (ME && ME.who) || "Both";
-  return `<form class="tile sd-form" data-form="${c ? c.id : "new"}" data-col="${esc(c ? c.col : EDIT.col)}">
-    <textarea name="title" rows="2" maxlength="300" required placeholder="What needs doing?" aria-label="Card title">${esc(c ? c.title : "")}</textarea>
-    <textarea name="detail" rows="2" maxlength="4000" placeholder="Details (optional)" aria-label="Details">${esc(c && c.detail ? c.detail : "")}</textarea>
-    <label class="sd-due"><span>Due</span><input type="date" name="due" value="${esc(c && c.due ? c.due : "")}" aria-label="Due date"></label>
-    <div class="seg" role="group" aria-label="Owner">${["Simas", "Benas", "Both"].map(x => `<button type="button" data-own="${x}" class="${x === o ? "on" : ""}" aria-pressed="${x === o}">${x}</button>`).join("")}</div>
-    <div class="row">${c ? `<button type="button" class="act no del" data-del>${c.source === "board" ? "Delete" : "Drop"}</button>` : ""}<button type="button" class="act" data-cancel>Cancel</button><button type="submit" class="act go">${c ? "Save" : "Add card"}</button></div></form>`;
-}
-const addBtn = (k, o) => EDIT && EDIT.id === "new" && EDIT.col === k && (EDIT.owner || "") === (o || "") ? formHtml(null) : `<button type="button" class="sd-add" data-add="${k}"${o ? ` data-owner="${o}"` : ""}><svg aria-hidden="true"><use href="#i-plus"/></svg>Add a card</button>`;
 function boardHtml(list) {
-  if (TVIEW === "founder") return OWNERS.map(o => { const mine = list.filter(c => c.owner === o), open = mine.filter(c => c.col !== "done").length, done = cardsIn(mine, "done");
-    return `<section class="sd-lane${o === "Both" ? " slim" : ""}" data-lane="${o}" aria-label="${o}"><div class="sd-col-h"><span>${o === "Both" ? "Both / unassigned" : o}</span><span class="chip">${open} open</span></div>
-      ${[["todo", "To do"], ["doing", "Doing"]].map(([k, label]) => { const cs = cardsIn(mine, k); return `<div class="sd-sub">${label} · ${cs.length}</div><div class="sd-col sd-zone" data-col="${k}" data-owner="${o}">${k === "todo" ? addBtn(k, o) : ""}${cs.map(cardHtml).join("")}${!cs.length && k === "doing" ? `<p class="empty">Drop a card here.</p>` : ""}</div>`; }).join("")}
-      <details class="sd-done"><summary>Done · ${done.length}</summary><div class="sd-col sd-zone" data-col="done" data-owner="${o}">${done.map(cardHtml).join("")}</div></details></section>`; }).join("");
-  const show = OWNF === "All" ? list : list.filter(c => c.owner === OWNF);
-  return COLS.map(([k, label]) => { const cs = cardsIn(show, k);
-    return `<section class="sd-col" data-col="${k}" aria-label="${label}"><div class="sd-col-h"><span>${label}</span><span class="chip">${cs.length}</span></div>
-      ${addBtn(k, "")}${cs.map(cardHtml).join("")}${!cs.length && !(EDIT && EDIT.col === k) ? `<p class="empty">Nothing here yet.</p>` : ""}</section>`; }).join("");
+  return COLS.map(([k, label]) => { const cs = cardsIn(list, k), add = k !== "waiting" && k !== "done";
+    return `<section class="sd-col sd-c-${k.toLowerCase()}" data-col="${k}" aria-label="${esc(label)}"><div class="sd-col-h"><span>${k === "Simas" || k === "Benas" ? avatar(k) : ""}${esc(label)}</span><span class="chip">${cs.length}</span></div>
+      ${add ? `<button type="button" class="sd-add" data-add="${k}"><svg aria-hidden="true"><use href="#i-plus"/></svg>Add a to-do</button>` : ""}
+      ${cs.map(cardHtml).join("")}${cs.length ? "" : `<p class="empty">${k === "waiting" ? "Paused to-dos wait here." : k === "done" ? "Nothing done in the last 30 days." : k === "general" ? "Nothing in the pool." : "All clear."}</p>`}</section>`; }).join("");
 }
-function toolsHtml(list) { const n = o => list.filter(c => c.col !== "done" && (o === "All" || c.owner === o)).length;
-  return `<div class="seg sd-view" role="group" aria-label="View">${[["board", "Board"], ["founder", "By founder"]].map(([k, l]) => `<button type="button" data-tv="${k}" class="${TVIEW === k ? "on" : ""}" aria-pressed="${TVIEW === k}">${l}</button>`).join("")}</div>
-    ${TVIEW === "board" ? `<span class="sd-chips" role="group" aria-label="Owner">${["All", ...OWNERS].map(o => `<button type="button" class="chip${OWNF === o ? " b" : ""}" data-of="${o}" aria-pressed="${OWNF === o}">${o} · ${n(o)}</button>`).join("")}</span>` : `<span class="mut">Drag a card to another lane to change its owner.</span>`}`; }
-/* promises (SIMAS 11-21: "layout is wrong ... structurize it that it will be simple to read"): one tile per promise, scanned top-down:
-   who + when (red overdue, orange today, grey later), the promise in two lines (tap for all of it), then owner and status. Overdue first. */
-const pName = e => PNAME[lc(e)] || String(e || "") || "?";
-function promDue(q) {   // [chip class, label, group 0 overdue / 1 today / 2 later]
-  if (!q.due_at) return ["", "no date", 2];
-  const d = dayOf(q.due_at), n = Math.round((Date.parse(d + "T12:00:00Z") - Date.parse(dayOf(Date.now()) + "T12:00:00Z")) / 864e5);
-  return n < 0 ? ["r", `overdue ${-n} d · ${dLabel(d)}`, 0] : n === 0 ? ["o", `today · ${hm(q.due_at)}`, 1] : ["", `in ${n} d · ${dLabel(d)}`, 2];
+function toolsHtml() { return ""; }
+function panelHtml() {
+  if (!EDIT) return "";
+  const isNew = EDIT.id === "new", c = isNew ? null : CACHE.todos.find(x => x.id === EDIT.id);
+  if (!isNew && !c) return "";
+  const own = c ? c.owner : EDIT.col === "general" ? "Both" : EDIT.col, meta = c ? [SRCL[c.source] || c.source, c.at ? `added ${dLabel(dayOf(c.at))}${c.by ? ` by ${c.by}` : ""}` : "", c.col === "done" && c.done ? `done ${dLabel(dayOf(c.done))}` : ""].filter(Boolean).join(" · ") : "New to-do";
+  return `<div class="sd-scrim" data-close></div><aside class="sd-panel" role="dialog" aria-modal="true" aria-label="${isNew ? "New to-do" : "To-do"}">
+    <form class="sd-pform" data-form="${isNew ? "new" : c.id}">
+      <div class="sd-pt"><span class="mut">${esc(meta)}</span><button type="button" class="mini" data-close aria-label="Close" title="Close (Esc)"><svg aria-hidden="true"><use href="#i-x"/></svg></button></div>
+      <label class="fld"><span>To-do</span><textarea name="title" rows="2" maxlength="300" required placeholder="A short, clear next step">${esc(c ? c.title : "")}</textarea></label>
+      <label class="fld"><span>Details</span><textarea name="detail" rows="7" maxlength="4000" placeholder="Anything that helps (optional)">${esc(c && c.detail ? c.detail : "")}</textarea></label>
+      <div class="fld"><span>Owner</span><div class="seg" role="group" aria-label="Owner">${[["Benas", "Benas"], ["Simas", "Simas"], ["Both", "General"]].map(([v, l]) => `<button type="button" data-own="${v}" class="${v === own ? "on" : ""}" aria-pressed="${v === own}">${l}</button>`).join("")}</div></div>
+      <label class="fld sd-due"><span>Due</span><input type="date" name="due" value="${esc(c && c.due ? c.due : "")}"></label>
+      ${c && c.lead ? `<div class="fld"><span>Lead</span><div><span class="chip">${esc(pName(c.lead))}</span> <span class="mut">${esc(c.lead)}</span></div></div>` : ""}
+      <div class="sd-pa">${c ? `<button type="button" class="act no del" data-del>${c.source === "board" ? "Delete" : "Drop"}</button>` : ""}
+        ${c && c.col !== "done" ? `<button type="button" class="act" data-wait>${c.st === "waiting" ? "Back to To do" : "Move to Waiting"}</button>` : ""}
+        ${c && c.col === "done" ? `<button type="button" class="act" data-reopen>Reopen</button>` : ""}
+        <button type="submit" class="act${c && c.col !== "done" ? "" : " go"}">${isNew ? "Add" : "Save"}</button>
+        ${c && c.col !== "done" ? `<button type="button" class="act go" data-tick>${ic("check")}Done</button>` : ""}</div>
+    </form></aside>`;
 }
-function promsHtml() {
-  if (!PROMS.length) return "";
-  const t = q => (q.due_at ? +new Date(q.due_at) : Infinity), L = PROMS.map(q => ({ q, d: promDue(q) })).sort((a, b) => a.d[2] - b.d[2] || t(a.q) - t(b.q));
-  const tile = ({ q, d }) => { const txt = String(q.promise || ""), st = String(q.status || "open");
-    return `<div class="tile sd-pc${d[2] === 0 ? " late" : ""}"><div class="sd-pt"><b title="${esc(q.lead_email)}">${esc(pName(q.lead_email))}</b><span class="chip${d[0] ? " " + d[0] : ""}">${esc(d[1])}</span></div>
-      ${txt.length > 110 ? `<button type="button" class="tt sd-pw" aria-expanded="false" title="Show the whole promise">${esc(txt)}</button>` : `<p class="tt">${esc(txt)}</p>`}
-      <div class="ft"><span class="chip">${esc(q.owner || "?")}</span><span class="chip">${esc(st.charAt(0).toUpperCase() + st.slice(1))}</span></div></div>`; };
-  const body = L.length > 6 ? [["Overdue", 0], ["Due today", 1], ["Later", 2]].map(([label, k]) => { const xs = L.filter(x => x.d[2] === k); return xs.length ? `<h3 class="sd-pg">${label} <span class="mut">${xs.length}</span></h3><div class="sd-pr">${xs.map(tile).join("")}</div>` : ""; }).join("")
-    : `<div class="sd-pr">${L.map(tile).join("")}</div>`;
-  return `<section class="card sp-card sd-proms"><h2>Promised to clients <small>${PROMS.length} open · from the CRM, read-only</small></h2>${body}</section>`;
-}
-PAGE_EL.addEventListener("click", ev => { const b = ev.target.closest(".sd-pw"); if (!b) return; const on = b.getAttribute("aria-expanded") !== "true"; b.setAttribute("aria-expanded", on); b.classList.toggle("open", on); });
-function viewTodos(list) { return `${promsHtml()}<div class="sd-tools" id="sd-tools">${toolsHtml(list)}</div><div class="sd-board${TVIEW === "founder" ? " lanes" : ""}" id="sd-board">${boardHtml(list)}</div>`; }
-function renderTodos() {
+function viewTodos(list) { return `<div class="sd-tools" id="sd-tools">${toolsHtml()}</div><div class="sd-board" id="sd-board">${boardHtml(list || [])}</div><div id="sd-pan">${panelHtml()}</div>`; }
+function renderTodos(panel = false) {
   const bd = $("#sd-board"); if (PAGE !== "todos" || !CACHE.todos || !bd) return;
-  const sx = bd.scrollLeft, openD = new Set($$("details.sd-done[open]", bd).map(x => x.closest("[data-lane]").dataset.lane));
-  bd.classList.toggle("lanes", TVIEW === "founder"); bd.innerHTML = boardHtml(CACHE.todos); bd.scrollLeft = sx; $("#sd-tools").innerHTML = toolsHtml(CACHE.todos);
-  $$("details.sd-done", bd).forEach(x => { if (openD.has(x.closest("[data-lane]").dataset.lane)) x.open = true; });
-  const f = $(".sd-form textarea", bd); if (f) { f.focus(); f.setSelectionRange(f.value.length, f.value.length); }
+  const sx = bd.scrollLeft; bd.innerHTML = boardHtml(CACHE.todos); bd.scrollLeft = sx;
+  if (panel) { const p = $("#sd-pan"); p.innerHTML = panelHtml(); const ta = $("textarea[name=title]", p); if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); } }
   todoBadge();
 }
+const openPanel = e => { EDIT = e; renderTodos(true); };
+const closePanel = () => { const id = EDIT && EDIT.id; EDIT = null; renderTodos(true); if (id && id !== "new") $(`[data-card="${id}"]`)?.focus(); };
 function posBetween(list, col, idx, skipId) { const cs = cardsIn(list, col).filter(c => c.id !== skipId), a = cs[idx - 1], b = cs[idx]; return a && b ? (a.pos + b.pos) / 2 : a ? a.pos + 1024 : b ? b.pos - 1024 : 1024; }
 async function mirror(c, patch, t) {   // the same change on the old list's row (best effort; the tasks row is the one that counts)
-  const has = k => k in patch, nowI = new Date().toISOString(), flip = has("col") && (patch.col === "done") !== (c.col === "done"), who = (ME && ME.who !== "Both" ? ME.who : ME && ME.name) || null;
-  if (c.source === "board" && c.ref) { const u = {}; ["col", "pos", "owner", "title", "detail", "due"].forEach(k => { if (has(k)) u[k] = patch[k]; }); if (Object.keys(u).length) await must(sb().from("todo_cards").update(u).eq("id", +c.ref)); }
-  else if (c.source === "call" && c.ref) { const u = {}; if (flip) { u.done_at = t.done_at; u.done_by = t.done_at ? who : null; } if (has("owner")) u.owner = patch.owner; if (has("title")) u.text = patch.title; if (has("due")) u.due_at = t.due_at;
-    if (Object.keys(u).length) await must(sb().from("call_tasks").update(u).eq("id", +c.ref)); }
+  const has = k => k in patch, nowI = new Date().toISOString(), flip = has("st") && (patch.st === "done") !== (c.st === "done");
+  if (c.source === "board" && c.ref) { const u = {}; if (has("st")) u.col = patch.st === "waiting" ? "doing" : patch.st; ["pos", "owner", "title", "detail", "due"].forEach(k => { if (has(k)) u[k] = patch[k]; });
+    if (Object.keys(u).length) await must(sb().from("todo_cards").update(u).eq("id", +c.ref)); }
   else if (c.source === "founder_tasks" && c.ref) { const u = {}; if (flip) u.done_at = t.done_at; if (has("owner")) u.who = patch.owner; if (has("title")) u.title = patch.title; if (has("detail")) u.detail = patch.detail; if (has("due")) u.due_at = t.due_at;
     if (Object.keys(u).length) { u.updated_at = nowI; await must(sb().from("founder_tasks").update(u).eq("id", +c.ref)); } }
 }
-async function writeTask(c, patch) {   // c = the card before the change
+async function writeTask(c, patch) {   // c = the card before the change. tasks is written LAST, so it wins over the todo_cards trigger
   const t = { updated_at: new Date().toISOString() };
-  if ("col" in patch && patch.col !== c.col) { t.status = patch.col; t.done_at = patch.col === "done" ? t.updated_at : null; }
+  if ("st" in patch && patch.st !== c.st) { t.status = patch.st; t.done_at = patch.st === "done" ? t.updated_at : null; }
   if ("pos" in patch) t.pos = patch.pos; if ("owner" in patch) t.owner = patch.owner; if ("title" in patch) t.title = patch.title; if ("detail" in patch) t.detail = patch.detail;
   if ("due" in patch) t.due_at = patch.due ? vilNoon(patch.due) : null;
   let warn = false; try { await mirror(c, patch, t); } catch { warn = true; }
@@ -1232,67 +1220,73 @@ async function writeTask(c, patch) {   // c = the card before the change
   if (warn) toast("Saved. The list it came from didn't update.");
 }
 async function saveCard(id, patch) {
-  const c = CACHE.todos.find(x => x.id === id), before = { ...c };
-  Object.assign(c, patch); renderTodos();
-  try { await writeTask(before, patch); } catch (e) { Object.assign(c, before); renderTodos(); toast("Couldn't save that card. Check your connection."); }
+  const c = CACHE.todos.find(x => x.id === id); if (!c) return; const before = { ...c };
+  Object.assign(c, patch); c.col = colOf(c.st, c.owner); if ("st" in patch) c.done = patch.st === "done" ? new Date().toISOString() : null;
+  renderTodos(!!EDIT);
+  try { await writeTask(before, patch); } catch (e) { Object.assign(c, before); renderTodos(!!EDIT); toast("Couldn't save that to-do. Check your connection."); }
 }
-const moveCard = (id, col, idx) => saveCard(id, { col, pos: posBetween(CACHE.todos, col, idx, id) });
-function dropCard(id, col, owner, prevId, nextId) {   // position from the neighbours in the zone it was dropped into (works in both views)
+const colPatch = col => col === "done" ? { st: "done" } : col === "waiting" ? { st: "waiting" } : { st: "todo", owner: col === "general" ? "Both" : col };
+function dropCard(id, col, prevId, nextId) {   // position from the neighbours in the column it was dropped into
   const L = CACHE.todos, a = L.find(x => x.id === prevId), b = L.find(x => x.id === nextId), pos = a && b ? (a.pos + b.pos) / 2 : a ? a.pos + 1024 : b ? b.pos - 1024 : posBetween(L, col, 0, id);
-  return saveCard(id, { col, pos, ...(owner ? { owner } : {}) });
+  const c = L.find(x => x.id === id), p = { pos, ...(c && c.col === col ? {} : colPatch(col)) };
+  return saveCard(id, p);
 }
+let JUSTDRAG = 0;
 function wireBoard() {
-  const board = $("#sd-board"); if (!board) return;
-  board.addEventListener("click", async ev => {
-    const t = ev.target.closest("button"); if (!t) return;
-    const card = t.closest("[data-card]"), id = card ? +card.dataset.card : null, list = CACHE.todos;
-    if (t.dataset.add) { EDIT = { id: "new", col: t.dataset.add, owner: t.dataset.owner || "" }; renderTodos(); return; }
-    if (t.dataset.own) { $$("[data-own]", t.parentElement).forEach(b => { b.classList.toggle("on", b === t); b.setAttribute("aria-pressed", b === t); }); return; }
-    if (t.hasAttribute("data-cancel")) { EDIT = null; renderTodos(); return; }
-    if (t.hasAttribute("data-del")) {
-      const fid = +t.closest("[data-form]").dataset.form, c = list.find(x => x.id === fid);
-      if (!c || !confirm(`${c.source === "board" ? "Delete" : "Drop"} "${c.title}"?`)) return;
-      EDIT = null; CACHE.todos = list.filter(x => x.id !== fid); renderTodos();
-      try {
-        if (c.source === "board" && c.ref) { await must(sb().from("todo_cards").delete().eq("id", +c.ref)); await must(sb().from("tasks").delete().eq("id", fid)); }
-        else { const t = { status: "dropped", done_at: new Date().toISOString(), updated_at: new Date().toISOString() }; try { await mirror(c, { col: "done" }, t); } catch {} const ok = await must(sb().from("tasks").update(t).eq("id", fid).select("id")); if (!ok || !ok.length) throw new Error("not allowed"); }
-      } catch (e) { CACHE.todos = list; renderTodos(); toast("Couldn't remove that card."); }
-      return;
-    }
-    if (id && t.hasAttribute("data-ed")) { EDIT = { id, col: list.find(x => x.id === id).col }; renderTodos(); return; }
-    if (id && t.hasAttribute("data-tick")) { await moveCard(id, "done", 0); return; }
-    if (id && t.dataset.mv) { const c = list.find(x => x.id === id), i = COLS.findIndex(x => x[0] === c.col) + +t.dataset.mv; if (COLS[i]) await moveCard(id, COLS[i][0], 0); }
+  const board = $("#sd-board"), pan = $("#sd-pan"); if (!board) return;
+  board.addEventListener("click", ev => {
+    if (Date.now() - JUSTDRAG < 350) return;
+    const add = ev.target.closest("[data-add]"); if (add) { openPanel({ id: "new", col: add.dataset.add }); return; }
+    const card = ev.target.closest("[data-card]"); if (card) openPanel({ id: +card.dataset.card });
   });
-  board.addEventListener("submit", async ev => {
+  board.addEventListener("keydown", ev => {
+    const card = ev.target.closest("[data-card]"); if (!card || ev.target !== card) return;
+    const id = +card.dataset.card, c = CACHE.todos.find(x => x.id === id); if (!c) return;
+    if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); openPanel({ id }); return; }
+    if (!ev.altKey) return;
+    const cs = cardsIn(CACHE.todos, c.col), i = cs.findIndex(x => x.id === id), ci = COLS.findIndex(x => x[0] === c.col);
+    let p = null;
+    if (ev.key === "ArrowLeft" && ci > 0) p = { ...colPatch(COLS[ci - 1][0]), pos: posBetween(CACHE.todos, COLS[ci - 1][0], 0, id) };
+    else if (ev.key === "ArrowRight" && ci < COLS.length - 1) p = { ...colPatch(COLS[ci + 1][0]), pos: posBetween(CACHE.todos, COLS[ci + 1][0], 0, id) };
+    else if (ev.key === "ArrowUp" && i > 0 && c.col !== "done") p = { pos: posBetween(CACHE.todos, c.col, i - 1, id) };
+    else if (ev.key === "ArrowDown" && i < cs.length - 1 && c.col !== "done") p = { pos: posBetween(CACHE.todos, c.col, i + 2, id) };
+    if (!p) return;
+    ev.preventDefault(); saveCard(id, p).then(() => $(`[data-card="${id}"]`)?.focus());
+  });
+  board.addEventListener("pointerdown", dragStart);
+  pan.addEventListener("click", async ev => {
+    const t = ev.target.closest("button,[data-close]"); if (!t) return;
+    if (t.hasAttribute("data-close")) { closePanel(); return; }
+    if (t.dataset.own) { $$("[data-own]", t.parentElement).forEach(b => { b.classList.toggle("on", b === t); b.setAttribute("aria-pressed", b === t); }); return; }
+    const f = t.closest("[data-form]"), id = f && f.dataset.form !== "new" ? +f.dataset.form : null, c = id ? CACHE.todos.find(x => x.id === id) : null;
+    if (!c) return;
+    if (t.hasAttribute("data-tick")) { EDIT = null; renderTodos(true); await saveCard(id, { st: "done" }); toast("Done"); return; }
+    if (t.hasAttribute("data-wait")) { await saveCard(id, { st: c.st === "waiting" ? "todo" : "waiting" }); return; }
+    if (t.hasAttribute("data-reopen")) { await saveCard(id, { st: "todo" }); return; }
+    if (t.hasAttribute("data-del")) {
+      if (!confirm(`${c.source === "board" ? "Delete" : "Drop"} "${c.title}"?`)) return;
+      const list = CACHE.todos; EDIT = null; CACHE.todos = list.filter(x => x.id !== id); renderTodos(true);
+      try {
+        if (c.source === "board" && c.ref) { await must(sb().from("todo_cards").delete().eq("id", +c.ref)); await must(sb().from("tasks").delete().eq("id", id)); }
+        else { const tt = { status: "dropped", done_at: new Date().toISOString(), updated_at: new Date().toISOString() }; try { await mirror(c, { st: "done" }, tt); } catch {} const ok = await must(sb().from("tasks").update(tt).eq("id", id).select("id")); if (!ok || !ok.length) throw new Error("not allowed"); }
+      } catch (e) { CACHE.todos = list; renderTodos(); toast("Couldn't remove that to-do."); }
+    }
+  });
+  pan.addEventListener("submit", async ev => {
     ev.preventDefault();
     const f = ev.target, title = f.title.value.trim(), detail = f.detail.value.trim() || null, owner = $("[data-own].on", f)?.dataset.own || "Both", due = f.due.value || null;
     if (!title) { f.title.focus(); return; }
     if (f.dataset.form === "new") {
-      const col = f.dataset.col, row = { title, detail, owner, due, col, pos: posBetween(CACHE.todos, col, 0), created_by: (ME && ME.name) || null };
-      EDIT = null;
-      try { const ins = await must(sb().from("todo_cards").insert(row).select().single()), t = await must(sb().from("tasks").select("*").eq("source", "board").eq("source_ref", String(ins.id)).maybeSingle());
-        if (t) CACHE.todos.push(tCard(t, t.source_ref)); else CACHE.todos = await loadTaskList(); renderTodos(); } catch (e) { renderTodos(); toast("Couldn't add that card. Check your connection."); }
-    } else { EDIT = null; await saveCard(+f.dataset.form, { title, detail, owner, due }); }
+      const col = colOf("todo", owner), row = { title, detail, owner, due, col: "todo", pos: posBetween(CACHE.todos, col, 0), created_by: (ME && ME.name) || null };
+      EDIT = null; renderTodos(true);
+      try { const ins = await must(sb().from("todo_cards").insert(row).select().single()), t = await must(sb().from("tasks").select(TCOLS).eq("source", "board").eq("source_ref", String(ins.id)).maybeSingle());
+        if (t) CACHE.todos.push(tCard(t)); else CACHE.todos = await loadTaskList(); renderTodos(); } catch (e) { renderTodos(); toast("Couldn't add that to-do. Check your connection."); }
+    } else { const id = +f.dataset.form; EDIT = null; renderTodos(true); await saveCard(id, { title, detail, owner, due }); }
   });
-  board.addEventListener("keydown", ev => {
-    if (ev.target.matches("textarea") && ev.key === "Enter" && (ev.metaKey || ev.ctrlKey || (ev.target.name === "title" && !ev.shiftKey))) { ev.preventDefault(); ev.target.form.requestSubmit(); return; }
-    const card = ev.target.closest("[data-card]"); if (!card || ev.target !== card) return;
-    const id = +card.dataset.card, c = CACHE.todos.find(x => x.id === id);
-    if (ev.key === "Enter") { ev.preventDefault(); EDIT = { id, col: c.col }; renderTodos(); return; }
-    if (!ev.altKey) return;
-    if (TVIEW === "founder" && (ev.key === "ArrowLeft" || ev.key === "ArrowRight")) { const oi = OWNERS.indexOf(c.owner) + (ev.key === "ArrowRight" ? 1 : -1); if (OWNERS[oi]) { ev.preventDefault(); saveCard(id, { owner: OWNERS[oi] }).then(() => $(`[data-card="${id}"]`)?.focus()); } return; }
-    const cs = cardsIn(CACHE.todos, c.col), i = cs.findIndex(x => x.id === id), ci = COLS.findIndex(x => x[0] === c.col);
-    let col = c.col, idx = null;
-    if (ev.key === "ArrowLeft" && ci > 0) { col = COLS[ci - 1][0]; idx = 0; }
-    else if (ev.key === "ArrowRight" && ci < 2) { col = COLS[ci + 1][0]; idx = 0; }
-    else if (ev.key === "ArrowUp" && i > 0) idx = i - 1;
-    else if (ev.key === "ArrowDown" && i < cs.length - 1) idx = i + 2;
-    if (idx == null) return;
-    ev.preventDefault(); moveCard(id, col, idx).then(() => $(`[data-card="${id}"]`)?.focus());
+  pan.addEventListener("keydown", ev => {
+    if (ev.key === "Escape") { ev.preventDefault(); closePanel(); return; }
+    if (ev.target.matches("textarea") && ev.key === "Enter" && (ev.metaKey || ev.ctrlKey || (ev.target.name === "title" && !ev.shiftKey))) { ev.preventDefault(); ev.target.form.requestSubmit(); }
   });
-  board.addEventListener("pointerdown", dragStart);
-  $("#sd-tools").addEventListener("click", ev => { const b = ev.target.closest("button"); if (!b) return;
-    if (b.dataset.tv) { TVIEW = b.dataset.tv; store.set(K_TV, TVIEW); EDIT = null; renderTodos(); } else if (b.dataset.of) { OWNF = b.dataset.of; renderTodos(); } });
 }
 /* pointer drag: a mouse drags after a 6 px move; a finger needs a short press-and-hold (280 ms), so a swipe still scrolls */
 function dragStart(ev) {
@@ -1304,7 +1298,7 @@ function dragStart(ev) {
   document.addEventListener("pointermove", dragMove); document.addEventListener("pointerup", dragEnd); document.addEventListener("pointercancel", dragEnd);
 }
 function liftUp(D) {
-  D.on = true; $$("details.sd-done").forEach(x => { x.open = true; });
+  D.on = true;
   D.lift = D.card.cloneNode(true); D.lift.classList.add("lift"); D.lift.removeAttribute("data-card"); D.lift.removeAttribute("tabindex"); D.lift.setAttribute("aria-hidden", "true");
   D.lift.style.setProperty("--w", D.w + "px"); document.body.append(D.lift);
   D.ph = document.createElement("div"); D.ph.className = "sd-ph"; D.ph.style.setProperty("--h", D.h + "px");
@@ -1312,14 +1306,13 @@ function liftUp(D) {
 }
 function place(D, x, y) {
   D.lift.style.setProperty("--x", x - D.dx + "px"); D.lift.style.setProperty("--y", y - D.dy + "px");
-  const cols = $$(".sd-col").filter(c => c.offsetParent), hit = (c, up, down) => { const b = c.getBoundingClientRect(); return x >= b.left && x <= b.right && y >= b.top - up && y <= b.bottom + down; },
+  const cols = $$("#sd-board .sd-col").filter(c => c.offsetParent), hit = (c, up, down) => { const b = c.getBoundingClientRect(); return x >= b.left && x <= b.right && y >= b.top - up && y <= b.bottom + down; },
     col = cols.find(c => hit(c, 0, 0)) || cols.find(c => hit(c, 24, 24)) || cols.find(c => hit(c, 40, 120));
   cols.forEach(c => c.classList.toggle("drop", c === col));
   if (col) {
     const others = $$("[data-card]:not([hidden])", col), next = others.find(el => { const b = el.getBoundingClientRect(); return y < b.top + b.height / 2; });
     next ? next.before(D.ph) : col.append(D.ph);
-    D.col = col.dataset.col; D.idx = next ? others.indexOf(next) : others.length; D.owner = col.dataset.owner || null;
-    const i = next ? others.indexOf(next) : others.length; D.nextId = next ? +next.dataset.card : null; D.prevId = others[i - 1] ? +others[i - 1].dataset.card : null;
+    D.col = col.dataset.col; const i = next ? others.indexOf(next) : others.length; D.nextId = next ? +next.dataset.card : null; D.prevId = others[i - 1] ? +others[i - 1].dataset.card : null;
   }
   if (y < 60) scrollBy(0, -14); else if (y > innerHeight - 60) scrollBy(0, 14);   // auto-scroll near the edges
   const bd = $("#sd-board"); if (bd) { const bb = bd.getBoundingClientRect(); if (x < bb.left + 30) bd.scrollLeft -= 14; else if (x > bb.right - 30) bd.scrollLeft += 14; }
@@ -1339,10 +1332,11 @@ function cleanup() {
 function dragEnd(ev) {
   if (!DRAG || (ev.pointerId !== undefined && ev.pointerId !== DRAG.pid)) return;
   const D = cleanup(); if (!D.on) return;
+  JUSTDRAG = Date.now();
   D.lift.remove(); D.ph.remove(); D.card.hidden = false;
-  $$(".sd-col").forEach(c => c.classList.remove("drop"));
+  $$("#sd-board .sd-col").forEach(c => c.classList.remove("drop"));
   if (ev.type === "pointercancel" || !D.col) return renderTodos();
-  dropCard(D.id, D.col, D.owner, D.prevId, D.nextId);
+  dropCard(D.id, D.col, D.prevId, D.nextId);
 }
 document.addEventListener("touchmove", ev => { if (DRAG && DRAG.on) ev.preventDefault(); }, { passive: false });
 document.addEventListener("contextmenu", ev => { if (DRAG && ev.target.closest && ev.target.closest(".sd-card")) ev.preventDefault(); });
@@ -1405,13 +1399,12 @@ window.BEJU_CRM_PAGE = (p, extra = {}) => { if (!ON || !PAGES[p]) return; if (p 
 let RT_T = null;
 function startRealtime() {
   if (CH || !sb()) return;
-  CH = sb().channel("side-todos").on("postgres_changes", { event: "*", schema: "public", table: "todo_cards" }, () => {
-    clearTimeout(RT_T); RT_T = setTimeout(async () => {
+  const hit = () => { clearTimeout(RT_T); RT_T = setTimeout(async () => {   // 11-22: tasks too, so crm-api / Claude adds show live
       todoBadge();
       if (DRAG || EDIT || PAGE !== "todos") return;
       try { CACHE.todos = await loadTaskList(); renderTodos(); } catch {}
-    }, 400);
-  }).subscribe();
+    }, 400); };
+  CH = sb().channel("side-todos").on("postgres_changes", { event: "*", schema: "public", table: "todo_cards" }, hit).on("postgres_changes", { event: "*", schema: "public", table: "tasks" }, hit).subscribe();
 }
 function stopRealtime() { if (CH) { try { sb().removeChannel(CH); } catch {} CH = null; } }
 
