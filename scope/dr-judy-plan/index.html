@@ -1,0 +1,849 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Dr. Judy Plan · BEJÚ Creative</title>
+<meta name="theme-color" content="#FFFFFF">
+<link rel="preload" href="https://bejucreative.digital/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+/* Scope for Dr. Judy Rosenberg, on the approved white scope template. Private link, noindex. */
+@font-face{font-family:'Geist';font-style:normal;font-weight:300 600;font-display:swap;src:url(https://bejucreative.digital/fonts/geist-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Geist';font-style:normal;font-weight:300 600;font-display:swap;src:url(https://bejucreative.digital/fonts/geist-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
+:root{
+  --bg:#FFFFFF; --soft:#F7F6F1; --ink:#11150E; --body:#3A4135; --muted:#646C5C; --dim:#7A8272;
+  --gold:#22D16F; --gold-text:#0E7A44; --gold-soft:#E7FBEF; --green-head:#11A85A; --hair:#E7E4DA; --hair-2:#D9D5C8;
+  --sans:"Geist",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{background:var(--bg);-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--body);font-size:18px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{position:relative;width:min(960px,calc(100% - 32px));margin-inline:auto}
+section{position:relative;padding:clamp(52px,7vw,92px) 0}
+h1,h2,h3{color:var(--ink);margin:0;text-wrap:balance;font-weight:600}
+h1{font-size:clamp(40px,6.6vw,68px);line-height:1.04;letter-spacing:-.035em}
+h2{font-size:clamp(28px,3.6vw,40px);line-height:1.12;letter-spacing:-.025em}
+h3{font-size:19px;line-height:1.3;letter-spacing:-.01em}
+p{margin:0}
+.gold{color:var(--green-head)}
+.eyebrow{font-size:13px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-text)}
+.head{display:grid;gap:12px}
+.lede{font-size:clamp(18px,1.6vw,20px);line-height:1.6;max-width:36em;color:var(--body)}
+.small{font-size:15px;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;justify-content:center;height:62px;padding:0 38px;border-radius:999px;font:500 18px var(--sans);text-decoration:none;white-space:nowrap;transition:background .15s ease,border-color .15s ease}
+.btn.primary{background:var(--ink);color:#fff;box-shadow:0 14px 34px -18px rgba(17,21,14,.55)}
+.btn.primary:hover{background:#2A3322}
+.btn.ghost{color:var(--ink);background:#fff;border:1px solid var(--hair-2)}
+.btn.ghost:hover{border-color:var(--ink)}
+.btn.sm{height:42px;padding:0 18px;font-size:15px;box-shadow:none}
+.btn:focus-visible,summary:focus-visible{outline:3px solid rgba(34,209,111,.55);outline-offset:3px}
+.btns{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:34px}
+.card{border-radius:20px;padding:24px 26px;background:#fff;border:1px solid var(--hair);box-shadow:0 1px 2px rgba(17,21,14,.04),0 10px 30px -22px rgba(17,21,14,.18)}
+
+/* top bar */
+.nav{position:relative;z-index:2;padding-top:18px}
+.nav .wrap{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:16px;border-bottom:1px solid var(--hair)}
+.brand{font-weight:600;font-size:17px;color:var(--ink);text-decoration:none;letter-spacing:-.01em}
+.nav .for{font-size:14px;color:var(--muted)}
+
+/* hero (centred) */
+.hero{padding-top:clamp(64px,10vw,124px);padding-bottom:clamp(40px,5vw,60px);text-align:center}
+.hero .lede{margin:18px auto 0}
+.meta{margin:36px auto 0;display:flex;justify-content:center;gap:10px 28px;flex-wrap:wrap;font-size:14px;color:var(--muted);max-width:52em}
+.meta b{color:var(--ink);font-weight:500}
+
+/* facts */
+.facts{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);text-align:center}
+.facts div{padding:26px 12px;display:grid;gap:4px}
+.facts div+div{border-left:1px solid var(--hair)}
+.facts b{font-size:clamp(24px,2.6vw,30px);font-weight:600;color:var(--ink);letter-spacing:-.02em;line-height:1.15}
+.facts span{font-size:15px;color:var(--muted)}
+
+/* goal */
+.quotes{display:grid;gap:14px;margin-top:26px}
+.quote{margin:0;padding:4px 0 4px 22px;border-left:3px solid var(--gold);font-size:clamp(20px,2.2vw,25px);line-height:1.4;font-weight:500;color:var(--ink);max-width:36em}
+
+/* engine */
+.split{margin-top:30px;display:grid;gap:10px}
+.bar{display:grid;grid-template-columns:1fr 1fr;height:14px;border-radius:999px;overflow:hidden;border:1px solid var(--hair-2)}
+.bar span:first-child{background:var(--gold)}
+.bar span:last-child{background:#E6EAE4}
+.bar-legend{display:flex;justify-content:space-between;gap:12px;font-size:15px;color:var(--muted)}
+.bar-legend b{color:var(--ink);font-weight:600}
+.grid4{margin-top:22px;display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.grid4 .card{display:grid;gap:8px;align-content:start}
+.tag{justify-self:start;font-size:12px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-text)}
+.wide{margin-top:14px;padding:30px 30px;display:grid;gap:10px;background:var(--gold-soft);border-color:rgba(34,209,111,.55)}
+.wide h3{font-size:clamp(20px,2.2vw,24px)}
+
+/* list */
+.list{margin-top:28px;border-top:1px solid var(--hair)}
+.item{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.3fr);gap:24px;padding:22px 0;border-bottom:1px solid var(--hair);align-items:baseline}
+
+/* steps */
+.grid3{margin-top:28px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.step{display:grid;gap:8px;align-content:start}
+.num{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--ink);color:#fff;font-weight:600;font-size:14px}
+
+/* faq */
+.cols{display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);gap:clamp(24px,5vw,72px);align-items:start}
+details{border-bottom:1px solid var(--hair);padding:18px 0}
+details:first-of-type{border-top:1px solid var(--hair)}
+summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;gap:16px;color:var(--ink);font-weight:500;font-size:18px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";color:var(--muted);font-weight:300;font-size:22px;line-height:1}
+details[open] summary::after{content:"–"}
+details p{margin-top:8px;color:var(--body);max-width:36em}
+
+/* close */
+.close{text-align:center;padding-bottom:clamp(70px,10vw,130px)}
+.close .card{padding:clamp(34px,5vw,56px) clamp(20px,4vw,48px);background:var(--soft)}
+.close .lede{margin:14px auto 0}
+.call{margin-top:28px;padding-top:24px;border-top:1px solid var(--hair-2);display:grid;justify-items:center;gap:14px}
+.call p{color:var(--muted);font-size:16px}
+.terms{margin:26px auto 0;max-width:42em;font-size:14px;color:var(--muted)}
+.terms a{color:var(--muted)}
+.site-btn{border:1px solid var(--hair-2)}
+@media (max-width:760px){.nav .site-btn{display:inline-flex}}
+/* proof v2 (Benas 11-19 ~00:28): bigger, its own section, logos at wordmark size, big numbers */
+.proof{padding:clamp(36px,5vw,64px) 0}
+.proof-card{display:grid;justify-items:center;gap:26px;text-align:center;padding:clamp(30px,4vw,48px) 24px;border:1px solid var(--hair);border-radius:24px;background:var(--soft,#F7F6F1)}
+.proof-logos{display:flex;align-items:center;justify-content:center;gap:28px 56px;flex-wrap:wrap}
+.proof-logos img{height:48px;width:auto;filter:brightness(0);display:block}
+.proof-wordmark{font-size:44px;font-weight:700;letter-spacing:-.035em;line-height:1;color:var(--ink);text-decoration:none}
+.proof-logos a:hover{opacity:.75}
+.proof-nums{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 56px;border-top:1px solid var(--hair);padding-top:24px;width:min(640px,100%)}
+.proof-nums b{display:block;font-size:clamp(44px,5.6vw,56px);font-weight:700;letter-spacing:-.03em;line-height:1;color:var(--ink)}
+.proof-nums span{display:block;margin-top:6px;font-size:15px;color:var(--muted)}
+@media (max-width:560px){.proof-nums{grid-template-columns:1fr}.proof-logos{flex-direction:column}}
+/* BEJÚ mark (dark on the white pages) */
+.brand{display:inline-flex;align-items:center;gap:10px}
+.brand img{height:26px;width:auto;filter:brightness(0);display:block}
+.foot-mark{height:18px;width:auto;filter:brightness(0);vertical-align:-3px;margin-right:8px;opacity:.85}
+/* polish (Benas 11-19 ~00:45): no sideways drift, readable small text on phones, proof a bit smaller, TikTok links, comms grid */
+html,body{overflow-x:hidden;max-width:100%}
+img{max-width:100%}
+.proof-logos img{height:40px}
+.proof-wordmark{font-size:36px}
+.proof-nums b{font-size:clamp(36px,4.6vw,46px)}
+.proof-item{display:flex;flex-direction:column;align-items:center;gap:8px;text-decoration:none}
+.tt{font-size:13px;font-weight:500;color:var(--muted);letter-spacing:.02em}
+.proof-item:hover .tt{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+.comm{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-top:26px}
+.comm .card{display:grid;gap:6px;align-content:start}
+.accept{margin-top:16px;font-size:15px;color:var(--muted)}
+.accept a{color:var(--ink)}
+@media (max-width:560px){
+  .meta{font-size:15px;flex-direction:column;align-items:center;gap:4px}
+  .small,.card p{font-size:16px}
+  .tag,.eyebrow{font-size:13px}
+  .facts span{font-size:15px}
+  .proof-logos img{height:34px}
+  .proof-wordmark{font-size:32px}
+  .item p,.bar-legend{font-size:15px}
+}
+/* Benas fixes 11-19 01:0x: 50/50 as two equal cards, readable text everywhere */
+.split2{margin-top:28px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.split2 .half{display:grid;gap:8px;align-content:start;padding:28px 26px}
+.split2 .big{font-size:clamp(40px,5vw,52px);font-weight:700;letter-spacing:-.03em;line-height:1;color:var(--green-head,#11A85A)}
+.split2 h3{font-size:22px}
+.split2 p{font-size:17px;color:var(--ink);line-height:1.5}
+.small,.card p{font-size:16px;color:var(--body)}
+.meta{font-size:15px;color:var(--body)}
+.facts span{font-size:16px;color:var(--body)}
+.terms{font-size:15px;color:var(--body)}
+.accept{color:var(--body)}
+.tag{font-size:13px}
+.proof-nums span{font-size:16px;color:var(--body)}
+@media (max-width:640px){.split2{grid-template-columns:1fr}}
+footer{border-top:1px solid var(--hair);padding:24px 0 40px}
+footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:14px;color:var(--dim)}
+
+@media (max-width:760px){
+  body{font-size:17px}
+  .facts{grid-template-columns:1fr}
+  .facts div+div{border-left:0;border-top:1px solid var(--hair)}
+  .item{grid-template-columns:1fr;gap:4px}
+  .grid3,.grid4{grid-template-columns:1fr}
+  .cols{grid-template-columns:1fr}
+  .nav .for{display:none}
+  .btns{flex-direction:column;align-items:stretch}
+  .btn{width:100%}
+  .btn.sm,.call .btn{width:auto}
+}
+
+/* PDF / print */
+@media print{
+  @page{size:A4;margin:16mm 14mm}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body{font-size:11.5pt}
+  .wrap{width:100%}
+  .noprint,.call{display:none!important}
+  section{padding:16px 0}
+  .hero{padding:26px 0 10px}
+  h1{font-size:30pt} h2{font-size:18pt} h3{font-size:12.5pt}
+  .card{box-shadow:none;border-radius:12px;padding:14px 16px}
+  .facts div{padding:14px 8px}
+  details{padding:10px 0}
+  summary::after{content:""}
+  .close{padding-bottom:10px}
+  .item,.card,.facts,.quote,details,.split{break-inside:avoid}
+  h2,.head{break-after:avoid}
+}
+
+/* ---- Dr. Judy: additions on top of the white template ---- */
+.wrapw{width:min(1120px,calc(100% - 32px))}
+/* top bar: stays in view, with the three actions */
+.nav{position:sticky;top:0;z-index:20;background:#fff;padding-top:12px}
+.nav .wrap{padding-bottom:12px}
+.navbtns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+section[id],header .toc,.evid li{scroll-margin-top:84px}
+.nav .sh{display:none}
+@media (max-width:760px){
+  .nav{padding-top:8px}
+  .nav .wrap{flex-wrap:nowrap;gap:8px;padding-bottom:8px}
+  .navbtns{flex:1;justify-content:flex-end;gap:6px;flex-wrap:nowrap}
+  .navbtns .btn.sm{height:44px;padding:0 14px;font-size:15px}
+  .navbtns .site-btn{display:none!important}
+  .nav .lg{display:none}.nav .sh{display:inline}
+  .brand{min-height:44px}
+  section[id],header .toc,.evid li,#promise{scroll-margin-top:76px}
+}
+.band{background:var(--soft)}
+.head{max-width:44em}
+.secno{display:inline-block;min-width:2.1em;color:var(--dim);font-weight:500}
+.hero h1{font-size:clamp(34px,5.2vw,58px);max-width:17em;margin-inline:auto}
+.hero .ans{font-size:clamp(20px,2vw,24px);color:var(--ink);font-weight:500;max-width:30em;margin:22px auto 0;line-height:1.4}
+.hero .ans b{color:var(--green-head);font-weight:600}
+.toc{margin:34px auto 0;max-width:46em;text-align:left;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 28px;border-top:1px solid var(--hair)}
+.toc a{display:flex;gap:10px;font-size:16px;color:var(--ink);text-decoration:none;padding:11px 2px;border-bottom:1px solid var(--hair)}
+.toc a:hover{color:var(--green-head)}
+.toc a span{color:var(--dim);font-variant-numeric:tabular-nums}
+.subh{margin-top:44px;font-size:24px;letter-spacing:-.02em}
+
+/* call summary, in the style of a meeting recap */
+.purpose{margin-top:30px;background:#fff;border:1px solid var(--hair);border-radius:18px;padding:20px 24px;font-size:19px;color:var(--ink);line-height:1.5}
+.purpose b{display:block;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-text);margin-bottom:6px}
+.take{margin-top:16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.take div{background:#fff;border:1px solid var(--hair);border-radius:18px;padding:18px 22px}
+.take b{display:block;color:var(--ink);font-size:18px;font-weight:600}
+.take span{display:block;font-size:17px;line-height:1.55;color:var(--body);margin-top:5px}
+.topics{margin-top:16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.topic{background:#fff;border:1px solid var(--hair);border-radius:20px;padding:24px 24px 22px;display:grid;gap:12px;align-content:start}
+.topic h4{margin:0;font-size:21px;font-weight:600;color:var(--ink);letter-spacing:-.015em}
+.topic ul{margin:0;padding-left:20px;display:grid;gap:7px;font-size:17px;line-height:1.5;color:var(--body)}
+.topic .q{font-size:17px;line-height:1.45;color:var(--ink);font-weight:500;border-left:3px solid var(--gold);padding-left:14px}
+.topic .q small{display:block;font-size:13px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.topic .do{background:var(--gold-soft);border-radius:14px;padding:12px 16px;font-size:16.5px;line-height:1.5;color:#0A3D24}
+.topic .do b{display:block;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-text);margin-bottom:3px}
+.nexts{margin-top:16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.nexts div{background:#fff;border:1px solid var(--hair);border-radius:20px;padding:22px 24px}
+.nexts b{display:block;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-text)}
+.nexts .nx{margin-top:8px;font-size:16px;color:var(--muted)}
+.nexts ul{margin:10px 0 0;padding-left:20px;display:grid;gap:7px;font-size:17px;color:var(--body);line-height:1.5}
+
+/* plain data tables (what we found, terms, roadmap) */
+.tb{margin-top:26px;width:100%;border-collapse:separate;border-spacing:0;background:#fff;border:1px solid var(--hair);border-radius:24px;overflow:hidden;font-size:17px}
+.tb th,.tb td{text-align:left;vertical-align:top;padding:18px 22px;border-bottom:1px solid var(--hair);line-height:1.55}
+.tb tr:last-child th,.tb tr:last-child td{border-bottom:0}
+.tb thead th{font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-text);background:var(--soft)}
+.tb tbody th{color:var(--ink);font-weight:600;width:27%}
+.tb td{color:var(--body)}
+.tb.three tbody th{width:30%}.tb.three td{width:35%}
+
+/* path: vertical timeline */
+.path{margin-top:34px;display:grid;gap:0;max-width:46em}
+.path .st{display:grid;grid-template-columns:52px 1fr;gap:20px;position:relative;padding-bottom:30px}
+.path .st:last-child{padding-bottom:0}
+.path .st::before{content:"";position:absolute;left:25px;top:52px;bottom:0;width:2px;background:var(--gold-soft)}
+.path .st:last-child::before{display:none}
+.path .n{width:52px;height:52px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-weight:600;font-size:20px;position:relative;z-index:1}
+.path h3{font-size:22px;margin-top:10px}
+.path p{font-size:18px;line-height:1.6;color:var(--body);margin-top:6px}
+.bubble{margin-top:12px;display:inline-block;background:var(--gold-soft);color:#0A3D24;border-radius:16px 16px 16px 4px;padding:12px 16px;font-size:17px;line-height:1.5;max-width:30em}
+.twice{margin-top:30px;max-width:46em;border:1px solid var(--gold);background:var(--gold-soft);border-radius:18px;padding:20px 24px}
+.twice b{display:block;color:#0A3D24;font-size:20px;font-weight:600}
+.twice p{color:#0A3D24;font-size:17px;margin-top:6px}
+
+/* trust: two phones */
+.works{margin-top:22px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
+.work{display:grid;grid-template-columns:190px 1fr;gap:22px;align-items:center;background:#fff;border:1px solid var(--hair);border-radius:24px;padding:22px}
+.phone{width:190px;aspect-ratio:9/16;border-radius:22px;overflow:hidden;background:#000}
+.phone video{display:block;width:100%;height:100%;object-fit:cover}
+.work h3{font-size:21px}
+.work p{font-size:16px;color:var(--body);margin-top:6px;line-height:1.55}
+
+/* plan table */
+.cmpwrap{margin-top:30px;overflow-x:auto;border:1px solid var(--hair);border-radius:24px;background:#fff}
+.cmp{width:100%;min-width:760px;border-collapse:separate;border-spacing:0;font-size:17px}
+.cmp th,.cmp td{text-align:left;vertical-align:top;padding:18px 20px;border-bottom:1px solid var(--hair)}
+.cmp thead th{vertical-align:top;padding:26px 20px 22px;border-bottom:1px solid var(--hair-2)}
+.cmp thead .pill{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:5px 10px;border-radius:999px;background:var(--soft);color:var(--muted)}
+.cmp thead th.main .pill{background:var(--ink);color:#fff}
+.cmp thead b{display:block;font-size:21px;font-weight:600;color:var(--ink);margin-top:12px;line-height:1.25}
+.cmp thead .was{display:block;margin-top:10px;font-size:15px;font-weight:400;color:var(--body);line-height:1.4}
+.cmp thead .was s{color:var(--muted)}
+.cmp thead .only{display:block;margin-top:8px;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-text)}
+.cmp thead .pr{display:block;font-size:44px;font-weight:600;letter-spacing:-.035em;color:var(--ink);line-height:1.05;margin-top:4px}
+.cmp thead .pr small{display:block;font-size:16px;font-weight:400;color:var(--muted);letter-spacing:0;margin-top:4px}
+.cmp thead .sub{display:block;font-size:15px;font-weight:400;color:var(--body);margin-top:8px;line-height:1.45}
+.cmp .main,.cmp td.yes{background:var(--gold-soft)}
+.cmp thead th.main{box-shadow:inset 0 4px 0 var(--gold)}
+.cmp tbody th{width:44%;font-weight:400}
+.cmp tbody th b{display:block;color:var(--ink);font-weight:600;font-size:18px}
+.cmp tbody th span{display:block;color:var(--body);font-size:15.5px;margin-top:5px;line-height:1.5}
+.cmp td{width:28%;color:var(--ink);font-weight:500;line-height:1.45}
+.cmp td .ok{display:flex;gap:10px;align-items:flex-start}
+.cmp td .ok::before{content:"";flex:0 0 22px;height:22px;margin-top:1px;border-radius:50%;background:var(--green-head) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Cpath d='M6 11.5l3.2 3.2L16 8' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/22px no-repeat}
+.cmp td .no{color:var(--dim);font-weight:400}
+.cmp td.val{color:var(--body);font-weight:400;font-size:16px}
+.cmp td.val b{display:block;color:var(--ink);font-weight:600}
+.cmp td.val sup,.src sup{font-size:11px;color:var(--gold-text);font-weight:600}
+.cmp tr.grp th{background:var(--soft);padding:12px 20px;font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-text)}
+.cmp tr.tot th,.cmp tr.tot td{border-bottom:0;border-top:2px solid var(--ink);padding-top:22px;padding-bottom:24px}
+.cmp tr.tot td{font-size:24px;font-weight:600;letter-spacing:-.02em}
+.cmp tr.tot td small{display:block;font-size:15px;font-weight:400;color:var(--body);letter-spacing:0;margin-top:4px}
+.cmp tr.tot td.val{font-size:18px;font-weight:600;color:var(--ink);letter-spacing:0}
+.note{margin-top:14px;font-size:15px;color:var(--body);max-width:62em}
+.src{margin-top:18px;font-size:14px;color:var(--body);line-height:1.6;max-width:70em}
+.src a{color:var(--body)}
+
+.cmp thead .mini{display:block;margin-top:12px;background:#fff;border:1px solid var(--gold);border-radius:12px;padding:10px 12px;font-size:14.5px;font-weight:400;color:var(--body);line-height:1.45}
+.cmp thead .mini b{display:block;margin:0 0 2px;font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-text)}
+.cmp thead th.quiet b{font-size:18px;font-weight:500;color:var(--body)}
+.cmp thead th.quiet .pr{font-size:28px;color:var(--body)}
+.cmp td.q2{color:var(--body);font-weight:400}
+.cmp td.q2 .ok::before{background-color:var(--dim)}
+.cmp tr.tot td.q2{font-size:20px;font-weight:500;color:var(--body)}
+.urge{margin:18px auto 0;font-size:17px;color:var(--ink);font-weight:500;max-width:30em}
+
+/* plan cards above the table */
+.plans2{margin-top:30px;display:grid;grid-template-columns:minmax(0,1fr);gap:16px;max-width:720px}
+.febline{margin-top:16px;max-width:720px;border:1px dashed var(--hair-2);border-radius:18px;padding:16px 20px;font-size:17px;color:var(--body);line-height:1.5}
+.febline b{color:var(--ink)}
+.yourpart{margin-top:22px;max-width:720px;background:var(--gold-soft);border-radius:20px;padding:20px 24px}
+.yourpart h3{font-size:21px}.yourpart ul{margin:10px 0 0;padding-left:20px;display:grid;gap:6px;color:var(--body);font-size:17px}
+details.more{margin-top:8px}details.more>summary{font-size:18px;font-weight:600;color:var(--ink);padding:14px 0;cursor:pointer}
+.pl .pr{font-size:46px}
+.pl{background:#fff;border:1px solid var(--hair);border-radius:24px;padding:28px;display:grid;gap:12px;align-content:start}
+.pl.main{border:2px solid var(--gold);box-shadow:0 20px 44px -30px rgba(17,21,14,.35)}
+.pl .pill{justify-self:start;font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:5px 10px;border-radius:999px;background:var(--soft);color:var(--muted)}
+.pl.main .pill{background:var(--ink);color:#fff}
+.pl h3{font-size:26px;letter-spacing:-.02em}
+.pl .was{font-size:15.5px;color:var(--body)}
+.pl .was s{color:var(--muted)}
+.pl .only{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-text)}
+.pl .pr{font-size:54px;font-weight:600;letter-spacing:-.035em;color:var(--ink);line-height:1}
+.pl .pr small{font-size:17px;font-weight:400;color:var(--muted);letter-spacing:0}
+.pl .sub{font-size:17px;color:var(--body);line-height:1.5}
+.pl .mini{background:var(--gold-soft);border-radius:14px;padding:12px 16px;font-size:16px;color:#0A3D24;line-height:1.5}
+.pl .mini b{display:block;font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-text);margin-bottom:2px}
+.pl .btn{margin-top:6px;justify-self:start}
+.pl.quiet h3{font-size:22px;font-weight:500;color:var(--body)}
+.pl.quiet .pr{font-size:38px;color:var(--body)}
+.cmp thead th{padding:16px 20px;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);vertical-align:bottom}
+.cmp thead th.main{color:var(--gold-text);box-shadow:inset 0 4px 0 var(--gold)}
+.cmp td.val a{display:block;margin-top:4px;font-size:14px;font-weight:600;color:var(--gold-text);text-decoration:none}
+.evid li:target{background:var(--gold-soft);border-radius:8px}
+.evid{margin-top:16px;background:#fff;border:1px solid var(--hair);border-radius:18px;padding:6px 22px}
+.evid summary{padding:14px 0;font-size:17px}
+.evid ol{margin:0 0 16px;padding-left:22px;display:grid;gap:10px;font-size:15.5px;color:var(--body);line-height:1.55}
+.evid q{color:var(--ink)}
+.evid a{color:var(--gold-text)}
+.dmex{margin-top:16px;display:grid;grid-template-columns:260px 1fr;gap:22px;align-items:center;max-width:44em}
+.dmex img{width:260px;height:auto;border-radius:22px;border:1px solid var(--hair);display:block}
+.dmex p{font-size:16.5px;color:var(--body);line-height:1.55}
+@media (max-width:900px){.plans2{grid-template-columns:minmax(0,1fr)}.dmex{grid-template-columns:1fr;justify-items:start}}
+@media print{.plans2{grid-template-columns:minmax(0,1fr)!important}.pl{padding:16px;break-inside:avoid}.pl .pr{font-size:26pt}.pl .btn{display:none!important}.evid{break-inside:auto}.dmex{grid-template-columns:120px 1fr!important;gap:14px}.dmex img{width:120px;border-radius:12px}}
+
+/* guarantee: a light document box, no dark band */
+.guar{margin-top:26px;background:#fff;border:2px solid var(--gold);border-radius:24px;padding:clamp(26px,4vw,42px);display:grid;gap:14px}
+.guar h3{font-size:clamp(26px,3.2vw,36px);line-height:1.15;letter-spacing:-.025em;max-width:22em}
+.guar h3 span{color:var(--green-head)}
+.guar ul{margin:6px 0 0;padding:0;list-style:none;display:grid;gap:10px;max-width:48em}
+.guar li{position:relative;padding-left:32px;color:var(--body);font-size:17.5px;line-height:1.5}
+.guar li::before{content:"";position:absolute;left:0;top:3px;width:20px;height:20px;border-radius:50%;background:var(--green-head) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Cpath d='M6 11.5l3.2 3.2L16 8' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/20px no-repeat}
+
+/* break-even */
+.be{margin-top:26px;background:#fff;border:1px solid var(--hair);border-radius:24px;padding:clamp(24px,3.4vw,36px);display:grid;gap:16px}
+.be h3{font-size:24px;letter-spacing:-.02em}
+.be .ctl{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:20px;align-items:end}
+.be label{display:block;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.be select{width:100%;height:50px;border-radius:12px;border:1px solid var(--hair-2);background:#fff;font:500 17px var(--sans);color:var(--ink);padding:0 12px}
+.be input[type=range]{width:100%;accent-color:var(--green-head);height:28px}
+.be .out{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.be .out div{background:var(--soft);border-radius:16px;padding:16px 18px}
+.be .out b{display:block;font-size:30px;font-weight:600;letter-spacing:-.03em;color:var(--ink);line-height:1.1;font-variant-numeric:tabular-nums}
+.be .out span{display:block;font-size:15px;color:var(--body);margin-top:6px}
+.be .out div.pos b{color:var(--green-head)}
+.be .static{display:none}
+
+/* detail */
+.dt{margin-top:30px;display:grid;gap:16px}
+.dcard{background:#fff;border:1px solid var(--hair);border-radius:24px;padding:28px;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:28px;align-items:start}
+.dcard .k{font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-text)}
+.dcard h3{font-size:25px;letter-spacing:-.02em;margin-top:6px}
+.dcard .lbl{font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:16px}
+.dcard p{font-size:17.5px;line-height:1.62;color:var(--body);margin-top:6px}
+.dcard .ex{background:var(--gold-soft);border-radius:18px;padding:20px 22px;align-self:start;margin-top:6px}
+.dcard .ex .lbl{margin-top:0;color:var(--gold-text)}
+.dcard .ex p{color:#0A3D24;font-size:17px}
+
+/* per-site cards */
+.sites{margin-top:16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.site{background:#fff;border:1px solid var(--hair);border-radius:24px;padding:26px;display:grid;gap:12px;align-content:start}
+.site h3{font-size:20px;overflow-wrap:anywhere}
+.site .what{font-size:16px;color:var(--body)}
+.site ul{margin:0;padding-left:20px;display:grid;gap:7px;font-size:16.5px;color:var(--body);line-height:1.5}
+.pick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:4px}
+.pick label{position:relative;display:block;cursor:pointer}
+.pick input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.pick span{display:block;text-align:center;padding:11px 6px;border-radius:12px;border:1px solid var(--hair-2);font-size:15.5px;font-weight:500;color:var(--ink);background:#fff}
+.pick input:checked+span{background:var(--ink);color:#fff;border-color:var(--ink)}
+.pick input:focus-visible+span{outline:3px solid rgba(34,209,111,.55);outline-offset:2px}
+.levels{margin-top:28px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.levels div{background:var(--soft);border-radius:16px;padding:16px 18px}
+.levels b{display:block;color:var(--ink);font-size:17px}
+.levels span{display:block;font-size:15.5px;color:var(--body);margin-top:4px;line-height:1.5}
+.picksum{margin-top:18px;font-size:16px;color:var(--body)}
+
+/* after you pay */
+.comm{grid-template-columns:repeat(3,minmax(0,1fr))}
+.steps4{margin-top:28px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.steps4 .card{display:grid;gap:10px;align-content:start}
+.steps4 .num{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--ink);color:#fff;font-weight:600;font-size:15px}
+.steps4 h3{font-size:19px}
+
+@media (max-width:900px){
+  .works,.take,.topics,.nexts,.sites,.levels,.be .ctl,.be .out,.toc{grid-template-columns:1fr}
+  .comm{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .steps4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dcard{grid-template-columns:1fr;padding:22px}
+  .tb th,.tb td{display:block;width:auto!important}
+  .tb tbody th{border-bottom:0;padding-bottom:2px}
+  .tb tbody td{padding-top:4px}
+  .tb thead{display:none}
+}
+@media (max-width:560px){
+  .steps4,.comm{grid-template-columns:1fr}
+  .work{grid-template-columns:1fr;justify-items:center;text-align:center}
+  .path .st{grid-template-columns:44px 1fr;gap:14px}
+  .path .n{width:44px;height:44px;font-size:17px}
+  .path .st::before{left:21px;top:44px}
+}
+
+/* ---------- phone ---------- */
+html,body{overflow-x:clip}   /* 'hidden' on both turns body into a scroll box and the sticky top bar stops sticking */
+@media screen and (max-width:760px){
+  .btn:not(.sm){white-space:normal;height:auto;min-height:56px;padding:13px 22px;text-align:center;line-height:1.3}
+  details{padding:8px 0}
+  summary{min-height:48px;align-items:center;padding:6px 0}
+  .evid summary{padding:6px 0}
+  .pl{padding:22px 20px;min-width:0}
+  .pl .pr{font-size:46px}
+  .pl .btn{justify-self:stretch}
+  .guar{padding:24px 20px}
+  .nexts div{padding:20px}
+  .dmex img{width:min(260px,100%)}
+  /* the plan table becomes one card per row: no sideways scrolling */
+  .cmpwrap{overflow:visible;border:0;background:none;border-radius:0;margin-top:22px}
+  .cmp{display:block;min-width:0}
+  .cmp thead{display:none}
+  .cmp tbody{display:grid;gap:12px}
+  .cmp tr{display:block;background:#fff;border:1px solid var(--hair);border-radius:20px;overflow:hidden}
+  .cmp tr.grp{background:none;border:0;border-radius:0;margin-top:14px}
+  .cmp tr.grp th{display:block;background:none;padding:0 4px}
+  .cmp tbody th,.cmp td{display:block;width:auto;border-bottom:0}
+  .cmp tbody th{padding:18px 18px 14px}
+  .cmp tbody th span{font-size:16px}
+  .cmp td{padding:12px 18px;border-top:1px solid var(--hair)}
+  .cmp td::before{content:attr(data-l);display:block;font-size:12.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+  .cmp td.yes::before{color:var(--gold-text)}
+  .cmp td.val:empty{display:none}
+  .cmp td.val a{display:flex;align-items:center;min-height:44px;padding:0;margin-top:2px;font-size:15px}
+  .pl .mini b{font-size:13px}
+  .cmp tr.tot{border:2px solid var(--ink)}
+  .cmp tr.tot th,.cmp tr.tot td{border-top:0;padding-top:16px;padding-bottom:16px}
+  .cmp tr.tot td{border-top:1px solid var(--hair)}
+  /* stacked tables get their column names back as small labels */
+  .tb td[data-l]::before{content:attr(data-l);display:block;font-size:12.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-text);margin-bottom:3px}
+  .tb td[data-l]{padding-top:12px}
+  .tb tr:last-child td[data-l]:not(:last-child){border-bottom:1px solid var(--hair)}
+}
+
+/* PDF: Chrome prints at about 680 px wide, so the phone rules above would apply. Force the desktop grids back. */
+@media print{
+  @page{size:A4;margin:14mm 12mm 18mm;
+    @bottom-center{content:"Scope BEJ-2026-0123 · Dr. Judy Rosenberg · issued 22 Nov 2026 · BEJÚ Creative · page " counter(page) " of " counter(pages);font-family:Geist,Helvetica,Arial,sans-serif;font-size:8pt;color:#646C5C}}
+  body{font-size:10.5pt}
+  .facts{grid-template-columns:repeat(3,1fr)!important}
+  .facts div+div{border-left:1px solid var(--hair)!important;border-top:0!important}
+  .head{break-inside:avoid}
+  #detail,#sites{break-before:page}
+  .cmp tr.grp{break-after:avoid}
+  .site h3{font-size:11.5pt;word-break:normal;overflow-wrap:anywhere}
+  .steps4 h3{font-size:10.5pt}.steps4 .card p{font-size:9pt}
+  section{padding:14px 0!important;border:0}
+  .band{background:#fff}
+  .noprint,.toc,.pick,.picksum,.be .ctl,.be .out,.phone{display:none!important}
+  .be .static{display:table}
+  .hero{padding:18px 0 6px}
+  .hero h1{font-size:24pt}
+  h2{font-size:17pt}
+  .wrap,.wrapw{width:100%}
+  .take,.topics,.nexts,.sites,.works{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .levels,.comm{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .steps4{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  .dcard{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)!important;padding:14px 16px;gap:16px}
+  .work{grid-template-columns:1fr!important}
+  .tb th,.tb td{display:table-cell!important;padding:9px 12px;font-size:9.5pt}
+  .tb thead{display:table-header-group!important}
+  .tb tbody th{border-bottom:1px solid var(--hair)!important}
+  .cmpwrap{overflow:visible;border-radius:12px}
+  .cmp{min-width:0;font-size:9pt}
+  .cmp th,.cmp td{padding:8px 10px}
+  .cmp thead{display:table-row-group}
+  .cmp thead tr,.cmp tr.grp{break-after:avoid}
+  .plans2{break-after:auto}
+  .cmp thead th{padding:12px 10px}
+  .cmp thead b{font-size:11.5pt;margin-top:8px}
+  .cmp thead .sub,.cmp thead .was{font-size:8.5pt}
+  .cmp thead .only{font-size:7pt}
+  .cmp thead .pill{font-size:7pt}
+  .cmp thead .pr{font-size:20pt}
+  .cmp tbody th b{font-size:10pt}.cmp tbody th span{font-size:8.5pt}
+  .cmp td.val{font-size:8.5pt}
+  .cmp tr.tot td{font-size:13pt}
+  .take div,.topic,.nexts div,.site,.dcard,.work,.guar,.be,.path .st,.tb tr,.cmp tr,.steps4 .card,.comm .card,.levels div,.purpose,.twice{break-inside:avoid}
+  .dcard p,.topic ul,.topic .q,.topic .do,.take span,.site ul,.path p,.guar li,.nexts ul{font-size:9.8pt}
+  .dcard h3{font-size:14pt}.topic h4{font-size:12.5pt}
+  .subh,h2,.head{break-after:avoid}
+  a{text-decoration:none}
+}
+</style>
+<style>
+/* v9: one plan, one width */
+.plan1{margin-top:30px;display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:18px;align-items:stretch}
+.plan1 .pl{height:100%}
+.incl{background:#fff;border:1px solid var(--hair);border-radius:24px;padding:26px 28px;display:grid;gap:18px;align-content:start}
+.incl h4{margin:0;font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-text)}
+.incl ul{margin:8px 0 0;padding:0;list-style:none;display:grid;gap:8px}
+.incl li{position:relative;padding-left:30px;font-size:16.5px;line-height:1.45;color:var(--ink)}
+.incl li::before{content:"";position:absolute;left:0;top:1px;width:20px;height:20px;border-radius:50%;background:var(--green-head) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Cpath d='M6 11.5l3.2 3.2L16 8' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/20px no-repeat}
+.mypart{margin-top:auto;background:var(--gold-soft);border-radius:18px;padding:18px 20px}
+.mypart h4{margin:0;font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-text)}
+.mypart ul{margin:8px 0 0;padding-left:20px;display:grid;gap:5px;color:var(--ink);font-size:16px}.mypart p{margin:8px 0 0;color:var(--body);font-size:15px}
+.plan1 .pl{display:flex;flex-direction:column;gap:12px}
+.plan1 .pl .pill,.plan1 .pl .btn{align-self:flex-start}
+.why{margin-top:26px;max-width:46em;border:1px solid var(--gold);background:var(--gold-soft);border-radius:18px;padding:20px 24px}
+.why b{display:block;color:#0A3D24;font-size:19px;font-weight:600;margin-bottom:6px}.why p{margin:0;color:#0A3D24;font-size:16.5px;line-height:1.55}
+.priv{margin-top:26px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.priv div{background:#fff;border:1px solid var(--hair);border-radius:20px;padding:20px 22px}
+.priv b{display:block;color:var(--ink);font-size:18px;font-weight:600}.priv span{display:block;color:var(--body);font-size:16px;margin-top:4px;line-height:1.5}
+.later{margin-top:18px;max-width:46em;color:var(--body);font-size:17px}
+.tierhead{margin-top:34px}.tierhead h3{font-size:22px}.tierhead p{margin:6px 0 0;color:var(--body);font-size:16.5px}
+.both{margin-top:12px;color:var(--body);font-size:16px}
+.cmp tbody th{font-weight:600;color:var(--ink)}
+.cmp td .no{font-size:20px;color:var(--muted)}
+details.more{margin-top:10px}details.more>summary{font-size:18px;font-weight:600;color:var(--ink);padding:14px 0;cursor:pointer}
+@media (max-width:900px){.plan1,.priv{grid-template-columns:minmax(0,1fr)}.incl{padding:22px 20px}.mypart{margin-top:6px}}
+@media print{.plan1{grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr)!important}.priv{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .plan1,.incl,.mypart,.priv div,.why{break-inside:avoid}.incl li,.priv span{font-size:9.8pt}.plan1 .pl .btn{display:none!important}}
+</style>
+</head>
+<body>
+<nav class="nav" aria-label="Scope">
+  <div class="wrap">
+    <a class="brand" href="https://bejucreative.digital/" aria-label="BEJÚ Creative"><img src="https://bejucreative.digital/assets/beju-mark-640.png" alt="BEJÚ Creative" width="44" height="26"></a>
+    <div class="navbtns noprint">
+      <a class="btn ghost sm" href="#plan"><span class="lg">See the plan</span><span class="sh">Plan</span></a>
+      <a class="btn ghost sm" href="Dr-Judy-Plan-BEJU-Creative.pdf" download><span class="lg">Download PDF</span><span class="sh">PDF</span></a>
+      <a class="btn ghost sm site-btn" href="https://bejucreative.digital/">Visit our website</a>
+      <a class="btn primary sm" href="https://cal.com/beju-creative/15min-call" target="_blank" rel="noopener">Book a call</a>
+    </div>
+  </div>
+</nav>
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Scope of work · Dr. Judy WTFreud!</p>
+    <h1 style="margin-top:14px">Content engine strategy <span class="gold">for Dr. Judy</span></h1>
+    <p class="ans"><b>$1,500 a month, replacing your $300 plan.</b> We run your videos, your websites and your funnels as one team. You stay in control of every step.</p>
+    <div class="btns noprint"><a class="btn primary" href="#plan">See the plan</a><a class="btn ghost" href="Dr-Judy-Plan-BEJU-Creative.pdf" download>Download PDF</a></div>
+    <div class="meta">
+      <span>Prepared for <b>Dr. Judy Rosenberg, Psychological Healing Center</b></span>
+      <span>Scope <b>BEJ-2026-0123</b></span>
+      <span>Issued <b>22 Nov 2026</b></span>
+      <span>Valid until <b>6 Dec 2026</b></span>
+      <span>Your contact <b>Benas, Co-founder</b></span>
+    </div>
+    <div class="toc noprint"><a href="#plan"><span>01</span>Your plan</a><a href="#privacy"><span>02</span>Safety and HIPAA</a><a href="#how"><span>03</span>How it works</a><a href="#sites"><span>04</span>Your websites</a><a href="#road"><span>05</span>Your first month</a><a href="#terms"><span>06</span>The terms</a><a href="#detail"><span>07</span>Every detail</a><a href="#call"><span>08</span>Our call</a><a href="#trust"><span>09</span>Who we work with</a><a href="#faq"><span>10</span>Questions</a></div>
+  </div>
+</header>
+
+<section style="padding-top:0" aria-label="The plan at a glance">
+  <div class="wrap facts">
+    <div><b>One plan</b><span>$1,500 a month, no setup fee</span></div>
+    <div><b>Your websites</b><span>two optimised, booking on the third</span></div>
+    <div><b>At your pace</b><span>Nothing changes without your OK.</span></div>
+  </div>
+</section>
+
+<section class="band" id="plan" aria-labelledby="plan-h">
+  <div class="wrap">
+    <div class="head"><p class="eyebrow"><span class="secno">01</span>Your plan</p><h2 id="plan-h">Your plan, <span class="gold">and room to grow</span></h2>
+      <p class="lede">It replaces your $300 Shorts plan. Month-to-month, cancel any time. Tool costs are covered by us.</p></div>
+    <div class="plan1">
+      <div class="pl main">
+        <span class="pill">Recommended for you</span>
+        <h3>Your two programs, run for you</h3>
+        <p class="pr">$1,500 <small>a month</small></p>
+        <p class="sub">It replaces your $300 plan. No setup fee. The 20 Shorts still owed from your current plan come on top, at no extra cost.</p>
+        <a class="btn primary noprint" href="https://buy.stripe.com/9B6cN59n49IMgpU5Qu5EY1d?client_reference_id=scope-dr-judy-plan&amp;prefilled_email=drjudyrosenberg%40gmail.com" target="_blank" rel="noopener">Start this week · $1,500&nbsp;a&nbsp;month</a>
+        <p class="small">Month-to-month. Cancel any time by email.</p>
+        <div class="mypart"><h4>Your part each month</h4><ul><li>Approve the first video in each new style.</li><li>Send us any new recordings.</li><li>Tell us what matters most each month.</li></ul><p>That's it. We do the rest.</p></div>
+      </div>
+      <div class="incl">
+        <div><h4>Your videos</h4><ul><li>60 new Shorts a month, from your long videos, in your look</li><li>Plus the 20 Shorts still owed from your current plan, at no extra cost</li><li>Posted every day on Instagram, TikTok, YouTube Shorts and Facebook</li></ul></div>
+        <div><h4>Your websites</h4><ul><li>healingnarcissisticwounds.com and healingchildhoodwounds.com, optimised for sign-ups and sales</li><li>Your free video on each site, with the full introduction in exchange for an email address</li><li>A booking calendar for free consultations, on these two sites and on psychologicalhealingcenter.com</li></ul></div>
+        <div><h4>Your funnels and emails</h4><ul><li>Two keyword funnels, one for each program, built on your free video</li><li>Three welcome emails for every new contact</li><li>Two emails a month to your whole list</li></ul></div>
+        <div><h4>Working with us</h4><ul><li>A full report every week</li><li>Strategy calls with Benas and Simas, whenever you want one</li><li>Every tool paid for and run by our team</li></ul></div>
+      </div>
+    </div>
+    <div class="tierhead"><h3>Room to grow: the higher tier plan</h3><p>When you want more, you move up from your next billing date. Everything we built keeps running.</p></div>
+    <div class="cmpwrap"><table class="cmp">
+      <thead><tr><th>What changes</th><th class="main">Your plan · $1,500 a month</th><th class="quiet">Higher tier plan · $2,500 a month</th></tr></thead>
+      <tbody>
+        <tr><th scope="row"><b>New Shorts a month</b></th><td class="yes" data-l="Your plan · $1,500"><span class="ok"><span>60</span></span></td><td class="q2" data-l="Higher tier plan · $2,500"><span class="ok"><span>60–90</span></span></td></tr>
+        <tr><th scope="row"><b>Your websites</b></th><td class="yes" data-l="Your plan · $1,500"><span class="ok"><span>Your 2 program sites optimised, plus booking on your practice site</span></span></td><td class="q2" data-l="Higher tier plan · $2,500"><span class="ok"><span>All 4: plus your practice and The Gift House, rebuilt</span></span></td></tr>
+        <tr><th scope="row"><b>Keyword funnels</b></th><td class="yes" data-l="Your plan · $1,500"><span class="ok"><span>2, built on your free video</span></span></td><td class="q2" data-l="Higher tier plan · $2,500"><span class="ok"><span>4: plus your practice and The Gift House</span></span></td></tr>
+        <tr><th scope="row"><b>Welcome emails</b></th><td class="yes" data-l="Your plan · $1,500"><span class="ok"><span>3 per funnel</span></span></td><td class="q2" data-l="Higher tier plan · $2,500"><span class="ok"><span>5 per funnel</span></span></td></tr>
+        <tr><th scope="row"><b>Emails to your list</b></th><td class="yes" data-l="Your plan · $1,500"><span class="ok"><span>2 a month</span></span></td><td class="q2" data-l="Higher tier plan · $2,500"><span class="ok"><span>Every week</span></span></td></tr>
+        <tr><th scope="row"><b>Your show, handled</b></th><td class="yes" data-l="Your plan · $1,500"><span class="no" aria-label="Not included">-</span></td><td class="q2" data-l="Higher tier plan · $2,500"><span class="ok"><span>2 shows a month</span></span></td></tr>
+        <tr><th scope="row"><b>Book launch and webinars</b></th><td class="yes" data-l="Your plan · $1,500"><span class="no" aria-label="Not included">-</span></td><td class="q2" data-l="Higher tier plan · $2,500"><span class="ok"><span>Included</span></span></td></tr>
+        <tr><th scope="row"><b>Our 30-day promise</b></th><td class="yes" data-l="Your plan · $1,500"><span class="no" aria-label="Not included">-</span></td><td class="q2" data-l="Higher tier plan · $2,500"><span class="ok"><span>Included</span></span></td></tr>
+      </tbody>
+    </table></div>
+    <p class="both">In both plans: daily posting on all four channels, a booking calendar, a full report every week, strategy calls whenever you want one, and every tool paid by us.</p>
+  </div>
+</section>
+
+<section id="privacy" aria-labelledby="privacy-h">
+  <div class="wrap">
+    <div class="head"><p class="eyebrow"><span class="secno">02</span>Safety and HIPAA</p><h2 id="privacy-h">Safety, privacy <span class="gold">and HIPAA</span></h2>
+      <p class="lede">You don't need an IT person, and your patients' information stays out of our work. We only work on your marketing: videos, posts, and the sign-ups of people who ask for your free video.</p></div>
+    <div class="priv">
+      <div><b>No IT person needed</b><span>Our team sets up and runs every tool for you. Nothing for you to install or code.</span></div>
+      <div><b>Built with HIPAA in mind</b><span>We never collect, see or store patient health information. That stays in your practice systems.</span></div>
+      <div><b>Name and email only</b><span>The sign-up asks for a first name and an email address. Never anything about health.</span></div>
+      <div><b>No patient records</b><span>We never see or store patient records.</span></div>
+      <div><b>Kept separate</b><span>Our tools stay separate from your practice systems. Happy to walk you, or anyone you work with, through them.</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="how" aria-labelledby="how-h">
+  <div class="wrap">
+    <div class="head"><p class="eyebrow"><span class="secno">03</span>How it works</p><h2 id="how-h">From one video to a <span class="gold">program sale</span></h2>
+      <p class="lede">Built around your own lead magnet: a short free video about your program, then the full introduction in exchange for an email address.</p></div>
+    <div class="path">
+      <div class="st"><span class="n">1</span><div><h3>Someone sees your Short</h3><p>It opens on a question in yellow. They stop scrolling to hear your answer.</p></div></div>
+      <div class="st"><span class="n">2</span><div><h3>They comment one word</h3><p>Your page sends them a private message within seconds, with your short free video about the program. It asks them to follow you.</p><div class="dmex"><img src="dm-example.jpg" alt="Example of an automatic Instagram message with a free guide and a button" width="260" height="466" loading="lazy" decoding="async"><p><b style="color:var(--ink)">An example from another creator's page.</b> The message is a card with the free gift and one button. A friendly follow-up comes after it, here an invitation to a free class. Yours gets your own words, your free video and your look. We tailor every line with you.</p></div></div></div>
+      <div class="st"><span class="n">3</span><div><h3>They join your list for the full introduction</h3><p>They type their email address, and the full introduction arrives. Their address goes into a list that belongs to you.</p></div></div>
+      <div class="st"><span class="n">4</span><div><h3>Your emails stay with them</h3><p>Three short welcome emails in your voice, then two emails a month.</p></div></div>
+      <div class="st"><span class="n">5</span><div><h3>They take the next step</h3><p>They buy Healing Narcissistic Wounds or Healing Childhood Wounds, or book a free consultation at a time you opened.</p></div></div>
+    </div>
+    <div class="why"><b>Why your video works as a lead magnet</b><p>People see and hear you before they buy, so trust starts early. And everyone who asks for the full introduction has already shown interest in that program. Your book can still become a second gift later.</p></div>
+  </div>
+</section>
+
+<section id="sites" aria-labelledby="sites-h">
+  <div class="wrap">
+    <div class="head"><p class="eyebrow"><span class="secno">04</span>Your websites</p><h2 id="sites-h">Your websites, <span class="gold">optimised</span></h2>
+      <p class="lede">You're rebuilding your site yourself right now. We work on the version you build, and nothing goes live without your OK. This is what we optimise on each site. Your practice site gets the booking calendar.</p></div>
+    <div class="sites">
+      <div class="site"><h3>healingnarcissisticwounds.com</h3><p class="what">Your main site, and your first funnel.</p><ul><li>Your free video plays on the page. The full introduction asks for an email address.</li><li>The “2-Minute Quiz” button leads to a working quiz, or comes off until the quiz is ready.</li><li>Your program, its price and one clear buy button show before any scrolling.</li><li>A booking calendar for the free consultation, in the hours you open.</li><li>Fast and easy to use on a phone.</li></ul></div>
+      <div class="site"><h3>healingchildhoodwounds.com</h3><p class="what">Your second program, and your second funnel.</p><ul><li>Its own title and description, so Google stops reading it as a copy of your other site.</li><li>One page and one price for the program, wherever people come from.</li><li>Your free video and the email sign-up, the same as on your main site.</li><li>Reviews next to the buy button.</li><li>Fast and easy to use on a phone.</li></ul></div>
+      <div class="site"><h3>psychologicalhealingcenter.com</h3><p class="what">Your practice site. Booking only, in this plan.</p><ul><li>A booking calendar for the free 15-minute consultation, in the hours you open.</li><li>No more calling each person back.</li></ul></div>
+    </div>
+  </div>
+</section>
+
+
+<section class="band" id="road" aria-labelledby="road-h">
+  <div class="wrap">
+    <div class="head"><p class="eyebrow"><span class="secno">05</span>Your first month</p><h2 id="road-h">We start gently, <span class="gold">step by step</span></h2>
+      <p class="lede">Nothing changes on your sites or your accounts without your OK. Here is the first month.</p></div>
+    <table class="tb">
+      <tbody>
+        <tr><th scope="row">Day 1</th><td>You pay the first month. We book a call with you, and a short call with your assistant to see how your accounts are set up today.</td></tr>
+        <tr><th scope="row">Week 1</th><td>Posting starts as soon as your accounts are connected. Your first funnel, for Healing Narcissistic Wounds, comes to you for approval and goes live. Your first weekly report arrives. Your assistant keeps any part of her work you want her to keep.</td></tr>
+        <tr><th scope="row">Start of week 2</th><td>Your second funnel goes live, for Healing Childhood Wounds. The welcome emails start, and the booking calendar opens on all three sites.</td></tr>
+        <tr><th scope="row">Weeks 2–3</th><td>Your first email to your list goes out. The site work continues, one change at a time, each with your OK.</td></tr>
+        <tr><th scope="row">Week 4</th><td>A call to look at the first month together and plan the next one.</td></tr>
+      </tbody>
+    </table>
+    <p class="later">On the higher tier plan we add your show, your practice and The Gift House, your book launch and webinars. You decide when.</p>
+  </div>
+</section>
+
+<section id="terms" aria-labelledby="terms-h">
+  <div class="wrap">
+    <div class="head"><p class="eyebrow"><span class="secno">06</span>The terms</p><h2 id="terms-h">The terms, <span class="gold">in plain words</span></h2></div>
+    <table class="tb">
+      <tbody>
+        <tr><th scope="row">Billing</th><td>$1,500 a month, paid in advance, by card or invoice. There is no setup fee.</td></tr>
+        <tr><th scope="row">Your current plan</th><td>This plan replaces your $300 Shorts plan. The 20 Shorts still owed from it come on top, at no extra cost.</td></tr>
+        <tr><th scope="row">Cancel</th><td>Any time before your next billing date, by email. You keep everything delivered. No refunds on delivered work, except the 30-day promise in the higher tier plan.</td></tr>
+        <tr><th scope="row">Moving up</th><td>Move up to the higher tier plan from your next billing date, by email. Everything we built keeps running. There is no setup fee.</td></tr>
+        <tr><th scope="row">Tools</th><td>Our team pays for and runs every tool while the plan runs. If you stop, you choose: we hand the tool accounts over to you and you pay for them from then on, or we send you your full email list as a file and close them.</td></tr>
+        <tr><th scope="row">What's yours</th><td>Your social accounts, your email list, your videos and your websites.</td></tr>
+        <tr><th scope="row">Your word is final</th><td>If you don't like something, we change it. If you're not sure about something, leave it to us.</td></tr>
+        <tr><th scope="row">Approvals</th><td>You approve the first video in each new style, every email and every change to your sites. If we don't hear from you in 48 hours, videos in a style you approved go out on schedule. Emails and site changes wait for you.</td></tr>
+        <tr><th scope="row">Replies</th><td>You get an answer the same day, every day of the week.</td></tr>
+        <tr><th scope="row">A failed payment</th><td>We tell you at once and keep working for 7 days. After that, posting and the funnels pause until it's fixed.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="band" id="detail" aria-labelledby="detail-h">
+  <div class="wrap">
+    <div class="head"><p class="eyebrow"><span class="secno">07</span>Every detail</p><h2 id="detail-h">How each part works, <span class="gold">step by step</span></h2>
+      <p class="lede">Each card says what we do, what your part is, and gives one example.</p></div>
+    <details class="more"><summary>See every detail</summary>
+    <div class="dt">
+      <div class="dcard"><div><span class="k">01</span><h3>New videos every day</h3><p class="lbl">What we do</p><p>We make 60 new Shorts a month from your long videos. We mark the lines people will relate to most. Each one becomes a video of 30 to 50 seconds. It opens on a yellow question while you start talking, keeps your WTFreud! lettering, and closes on your end card.</p><p class="lbl">Your part</p><p>Approve the first video in each style. After that, you only tell us when something feels wrong.</p></div>
+        <div class="ex"><p class="lbl">Example</p><p>From your talk on why we love people who keep hurting us, one Short opens on “Why do we love people who hurt us?”</p></div></div>
+      <div class="dcard"><div><span class="k">02</span><h3>Posted on all your channels</h3><p class="lbl">What we do</p><p>We post your videos on Instagram, TikTok, YouTube Shorts and Facebook, every day, on a calendar you can see. Each post gets its own title, description and hashtags.</p><p class="lbl">Your part</p><p>Give us access once, through your assistant. We never ask for a password by email.</p></div>
+        <div class="ex"><p class="lbl">Example</p><p>Monday's video goes out on all four channels, each with its own title and hashtags.</p></div></div>
+      <div class="dcard"><div><span class="k">03</span><h3>Your two funnels</h3><p class="lbl">What we do</p><p>Each video invites people to comment one word. Your page sends them a private message within seconds, with your short free video about the program. It asks them to follow you, then for their email address, and the full introduction arrives. One funnel for each program.</p><p class="lbl">Your part</p><p>Choose the word, and approve the message once.</p></div>
+        <div class="ex"><p class="lbl">Example</p><p>A viewer comments HEAL at 11 pm. One minute later they follow you, they have your full introduction, and you have their email address.</p></div></div>
+      <div class="dcard"><div><span class="k">04</span><h3>Welcome emails and emails to your list</h3><p class="lbl">What we do</p><p>Every new contact gets three short welcome emails in their first two weeks: your full introduction, one idea from your work, then the invitation to the program or a free consultation. Your whole list also gets two short emails a month from you.</p><p class="lbl">Your part</p><p>Approve the welcome emails once, and each list email with one reply.</p></div>
+        <div class="ex"><p class="lbl">Example</p><p>Day 1: the full introduction. Day 5: one idea from your work. Day 10: the invitation.</p></div></div>
+      <div class="dcard"><div><span class="k">05</span><h3>Consultation booking</h3><p class="lbl">What we do</p><p>Today your free consultation is a form, and someone has to call each person back. We add a calendar to your two program sites and your practice site. People pick a time themselves, and reminders go to them before the call.</p><p class="lbl">Your part</p><p>Open the hours that work for you. You can change them whenever you like.</p></div>
+        <div class="ex"><p class="lbl">Example</p><p>You open Tuesdays and Thursdays from 2 to 4. A new contact books Thursday at 2:30, and it lands in your calendar.</p></div></div>
+      <div class="dcard"><div><span class="k">06</span><h3>Your two websites, optimised</h3><p class="lbl">What we do</p><p>You're rebuilding your site yourself right now. We work on the version you build and optimise both program sites for sign-ups and sales: the free video and email sign-up, a clear program, price and buy button, the booking calendar, the Google basics, and speed on a phone.</p><p class="lbl">Your part</p><p>Give us access to the site you're building, and OK each change.</p></div>
+        <div class="ex"><p class="lbl">Example</p><p>On healingnarcissisticwounds.com, your free video asks for an email address first. From then on, every visitor who wants the full introduction joins your list.</p></div></div>
+      <div class="dcard"><div><span class="k">07</span><h3>Weekly reports and strategy calls</h3><p class="lbl">What we do</p><p>Every week you get a full report: what we posted, which videos did best, new followers and email addresses, and what comes next. Whenever you want a strategy call, we plan the coming weeks together.</p><p class="lbl">Your part</p><p>Pick the call times that suit you, and tell us what matters most that month.</p></div>
+        <div class="ex"><p class="lbl">Example</p><p>“This week: 14 videos posted, 31 new email addresses, best video: the question about empathy.” These numbers only show the format.</p></div></div>
+    </div></details>
+  </div>
+</section>
+
+<section id="call" aria-labelledby="call-h">
+  <div class="wrap">
+    <div class="head"><p class="eyebrow"><span class="secno">08</span>Call summary</p><h2 id="call-h">Our call on <span class="gold">20 November</span></h2>
+      <p class="lede">You and Benas spoke for almost an hour. This is what we took from it, and from your email after it.</p></div>
+    <p class="purpose"><b>Meeting purpose</b>Agree one consistent look for your videos, and find out how those videos can bring more people to your programs.</p>
+    <h3 class="subh">Key takeaways</h3>
+    <div class="take">
+      <div><b>A new look for every video</b><span>A question in yellow first, then you talking, then one end card with healingnarcissisticwounds.com, “Call now for information” and 310-651-7644.</span></div>
+      <div><b>Studio footage first</b><span>Your professional recordings, like the interview where you host Rebecca Zung, look best. We make new clips from them.</span></div>
+      <div><b>More than editing</b><span>You asked if we can also post for you, capture emails and automate the work, and start with a small step.</span></div>
+      <div><b>A gentle start</b><span>After the call you asked to start step by step, around $1,500, with two or three sites first. This page is that plan.</span></div>
+    </div>
+    <details class="more"><summary>See the full call notes</summary>
+    <div class="topics">
+      <div class="topic"><h4>Your brand and your videos</h4><ul><li>You want people to recognise your videos at once, in the style of your WTFreud! banner.</li><li>The question comes first, in yellow, while you start talking.</li><li>No cut in the middle of a word.</li><li>Your face sits more in the centre.</li><li>One end card on every video: your website, “Call now for information”, and 310-651-7644.</li></ul>
+        <p class="do"><b>What we do</b>Every video now follows this look. The redone videos are with your assistant.</p></div>
+      <div class="topic"><h4>Your footage</h4><ul><li>Studio recordings look better than webcam recordings.</li><li>Use the interview where you host Rebecca Zung, and keep it about you.</li><li>Your site's welcome video can become a short ad.</li></ul>
+        <p class="do"><b>What we do</b>Two or three clips from each studio recording, with you in the centre of the picture.</p></div>
+      <div class="topic"><h4>Posting and your social accounts</h4><ul><li>You want to spread your videos out, about one a day.</li><li>You asked if we can post on TikTok, Facebook and the others for you.</li><li>You asked what your assistant would still need to do.</li></ul>
+        <p class="do"><b>What we do</b>We post every day on Instagram, TikTok, YouTube Shorts and Facebook. We start alongside your assistant, and what she keeps is your call.</p></div>
+      <div class="topic"><h4>Sales and your email list</h4><ul><li>Business has been slower than you'd like.</li><li>You want emails captured and the work automated.</li><li>Your programs: Healing Narcissistic Wounds at $497, Healing Childhood Wounds at $395.</li></ul>
+        <p class="do"><b>What we do</b>Two funnels, one for each program, built on your own free video. Then your emails follow up.</p></div>
+      <div class="topic"><h4>Your websites</h4><ul><li>You are rebuilding your site yourself.</li><li>A few things on your sites lose visitors today.</li><li>Free consultation requests are more than you can manage.</li></ul>
+        <p class="do"><b>What we do</b>We optimise your two program sites, on the version you build. A booking calendar replaces the call-backs.</p></div>
+    </div></details>
+    <h3 class="subh">Next steps</h3>
+    <div class="nexts">
+      <div><b>BEJÚ Creative</b><ul><li>Redo the four videos in the new look. Done, plus two more.</li><li>Make new clips from your studio interview and your welcome video.</li><li>Put a plan in writing, around your budget. This page is that.</li><li>Book a short call with your assistant, to see how your accounts are set up.</li></ul></div>
+      <div><b>Dr. Judy</b><p class="nx">Small steps. Each one helps us start on day one.</p><ul><li>Read this page, and tell us if the plan fits.</li><li>Watch the redone videos, and tell us if the new look is right.</li><li>Tell us which website builder you use, and give us access to the site you're building.</li><li>Set your Instagram as a business account, linked to your Facebook Page. We can do it with you on the first call.</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<section class="proof" id="trust" aria-labelledby="trust-h">
+  <div class="wrap">
+    <div class="head"><p class="eyebrow"><span class="secno">09</span>Trusted by</p><h2 id="trust-h">Who we already <span class="gold">work with</span></h2></div>
+    <div class="proof-card" style="margin-top:26px">
+      <div class="proof-logos">
+        <a class="proof-item" href="https://www.tiktok.com/@based" target="_blank" rel="noopener"><img src="https://bejucreative.digital/assets/based-wordmark.svg" alt="BASED" width="211" height="48"><span class="tt">View on TikTok ↗</span></a>
+        <a class="proof-item" href="https://www.tiktok.com/@samm.zia" target="_blank" rel="noopener"><span class="proof-wordmark">Sam Zia</span><span class="tt">View on TikTok ↗</span></a>
+      </div>
+      <p class="small" style="max-width:34em"><b style="color:var(--ink)">BASED: 4.6 million followers on TikTok. Sam Zia: 1.1 million.</b> We have run this kind of engine before: daily videos, a funnel behind them, and one team that handles it all.</p>
+      <div class="proof-nums">
+        <div><b>50+</b><span>clients</span></div>
+        <div><b>97%</b><span>stay after the first month</span></div>
+      </div>
+    </div>
+    <div class="works noprint">
+      <div class="work"><div class="phone"><video src="https://bejucreative.digital/assets/sam-zia-preview.mp4" controls playsinline preload="metadata" poster="https://bejucreative.digital/assets/sam-zia.jpg"></video></div>
+        <div><h3>Sam Zia</h3><p>A Short from our work with Sam Zia. Press play to see the opening, the pace and the captions.</p></div></div>
+      <div class="work"><div class="phone"><video src="https://bejucreative.digital/assets/based-preview.mp4" controls playsinline preload="metadata" poster="https://bejucreative.digital/assets/based.jpg"></video></div>
+        <div><h3>BASED</h3><p>A Short from our work with BASED. Your videos get the same care, in your own look.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="after" aria-labelledby="after-h">
+  <div class="wrap">
+    <div class="head"><p class="eyebrow">After you pay</p><h2 id="after-h">We start <span class="gold">the same day</span></h2></div>
+    <div class="steps4">
+      <div class="card"><span class="num">1</span><h3>A call with you</h3><p class="small">We agree what comes first, the word for your first funnel, and anything you want done your way.</p></div>
+      <div class="card"><span class="num">2</span><h3>A short call with your assistant</h3><p class="small">She shows us how your accounts are set up today. We start alongside her, and she keeps what you want her to keep.</p></div>
+      <div class="card"><span class="num">3</span><h3>Posting starts</h3><p class="small">As soon as your accounts are connected, your videos go out every day on all four platforms.</p></div>
+      <div class="card"><span class="num">4</span><h3>Your first funnel, for approval</h3><p class="small">The funnel for Healing Narcissistic Wounds, with your free video, comes to you first. Once you like it, it goes live.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="faq" aria-labelledby="faq-h">
+  <div class="wrap cols">
+    <div class="head"><p class="eyebrow"><span class="secno">10</span>Good to know</p><h2 id="faq-h">Questions</h2></div>
+    <div>
+      <details open><summary>Do I need an IT person? What about HIPAA?</summary><p>No IT person is needed. Our team sets up and runs every tool. We never collect, see or store patient health information. We only work on your marketing: videos, posts, and the sign-ups of people who ask for your free video. They give a first name and an email address, nothing about their health. We never see patient records, and your practice systems stay separate from our tools. Happy to walk you, or anyone you work with, through the tools.</p></details>
+      <details><summary>Who owns my accounts, my websites and my email list?</summary><p>You do. Your social accounts, your websites, your email list and your videos stay yours. We run them for you.</p></details>
+      <details><summary>I'm rebuilding my site myself. Does that work?</summary><p>Yes. We work on the version you build, and every change waits for your OK. Send us the link when it's ready.</p></details>
+      <details><summary>Why do viewers have to follow my page to get the video?</summary><p>So that every person who asks for your free video also becomes a follower. Your audience grows with each comment.</p></details>
+      <details><summary>What happens with my assistant?</summary><p>We start alongside her. She shows us how your accounts are set up, and she keeps any part of her work you want her to keep.</p></details>
+      <details><summary>Can I move to the higher tier plan later?</summary><p>Yes. Email us, and it starts from your next billing date. Everything we built keeps running, and nothing is set up twice. The 30-day promise starts the day you pay for the higher tier plan: if no program sells in those 30 days, you choose one more month free or that month back.</p></details>
+      <details><summary>Do I pay for any software?</summary><p>No. Our team pays for and runs every tool we use for you: the message tool, the email sender and the booking calendar.</p></details>
+      <details><summary>What if I don't like a video?</summary><p>Tell us, and we change it until it's right. Revisions are unlimited.</p></details>
+      <details><summary>Can I cancel?</summary><p>Yes. It's month-to-month. Email us before your next billing date. You keep everything delivered. No refunds on delivered work, except the 30-day promise in the higher tier plan.</p></details>
+    </div>
+  </div>
+</section>
+
+<section class="close" id="start" aria-labelledby="ready">
+  <div class="wrap">
+    <div class="card">
+      <p class="eyebrow">Next step</p>
+      <h2 id="ready" style="margin-top:12px">Ready when you are</h2>
+      <p class="lede">Pay the first month, and we start the same day.</p>
+      <div class="btns noprint">
+        <a class="btn primary" href="https://buy.stripe.com/9B6cN59n49IMgpU5Qu5EY1d?client_reference_id=scope-dr-judy-plan&amp;prefilled_email=drjudyrosenberg%40gmail.com" target="_blank" rel="noopener">Start your plan · $1,500&nbsp;a&nbsp;month</a>
+      </div>
+      <div class="btns noprint" style="margin-top:12px">
+        <a class="btn ghost" href="mailto:ben@getbejucreative.com?subject=Invoice%20for%20Psychological%20Healing%20Center%20(BEJ-2026-0123)">Request an invoice</a>
+        <a class="btn ghost" href="Dr-Judy-Plan-BEJU-Creative.pdf" download>Download PDF</a>
+      </div>
+      <div class="call">
+        <p>Rather talk it through first?</p>
+        <a class="btn ghost" href="https://cal.com/beju-creative/15min-call" target="_blank" rel="noopener">Book a 15-minute call</a>
+      </div>
+      <p class="accept">Paying the first month, by card or invoice, accepts this scope and our <a href="https://bejucreative.digital/terms.html">terms</a>.</p>
+      <p class="terms">Month-to-month. Cancel any time before your next billing date by email. You keep everything delivered. No refunds on delivered work, except the 30-day promise in the higher tier plan. Payments are processed by Stripe. <a href="https://bejucreative.digital/terms.html">Full terms</a></p>
+    </div>
+  </div>
+</section>
+<footer><div class="wrap"><span><img class="foot-mark" src="https://bejucreative.digital/assets/beju-mark-640.png" alt="">BEJÚ Creative · bejucreative.digital</span><span>Scope BEJ-2026-0123 · Questions? Reply to Benas's email.</span></div></footer>
+<script>
+const openAll = () => document.querySelectorAll("details").forEach(d => d.open = true);
+if (location.search.includes("print")) openAll();
+addEventListener("beforeprint", openAll);
+</script>
+</body>
+</html>
