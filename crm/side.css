@@ -863,3 +863,9 @@ button.clc-m{cursor:pointer} button.clc-m:hover{background:var(--tile)}
 /* 11-22: the fix note has its own Send button, right under the box */
 .sd-fixgo{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:-4px 0 12px}
 .sd-fixgo .mut{font-size:12px}
+
+/* 11-22: Expenses "Withdrawn to our banks" (SIMAS) */
+.ex-wd .p strong{display:block;font-family:var(--mono);font-size:24px;font-weight:500;letter-spacing:-.03em;margin:2px 0}
+.ex-wd .p small{display:block}
+.ex-wdbar{display:flex;height:10px;border-radius:99px;overflow:hidden;background:var(--line-2);margin:2px 0 10px;gap:2px}
+.ex-wdbar i{display:block;height:100%;width:var(--w,0%);transition:width .8s var(--ease)} .ex-wdbar .s{background:var(--ink-2)} .ex-wdbar .b{background:var(--orange)}
