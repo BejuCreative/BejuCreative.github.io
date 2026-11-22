@@ -799,18 +799,22 @@ button.clc-m{cursor:pointer} button.clc-m:hover{background:var(--tile)}
 .sd-desc-t{white-space:pre-wrap;font-size:13px;line-height:1.5;color:var(--ink-2);background:var(--card-2,rgba(0,0,0,.03));border:1px solid var(--line);border-radius:12px;padding:10px 12px;max-height:38vh;overflow:auto}
 
 /* ---------- 11-22 Email campaigns (BENAS): overview board in the Home look, "Needs a look", one tile per campaign, side panels.
-   Type: 13 (captions, pills, buttons) · 15 (body, labels, names) · 30 (titles) · 44 / 56 (numbers). Colour = meaning only:
-   green = the A/B winner, amber = a change to make, red = something is wrong, grey = running / neutral. ---------- */
+   Type: 13 (captions, pills, buttons) · 15 (body, labels, names) · 30 (titles) · numbers clamp(28-48) / clamp(28-40). Colour = meaning only:
+   green = the A/B winner, amber = a change to make, red = something is wrong, blue (--blue, so every look recolours it) = live data and
+   what you can open: today's sending, the best campaign, test progress, A/B in progress. Grey = neutral.
+   v2 (BENAS 11-22 "blue ... clean Apple style like the dashboard and expenses ... bento ... when you open, it's moving"): the overview is the
+   Expenses hero card (card sp-card); the blocks and tiles rise in with anim.css's keyframes (a-fade, a-up, m-grow, sheet-up). ---------- */
 .spage:has(.ec-hero) .sp-h p{font-size:15px}
 .spage:has(.ec-hero) .sp-src{font-size:13px}
 .spage:has(#ec-pan .sd-panel){animation:none}   /* same fix as the to-dos panel: a transform on .spage would pin the fixed panel to the page */
-.ec-hero{position:relative;isolation:isolate;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"hh btns" "board board";gap:16px 12px;align-items:center;border-radius:28px;background:var(--hero);box-shadow:var(--edge);padding:20px 22px 22px;-webkit-backdrop-filter:var(--blurv);backdrop-filter:var(--blurv)}
+.ec-hero{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"hh btns" "board board";gap:16px 12px;align-items:center;padding:22px 24px}
 .ec-hero>.ec-hh{grid-area:hh} .ec-hero>.ec-btns{grid-area:btns} .ec-hero>.ec-board{grid-area:board}
 .ec-hh,.ec-ch{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;min-width:0}
 .ec-hh h2,.ec-ch h2{font-size:15px;font-weight:600;letter-spacing:-.01em;margin:0}
 .ec-asof{font-family:var(--mono);font-size:13px;color:var(--mute)}
+.ec-asof.old{color:var(--orange)}
 .ec-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-.spage .ec-hero .act,.spage .ec-look .act,.spage .ec-panel .act{font-size:13px;height:36px}
+.spage .ec-hero .act,.spage .ec-look .act,.spage .ec-panel .act,.spage .ec-camps .act{font-size:13px;height:36px}
 .ec-board{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.15fr);grid-template-areas:"chg best rev" "tst tst rev";gap:12px}
 .ec-t{display:grid;align-content:start;gap:6px;padding:16px 18px;min-width:0;color:var(--ink)}
 .ec-t:nth-child(1){grid-area:chg} .ec-t:nth-child(2){grid-area:best} .ec-t:nth-child(3){grid-area:rev} .ec-t:nth-child(4){grid-area:tst}
@@ -819,13 +823,14 @@ button.clc-m{cursor:pointer} button.clc-m:hover{background:var(--tile)}
 .ec-l strong{color:var(--ink);font-weight:600}
 .ec-t small,.ec-num small,.ec-r small{font-size:13px;color:var(--mute);line-height:1.35;overflow-wrap:anywhere}
 .ec-n,.ec-n2{display:block;font-family:var(--mono);font-weight:500;letter-spacing:-.05em;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
-.ec-n{font-size:56px;margin:4px 0 2px}
-.ec-n2{font-size:44px}
+.ec-n{font-size:clamp(28px,3.6vw,48px);margin:4px 0 2px}
+.ec-n2{font-size:clamp(28px,3vw,40px)}
+.ec-best .ec-n,.ec-c:not(.off) .ec-nl .ec-n2{color:var(--blue)}
 .ec-t.ec-due .ec-n{color:var(--orange)}
 .ec-r3{display:grid;gap:8px;margin-top:4px}
 .ec-r{display:grid;gap:2px;min-width:0}
 .ec-tst .ec-tr{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-.ring.ec-ring{width:56px;height:56px;--c:var(--ink-2);-webkit-mask:radial-gradient(circle,transparent 20px,#000 21px);mask:radial-gradient(circle,transparent 20px,#000 21px)}
+.ring.ec-ring{width:56px;height:56px;--c:var(--blue);-webkit-mask:radial-gradient(circle,transparent 20px,#000 21px);mask:radial-gradient(circle,transparent 20px,#000 21px)}
 .ec-look{display:grid;gap:12px}
 .ec-flags{display:grid;gap:8px}
 .ec-f{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;background:var(--panel);font-size:15px;line-height:1.4;min-width:0}
@@ -834,7 +839,10 @@ button.clc-m{cursor:pointer} button.clc-m:hover{background:var(--tile)}
 .ec-f.k-act>i,.ec-dot.k-act{background:var(--orange)} .ec-f.k-warn>i,.ec-dot.k-warn{background:var(--red)}
 .ec-f .act{flex:none}
 .ec-more{justify-self:start}
-.ec-camps{display:grid;gap:12px}
+.ec-camps{display:grid;gap:20px}
+.ec-grp{display:grid;gap:10px}
+.ec-grp>.ec-h3{padding:0 4px}
+.ec-pbtn{justify-self:start}
 .ec-camps>.ec-ch{padding:0 4px}
 .ec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
 .ec-c{display:grid;align-content:start;gap:14px;width:100%;padding:16px 18px;text-align:left;color:var(--ink)}
@@ -846,7 +854,26 @@ button.clc-m{cursor:pointer} button.clc-m:hover{background:var(--tile)}
 .ec-num.win .ec-n2{color:var(--green)}
 .ec-pill{display:inline-flex;align-items:center;flex:none;font-size:13px;font-weight:600;line-height:1.2;padding:3px 10px;border-radius:999px;background:var(--panel);color:var(--ink-2);white-space:nowrap}
 .ec-pill.win{background:var(--green-soft);color:var(--green)}
+.ec-pill.ab{background:var(--blue-soft);color:var(--blue)}
+.ec-pill.warn{background:var(--red-soft);color:var(--red)}
 .ec-pill.off{background:none;box-shadow:inset 0 0 0 1px var(--line-2);color:var(--mute)}
+/* compact tiles (BENAS 11-22): tests and small lanes, and the paused group: name, one number, the pill */
+.ec-grid.sm{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+.ec-c.ec-sm{gap:10px;padding:14px 16px}
+.ec-sr{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:8px 10px;min-width:0}
+.ec-sm .ec-nl{gap:2px}
+/* the Best campaign's tile (BENAS 11-22): a thin accent ring with a soft glow and a "Best" badge sitting on its top edge. Box-shadow and an
+   absolute badge only, so the tile keeps its size and place. The top sender's "Most sent" chip sits beside its number. Theme tokens only. */
+.ec-c.ec-top{box-shadow:var(--edge),0 0 0 1.5px var(--blue),0 0 0 5px var(--blue-soft),0 12px 34px -10px var(--blue-2)}
+.ec-crown{position:absolute;top:0;right:18px;transform:translateY(-50%);display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:600;line-height:1.2;padding:3px 10px;border-radius:999px;background:var(--blue);color:var(--on-accent);box-shadow:0 0 0 3px var(--blue-soft),0 6px 16px -6px var(--blue-2);white-space:nowrap;pointer-events:none}
+.ec-shine{position:absolute;inset:-3px;border-radius:calc(var(--r-card) + 3px);padding:4.5px;overflow:hidden;pointer-events:none;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
+.ec-shine::before{content:"";position:absolute;top:0;bottom:0;left:0;width:40%;background:linear-gradient(90deg,transparent,var(--blue-2) 30%,var(--sheen) 50%,var(--blue-2) 70%,transparent);opacity:0;transform:translateX(-110%) skewX(-20deg)}
+.ec-most{display:inline-flex;align-items:center;gap:6px;justify-self:start;font-size:13px;font-weight:600;line-height:1.2;padding:3px 10px 3px 8px;border-radius:999px;background:var(--blue-soft);color:var(--blue);white-space:nowrap}
+.ec-most::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.ec-nl.has-most{grid-template-columns:auto minmax(0,1fr);column-gap:10px}
+.ec-nl.has-most>*{grid-column:1/-1}
+.ec-nl.has-most>.ec-n2{grid-column:1}
+.ec-nl.has-most>.ec-most{grid-column:2;grid-row:1;align-self:center}
 /* side panels (the to-dos .sd-panel) */
 .sd-panel.ec-panel{width:min(560px,calc(100vw - 24px));display:grid;gap:16px;align-content:start}
 .sd-panel.ec-panel.wide{width:min(920px,calc(100vw - 24px))}
@@ -869,7 +896,7 @@ button.clc-m{cursor:pointer} button.clc-m:hover{background:var(--tile)}
 .ec-pg{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;font-size:13px;color:var(--ink-2)}
 .ec-pg .v{font-family:var(--mono)}
 .ec-bar{grid-column:1/-1;display:block;height:6px;border-radius:99px;background:var(--line);overflow:hidden}
-.ec-bar i{display:block;height:100%;width:var(--w,0%);border-radius:99px;background:var(--ink-2)}
+.ec-bar i{display:block;height:100%;width:var(--w,0%);border-radius:99px;background:var(--blue);transition:width 1.1s var(--ease)}
 .ec-panel .sp-tbl,.ec-panel .sp-tbl th{font-size:13px}
 .ec-tbl td small{font-size:13px;color:var(--mute)}
 .ec-tbl th[scope=row]{color:var(--ink-2);font-weight:500;border-bottom:1px solid var(--line);padding:10px}
@@ -887,16 +914,34 @@ button.clc-m{cursor:pointer} button.clc-m:hover{background:var(--tile)}
 .ec-rules{margin:0;padding-left:18px;display:grid;gap:6px;font-size:15px;line-height:1.5;color:var(--ink-2)}
 @media (max-width:1100px){.ec-board{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"chg best" "rev tst"}}
 @media (max-width:600px){
-  .ec-hero{padding:16px;border-radius:24px}
+  .ec-hero{padding:16px}
   .ec-hero{grid-template-columns:minmax(0,1fr);grid-template-areas:"hh" "board" "btns"}
   .ec-btns{justify-content:stretch} .ec-btns .act{flex:1 1 40%}
-  .spage .ec-hero .act,.spage .ec-look .act,.spage .ec-panel .act{min-height:44px;height:auto}
+  .spage .ec-hero .act,.spage .ec-look .act,.spage .ec-panel .act,.spage .ec-camps .act{min-height:44px;height:auto}
   .ec-board{grid-template-areas:"chg best" "rev rev" "tst tst"}
   .ec-t{padding:14px}
-  .ec-n{font-size:44px}
   .ec-grid{grid-template-columns:minmax(0,1fr)}
   .ec-c{padding:16px}
+  .ec-grid.sm{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px} .ec-c.ec-sm{padding:12px}
   .sd-panel.ec-panel,.sd-panel.ec-panel.wide{width:100%}
   .ec-ph{font-size:30px}
   .ec-li{flex-wrap:wrap}
+}
+/* Email campaigns motion (v2): anim.css keyframes only, transform + opacity; crm.css's reduced-motion rule makes them instant.
+   When the data replaces the skeleton (.sp-in, crm.js) or the page is switched to (html.pg-in): the overview, Needs a look and Campaigns rise
+   in that order and their tiles follow in reading order (--n, set in wireEmail). The side panel grows in from the right edge like the
+   dashboard's drill sheets (a bottom sheet rises on a phone), only when it opens, not on every redraw inside it. */
+#spage.sp-in>.ec-hero,#spage.sp-in>.ec-look,#spage.sp-in>.ec-camps{animation:a-fade .3s ease-out backwards,a-up .5s var(--out) backwards}
+#spage.sp-in>.ec-look{animation-delay:.08s} #spage.sp-in>.ec-camps{animation-delay:.14s}   /* on a page switch anim.css staggers #spage>* the same way */
+#spage.sp-in .ec-t,html.pg-in #spage .ec-t{animation:a-fade .3s ease-out backwards,a-up .5s var(--out) backwards;animation-delay:calc(.06s + var(--n,0)*45ms)}
+#spage.sp-in .ec-c,html.pg-in #spage .ec-c,#spage.sp-in .ec-pbtn,html.pg-in #spage .ec-pbtn{animation:a-fade .3s ease-out backwards,a-up .5s var(--out) backwards;animation-delay:calc(.2s + var(--n,0)*30ms)}
+html #spage>#ec-pan{animation:none}   /* a transform on the panel's parent would pin the fixed panel to the page */
+.sd-scrim.in{animation:a-fade .26s ease-out both}
+@media (min-width:601px){ .sd-panel.ec-panel.in{transform-origin:100% 50%;animation:a-fade .22s ease-out both,m-grow .5s var(--spr) both} }
+@media (max-width:600px){ .sd-panel.ec-panel.in{animation:a-fade .2s ease-out backwards,sheet-up .5s var(--out) backwards} }
+/* the Best tile's one shine (BENAS 11-22): a single highlight runs along its ring once the tiles have risen, then everything is still.
+   side.js adds .ec-glint only while the entrance plays; transform + opacity only */
+@media (prefers-reduced-motion:no-preference){
+  .ec-c.ec-glint .ec-shine::before{animation:ec-glint 1.3s cubic-bezier(.45,0,.2,1) .75s 1 both}
+  @keyframes ec-glint{0%{opacity:0;transform:translateX(-110%) skewX(-20deg)}14%,86%{opacity:1}100%{opacity:0;transform:translateX(400%) skewX(-20deg)}}
 }
