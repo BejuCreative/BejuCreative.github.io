@@ -20,7 +20,7 @@
 <link rel="preload" href="fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/geist-mono.woff2" as="font" type="font/woff2" crossorigin>
 <script src="theme.js?v=20261112p3"></script>
-<link rel="stylesheet" href="crm.css?v=20261122sf1">
+<link rel="stylesheet" href="crm.css?v=20261122cv1">
 <link rel="stylesheet" href="side.css?v=20261122ec4">
 <link rel="stylesheet" href="contacts.css?v=20261121zd">
 <link rel="stylesheet" href="replies.css?v=20261122rp1">
@@ -169,7 +169,7 @@
   <span class="sn-cap"><span class="sn-lbl">Menu</span></span>
   <ul class="sn-list">
     <li><a href="./" data-nav="dashboard" data-act="tab" data-t="home" data-tip="Dashboard"><svg aria-hidden="true"><use href="#i-home"/></svg><span class="sn-lbl">Dashboard</span></a></li>
-    <li><a href="?p=replies" data-nav="replies" data-tip="Replies"><svg aria-hidden="true"><use href="#i-reply"/></svg><span class="sn-lbl">Replies</span><i class="sn-badge" id="sn-rep-n" hidden></i></a></li>
+    <!-- Replies hidden from the menu (BENAS 11-22 "hide it for now"); ?p=replies still works. To bring it back, restore: <li><a href="?p=replies" data-nav="replies" data-tip="Replies"><svg aria-hidden="true"><use href="#i-reply"/></svg><span class="sn-lbl">Replies</span><i class="sn-badge" id="sn-rep-n" hidden></i></a></li> -->
     <li><a href="?p=expenses" data-nav="expenses" data-tip="Expenses"><svg aria-hidden="true"><use href="#i-cash"/></svg><span class="sn-lbl">Expenses</span></a></li>
     <li><a href="?p=email" data-nav="email" data-tip="Email campaigns"><svg aria-hidden="true"><use href="#i-mail"/></svg><span class="sn-lbl">Email campaigns</span></a></li>
     <li><a href="?p=clients" data-nav="clients" data-tip="Clients"><svg aria-hidden="true"><use href="#i-film"/></svg><span class="sn-lbl">Clients</span></a></li>
@@ -208,7 +208,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="config.js?v=20261112p3"></script>
-<script src="crm.js?v=20261122rp1"></script>
+<script src="crm.js?v=20261122cv1"></script>
 <script src="contacts.js?v=20261121zd"></script>
 <script src="replies.js?v=20261122rp1"></script>
 <script src="side.js?v=20261122ec4"></script>
