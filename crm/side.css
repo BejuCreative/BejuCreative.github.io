@@ -801,7 +801,7 @@ button.clc-m{cursor:pointer} button.clc-m:hover{background:var(--tile)}
 }
 
 /* 11-22 To-dos board v3 (BENAS: Trello style, founder to-dos only, short cards, side panel; no text overflow) */
-.sd-board{grid-template-columns:repeat(5,minmax(196px,1fr));gap:12px}
+.sd-board{grid-template-columns:repeat(6,minmax(196px,1fr));gap:12px}
 .sd-col{min-width:0;min-height:180px}
 .sd-col-h>span:first-child{display:inline-flex;align-items:center;gap:8px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sd-c-waiting .sd-col-h,.sd-c-done .sd-col-h{color:var(--mute)}
@@ -832,8 +832,26 @@ button.clc-m{cursor:pointer} button.clc-m:hover{background:var(--tile)}
 .sd-pa .del{margin-right:auto}
 .sd-pa .act{height:38px}
 @media (max-width:600px){
-  .sd-board{grid-template-columns:repeat(5,minmax(82%,1fr))}
+  .sd-board{grid-template-columns:repeat(6,minmax(82%,1fr))}
   .sd-panel{top:auto;left:0;right:0;bottom:0;width:100%;max-height:88vh;border-radius:22px 22px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}
   .sd-pform textarea,.sd-pform input[type=date]{font-size:16px}
   .sd-pa .act{height:44px;flex:1}
+}
+
+/* 11-22 board v4 (SIMAS: approval flow): 6 columns (+ Needs fixing), "Check:" cards marked, fix notes + link buttons in the panel */
+.spage:has(#sd-pan .sd-panel){animation:none}   /* the "rise" fill leaves a transform on .spage, which pinned the fixed panel to the page, not the screen (Save/Done fell below the fold) */
+.sd-c-fixing .sd-col-h{color:var(--red)}
+.sd-card.chk{box-shadow:var(--shadow),inset 3px 0 0 var(--blue)}
+.sd-card.chk.sel{box-shadow:inset 3px 0 0 var(--blue),inset 0 0 0 2px var(--focus)}
+.sd-notes ol{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.sd-notes li{padding:10px 12px;border-radius:12px;background:var(--red-soft);color:var(--ink)}
+.sd-notes li b{display:block;font-size:12px;font-weight:600;color:var(--mute)}
+.sd-notes li p{margin:4px 0 0;font-size:14px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
+.sd-pform .sd-fix>span{color:var(--red);font-weight:600}
+.sd-links{display:flex;flex-wrap:wrap;gap:8px;min-width:0}
+.sd-links .act{height:34px;max-width:100%;min-width:0}
+.sd-links .act span{overflow:hidden;text-overflow:ellipsis}
+@media (max-width:600px){
+  .sd-links .act{height:44px}
+  .sd-notes li p{font-size:15px}
 }

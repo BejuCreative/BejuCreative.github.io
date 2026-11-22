@@ -1122,9 +1122,13 @@ function wireWeekly() {
    Reads public.tasks straight, founder sources only: founder_tasks, board, deferred, manual (a Claude-written one shows a "suggested" chip).
    Client work (replies, calls, promises, approvals) lives on its own tabs. A card is a short title + chips; a click opens the side
    panel, where it is edited, parked in Waiting or ticked Done. Dropping a card sets its owner (founder columns, General = "Both")
-   or its status (Waiting, Done). The old list a card came from (todo_cards, founder_tasks) gets the same change first. */
+   or its status (Waiting, Done). The old list a card came from (todo_cards, founder_tasks) gets the same change first.
+   v4 (SIMAS 11-22, approval flow): Simas's Claude ends every task as a "Check: <title>" card in To do · Simas (crm.review_card).
+   Done = approved. Needs fixing (status 'fixing', owner unchanged) = sent back: the panel opens on "What needs fixing", the note
+   is appended to the details as "— YYYY-MM-DD HH:MM <who>: <note>", and the tasks trigger crm_fix pings his Claude
+   (crm_events kind 'fix', scripts/watch_board.py). URLs in the details show as link buttons in the panel. */
 const FSRC = ["founder_tasks", "board", "deferred", "manual"];   // BENAS 11-22 16:48: only work a FOUNDER must do; Claude's own tasks (source claude) stay off
-const COLS = [["Benas", "To do · Benas"], ["Simas", "To do · Simas"], ["general", "General"], ["waiting", "Waiting"], ["done", "Done"]];
+const COLS = [["Benas", "To do · Benas"], ["Simas", "To do · Simas"], ["fixing", "Needs fixing"], ["general", "General"], ["waiting", "Waiting"], ["done", "Done"]];
 const SRCL = { founder_tasks: "Founder to-do", board: "Added on the board", deferred: "Deferred", manual: "Added by hand" };
 const OWNL = o => o === "Both" ? "General" : o;
 let PNAME = {};
@@ -1137,13 +1141,32 @@ async function promNames() {   // lead / client names for the lead chip: a clien
 const pName = e => PNAME[lc(e)] || String(e || "") || "?";
 const vilNoon = d => { const g = Date.parse(d + "T12:00:00Z"), p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).formatToParts(new Date(g)).map(x => [x.type, x.value]));
   return new Date(g - (Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute) - g)).toISOString(); };   // a day at 12:00 Vilnius -> ISO
-const colOf = (st, owner) => st === "done" || st === "dropped" ? "done" : st === "waiting" ? "waiting" : owner === "Both" || !owner ? "general" : owner;
+const colOf = (st, owner) => st === "done" || st === "dropped" ? "done" : st === "waiting" ? "waiting" : st === "fixing" ? "fixing" : owner === "Both" || !owner ? "general" : owner;
+const isCheck = c => /^check:/i.test(String(c.title || "").trim());
+/* fix notes inside the details: "— YYYY-MM-DD HH:MM <who>: <note>", each on its own line (the DB's task_last_fix_note reads the same) */
+const FIXRE = /(?:^|\n)— (\d{4}-\d{2}-\d{2} \d{2}:\d{2}) ([^:\n]*): ([\s\S]*?)(?=\n— \d{4}-\d{2}-\d{2} \d{2}:\d{2} |$)/g;
+const fixNotes = d => [...String(d || "").matchAll(FIXRE)].map(m => ({ at: m[1], who: m[2], text: m[3].trim() })).filter(n => n.text);
+const vilNow = () => { const p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).formatToParts(new Date()).map(x => [x.type, x.value]));
+  return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}`; };
+/* http(s) links in the details, once each; a "- <label>: <url>" line gives the button its label */
+function detailLinks(d) {
+  const out = [], seen = new Set();
+  String(d || "").split("\n").forEach(line => {
+    const lab = (line.match(/^\s*[-•*]\s*([^:\n]{1,60}):\s*https?:\/\//i) || [])[1];
+    (line.match(/https?:\/\/[^\s<>"'`]+/gi) || []).forEach(raw => {
+      const u = webUrl(raw.replace(/[).,;:!?\]]+$/, "")); if (!u || seen.has(u)) return; seen.add(u);
+      let short = u; try { const x = new URL(u); short = (x.hostname.replace(/^www\./, "") + (x.pathname.length > 1 ? x.pathname : "")).slice(0, 48); } catch {}
+      out.push({ u, label: (lab || "").trim() || short });
+    });
+  });
+  return out.slice(0, 12);
+}
 const tCard = t => ({ id: +t.id, title: t.title, detail: t.detail || null, owner: t.owner || "Both", st: t.status, col: colOf(t.status, t.owner), due: t.due_at ? dayOf(t.due_at) : null,
   pos: +t.pos || 0, source: t.source, ref: t.source_ref ?? null, lead: lc(t.lead_email), by: t.created_by || null, at: t.created_at || null, done: t.done_at || null });
 const TCOLS = "id,title,detail,owner,status,due_at,lead_email,source,source_ref,pos,created_by,created_at,done_at";
 async function loadTaskList() {
   const since = new Date(Date.now() - 30 * 864e5).toISOString();
-  const [open, done] = await Promise.all([all("tasks", TCOLS, r => r.in("source", FSRC).in("status", ["todo", "doing", "waiting"])),
+  const [open, done] = await Promise.all([all("tasks", TCOLS, r => r.in("source", FSRC).in("status", ["todo", "doing", "waiting", "fixing"])),
     all("tasks", TCOLS, r => r.in("source", FSRC).eq("status", "done").gte("done_at", since))]);
   return open.concat(done).map(tCard);
 }
@@ -1157,19 +1180,20 @@ async function todoBadge() {   // the menu badge: open founder to-dos (not Waiti
 }
 const avatar = o => o === "Simas" || o === "Benas" ? `<span class="sd-av ${o === "Simas" ? "s" : "b"}" title="${o}" aria-hidden="true">${o[0]}</span>` : "";
 function cardHtml(c) {
-  const late = c.col !== "done" && overdue(c.due), sel = EDIT && EDIT.id === c.id;
+  const late = c.col !== "done" && overdue(c.due), sel = EDIT && EDIT.id === c.id, chk = isCheck(c) && c.col !== "done";
   const chips = [avatar(c.col === "Simas" || c.col === "Benas" ? "" : c.owner),
     c.due ? `<span class="chip${late ? " r" : ""}">${late ? "overdue · " : ""}${esc(dLabel(c.due))}</span>` : "",
     c.lead ? `<span class="chip sd-lead" title="${esc(c.lead)}">${esc(pName(c.lead))}</span>` : "",
-    /claude/i.test(c.by || "") ? `<span class="chip" title="Suggested by Claude">suggested</span>` : ""].join("");
-  return `<div class="tile sd-card${c.col === "done" ? " done" : ""}${sel ? " sel" : ""}" data-card="${c.id}" tabindex="0" role="button" aria-roledescription="draggable card" aria-label="${esc(c.title)}. ${esc(OWNL(c.owner))}${c.due ? `, due ${esc(dLabel(c.due))}` : ""}. Enter opens it. Alt plus arrow keys move it.">
+    isCheck(c) ? (chk && c.col !== "fixing" ? `<span class="chip b" title="Drag to Done to approve, or to Needs fixing to send it back">to approve</span>` : "")
+      : /claude/i.test(c.by || "") ? `<span class="chip" title="Suggested by Claude">suggested</span>` : ""].join("");
+  return `<div class="tile sd-card${c.col === "done" ? " done" : ""}${chk ? " chk" : ""}${sel ? " sel" : ""}" data-card="${c.id}" tabindex="0" role="button" aria-roledescription="draggable card" aria-label="${esc(c.title)}. ${esc(OWNL(c.owner))}${c.due ? `, due ${esc(dLabel(c.due))}` : ""}. Enter opens it. Alt plus arrow keys move it.">
     <div class="tt">${esc(c.title)}</div>${chips ? `<div class="ft">${chips}</div>` : ""}</div>`;
 }
 function boardHtml(list) {
-  return COLS.map(([k, label]) => { const cs = cardsIn(list, k), add = k !== "waiting" && k !== "done";
+  return COLS.map(([k, label]) => { const cs = cardsIn(list, k), add = k !== "waiting" && k !== "done" && k !== "fixing";
     return `<section class="sd-col sd-c-${k.toLowerCase()}" data-col="${k}" aria-label="${esc(label)}"><div class="sd-col-h"><span>${k === "Simas" || k === "Benas" ? avatar(k) : ""}${esc(label)}</span><span class="chip">${cs.length}</span></div>
       ${add ? `<button type="button" class="sd-add" data-add="${k}"><svg aria-hidden="true"><use href="#i-plus"/></svg>Add a to-do</button>` : ""}
-      ${cs.map(cardHtml).join("")}${cs.length ? "" : `<p class="empty">${k === "waiting" ? "Paused to-dos wait here." : k === "done" ? "Nothing done in the last 30 days." : k === "general" ? "Nothing in the pool." : "All clear."}</p>`}</section>`; }).join("");
+      ${cs.map(cardHtml).join("")}${cs.length ? "" : `<p class="empty">${k === "waiting" ? "Paused to-dos wait here." : k === "done" ? "Nothing done in the last 30 days." : k === "general" ? "Nothing in the pool." : k === "fixing" ? "Drop a card here to send it back with a note." : "All clear."}</p>`}</section>`; }).join("");
 }
 function toolsHtml() { return ""; }
 function panelHtml() {
@@ -1177,10 +1201,14 @@ function panelHtml() {
   const isNew = EDIT.id === "new", c = isNew ? null : CACHE.todos.find(x => x.id === EDIT.id);
   if (!isNew && !c) return "";
   const own = c ? c.owner : EDIT.col === "general" ? "Both" : EDIT.col, meta = c ? [SRCL[c.source] || c.source, c.at ? `added ${dLabel(dayOf(c.at))}${c.by ? ` by ${c.by}` : ""}` : "", c.col === "done" && c.done ? `done ${dLabel(dayOf(c.done))}` : ""].filter(Boolean).join(" · ") : "New to-do";
+  const fix = !!c && c.col === "fixing", notes = c ? fixNotes(c.detail).reverse() : [], links = c ? detailLinks(c.detail) : [];
   return `<div class="sd-scrim" data-close></div><aside class="sd-panel" role="dialog" aria-modal="true" aria-label="${isNew ? "New to-do" : "To-do"}">
     <form class="sd-pform" data-form="${isNew ? "new" : c.id}">
       <div class="sd-pt"><span class="mut">${esc(meta)}</span><button type="button" class="mini" data-close aria-label="Close" title="Close (Esc)"><svg aria-hidden="true"><use href="#i-x"/></svg></button></div>
+      ${fix && notes.length ? `<div class="fld sd-notes"><span>Sent back${notes.length > 1 ? ` · ${notes.length} notes` : ""}</span><ol>${notes.map(n => `<li><b>${esc(n.who)} · ${esc(dLabel(n.at.slice(0, 10)))} ${esc(n.at.slice(11))}</b><p>${esc(n.text)}</p></li>`).join("")}</ol></div>` : ""}
+      ${fix ? `<label class="fld sd-fix"><span>What needs fixing</span><textarea name="fix" rows="3" maxlength="1500" placeholder="What is wrong, and what you want instead. Saving pings Simas's Claude."></textarea></label>` : ""}
       <label class="fld"><span>To-do</span><textarea name="title" rows="2" maxlength="300" required placeholder="A short, clear next step">${esc(c ? c.title : "")}</textarea></label>
+      ${links.length ? `<div class="fld"><span>${c && isCheck(c) ? "Links to check" : "Links"}</span><div class="sd-links">${links.map(l => `<a class="act" href="${esc(l.u)}" target="_blank" rel="noopener noreferrer" title="${esc(l.u)}">${ic("link")}<span>${esc(l.label)}</span></a>`).join("")}</div></div>` : ""}
       <label class="fld"><span>Details</span><textarea name="detail" rows="7" maxlength="4000" placeholder="Anything that helps (optional)">${esc(c && c.detail ? c.detail : "")}</textarea></label>
       <div class="fld"><span>Owner</span><div class="seg" role="group" aria-label="Owner">${[["Benas", "Benas"], ["Simas", "Simas"], ["Both", "General"]].map(([v, l]) => `<button type="button" data-own="${v}" class="${v === own ? "on" : ""}" aria-pressed="${v === own}">${l}</button>`).join("")}</div></div>
       <label class="fld sd-due"><span>Due</span><input type="date" name="due" value="${esc(c && c.due ? c.due : "")}"></label>
@@ -1196,7 +1224,7 @@ function viewTodos(list) { return `<div class="sd-tools" id="sd-tools">${toolsHt
 function renderTodos(panel = false) {
   const bd = $("#sd-board"); if (PAGE !== "todos" || !CACHE.todos || !bd) return;
   const sx = bd.scrollLeft; bd.innerHTML = boardHtml(CACHE.todos); bd.scrollLeft = sx;
-  if (panel) { const p = $("#sd-pan"); p.innerHTML = panelHtml(); const ta = $("textarea[name=title]", p); if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); } }
+  if (panel) { const p = $("#sd-pan"); p.innerHTML = panelHtml(); const ta = $("textarea[name=fix]", p) || $("textarea[name=title]", p); if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); } }
   todoBadge();
 }
 const openPanel = e => { EDIT = e; renderTodos(true); };
@@ -1204,7 +1232,7 @@ const closePanel = () => { const id = EDIT && EDIT.id; EDIT = null; renderTodos(
 function posBetween(list, col, idx, skipId) { const cs = cardsIn(list, col).filter(c => c.id !== skipId), a = cs[idx - 1], b = cs[idx]; return a && b ? (a.pos + b.pos) / 2 : a ? a.pos + 1024 : b ? b.pos - 1024 : 1024; }
 async function mirror(c, patch, t) {   // the same change on the old list's row (best effort; the tasks row is the one that counts)
   const has = k => k in patch, nowI = new Date().toISOString(), flip = has("st") && (patch.st === "done") !== (c.st === "done");
-  if (c.source === "board" && c.ref) { const u = {}; if (has("st")) u.col = patch.st === "waiting" ? "doing" : patch.st; ["pos", "owner", "title", "detail", "due"].forEach(k => { if (has(k)) u[k] = patch[k]; });
+  if (c.source === "board" && c.ref) { const u = {}; if (has("st")) u.col = patch.st === "waiting" || patch.st === "fixing" ? "doing" : patch.st; /* todo_cards.col has no 'waiting' / 'fixing' */ ["pos", "owner", "title", "detail", "due"].forEach(k => { if (has(k)) u[k] = patch[k]; });
     if (Object.keys(u).length) await must(sb().from("todo_cards").update(u).eq("id", +c.ref)); }
   else if (c.source === "founder_tasks" && c.ref) { const u = {}; if (flip) u.done_at = t.done_at; if (has("owner")) u.who = patch.owner; if (has("title")) u.title = patch.title; if (has("detail")) u.detail = patch.detail; if (has("due")) u.due_at = t.due_at;
     if (Object.keys(u).length) { u.updated_at = nowI; await must(sb().from("founder_tasks").update(u).eq("id", +c.ref)); } }
@@ -1225,11 +1253,12 @@ async function saveCard(id, patch) {
   renderTodos(!!EDIT);
   try { await writeTask(before, patch); } catch (e) { Object.assign(c, before); renderTodos(!!EDIT); toast("Couldn't save that to-do. Check your connection."); }
 }
-const colPatch = col => col === "done" ? { st: "done" } : col === "waiting" ? { st: "waiting" } : { st: "todo", owner: col === "general" ? "Both" : col };
+const colPatch = col => col === "done" ? { st: "done" } : col === "waiting" ? { st: "waiting" } : col === "fixing" ? { st: "fixing" } : { st: "todo", owner: col === "general" ? "Both" : col };
+const moveCard = (id, p) => { if (p.st === "fixing") EDIT = { id }; return saveCard(id, p); };   // sent back: the panel opens on "What needs fixing"
 function dropCard(id, col, prevId, nextId) {   // position from the neighbours in the column it was dropped into
   const L = CACHE.todos, a = L.find(x => x.id === prevId), b = L.find(x => x.id === nextId), pos = a && b ? (a.pos + b.pos) / 2 : a ? a.pos + 1024 : b ? b.pos - 1024 : posBetween(L, col, 0, id);
   const c = L.find(x => x.id === id), p = { pos, ...(c && c.col === col ? {} : colPatch(col)) };
-  return saveCard(id, p);
+  return moveCard(id, p);
 }
 let JUSTDRAG = 0;
 function wireBoard() {
@@ -1251,12 +1280,12 @@ function wireBoard() {
     else if (ev.key === "ArrowUp" && i > 0 && c.col !== "done") p = { pos: posBetween(CACHE.todos, c.col, i - 1, id) };
     else if (ev.key === "ArrowDown" && i < cs.length - 1 && c.col !== "done") p = { pos: posBetween(CACHE.todos, c.col, i + 2, id) };
     if (!p) return;
-    ev.preventDefault(); saveCard(id, p).then(() => $(`[data-card="${id}"]`)?.focus());
+    ev.preventDefault(); moveCard(id, p).then(() => { if (!EDIT) $(`[data-card="${id}"]`)?.focus(); });
   });
   board.addEventListener("pointerdown", dragStart);
   pan.addEventListener("click", async ev => {
     const t = ev.target.closest("button,[data-close]"); if (!t) return;
-    if (t.hasAttribute("data-close")) { closePanel(); return; }
+    if (t.hasAttribute("data-close")) { if (Date.now() - JUSTDRAG > 350) closePanel(); return; }   // the click that ends a drop onto Needs fixing must not close its panel
     if (t.dataset.own) { $$("[data-own]", t.parentElement).forEach(b => { b.classList.toggle("on", b === t); b.setAttribute("aria-pressed", b === t); }); return; }
     const f = t.closest("[data-form]"), id = f && f.dataset.form !== "new" ? +f.dataset.form : null, c = id ? CACHE.todos.find(x => x.id === id) : null;
     if (!c) return;
@@ -1274,8 +1303,15 @@ function wireBoard() {
   });
   pan.addEventListener("submit", async ev => {
     ev.preventDefault();
-    const f = ev.target, title = f.title.value.trim(), detail = f.detail.value.trim() || null, owner = $("[data-own].on", f)?.dataset.own || "Both", due = f.due.value || null;
+    const f = ev.target, title = f.title.value.trim(), note = f.fix ? f.fix.value.trim() : "", owner = $("[data-own].on", f)?.dataset.own || "Both", due = f.due.value || null;
     if (!title) { f.title.focus(); return; }
+    let detail = f.detail.value.trim();
+    if (note) {   // a fix note goes to the end of the details; the tasks trigger reads the newest one and pings Simas's Claude
+      await me(); const who = (ME && ME.who !== "Both" ? ME.who : ME && ME.name) || "a founder";
+      detail = `${detail ? detail + "\n\n" : ""}— ${vilNow()} ${String(who).replace(/[:\n]/g, " ").trim()}: ${note}`;
+      if (detail.length > 4000) { toast("The details are too long to add this note. Shorten them first."); f.fix.focus(); return; }
+    }
+    detail = detail || null;
     if (f.dataset.form === "new") {
       const col = colOf("todo", owner), row = { title, detail, owner, due, col: "todo", pos: posBetween(CACHE.todos, col, 0), created_by: (ME && ME.name) || null };
       EDIT = null; renderTodos(true);
