@@ -168,7 +168,7 @@ Object.entries(EXT).forEach(([id, x]) => { PAGES[id] = x.title; HEAD[id] = x.hea
 function srcOf(p, d) {
   if (EXT[p]) return EXT[p].src ? EXT[p].src(d) : null;
   if (p === "expenses") return d ? ["Beju Finance sheet + Stripe", d.updated_at] : null;
-  if (p === "email") { if (!d || !d.ab) return null; const F = ecFresh(d), o = F.filter(f => f.at).sort((a, b) => new Date(a.at) - new Date(b.at))[0]; return ["Instantly API", o ? o.at : d.ab.updated_at, F.some(f => f.old), "Older than its sync interval: the numbers may be out of date"]; }
+  if (p === "email") { if (!d || !d.ab) return null; const F = ecFresh(d), o = F.filter(f => f.at).sort((a, b) => new Date(a.at) - new Date(b.at))[0]; return ["Instantly API", o ? o.at : d.ab.updated_at, F.some(f => f.old), "Well past its sync interval (1.5 times it): the numbers may be out of date"]; }
   if (p === "clients") return d ? [d.dsOk === false ? "Drive access expired: delivered counts are stale" : "Google Drive + Stripe", d.synced] : null;
   if (p === "perf") return d ? ["YouTube API, TikTok, Instagram (public)", d.synced] : null;
   if (p === "weekly") return d ? ["Instantly API, Stripe, Samples tab, client scans, CRM", d.synced] : null;
@@ -427,10 +427,10 @@ const EC_SRC = [["ab", "panel_ab_tests", 90, "A/B numbers"], ["m", "panel_metric
 function ecFresh(x) {
   const ss = Object.fromEntries((x.sync || []).map(r => [r.name, r]));
   return EC_SRC.map(([k, name, def, label]) => { const r = ss[name], at = k === "ab" ? x.ab && x.ab.updated_at : k === "m" ? x.m && x.m.updated_at : r ? r.ran_at : null, max = (r && +r.max_age_min) || def;
-    return { k, label, at, max, old: !!at && Date.now() - new Date(at) > max * 6e4 }; });
+    return { k, label, at, max, old: !!at && Date.now() - new Date(at) > 1.5 * max * 6e4 }; });   // 11-23: 50 % slack, so a sync that is merely due does not flash "out of date" before every run
 }
 const ecAsOf = (x, ks) => { const F = ecFresh(x).filter(f => ks.includes(f.k) && f.at), o = F.slice().sort((a, b) => new Date(a.at) - new Date(b.at))[0], st = F.filter(f => f.old);
-  return o ? `<span class="ec-asof${st.length ? " old" : ""}" title="${esc(F.map(f => `${f.label}: synced ${ago(f.at)}, runs at least every ${f.max} min`).join(" · "))}">as of ${dayOf(o.at) === dayOf(Date.now()) ? "" : esc(dLabel(dayOf(o.at))) + ", "}${esc(hm(o.at))}${st.length ? ` · ${esc(st.map(f => f.label).join(", "))} out of date` : ""}</span>` : ""; };
+  return o ? `<span class="ec-asof${st.length ? " old" : ""}" title="${esc(F.map(f => `${f.label}: synced ${ago(f.at)}, runs about every ${f.max} min, out of date after ${Math.round(f.max * 1.5)} min`).join(" · "))}">as of ${dayOf(o.at) === dayOf(Date.now()) ? "" : esc(dLabel(dayOf(o.at))) + ", "}${esc(hm(o.at))}${st.length ? ` · ${esc(st.map(f => f.label).join(", "))} out of date` : ""}</span>` : ""; };
 const ecWhen = t => t ? `${dLabel(dayOf(t))}, ${hm(t)}` : "—";
 const r1 = v => v == null || !isFinite(v) ? "—" : (+v).toFixed(1) + "%";
 const median = a => { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y), i = s.length >> 1; return s.length % 2 ? s[i] : (s[i - 1] + s[i]) / 2; };
