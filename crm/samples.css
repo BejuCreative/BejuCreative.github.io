@@ -52,7 +52,16 @@ html.fx-lite .sm-col{-webkit-backdrop-filter:none;backdrop-filter:none;backgroun
 .sm-older{min-height:36px;padding:6px 10px;border-radius:12px;border:1px solid var(--line);background:transparent;font-size:13px;font-weight:600;color:var(--blue);transition:background-color .2s,border-color .2s}
 .sm-older:hover{background:var(--blue-soft);border-color:transparent}
 :root[data-mode="dark"] .sm-older{color:var(--blue-2)}
-.sm-quiet{margin:-4px 6px 0;font-size:13px;color:var(--mute)}
+.sm-quiet{display:grid;gap:8px;margin:-4px 6px 0;font-size:13px;color:var(--mute)}
+/* "N on hold": a quiet text button that opens the held people as a plain list (11-23: held samples are off the board) */
+.sm-hb{display:inline;padding:0;border:0;background:none;font:inherit;color:var(--ink-2);font-weight:600;text-decoration:underline;text-decoration-color:var(--line-2);text-underline-offset:3px;cursor:pointer}
+.sm-hb:hover{color:var(--ink);text-decoration-color:currentColor}
+.sm-hb::after{content:" ▾";font-weight:400;color:var(--mute)} .sm-hb[aria-expanded="true"]::after{content:" ▴"}
+.sm-holds{list-style:none;margin:0;padding:6px 0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:2px 16px;max-width:900px}
+.sm-holds button{display:flex;align-items:baseline;gap:8px;width:100%;min-width:0;min-height:32px;padding:4px 0;border:0;border-top:1px solid var(--line);background:none;text-align:left;font:inherit;font-size:13px;color:var(--ink-2);cursor:pointer}
+.sm-holds b{flex:none;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:var(--ink)}
+.sm-holds span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--mute)}
+.sm-holds button:hover b{color:var(--blue)}
 
 /* ---------- a card: the Short's frame on top, who and how big, the stage clock + owner, the next step ---------- */
 .sm-card{position:relative;isolation:isolate;display:grid;grid-template-columns:minmax(0,1fr);align-items:start;width:100%;min-width:0;padding:0;text-align:left;color:var(--ink);background:var(--tile);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);cursor:pointer;transition:transform .45s var(--out),border-color .2s}
@@ -63,7 +72,8 @@ html.fx-lite .sm-col{-webkit-backdrop-filter:none;backdrop-filter:none;backgroun
 @media (hover:hover) and (pointer:fine){ .sm-card:hover{transform:translateY(-3px);border-color:var(--line-2)} .sm-card:hover::before{opacity:1} }
 .sm-card:active{scale:.985;transition:scale .08s}
 .sm-th{position:relative;display:block;aspect-ratio:16/9;margin:5px 5px 0;border-radius:12px;overflow:hidden;background:var(--panel)}
-.sm-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 28%;display:block}
+.sm-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 28%;display:block;transition:opacity .4s ease}
+.sm-th.ph .sm-img{opacity:0}   /* not loaded (yet): the placeholder shows, never a half-loaded or broken image */
 /* no file yet, or the file's preview failed: a designed tile, never a broken image */
 .sm-ph{position:absolute;inset:0;display:none;place-content:center;justify-items:center;gap:4px;padding:6px;text-align:center;
   background:radial-gradient(110% 120% at 0% 0%,color-mix(in srgb,var(--blue) 20%,transparent),transparent 62%),radial-gradient(90% 110% at 100% 100%,color-mix(in srgb,var(--blue-2) 22%,transparent),transparent 60%),var(--panel)}
@@ -79,7 +89,7 @@ html.fx-lite .sm-col{-webkit-backdrop-filter:none;backdrop-filter:none;backgroun
 .sm-bb{flex-wrap:wrap-reverse;justify-content:flex-start}
 .sm-bd{display:inline-flex;align-items:center;max-width:100%;padding:4px 8px;border-radius:999px;font-size:13px;font-weight:600;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:rgba(255,255,255,.94);color:var(--ink);box-shadow:0 1px 3px rgba(10,16,40,.16)}
 :root[data-mode="dark"] .sm-bd{background:rgba(10,14,12,.88);color:var(--ink);box-shadow:0 0 0 1px rgba(255,255,255,.08)}
-.sm-bd.late{background:var(--red);color:#fff} .sm-bd.hot{background:#c8530a;color:#fff} .sm-bd.hold{background:var(--ink);color:var(--bg)}
+.sm-bd.late{background:var(--red);color:#fff} .sm-bd.hot{background:#c8530a;color:#fff}
 :root[data-mode="dark"] .sm-bd.late{background:#c2412f;color:#fff} :root[data-mode="dark"] .sm-bd.hot{background:#b9620e;color:#fff}
 .sm-b{display:grid;gap:2px;min-width:0;padding:9px 11px 11px}
 .sm-r1{display:flex;align-items:center;gap:6px;min-width:0}
@@ -101,7 +111,7 @@ html.fx-lite .sm-col{-webkit-backdrop-filter:none;backdrop-filter:none;backgroun
 /* in a wide column the marks leave the frame and sit as chips under the clock */
 .sm-chips{display:none;flex-wrap:wrap;gap:4px;min-width:0;margin-top:6px}
 .sm-chips .sm-bd{box-shadow:none;background:var(--panel);color:var(--ink-2)}
-.sm-chips .sm-bd.late{background:var(--red-soft);color:var(--red)} .sm-chips .sm-bd.hot{background:var(--orange-soft);color:#8f4a05} .sm-chips .sm-bd.hold{background:var(--ink);color:var(--bg)}
+.sm-chips .sm-bd.late{background:var(--red-soft);color:var(--red)} .sm-chips .sm-bd.hot{background:var(--orange-soft);color:#8f4a05} .sm-chips
 :root[data-mode="dark"] .sm-chips .sm-bd.hot{color:var(--orange)} :root[data-mode="dark"] .sm-chips .sm-bd.late{background:var(--red-soft);color:var(--red)}
 /* a wide column (a phone screen, a very wide desktop): the frame stands upright on the left */
 @container (min-width:300px){
@@ -218,7 +228,7 @@ html.sm-locked{overflow:hidden}
   .sm-board::-webkit-scrollbar{display:none}
   .sm-col{scroll-snap-stop:always;min-height:320px;padding:12px 10px 10px}
   .sm-older{min-height:44px}
-  .sm-quiet{margin:0 2px}
+  .sm-quiet{margin:0 2px} .sm-hb{min-height:44px} .sm-holds{grid-template-columns:minmax(0,1fr)} .sm-holds button{min-height:44px}
   .sm-pan{inset:0;width:100%;border-radius:0;display:block;overflow-y:auto;overscroll-behavior:contain;transform:translateY(100%);padding-bottom:env(safe-area-inset-bottom)}
   .sm-pan.on{transform:none}
   .sm-pv{padding:calc(12px + env(safe-area-inset-top)) 16px 16px}
