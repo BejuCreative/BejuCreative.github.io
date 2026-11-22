@@ -110,7 +110,7 @@ addEventListener("popstate", () => { if (ON) show(pageFromUrl()); });
 document.addEventListener("click", ev => { if (ON && PAGE !== "dashboard" && ev.target.closest('[data-act="tab"]')) go("dashboard"); }, true);
 
 function show(p) {
-  const was = PAGE; PAGE = p; EDIT = null; if (p !== "expenses") EXM = null; if (p !== "email") EPAN = null;
+  const was = PAGE; PAGE = p; EDIT = null; if (p !== "expenses") EXM = null; if (p !== "email") EPAN = null; EPOFF = false;
   $$("a[data-nav]", NAV).forEach(a => a.dataset.nav === p && !a.classList.contains("sn-brand") ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
   HTML.classList.toggle("paged", p !== "dashboard"); PAGE_EL.hidden = p === "dashboard";
   document.title = (document.title.match(/^\(\d+\+?\) /) || [""])[0] + (p === "dashboard" ? BASE_TITLE : `${PAGES[p]} · BEJÚ`);   // keeps the bell's unread count in front
@@ -420,6 +420,9 @@ const ecName = n => String(n || "").replace(/ — test\b/, " (test)").replace(/^
 /* AUDIT 11-22 (BENAS: "make sure everything is accurate and we can trust it"): each part says how old ITS data is, not when the page loaded.
    Three syncs feed this page, each with its own max age in sync_status: panel_ab_tests (A/B + queued, hourly), panel_metrics (all-time totals,
    every 15 min) and instantly (campaign_daily: the day's sending). Older than its max age = stale, said in words. */
+/* BENAS 11-22: the campaign tiles fall into three groups by size. Main lanes = active campaigns with at least EC_MAIN_CONTACTED leads contacted
+   in total, or at least EC_MAIN_DAY new leads emailed on the tiles' day (today / yesterday); every other active one is a test or small lane; paused last */
+const EC_MAIN_CONTACTED = 300, EC_MAIN_DAY = 20;
 const EC_SRC = [["ab", "panel_ab_tests", 90, "A/B numbers"], ["m", "panel_metrics", 45, "campaign totals"], ["cd", "instantly", 25, "daily sending"]];
 function ecFresh(x) {
   const ss = Object.fromEntries((x.sync || []).map(r => [r.name, r]));
@@ -432,7 +435,7 @@ const ecWhen = t => t ? `${dLabel(dayOf(t))}, ${hm(t)}` : "—";
 const r1 = v => v == null || !isFinite(v) ? "—" : (+v).toFixed(1) + "%";
 const median = a => { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y), i = s.length >> 1; return s.length % 2 ? s[i] : (s[i - 1] + s[i]) / 2; };
 const ecPill = (t, k = "") => `<span class="ec-pill${k ? " " + k : ""}">${esc(t)}</span>`;
-let EPAN = null, EFOCUS = null, EIN = false;   // the open side panel ({ k, id }), the overview control that opened it ([section class, data-ecopen]), and whether it just opened (its entrance plays once)
+let EPAN = null, EFOCUS = null, EIN = false, EPOFF = false;   // the open side panel ({ k, id }), the overview control that opened it ([section class, data-ecopen]), whether it just opened (its entrance plays once), and whether the paused group is open (closed again on every page open)
 function emailModel(x) {
   const d = x.ab.data, M = (x.m && x.m.data) || {}, acts = x.acts || [], R = d.rules || {}, MIN = R.min_sends || 300, MINP = R.min_pos || 8;
   const abC = d.campaigns, mC = Array.isArray(M.campaigns) ? M.campaigns : [];
@@ -498,6 +501,10 @@ function emailModel(x) {
     .sort((a, b) => KO[a.kind] - KO[b.kind]);
   /* v7 rule (SIMAS 11-21), renamed "Best campaign" (BENAS 11-22): the best all-time positive rate among campaigns with 100+ leads contacted */
   const best = mC.filter(c => c.contacted >= 100 && c.pos_rate != null).sort((a, b) => b.pos_rate - a.pos_rate || b.contacted - a.contacted)[0] || null;
+  /* BENAS 11-22: active tiles only. The Best campaign's own tile gets the highlight; the top sender of the tiles' day (most new leads; a tie goes to
+     the first in order; none when nobody sent) gets "Most sent". Groups: see EC_MAIN_CONTACTED */
+  const most = T.filter(t => t.on && t.nl > 0).reduce((a, t) => a && a.nl >= t.nl ? a : t, null);
+  T.forEach(t => { t.isBest = !!best && t.on && t.m === best; t.isMost = t === most; t.grp = !t.on ? "off" : (t.m && +t.m.contacted >= EC_MAIN_CONTACTED) || t.nl >= EC_MAIN_DAY ? "main" : "small"; });
   const nameOfId = id => { const t = T.find(y => y.m && String(y.m.id) === String(id)); return t ? t.name : ""; };
   const top3 = REV ? REV.filter(r => !revUn(r) && +r.revenue_usd > 0).sort((a, b) => b.revenue_usd - a.revenue_usd).slice(0, 3).map(r => ({ ...r, name: nameOfId(r.campaign_id) || ecName(r.campaign_name) || "Unnamed" })) : [];
   return { d, M, acts, R, MIN, MINP, tests, due, running, stalled, early, near, prog, out, low, REV, revUn, nameOfId, T, tileOf, flags, best, bestT: best ? T.find(t => t.m === best) : null, top3, day, isToday, S };
@@ -513,9 +520,18 @@ function viewEmail(x) {
     + `<button type="button" class="tile ec-t ec-tst" data-ecopen="tests" title="A and B both sending since the split, with leads still waiting for that email (stalled = none left). A verdict needs ${E.MIN}+ sends per side and ${E.MINP}+ positives.${E.near ? ` Closest: ${esc((E.tileOf(E.near.c) || {}).name || "")}, ${esc(E.near.s.step)}.` : ""}"><span class="ec-l">Tests running</span><span class="ec-tr"><b class="ec-n">${cu(E.running.length, "int", "ec-run")}</b>${E.near ? `<i class="ring ec-ring" data-v="p:${np}" aria-hidden="true"></i>` : ""}</span><small>${E.running.length && E.early.length === E.running.length ? "all too early" : `${int(E.early.length)} too early`}${E.stalled.length ? ` · ${int(E.stalled.length)} stalled, no leads left` : ""}${E.near ? ` · closest ${np}% there` : ""}</small></button>`;
   const hero = `<section class="card sp-card ec-hero" aria-labelledby="ec-ov"><div class="ec-hh"><h2 id="ec-ov">Overview</h2>${ecAsOf(x, ["ab", "m"])}</div><div class="ec-btns">${[["subj", "Subject lines"], ["table", "Full table"], ["partners", "Partners"], ["history", "History"]].map(([k, l]) => `<button type="button" class="act" data-ecopen="${k}">${l}</button>`).join("")}</div><div class="ec-board">${board}</div></section>`;
   const look = E.flags.length ? `<section class="card sp-card ec-look" aria-labelledby="ec-lk"><div class="ec-ch"><h2 id="ec-lk">Needs a look</h2>${ecAsOf(x, ["ab", "m", "cd"])}</div><div class="ec-flags">${E.flags.slice(0, 5).map(ecFlag).join("")}</div>${E.flags.length > 5 ? `<button type="button" class="act ec-more" data-ecopen="look">All ${E.flags.length} flags</button>` : ""}</section>` : "";
-  const tile = t => `<button type="button" class="mt ec-c${t.on ? "" : " off"}" data-ecopen="camp:${esc(t.id)}" title="${esc(t.full)}"><span class="ec-ct"><span class="ec-cn">${esc(t.name)}</span>${t.sev ? `<i class="ec-dot k-${t.sev}" title="In Needs a look"></i>` : ""}${ecPill(t.pill, t.pk)}</span>
-    <span class="ec-two"><span class="ec-num ec-nl"><b class="ec-n2">${cu(t.nl, "int", esc("ec-nl-" + t.id))}</b><span class="ec-l">New leads emailed <strong>${dayW}</strong></span><small>${t.fu ? `+${int(t.fu)} follow-up${t.fu === 1 ? "" : "s"}` : "no follow-ups"}</small></span><span class="ec-num"><b class="ec-n2">${t.m && t.m.pos_rate != null ? cu(t.m.pos_rate, "pct", esc("ec-pr-" + t.id)) : "—"}</b><span class="ec-l">Positive-reply rate</span><small>${t.m ? `${int(t.m.opportunities)} of ${int(t.m.contacted)} leads` : "not in the metrics sync"}</small></span></span></button>`;
-  const camps = `<section class="ec-camps" aria-labelledby="ec-cs"><div class="ec-ch"><h2 id="ec-cs">Campaigns</h2>${ecAsOf(x, ["cd", "m"])}</div><div class="ec-grid">${E.T.map(tile).join("")}</div></section>`;
+  const dot = t => t.sev ? `<i class="ec-dot k-${t.sev}" title="In Needs a look"></i>` : "", cls = t => `mt ec-c${t.on ? "" : " off"}${t.isBest ? " ec-top" : ""}`;
+  const crown = t => t.isBest ? `<span class="ec-crown" title="Best campaign: highest positive-reply rate among campaigns with 100+ leads contacted"><span aria-hidden="true">★</span> Best</span><i class="ec-shine" aria-hidden="true"></i>` : "";
+  const most = t => t.isMost ? `<span class="ec-most" title="Most new leads emailed ${dayW}">Most sent</span>` : "";
+  const sends = (t, lab, sub) => `<span class="ec-num ec-nl${t.isMost ? " has-most" : ""}"><b class="ec-n2">${cu(t.nl, "int", esc("ec-nl-" + t.id))}</b>${lab}${sub}${most(t)}</span>`;
+  const tile = t => `<button type="button" class="${cls(t)}" data-ecopen="camp:${esc(t.id)}" title="${esc(t.full)}">${crown(t)}<span class="ec-ct"><span class="ec-cn">${esc(t.name)}</span>${dot(t)}${ecPill(t.pill, t.pk)}</span>
+    <span class="ec-two">${sends(t, `<span class="ec-l">New leads emailed <strong>${dayW}</strong></span>`, `<small>${t.fu ? `+${int(t.fu)} follow-up${t.fu === 1 ? "" : "s"}` : "no follow-ups"}</small>`)}<span class="ec-num"><b class="ec-n2">${t.m && t.m.pos_rate != null ? cu(t.m.pos_rate, "pct", esc("ec-pr-" + t.id)) : "—"}</b><span class="ec-l">Positive-reply rate</span><small>${t.m ? `${int(t.m.opportunities)} of ${int(t.m.contacted)} leads` : "not in the metrics sync"}</small></span></span></button>`;
+  /* compact tile (tests, small lanes, paused): the name, one number (new leads emailed on the tiles' day) and the status pill */
+  const mini = t => `<button type="button" class="${cls(t)} ec-sm" data-ecopen="camp:${esc(t.id)}" title="${esc(t.full)}">${crown(t)}<span class="ec-ct"><span class="ec-cn">${esc(t.name)}</span>${dot(t)}</span><span class="ec-sr">${sends(t, "", `<small>new leads ${dayW}</small>`)}${ecPill(t.pill, t.pk)}</span></button>`;
+  const G = k => E.T.filter(t => t.grp === k), gMain = G("main"), gSmall = G("small"), gOff = G("off");
+  const grp = (k, label, list, fn) => list.length ? `<div class="ec-grp" data-ecgrp="${k}"><h3 class="ec-h3">${label}<small>${list.length}</small></h3><div class="ec-grid${fn === mini ? " sm" : ""}">${list.map(fn).join("")}</div></div>` : "";
+  const paused = gOff.length ? `<div class="ec-grp" data-ecgrp="off"><button type="button" class="act ec-pbtn" data-ecpaused aria-expanded="${EPOFF}">Paused (${gOff.length})</button>${EPOFF ? `<div class="ec-grid sm">${gOff.map(mini).join("")}</div>` : ""}</div>` : "";
+  const camps = `<section class="ec-camps" aria-labelledby="ec-cs"><div class="ec-ch"><h2 id="ec-cs">Campaigns</h2>${ecAsOf(x, ["cd", "m"])}</div>${grp("main", "Main lanes", gMain, tile)}${grp("small", "Tests and small lanes", gSmall, mini)}${paused}</section>`;
   return `${hero}${look}${camps}<div id="ec-pan">${ecPanel(E, x)}</div>`;
 }
 const ecSupT = ({ out, low }) => `${out.length ? `${out.length} campaign${out.length === 1 ? " is" : "s are"} out of new leads` : ""}${out.length && low.length ? ", " : ""}${low.length ? `${low.length} ${out.length ? "more " : ""}run${low.length === 1 ? "s" : ""} out within 2 days` : ""}. Needs a lead push.`;
@@ -632,7 +648,10 @@ function closeEPan() { if (!EPAN) return; EPAN = null; const f = EFOCUS; EFOCUS 
 function wireEmail() {
   const rer = () => { const y = scrollY; PAGE_EL.innerHTML = header("email", CACHE.email) + viewEmail(CACHE.email); applyVars(PAGE_EL); countUps(PAGE_EL); wireEmail(); scrollTo(0, y); if (EPAN) $("#ec-pan .mini")?.focus({ preventScroll: true }); };
   const who = () => (ME && ME.who !== "Both" ? ME.who : (ME && ME.name)) || null;
-  $$(".ec-board>.ec-t", PAGE_EL).forEach((el, i) => el.style.setProperty("--n", i)); $$(".ec-grid>.ec-c", PAGE_EL).forEach((el, i) => el.style.setProperty("--n", Math.min(i, 12)));
+  $$(".ec-board>.ec-t", PAGE_EL).forEach((el, i) => el.style.setProperty("--n", i)); const tl = $$(".ec-grid>.ec-c", PAGE_EL), pb = $("[data-ecpaused]", PAGE_EL); tl.forEach((el, i) => el.style.setProperty("--n", Math.min(i, 12)));
+  if (pb) { pb.style.setProperty("--n", Math.min(tl.filter(el => !el.classList.contains("off")).length, 12)); pb.addEventListener("click", () => { EPOFF = !EPOFF; rer(); $("[data-ecpaused]", PAGE_EL)?.focus(); }); }
+  /* the Best tile's one shine plays with the entrance only (data arrived / page opened), never on a redraw inside the page */
+  requestAnimationFrame(() => { if (PAGE_EL.classList.contains("sp-in") || HTML.classList.contains("pg-in")) $(".ec-c.ec-top", PAGE_EL)?.classList.add("ec-glint"); });
   $$("[data-ecopen]", PAGE_EL).forEach(b => b.addEventListener("click", () => { if (!b.closest("#ec-pan")) { const sec = b.closest(".ec-hero,.ec-look,.ec-camps"); EFOCUS = [sec ? ["ec-hero", "ec-look", "ec-camps"].find(c => sec.classList.contains(c)) : "spage", b.dataset.ecopen]; } const [k, ...r] = b.dataset.ecopen.split(":"); EIN = !EPAN; EPAN = { k, id: r.join(":") || null }; rer(); }));
   $$("[data-ecclose]", PAGE_EL).forEach(b => b.addEventListener("click", closeEPan));
   $$("[data-esort]", PAGE_EL).forEach(b => b.addEventListener("click", () => { ESORT = b.dataset.esort; rer(); }));

@@ -814,7 +814,7 @@ button.clc-m{cursor:pointer} button.clc-m:hover{background:var(--tile)}
 .ec-asof{font-family:var(--mono);font-size:13px;color:var(--mute)}
 .ec-asof.old{color:var(--orange)}
 .ec-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-.spage .ec-hero .act,.spage .ec-look .act,.spage .ec-panel .act{font-size:13px;height:36px}
+.spage .ec-hero .act,.spage .ec-look .act,.spage .ec-panel .act,.spage .ec-camps .act{font-size:13px;height:36px}
 .ec-board{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.15fr);grid-template-areas:"chg best rev" "tst tst rev";gap:12px}
 .ec-t{display:grid;align-content:start;gap:6px;padding:16px 18px;min-width:0;color:var(--ink)}
 .ec-t:nth-child(1){grid-area:chg} .ec-t:nth-child(2){grid-area:best} .ec-t:nth-child(3){grid-area:rev} .ec-t:nth-child(4){grid-area:tst}
@@ -839,7 +839,10 @@ button.clc-m{cursor:pointer} button.clc-m:hover{background:var(--tile)}
 .ec-f.k-act>i,.ec-dot.k-act{background:var(--orange)} .ec-f.k-warn>i,.ec-dot.k-warn{background:var(--red)}
 .ec-f .act{flex:none}
 .ec-more{justify-self:start}
-.ec-camps{display:grid;gap:12px}
+.ec-camps{display:grid;gap:20px}
+.ec-grp{display:grid;gap:10px}
+.ec-grp>.ec-h3{padding:0 4px}
+.ec-pbtn{justify-self:start}
 .ec-camps>.ec-ch{padding:0 4px}
 .ec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
 .ec-c{display:grid;align-content:start;gap:14px;width:100%;padding:16px 18px;text-align:left;color:var(--ink)}
@@ -854,6 +857,23 @@ button.clc-m{cursor:pointer} button.clc-m:hover{background:var(--tile)}
 .ec-pill.ab{background:var(--blue-soft);color:var(--blue)}
 .ec-pill.warn{background:var(--red-soft);color:var(--red)}
 .ec-pill.off{background:none;box-shadow:inset 0 0 0 1px var(--line-2);color:var(--mute)}
+/* compact tiles (BENAS 11-22): tests and small lanes, and the paused group: name, one number, the pill */
+.ec-grid.sm{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+.ec-c.ec-sm{gap:10px;padding:14px 16px}
+.ec-sr{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:8px 10px;min-width:0}
+.ec-sm .ec-nl{gap:2px}
+/* the Best campaign's tile (BENAS 11-22): a thin accent ring with a soft glow and a "Best" badge sitting on its top edge. Box-shadow and an
+   absolute badge only, so the tile keeps its size and place. The top sender's "Most sent" chip sits beside its number. Theme tokens only. */
+.ec-c.ec-top{box-shadow:var(--edge),0 0 0 1.5px var(--blue),0 0 0 5px var(--blue-soft),0 12px 34px -10px var(--blue-2)}
+.ec-crown{position:absolute;top:0;right:18px;transform:translateY(-50%);display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:600;line-height:1.2;padding:3px 10px;border-radius:999px;background:var(--blue);color:var(--on-accent);box-shadow:0 0 0 3px var(--blue-soft),0 6px 16px -6px var(--blue-2);white-space:nowrap;pointer-events:none}
+.ec-shine{position:absolute;inset:-3px;border-radius:calc(var(--r-card) + 3px);padding:4.5px;overflow:hidden;pointer-events:none;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
+.ec-shine::before{content:"";position:absolute;top:0;bottom:0;left:0;width:40%;background:linear-gradient(90deg,transparent,var(--blue-2) 30%,var(--sheen) 50%,var(--blue-2) 70%,transparent);opacity:0;transform:translateX(-110%) skewX(-20deg)}
+.ec-most{display:inline-flex;align-items:center;gap:6px;justify-self:start;font-size:13px;font-weight:600;line-height:1.2;padding:3px 10px 3px 8px;border-radius:999px;background:var(--blue-soft);color:var(--blue);white-space:nowrap}
+.ec-most::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.ec-nl.has-most{grid-template-columns:auto minmax(0,1fr);column-gap:10px}
+.ec-nl.has-most>*{grid-column:1/-1}
+.ec-nl.has-most>.ec-n2{grid-column:1}
+.ec-nl.has-most>.ec-most{grid-column:2;grid-row:1;align-self:center}
 /* side panels (the to-dos .sd-panel) */
 .sd-panel.ec-panel{width:min(560px,calc(100vw - 24px));display:grid;gap:16px;align-content:start}
 .sd-panel.ec-panel.wide{width:min(920px,calc(100vw - 24px))}
@@ -897,11 +917,12 @@ button.clc-m{cursor:pointer} button.clc-m:hover{background:var(--tile)}
   .ec-hero{padding:16px}
   .ec-hero{grid-template-columns:minmax(0,1fr);grid-template-areas:"hh" "board" "btns"}
   .ec-btns{justify-content:stretch} .ec-btns .act{flex:1 1 40%}
-  .spage .ec-hero .act,.spage .ec-look .act,.spage .ec-panel .act{min-height:44px;height:auto}
+  .spage .ec-hero .act,.spage .ec-look .act,.spage .ec-panel .act,.spage .ec-camps .act{min-height:44px;height:auto}
   .ec-board{grid-template-areas:"chg best" "rev rev" "tst tst"}
   .ec-t{padding:14px}
   .ec-grid{grid-template-columns:minmax(0,1fr)}
   .ec-c{padding:16px}
+  .ec-grid.sm{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px} .ec-c.ec-sm{padding:12px}
   .sd-panel.ec-panel,.sd-panel.ec-panel.wide{width:100%}
   .ec-ph{font-size:30px}
   .ec-li{flex-wrap:wrap}
@@ -913,8 +934,14 @@ button.clc-m{cursor:pointer} button.clc-m:hover{background:var(--tile)}
 #spage.sp-in>.ec-hero,#spage.sp-in>.ec-look,#spage.sp-in>.ec-camps{animation:a-fade .3s ease-out backwards,a-up .5s var(--out) backwards}
 #spage.sp-in>.ec-look{animation-delay:.08s} #spage.sp-in>.ec-camps{animation-delay:.14s}   /* on a page switch anim.css staggers #spage>* the same way */
 #spage.sp-in .ec-t,html.pg-in #spage .ec-t{animation:a-fade .3s ease-out backwards,a-up .5s var(--out) backwards;animation-delay:calc(.06s + var(--n,0)*45ms)}
-#spage.sp-in .ec-c,html.pg-in #spage .ec-c{animation:a-fade .3s ease-out backwards,a-up .5s var(--out) backwards;animation-delay:calc(.2s + var(--n,0)*30ms)}
+#spage.sp-in .ec-c,html.pg-in #spage .ec-c,#spage.sp-in .ec-pbtn,html.pg-in #spage .ec-pbtn{animation:a-fade .3s ease-out backwards,a-up .5s var(--out) backwards;animation-delay:calc(.2s + var(--n,0)*30ms)}
 html #spage>#ec-pan{animation:none}   /* a transform on the panel's parent would pin the fixed panel to the page */
 .sd-scrim.in{animation:a-fade .26s ease-out both}
 @media (min-width:601px){ .sd-panel.ec-panel.in{transform-origin:100% 50%;animation:a-fade .22s ease-out both,m-grow .5s var(--spr) both} }
 @media (max-width:600px){ .sd-panel.ec-panel.in{animation:a-fade .2s ease-out backwards,sheet-up .5s var(--out) backwards} }
+/* the Best tile's one shine (BENAS 11-22): a single highlight runs along its ring once the tiles have risen, then everything is still.
+   side.js adds .ec-glint only while the entrance plays; transform + opacity only */
+@media (prefers-reduced-motion:no-preference){
+  .ec-c.ec-glint .ec-shine::before{animation:ec-glint 1.3s cubic-bezier(.45,0,.2,1) .75s 1 both}
+  @keyframes ec-glint{0%{opacity:0;transform:translateX(-110%) skewX(-20deg)}14%,86%{opacity:1}100%{opacity:0;transform:translateX(400%) skewX(-20deg)}}
+}
