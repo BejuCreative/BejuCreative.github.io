@@ -430,7 +430,7 @@ button.lk{color:var(--blue);font:inherit;font-size:inherit;text-decoration:under
 .wk-pick{display:inline-flex;align-items:center;gap:8px} .wk-pick select{width:auto;height:34px}
 a.lk{color:var(--blue)}
 /* clients */
-.cl-al{margin-bottom:12px} a.sp-alert{text-decoration:none;color:inherit} a.sp-alert:hover{filter:brightness(1.04)}
+a.sp-alert{text-decoration:none;color:inherit} a.sp-alert:hover{filter:brightness(1.04)}
 .cl-ph{display:block;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);margin-bottom:8px}
 .cl-pr{display:flex;gap:10px;align-items:center;font-size:13px;padding:6px 0;border-top:1px solid var(--line)} .cl-pr:first-of-type{border-top:0} .cl-pr .grow{flex:1;min-width:0}
 .lkc{text-decoration:none;cursor:pointer}
@@ -453,16 +453,10 @@ button.sd-pw{font:inherit;font-size:14px;padding:0;background:none;border:0;curs
 
 /* ---------- round 6 (11-19 21:1x): pack status ---------- */
 .chip.acc{background:var(--sn-pill);color:var(--sn-pill-ink)}
-.cl-filt{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
-.cl-fb{display:grid;gap:2px;text-align:left;padding:12px 14px;border-radius:16px;background:var(--card);box-shadow:var(--edge);-webkit-backdrop-filter:var(--blurv);backdrop-filter:var(--blurv);border:1.5px solid transparent;transition:border-color .2s,transform .2s var(--ease)}
-html.fx-lite .cl-fb{-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--glass),var(--tint-lite)}
-.cl-fb:hover{transform:translateY(-1px)} .cl-fb.on{border-color:var(--focus)}
-.cl-fb b{font-family:var(--mono);font-size:24px;font-weight:500;letter-spacing:-.03em} .cl-fb span{font-size:12.5px;color:var(--mute)}
-.cl-fb.g b{color:var(--green)} .cl-fb.o b{color:var(--orange)} .cl-fb.b b,.cl-fb.acc b{color:var(--blue)}
 .cl-pk{display:flex;align-items:center;gap:10px;font-size:13px;padding:7px 0;border-top:1px solid var(--line)} .cl-pk:first-of-type{border-top:0} .cl-pk .grow{flex:1;min-width:0}
 .ring{width:22px;height:22px;border-radius:50%;flex:none;background:conic-gradient(var(--c,var(--faint)) calc(var(--p,0)*1%),var(--line) 0);-webkit-mask:radial-gradient(circle,transparent 6px,#000 6.5px);mask:radial-gradient(circle,transparent 6px,#000 6.5px)}
 .ring.g{--c:var(--green)} .ring.o{--c:var(--orange)} .ring.b{--c:var(--blue)}
-@media (max-width:600px){.cl-filt{grid-template-columns:repeat(2,minmax(0,1fr))} .cl-pk{flex-wrap:wrap}}
+@media (max-width:600px){.cl-pk{flex-wrap:wrap}}
 
 /* round 7: client rows get the full width for the name + plan; chips sit on their own line */
 .cl-item{flex-wrap:wrap;row-gap:6px}
@@ -610,7 +604,6 @@ html.fx-lite .cl-fb{-webkit-backdrop-filter:none;backdrop-filter:none;background
 .cl-oe input:focus-visible,.cl-oe select:focus-visible{border-color:var(--focus)}
 .cl-oe-b{display:flex;gap:8px}
 .cl-oe-err{grid-column:1/-1;color:var(--red);font-size:12.5px;margin:0}
-@media (min-width:601px){.cl-filt.n6{grid-template-columns:repeat(6,minmax(0,1fr))}}
 @media (max-width:600px){
   .cl-or{flex-wrap:wrap;row-gap:6px} .cl-or .grow{flex:1 1 calc(100% - 40px)} .cl-or-v{margin-left:32px}
   .cl-or-fix{height:44px;min-width:56px;margin-left:auto} .cl-leg > summary{min-height:44px}
@@ -686,7 +679,6 @@ button.clc-m{cursor:pointer} button.clc-m:hover{background:var(--tile)}
   .cl-ph{font-size:13px}
   .sd-pg{font-size:13px}
   .sd-due{font-size:13px}
-  .cl-fb span{font-size:13px}
   .cl-ch .chip{font-size:13px}
   .pf-h small{font-size:13px}
   .pf-wl{font-size:13px}
@@ -945,3 +937,117 @@ html #spage>#ec-pan{animation:none}   /* a transform on the panel's parent would
   .ec-c.ec-glint .ec-shine::before{animation:ec-glint 1.3s cubic-bezier(.45,0,.2,1) .75s 1 both}
   @keyframes ec-glint{0%{opacity:0;transform:translateX(-110%) skewX(-20deg)}14%,86%{opacity:1}100%{opacity:0;transform:translateX(400%) skewX(-20deg)}}
 }
+
+/* 11-23 Clients page clean-up (BENAS: "make everything already built there more clean, removing unnecessary text"; "no mini texts
+   everywhere": big numbers with one short label, 13 px is the floor). Same layout: the list on the left, the chosen client on the right.
+   Scoped to the Clients page (.cl-hero, #cl-list, #cl-detail, #clc, #c-holds, #c-prod): Performance shares .cl-item / .cl-plan and keeps its look. */
+.spage:has(.cl-hero) .sp-src{font-size:13px}
+.cl-hero{grid-template-columns:minmax(0,1fr);grid-template-areas:"board"}
+.cl-board{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-areas:none}
+.cl-board>.ec-t{grid-area:auto}
+button.cl-t-attn{text-align:left;font:inherit;cursor:pointer;border:1px solid var(--line)}
+.cl-t-attn.hot .ec-n{color:var(--red)}
+.cl-t-attn.on{border-color:var(--focus);box-shadow:0 0 0 1.5px var(--focus)}
+.cl-pb{position:relative;height:6px;border-radius:99px;background:var(--line);margin:2px 0}
+.cl-pb>i{display:block;height:100%;width:var(--w,0%);border-radius:99px;background:var(--green);transition:width 1s var(--ease)}
+.cl-pb>em{position:absolute;top:-4px;left:var(--x,0%);width:2px;height:14px;margin-left:-1px;border-radius:2px;background:var(--ink-2)}
+/* the list: name, plan size, money, one status mark */
+.cl-tools{flex-wrap:wrap}
+.cl-f{height:40px;flex:0 1 46%;min-width:0;border-radius:12px;border:1px solid var(--line);background:var(--tile);color:var(--ink);padding:0 8px;font:inherit;font-size:13px;outline:0}
+.cl-f:focus-visible{border-color:var(--focus)}
+#cl-list .cl-grp{font-size:13px;letter-spacing:.05em;padding:14px 8px 4px}
+#cl-list .cl-grp:first-child{padding-top:2px}
+#cl-list .cl-grp .n,.cl-h .n,#clc .clc-h .n{font-family:var(--mono);font-weight:500;color:var(--faint);letter-spacing:0;text-transform:none}
+#cl-list .cl-item{flex-wrap:nowrap;gap:12px;padding:10px 12px;min-height:54px}
+#cl-list .cl-item .t{font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#cl-list .cl-item .s{font-size:13px;white-space:nowrap}
+.cl-mn{flex:none;font-size:14px;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
+.cl-dot{flex:none;width:9px;height:9px;border-radius:50%;background:var(--green)}
+.cl-dot.k-attn{background:var(--red);box-shadow:0 0 0 3px color-mix(in srgb,var(--red) 22%,transparent)}
+.cl-dot.k-wait{background:var(--blue)}
+.cl-dot.k-past{background:var(--faint)}
+#cl-list .cl-item[aria-current="true"] .cl-dot{box-shadow:0 0 0 2px var(--sn-pill-ink)}
+.cl-past,.cl-nomatch{margin-top:8px;font-size:13px}
+/* the chosen client */
+#cl-detail .cl-head{align-items:center;margin-bottom:16px;flex-wrap:nowrap}
+#cl-detail .cl-head .grow{flex:1;min-width:0}
+#cl-detail .cl-head h2{overflow-wrap:anywhere}
+#cl-detail .cl-head p{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#cl-detail .cl-chips{flex:none}
+.cl-scope{height:36px;font-size:13px}
+.cl-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.cl-tl{display:grid;align-content:start;gap:8px;padding:16px 18px;min-width:0}
+.cl-tl .ec-l{font-size:13.5px;color:var(--mute);font-weight:500}
+.cl-big{font-family:var(--mono);font-size:clamp(26px,2.5vw,34px);font-weight:500;letter-spacing:-.04em;line-height:1.05;white-space:nowrap;font-variant-numeric:tabular-nums}
+.cl-big small{font-size:.5em;color:var(--mute);letter-spacing:-.01em}
+.cl-kv{display:flex;align-items:baseline;justify-content:space-between;gap:10px;font-size:13px;border-top:1px solid var(--line);padding-top:7px;min-width:0}
+.cl-kv>span{color:var(--mute);flex:none}
+.cl-kv>b{font-weight:500;text-align:right;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cl-kv small{color:var(--mute);font-weight:400;font-size:13px}
+.cl-next{color:var(--blue)}
+.cl-td,.cl-fail{justify-self:start}
+.cl-no{font-size:13px;color:var(--mute)}
+.cl-sec{margin-top:18px}
+.cl-h{display:flex;align-items:baseline;gap:8px;font-size:13px;font-weight:600;color:var(--mute);margin:0 0 8px}
+.cl-open ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.cl-open li{display:flex;align-items:center;gap:10px;font-size:13.5px;line-height:1.4;padding:9px 12px;border-radius:12px;background:var(--panel)}
+.cl-open li[hidden]{display:none}
+.cl-open li>i{width:8px;height:8px;border-radius:50%;flex:none;background:var(--faint)}
+.cl-open li>span{flex:1;min-width:0;overflow-wrap:anywhere}
+.cl-open li .chip{flex:none}
+.cl-open .k-r>i{background:var(--red)} .cl-open .k-o>i{background:var(--orange)} .cl-open .k-b>i{background:var(--blue)} .cl-open .k-p>i{background:var(--ink-2)}
+#cl-detail .cl-ords{padding:4px 14px}
+#cl-detail .chip{font-size:13px}
+#cl-detail .cl-or-t,#cl-detail .cl-leg>summary,#cl-detail .cl-oe label,#cl-detail .cl-oe-err,#cl-detail .cl-ord{font-size:13px}
+#cl-detail .vid small{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#cl-detail .vid-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+#cl-detail .vid .pl{height:84px}   /* second pass: calmer video tiles, meta on one line */
+#cl-detail .vid .vt{font-size:13px;letter-spacing:0;text-transform:none;font-weight:600}
+.cl-vall,.cl-morebtn{margin-top:10px;height:36px;font-size:13px}
+.cl-morebtn .ic{transition:transform .25s var(--ease)}
+.cl-morebtn[aria-expanded="true"] .ic{transform:rotate(90deg)}
+.cl-mw{border-top:1px solid var(--line);padding-top:4px}
+.cl-more{display:grid;gap:12px;margin-top:12px}
+.cl-more[hidden]{display:none}
+.cl-prob{font-size:13px;color:var(--mute);margin:0}
+.cl-none{padding:28px}
+/* Calls: smaller, upcoming | past side by side */
+#clc h2{margin-bottom:8px}
+#clc .clc-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:8px 32px}
+#clc .clc-h{display:flex;align-items:baseline;gap:8px;font-size:13px;margin:0 0 2px}
+#clc .clc-m{padding:6px;min-height:40px;row-gap:1px}
+#clc .clc-d,#clc .clc-s,#clc .clc-x,#clc .clc-none{font-size:13px}
+#clc .clc-w{font-size:14px}
+#clc .clc-s{color:var(--ink-2)}
+#clc .act{height:32px;font-size:13px}
+#clc .more{font-size:13px}
+/* In production + On hold (cards built by crm.js): under the client area, flat rows like the rest of the page */
+html.paged:has(#snav a[data-nav="clients"][aria-current="page"]) #app>#grid{order:3}
+#c-holds .ch .chip,#c-prod .ch .chip{font-size:13px}
+#c-holds .stack,#c-prod .stack{gap:0}
+#c-holds .tile.row,#c-prod .tile.row{background:none;border:0;box-shadow:none;border-top:1px solid var(--line);border-radius:12px;padding:10px 8px;transform:none}
+#c-holds .tile.row:first-child,#c-prod .tile.row:first-child{border-top-color:transparent}
+#c-holds .tile.row:hover,#c-prod .tile.row:hover{background:var(--tile)}
+#c-holds .it,#c-prod .it{width:30px;height:30px;border-radius:9px;color:var(--c);background:color-mix(in srgb,var(--c) 15%,transparent)}
+#c-holds .it svg,#c-prod .it svg{width:15px;height:15px}
+#c-holds .row-main b,#c-prod .row-main b{font-weight:500}
+#c-holds .more,#c-prod .more{font-size:13px}
+@media (max-width:1100px){
+  #clc .clc-cols{grid-template-columns:minmax(0,1fr)}
+  .cl-tiles{grid-template-columns:repeat(2,minmax(0,1fr))} .cl-tiles>.cl-tl:last-child{grid-column:1/-1}
+}
+@media (max-width:600px){
+  .cl-board{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px} .cl-board>.ec-t:first-child{grid-column:1/-1}
+  .cl-hero .ec-t{padding:14px}
+  .cl-f{flex:1 1 100%;height:44px;font-size:16px}
+  #cl-detail .cl-head{flex-wrap:wrap}
+  .cl-tl{padding:14px}
+  .cl-tiles{grid-template-columns:minmax(0,1fr)}   /* second pass: one tile per row, so Paid / Renews never cut off */
+  #cl-detail .vid-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px} #cl-detail .vid{padding:10px} #cl-detail .vid .pl{height:72px}
+  .cl-vall,.cl-morebtn,.cl-scope,#clc .act{height:44px}
+  .cl-past{min-height:44px}
+}
+#c-holds .ch,#c-prod .ch{justify-content:flex-start} #c-holds .ch .cx,#c-prod .ch .cx{margin-left:auto}
+/* the call list / call card crm.js paints under More and under a past call row: the same 13 px floor */
+#cl-detail .act{font-size:13px}
+:is(#cl-detail .cl-calls,#clc .clc-card) :is(.cc-h small,.cc-l,.ct-m,.ct-m span,.cc-miss,.fld span){font-size:13px}
