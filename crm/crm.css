@@ -1321,6 +1321,7 @@ button.qt:hover{color:var(--ink)}
 #c-funnel .fun .fb i{background:var(--blue)}
 #c-funnel .fun .fb{height:14px;border-radius:5px} #c-funnel .fun .fb i{border-radius:5px}
 .fphone{margin:0 0 12px}
+.fsc .act{flex:none} .fsc .row-main small .chip{margin-right:4px} .fsc-none{margin:0 2px 12px;font-size:13px} .stack:has(>.fsc){margin-bottom:12px}   /* Forms sheet: the scopes we sent (11-22) */
 /* hero: odometer, one quiet line, four period numbers, the track */
 .hero-sub{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--mute);font-size:13.5px;text-align:left}
 .hero-sub .dl{margin:0}

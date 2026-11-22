@@ -201,8 +201,14 @@ html.fx-lite .sd-col{-webkit-backdrop-filter:none;backdrop-filter:none;backgroun
 .sd-card:hover .mini,.sd-card:focus-within .mini{opacity:1}
 .sd-card .mini:hover{color:var(--ink);background:var(--panel)}
 .sd-card.done .tt{text-decoration:line-through;text-decoration-color:var(--faint);color:var(--mute)}
-.sd-card.lift{position:fixed;z-index:95;pointer-events:none;cursor:grabbing;box-shadow:0 18px 44px rgba(0,0,0,.28);transform:rotate(2deg);width:var(--w);left:0;top:0;translate:var(--x) var(--y);background:var(--solid)}
-.sd-ph{height:var(--h,44px);border-radius:var(--r-tile);border:2px dashed var(--line-2)}
+/* the lifted card while dragging (11-22: was .lift, which anim.css also uses for its invisible hover-shadow layer, so the card vanished) */
+.sd-card.sd-ghost{position:fixed;z-index:95;pointer-events:none;cursor:grabbing;box-shadow:0 18px 44px rgba(0,0,0,.28);transform:rotate(2deg) scale(1.03);width:var(--w);left:0;top:0;translate:var(--x) var(--y);background:var(--solid);opacity:1;margin:0;transition:none;will-change:translate}
+.sd-ph{height:var(--h,44px);border-radius:var(--r-tile);border:2px dashed var(--line-2);background:var(--panel)}
+.sd-col{transition:box-shadow .18s} .sd-col.drop .sd-col-h{color:var(--focus)}
+html:has(.sd-ghost),html:has(.sd-ghost) *{cursor:grabbing!important}
+.sd-board.sd-dragging{scroll-snap-type:none}
+.sd-move select{height:38px;border-radius:10px;border:1px solid var(--line);background:var(--tile);padding:0 10px;font:inherit;font-size:13.5px;color:var(--ink);outline:0;min-width:0;width:100%} .sd-move select:focus-visible{border-color:var(--focus)}
+@media (max-width:600px){.sd-move select{font-size:16px;height:44px}}
 .sd-add{display:flex;align-items:center;gap:6px;padding:9px 10px;border-radius:12px;color:var(--mute);font-size:13px;font-weight:500;width:100%}
 .sd-add:hover{background:var(--tile);color:var(--ink)}
 .sd-add svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}

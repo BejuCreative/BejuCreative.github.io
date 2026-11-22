@@ -118,7 +118,7 @@ function show(p) {
   slackLive(p === "slack");
   if (was !== p) scrollTo(0, 0);
 }
-function startTimer() { stopTimer(); TIMER = setInterval(() => { if (!document.hidden && PAGE !== "dashboard" && !DRAG && !EDIT && !$(".cl-oe, .cnform, [data-keep]", PAGE_EL)) { delete CACHE[PAGE]; renderPage(true); } }, 5 * 60000); }   // an open Fix / call-notes form is never wiped
+function startTimer() { stopTimer(); TIMER = setInterval(() => { if (!document.hidden && PAGE !== "dashboard" && !DRAG && !SAVING && !EDIT && !$(".cl-oe, .cnform, [data-keep]", PAGE_EL)) { delete CACHE[PAGE]; renderPage(true); } }, 5 * 60000); }   // an open Fix / call-notes form is never wiped
 function stopTimer() { if (TIMER) clearInterval(TIMER); TIMER = null; }
 
 /* keys: [ toggles the rail, Escape closes the phone drawer */
@@ -1359,6 +1359,7 @@ function panelHtml() {
       ${links.length ? `<div class="fld"><span>${c && isCheck(c) ? "Links to check" : "Links"}</span><div class="sd-links">${links.map(l => `<a class="act" href="${esc(l.u)}" target="_blank" rel="noopener noreferrer" title="${esc(l.u)}">${ic("link")}<span>${esc(l.label)}</span></a>`).join("")}</div></div>` : ""}
       <label class="fld"><span>Details</span><textarea name="detail" rows="7" maxlength="4000" placeholder="Anything that helps (optional)">${esc(c && c.detail ? c.detail : "")}</textarea></label>
       <div class="fld"><span>Owner</span><div class="seg" role="group" aria-label="Owner">${[["Benas", "Benas"], ["Simas", "Simas"], ["Both", "General"]].map(([v, l]) => `<button type="button" data-own="${v}" class="${v === own ? "on" : ""}" aria-pressed="${v === own}">${l}</button>`).join("")}</div></div>
+      ${c ? `<label class="fld sd-move"><span>Move to</span><select name="move">${COLS.map(([k, l]) => `<option value="${k}"${k === c.col ? " selected" : ""}>${esc(l)}</option>`).join("")}</select></label>` : ""}
       <label class="fld sd-due"><span>Due</span><input type="date" name="due" value="${esc(c && c.due ? c.due : "")}"></label>
       ${c && c.lead ? `<div class="fld"><span>Lead</span><div><span class="chip">${esc(pName(c.lead))}</span> <span class="mut">${esc(c.lead)}</span></div></div>` : ""}
       <div class="sd-pa">${c ? `<button type="button" class="act no del" data-del>${c.source === "board" ? "Delete" : "Drop"}</button>` : ""}
@@ -1369,9 +1370,25 @@ function panelHtml() {
     </form></aside>`;
 }
 function viewTodos(list) { return `<div class="sd-tools" id="sd-tools">${toolsHtml()}</div><div class="sd-board" id="sd-board">${boardHtml(list || [])}</div><div id="sd-pan">${panelHtml()}</div>`; }
+/* 11-22 (SIMAS "the to do cards are glitchy, when i drag them they disappear"): the board never redraws under a lifted card (the drop
+   redraws it anyway), and every card that changed place slides there (FLIP: transform only, none under reduced motion) */
+let SAVING = 0, RT_LATER = false, GHOST_FROM = null;
+const calm = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+const cardRects = root => { const m = new Map(); $$("[data-card]", root).forEach(el => { if (!el.hidden) m.set(el.dataset.card, el.getBoundingClientRect()); }); return m; };
+function flipCards(root, before, from) {   // from = { id, rect } of the ghost for the card that was just dropped
+  if (calm() || !Element.prototype.animate) return;
+  $$("[data-card]", root).forEach(el => {
+    const id = el.dataset.card, g = !!from && String(from.id) === id, a = g ? from.rect : before.get(id); if (!a) return;
+    const b = el.getBoundingClientRect(), dx = a.left - b.left, dy = a.top - b.top; if (!g && Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+    if (!g && (b.bottom < 0 || b.top > innerHeight) && (a.bottom < 0 || a.top > innerHeight)) return;   // off screen before and after
+    el.animate(g ? [{ transform: `translate(${dx}px,${dy}px) rotate(2deg) scale(1.03)` }, { transform: "none" }]
+      : [{ transform: `translate(${dx}px,${dy}px)` }, { transform: "none" }], { duration: g ? 300 : 240, easing: "cubic-bezier(.2,.8,.2,1)" });
+  });
+}
 function renderTodos(panel = false) {
-  const bd = $("#sd-board"); if (PAGE !== "todos" || !CACHE.todos || !bd) return;
-  const sx = bd.scrollLeft; bd.innerHTML = boardHtml(CACHE.todos); bd.scrollLeft = sx;
+  const bd = $("#sd-board"); if (PAGE !== "todos" || !CACHE.todos || !bd || (DRAG && DRAG.on)) return;
+  const before = cardRects(bd), from = GHOST_FROM; GHOST_FROM = null;
+  const sx = bd.scrollLeft; bd.innerHTML = boardHtml(CACHE.todos); bd.scrollLeft = sx; flipCards(bd, before, from);
   if (panel) { const p = $("#sd-pan"); p.innerHTML = panelHtml(); const ta = $("textarea[name=fix]", p) || $("textarea[name=title]", p); if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); } }
   todoBadge();
 }
@@ -1401,7 +1418,9 @@ async function saveCard(id, patch) {
   const c = CACHE.todos.find(x => x.id === id); if (!c) return; const before = { ...c };
   Object.assign(c, patch); c.col = colOf(c.st, c.owner); if ("st" in patch) c.done = patch.st === "done" ? new Date().toISOString() : null;
   renderTodos(!!EDIT);
+  SAVING++;
   try { await writeTask(before, patch); } catch (e) { Object.assign(c, before); renderTodos(!!EDIT); toast("Couldn't save that to-do. Check your connection."); }
+  finally { SAVING--; if (!SAVING && RT_LATER) { RT_LATER = false; rtHit(); } }   // one reload once every write landed, not mid-write
 }
 const colPatch = col => col === "done" ? { st: "done" } : col === "waiting" ? { st: "waiting" } : col === "fixing" ? { st: "fixing" } : { st: "todo", owner: col === "general" ? "Both" : col };
 const moveCard = (id, p) => { if (p.st === "fixing") EDIT = { id }; return saveCard(id, p); };   // sent back: the panel opens on "What needs fixing"
@@ -1469,6 +1488,11 @@ function wireBoard() {
         if (t) CACHE.todos.push(tCard(t)); else CACHE.todos = await loadTaskList(); renderTodos(); } catch (e) { renderTodos(); toast("Couldn't add that to-do. Check your connection."); }
     } else { const id = +f.dataset.form; delete FIXDRAFT[id]; EDIT = null; renderTodos(true); await saveCard(id, { title, detail, owner, due }); if (note) toast("Note sent to Simas's Claude"); }
   });
+  pan.addEventListener("change", ev => {
+    if (ev.target.name !== "move") return;
+    const f = ev.target.form, id = f && +f.dataset.form, c = id && CACHE.todos.find(x => x.id === id), col = ev.target.value; if (!c || col === c.col) return;
+    EDIT = null; moveCard(id, { ...colPatch(col), pos: posBetween(CACHE.todos, col, 0, id) }).then(() => { if (!EDIT) $(`[data-card="${id}"]`)?.focus(); });
+  });
   pan.addEventListener("input", ev => { if (ev.target.name === "fix") { const f = ev.target.form, id = f && +f.dataset.form; if (id) FIXDRAFT[id] = ev.target.value; } });
   pan.addEventListener("keydown", ev => {
     if (ev.key === "Escape") { ev.preventDefault(); closePanel(); return; }
@@ -1485,11 +1509,22 @@ function dragStart(ev) {
   document.addEventListener("pointermove", dragMove); document.addEventListener("pointerup", dragEnd); document.addEventListener("pointercancel", dragEnd);
 }
 function liftUp(D) {
-  D.on = true;
-  D.lift = D.card.cloneNode(true); D.lift.classList.add("lift"); D.lift.removeAttribute("data-card"); D.lift.removeAttribute("tabindex"); D.lift.setAttribute("aria-hidden", "true");
-  D.lift.style.setProperty("--w", D.w + "px"); document.body.append(D.lift);
+  D.on = true; D.card = $(`#sd-board [data-card="${D.id}"]`) || D.card;   // the board may have been redrawn since the press
+  D.lift = D.card.cloneNode(true); D.lift.classList.add("sd-ghost"); D.lift.classList.remove("sel"); D.lift.removeAttribute("data-card"); D.lift.removeAttribute("tabindex"); D.lift.setAttribute("aria-hidden", "true");
+  D.lift.style.setProperty("--w", D.w + "px"); D.lift.style.setProperty("--x", D.lx - D.dx + "px"); D.lift.style.setProperty("--y", D.ly - D.dy + "px"); document.body.append(D.lift);
+  if (!calm() && D.lift.animate) D.lift.animate([{ transform: "none" }, {}], { duration: 160, easing: "cubic-bezier(.2,.8,.2,1)" });
   D.ph = document.createElement("div"); D.ph.className = "sd-ph"; D.ph.style.setProperty("--h", D.h + "px");
   D.card.after(D.ph); D.card.hidden = true;
+  $("#sd-board")?.classList.add("sd-dragging"); D.raf = requestAnimationFrame(edgeTick);
+}
+/* auto-scroll while the pointer rests near an edge (every frame, not only on a move; the board's scroll-snap is off meanwhile) */
+function edgeTick() {
+  const D = DRAG; if (!D || !D.on) return;
+  const bd = $("#sd-board"), y0 = scrollY, x0 = bd ? bd.scrollLeft : 0;
+  if (D.ly < 60) scrollBy(0, -12); else if (D.ly > innerHeight - 60) scrollBy(0, 12);
+  if (bd) { const bb = bd.getBoundingClientRect(), e = Math.min(48, bb.width * .12); if (D.lx < bb.left + e) bd.scrollLeft -= 12; else if (D.lx > bb.right - e) bd.scrollLeft += 12; }
+  if (scrollY !== y0 || (bd && bd.scrollLeft !== x0)) place(D, D.lx, D.ly);
+  D.raf = requestAnimationFrame(edgeTick);
 }
 function place(D, x, y) {
   D.lift.style.setProperty("--x", x - D.dx + "px"); D.lift.style.setProperty("--y", y - D.dy + "px");
@@ -1498,11 +1533,13 @@ function place(D, x, y) {
   cols.forEach(c => c.classList.toggle("drop", c === col));
   if (col) {
     const others = $$("[data-card]:not([hidden])", col), next = others.find(el => { const b = el.getBoundingClientRect(); return y < b.top + b.height / 2; });
-    next ? next.before(D.ph) : col.append(D.ph);
+    if (D.ph.parentNode !== col || D.ph.nextElementSibling !== (next || null)) {
+      const bf = cardRects($("#sd-board"));
+      next ? next.before(D.ph) : col.append(D.ph);
+      if (!calm()) $$("#sd-board [data-card]:not([hidden])").forEach(el => { const a = bf.get(el.dataset.card), b = el.getBoundingClientRect(); if (a && (Math.abs(a.top - b.top) >= 1 || Math.abs(a.left - b.left) >= 1)) el.animate([{ transform: `translate(${a.left - b.left}px,${a.top - b.top}px)` }, { transform: "none" }], { duration: 180, easing: "cubic-bezier(.2,.8,.2,1)" }); });
+    }
     D.col = col.dataset.col; const i = next ? others.indexOf(next) : others.length; D.nextId = next ? +next.dataset.card : null; D.prevId = others[i - 1] ? +others[i - 1].dataset.card : null;
   }
-  if (y < 60) scrollBy(0, -14); else if (y > innerHeight - 60) scrollBy(0, 14);   // auto-scroll near the edges
-  const bd = $("#sd-board"); if (bd) { const bb = bd.getBoundingClientRect(); if (x < bb.left + 30) bd.scrollLeft -= 14; else if (x > bb.right - 30) bd.scrollLeft += 14; }
 }
 function dragMove(ev) {
   const D = DRAG; if (!D || ev.pointerId !== D.pid) return;
@@ -1514,12 +1551,14 @@ function dragMove(ev) {
 function cleanup() {
   const D = DRAG; if (D && D.timer) clearTimeout(D.timer);
   document.removeEventListener("pointermove", dragMove); document.removeEventListener("pointerup", dragEnd); document.removeEventListener("pointercancel", dragEnd);
+  if (D && D.raf) cancelAnimationFrame(D.raf); $("#sd-board")?.classList.remove("sd-dragging");
   DRAG = null; return D;
 }
 function dragEnd(ev) {
   if (!DRAG || (ev.pointerId !== undefined && ev.pointerId !== DRAG.pid)) return;
   const D = cleanup(); if (!D.on) return;
   JUSTDRAG = Date.now();
+  GHOST_FROM = { id: D.id, rect: D.lift.getBoundingClientRect() };
   D.lift.remove(); D.ph.remove(); D.card.hidden = false;
   $$("#sd-board .sd-col").forEach(c => c.classList.remove("drop"));
   if (ev.type === "pointercancel" || !D.col) return renderTodos();
@@ -1584,14 +1623,15 @@ window.BEJU_CRM_PAGE = (p, extra = {}) => { if (!ON || !PAGES[p]) return; if (p 
 
 /* live updates from the other founder (board + the menu badge) */
 let RT_T = null;
+function rtHit() { clearTimeout(RT_T); RT_T = setTimeout(async () => {   // 11-22: tasks too, so crm-api / Claude adds show live
+    todoBadge();
+    if (PAGE !== "todos") return;
+    if (DRAG || EDIT || SAVING) { RT_LATER = RT_LATER || !!SAVING; return; }   // a write of ours in flight: reload once it lands (a half-written row made cards jump)
+    try { const L = await loadTaskList(); if (DRAG || EDIT || SAVING || PAGE !== "todos") { RT_LATER = RT_LATER || !!SAVING; return; } CACHE.todos = L; renderTodos(); } catch {}
+  }, 400); }
 function startRealtime() {
   if (CH || !sb()) return;
-  const hit = () => { clearTimeout(RT_T); RT_T = setTimeout(async () => {   // 11-22: tasks too, so crm-api / Claude adds show live
-      todoBadge();
-      if (DRAG || EDIT || PAGE !== "todos") return;
-      try { CACHE.todos = await loadTaskList(); renderTodos(); } catch {}
-    }, 400); };
-  CH = sb().channel("side-todos").on("postgres_changes", { event: "*", schema: "public", table: "todo_cards" }, hit).on("postgres_changes", { event: "*", schema: "public", table: "tasks" }, hit).subscribe();
+  CH = sb().channel("side-todos").on("postgres_changes", { event: "*", schema: "public", table: "todo_cards" }, rtHit).on("postgres_changes", { event: "*", schema: "public", table: "tasks" }, rtHit).subscribe();
 }
 function stopRealtime() { if (CH) { try { sb().removeChannel(CH); } catch {} CH = null; } }
 

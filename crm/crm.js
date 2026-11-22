@@ -102,7 +102,7 @@ function feedX() {
 }
 async function fetchAll() {
   const t = today(), since60 = new Date(Date.now() - 60 * 864e5).toISOString(), since14 = new Date(Date.now() - 14 * 864e5).toISOString();
-  const [pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk, stages, nextSteps, forecast, fx, deals, drafts, dismiss, flags, forms, inb14] = await Promise.all([
+  const [pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk, stages, nextSteps, forecast, fx, deals, drafts, dismiss, flags, forms, inb14, scopes] = await Promise.all([
     all("pipeline", "*", q => q.order("email")),
     all("payments", "id,client_id,email,payer_name,amount,currency,package,refunded,paid_at", q => q.order("paid_at", { ascending: false })),
     all("campaign_daily", "campaign_id,day,sent,new_leads,replies,replies_auto,opportunities", q => q.gte("day", addDays(t, -75)).order("day").order("campaign_id")),
@@ -136,6 +136,7 @@ async function fetchAll() {
     all("lead_flags", "email,lost_reason,snoozed_until").catch(() => []),   // 11-21 (BENAS): lost / snoozed by a founder = out of Do next and Hot leads
     all("form_leads_v2", "*").catch(() => null),   // 11-22 (SIMAS "lots of money sleeping there"): brief forms + how far each lead got
     all("threads", "lead_email,at,snippet", q => q.neq("direction", "out").gte("at", since14).order("at", { ascending: false })).catch(() => []),   // 11-22: their words, last 14 days (Hot leads)
+    all("scopes", "email,offer,amount,currency,monthly,sent_at,paid_at,status,url", q => q.order("sent_at", { ascending: false })).catch(() => null),   // 11-22 (SIMAS "we should see the scope that u have sent them"): the Forms person sheet
   ]);
   /* 11-21 (tracking check, from v7): Instantly's daily "unique opportunities" counts a lead again on each day it is active, so sums over days
      ran up to 1.9x too high. Positives per day come from interested_leads: one row per lead, on the day it was marked interested. */
@@ -143,7 +144,7 @@ async function fetchAll() {
     interested.forEach(x => { const dd = dayOf(x.interest_changed_at || x.last_reply_at || x.created_at); if (!dd || !x.campaign_id) return; const k = x.campaign_id + "|" + dd; m[k] = (m[k] || 0) + 1; });
     if (interested.length) { daily.forEach(r => { const k = r.campaign_id + "|" + r.day; seen.add(k); r.opportunities = m[k] || 0; });
       Object.entries(m).forEach(([k, n]) => { const [campaign_id, day] = k.split("|"); if (!seen.has(k) && day >= lo) daily.push({ campaign_id, day, sent: 0, new_leads: 0, replies: 0, replies_auto: 0, opportunities: n }); }); } }
-  return { pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk, stages, nextSteps, forecast, fx, deals, drafts, dismiss, flags, forms, inb14 };
+  return { pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk, stages, nextSteps, forecast, fx, deals, drafts, dismiss, flags, forms, inb14, scopes };
 }
 
 /* ---------------- derive ---------------- */
@@ -639,12 +640,18 @@ const fKey = x => `${lc(x.email)}|${x.submitted_at}`;
 const fStage = x => { const s0 = FST[x.stage] || [x.stage, ""]; return `<span class="chip ${s0[1]}">${s0[0]}</span>`; };
 const formRow = x => dB("form", fKey(x), `<span class="it ${x.thirty && x.open ? "c-red" : "c-purple"}"><svg><use href="#i-${x.has_phone ? "phone" : "edit"}"/></svg></span><span class="row-main"><b>${esc(x.name || x.email)}</b><small>${esc([x.needs ? "needs " + lc(x.needs) : "", x.post_freq ? "posts " + x.post_freq : "", x.sells ? "sells " + cut(x.sells, 40) : ""].filter(Boolean).join(" · ") || "Older form: only the video and style questions")}</small><span class="tagline">${fStage(x)}${x.thirty && x.open ? `<span class="chip r" title="Posts daily or 5+ times a week">30/mo candidate</span>` : ""}${x.has_phone ? `<span class="chip" title="Phone number given">${ic("phone")}phone</span>` : ""}</span></span><span class="row-end">${x.value_usd && x.open ? usd(x.value_usd) : x.stage === "paid" && x.paid_usd ? `<small>paid</small>${usd(x.paid_usd)}` : ""}</span>`, "tile row frow", `${x.name || x.email}: open the whole form`);
 const qaRows = a => Object.entries(a || {}).filter(([k]) => !/^(Timestamp|Your name|Your phone number|The email we wrote to you on)$/.test(k)).map(([k, v]) => `<span><b>${esc(k)}</b> ${linkify(v, 3) && /^https?:\/\/\S+$/.test(String(v).trim()) ? linkify(v, 3) : esc(cut(v, 400))}</span>`).join("");
+/* 11-22 (SIMAS "we should see the scope that u have sent them"): public.scopes matched by lower(email), loaded once per refresh in fetchAll */
+const scopesOf = x => { const es = new Set([lc(x.email), lc(x.lead_email)].filter(Boolean)); return (RAW && RAW.scopes || []).filter(z => es.has(lc(z.email))); };
+const scopeRows = x => { if (!RAW || !RAW.scopes) return `<p class="mut fsc-none">Couldn't load the scopes.</p>`; const L = scopesOf(x); if (!L.length) return `<p class="mut fsc-none">No scope sent yet</p>`;
+  return `<div class="stack">${L.map(z => { const paid = z.status === "paid" || !!z.paid_at, cur = String(z.currency || "USD").toUpperCase(), amt = z.amount == null ? "" : cur === "USD" ? usd(z.amount) : `${nf0.format(Math.round(+z.amount))} ${esc(cur)}`, u = webUrl(z.url);
+    return `<div class="tile row fsc"><span class="row-main"><b>${esc(z.offer || "Scope")}${amt ? ` · ${amt}${z.monthly ? "/mo" : ""}` : ""}</b><small><span class="chip ${paid ? "g" : "o"}">${paid ? "paid" : esc(z.status || "sent")}</span> sent ${z.sent_at ? esc(dLabel(dayOf(z.sent_at))) : "—"}${paid && z.paid_at ? ` · paid ${esc(dLabel(dayOf(z.paid_at)))}` : ""}</small></span>${u ? `<a class="act" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${ic("link")}Open scope</a>` : ""}</div>`; }).join("")}</div>`; };
 function formSheet(key) {
   const x = (D.forms || []).find(z => fKey(z) === key) || (D.forms || []).find(z => lc(z.email) === lc(key)); if (!x) return { title: "Form", html: empty("This form is not in the list any more.") };
   const tel = String(x.phone || "").replace(/[^\d+]/g, ""), step = (label, at, extra = "") => `<div class="hf"><span>${label}</span><b>${at ? dLabel(dayOf(at)) : "—"}</b>${extra}</div>`;
   return { title: x.name || x.email, sub: `Form in ${fDT(x.submitted_at)} · ${x.email}`,
     html: `${x.phone ? `<div class="acts fphone">${tel ? `<a class="act go" href="tel:${esc(tel)}">${ic("phone")}${esc(x.phone)}</a>` : `<span class="act">${ic("phone")}${esc(x.phone)}</span>`}<button type="button" class="act" data-act="copy" data-what="Phone number" data-t="${esc(x.phone)}">${ic("copy")}Copy</button></div>` : ""}<div class="hero-facts mfacts">${step("Form in", x.submitted_at)}${step("Sample sent", x.sample_at)}${step("Scope or price sent", x.scope_at)}</div>
       <div class="pt-meta sp">${fStage(x)}${x.thirty && x.open ? `<span class="chip r">30/mo candidate</span>` : ""}${x.paid_at ? `<span class="chip g">paid ${usd(x.paid_usd)} · first ${dLabel(dayOf(x.paid_at))}</span>` : ""}${x.on_hold ? `<span class="chip r">On hold</span>` : ""}${x.owner ? `<span class="chip">${esc(x.owner)}</span>` : ""}</div>
+      ${grp("Scopes we sent")}${scopeRows(x)}
       ${grp("What they told us")}<div class="tile pt"><div class="pt-lines">${x.plan ? `<span><b>Fits</b> ${esc(x.plan)} (they post ${esc(x.post_freq)})</span>` : `<span><b>Fits</b> unknown: this form did not ask how often they post</span>`}
         ${x.phone ? `<span><b>Phone</b> ${tel ? `<a href="tel:${esc(tel)}">${esc(x.phone)}</a>` : esc(x.phone)}</span>` : ""}${x.channel ? `<span><b>Channel</b> ${linkify(x.channel, 2) || esc(cut(x.channel, 120))}</span>` : ""}
         ${x.needs ? `<span><b>Needs most</b> ${esc(x.needs)}</span>` : ""}${x.sells ? `<span><b>Sells</b> ${esc(cut(x.sells, 200))}</span>` : ""}${x.video ? `<span><b>Video</b> ${linkify(x.video, 1) || esc(cut(x.video, 160))}</span>` : ""}</div></div>
