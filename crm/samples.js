@@ -37,7 +37,7 @@ const COLS = [["yes", "Said yes", ["YES"], "No new yes"], ["build", "Building", 
 const COL_OF = {}; COLS.forEach(c => c[2].forEach(s => { COL_OF[s] = c[0]; }));
 const PRE = new Set(["yes", "build", "ready"]);   // not delivered yet: the 24 h late clock runs here
 const TAG = { BUILT: "Built", PUBLIC: "Public", DELIVERED: "No reply yet", FU1: "Follow-up 1 sent", FU2: "Follow-up 2 sent", SILENT: "Silent" };
-const colOf = p => { const s = up(p.status); if (s === "HOLD") return p.delivered_at ? "sent" : p.public_at ? "ready" : p.yes_at ? "yes" : null; return COL_OF[s] || null; };
+const colOf = p => { const s = up(p.status); if (s === "HOLD") return null;   /* BENAS 11-23: an on-hold sample is not on the board at all, only in the count line under it */ return COL_OF[s] || null; };
 /* the stage clock (Simas's side 11-22: stage_changed_at is empty on older rows): coalesce(stage_changed_at, delivered_at, public_at, yes_at, updated_at) */
 const stageAt = p => ms(p.stage_changed_at) || ms(p.delivered_at) || ms(p.public_at) || ms(p.yes_at) || ms(p.updated_at);
 /* Drive: drive_link holds the file id (or a file link). A folder link has no file id = no thumbnail. */
