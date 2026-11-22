@@ -1119,13 +1119,13 @@ function wireWeekly() {
 
 /* 5. to-do board (BENAS 11-22 16:0x: "Trello style", "extreme accuracy", founder to-dos ONLY).
    Columns: To do · Benas, To do · Simas, General (a pool either founder takes from), Waiting (paused), Done (last 30 days).
-   Reads public.tasks straight, founder sources only: founder_tasks, board, deferred, manual and claude (Claude's suggestions).
+   Reads public.tasks straight, founder sources only: founder_tasks, board, deferred, manual (a Claude-written one shows a "suggested" chip).
    Client work (replies, calls, promises, approvals) lives on its own tabs. A card is a short title + chips; a click opens the side
    panel, where it is edited, parked in Waiting or ticked Done. Dropping a card sets its owner (founder columns, General = "Both")
    or its status (Waiting, Done). The old list a card came from (todo_cards, founder_tasks) gets the same change first. */
-const FSRC = ["founder_tasks", "board", "deferred", "manual", "claude"];
+const FSRC = ["founder_tasks", "board", "deferred", "manual"];   // BENAS 11-22 16:48: only work a FOUNDER must do; Claude's own tasks (source claude) stay off
 const COLS = [["Benas", "To do · Benas"], ["Simas", "To do · Simas"], ["general", "General"], ["waiting", "Waiting"], ["done", "Done"]];
-const SRCL = { founder_tasks: "Founder to-do", board: "Added on the board", deferred: "Deferred", manual: "Added by hand", claude: "Suggested by Claude" };
+const SRCL = { founder_tasks: "Founder to-do", board: "Added on the board", deferred: "Deferred", manual: "Added by hand" };
 const OWNL = o => o === "Both" ? "General" : o;
 let PNAME = {};
 async function promNames() {   // lead / client names for the lead chip: a client's name wins, then the lead's
@@ -1161,7 +1161,7 @@ function cardHtml(c) {
   const chips = [avatar(c.col === "Simas" || c.col === "Benas" ? "" : c.owner),
     c.due ? `<span class="chip${late ? " r" : ""}">${late ? "overdue · " : ""}${esc(dLabel(c.due))}</span>` : "",
     c.lead ? `<span class="chip sd-lead" title="${esc(c.lead)}">${esc(pName(c.lead))}</span>` : "",
-    c.source === "claude" ? `<span class="chip" title="Suggested by Claude">suggested</span>` : ""].join("");
+    /claude/i.test(c.by || "") ? `<span class="chip" title="Suggested by Claude">suggested</span>` : ""].join("");
   return `<div class="tile sd-card${c.col === "done" ? " done" : ""}${sel ? " sel" : ""}" data-card="${c.id}" tabindex="0" role="button" aria-roledescription="draggable card" aria-label="${esc(c.title)}. ${esc(OWNL(c.owner))}${c.due ? `, due ${esc(dLabel(c.due))}` : ""}. Enter opens it. Alt plus arrow keys move it.">
     <div class="tt">${esc(c.title)}</div>${chips ? `<div class="ft">${chips}</div>` : ""}</div>`;
 }
