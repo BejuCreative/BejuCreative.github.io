@@ -1278,3 +1278,24 @@ html.paged:has(#snav a[data-nav="clients"][aria-current="page"]) #grid>.card[dat
   /* taps: 44 px */
   .pal-in input{min-height:44px}
 }
+
+/* 11-22 CRM pass (SIMAS: money, leads, outreach back on the dashboard): three compact tiles under the hero, Home only */
+.mtiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--gap);margin-bottom:var(--gap)}
+html:not([data-tab="home"]) .mtiles{display:none}
+.mt{position:relative;min-width:0;background:var(--card);box-shadow:var(--edge);border-radius:var(--r-card);padding:12px 16px 8px;isolation:isolate;-webkit-backdrop-filter:var(--blurv);backdrop-filter:var(--blurv);animation:rise .7s var(--ease) backwards}
+.mt-h{display:inline-flex;align-items:center;gap:6px;color:var(--mute);font-size:13px;padding:2px 4px 2px 0;border-radius:8px;min-height:28px}
+.mt-h .ic{width:15px;height:15px} .mt-h .ic:last-child{width:13px;height:13px;opacity:.6}
+.mt-h:hover{color:var(--ink)}
+.mt .big{display:block;width:100%;text-align:left;font-size:26px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mt .big small{font-size:12.5px}
+.mt-rows{margin-top:6px;border-top:1px solid var(--line);padding-top:2px}
+.mt-rows .kv{width:100%;padding:5px 0}
+.mt-rows .kv span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.mt-rows .kv span:last-child{white-space:nowrap}
+@media (max-width:820px){.mtiles{grid-template-columns:1fr;gap:10px}.mt .big{font-size:24px}}
+@media (max-width:600px){.mt-rows .kv{min-height:40px;align-items:center}.mt-h{min-height:40px}}
+/* Do next: the held people, once, under the list */
+.hold-line{margin-top:8px}
+.hold-line .row-main b{white-space:normal}
+/* Forms card rows: the stage / 30-mo / phone chips wrap instead of being cut on phones */
+.frow .tagline{flex-wrap:wrap;overflow:visible;row-gap:4px}
