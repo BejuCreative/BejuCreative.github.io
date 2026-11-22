@@ -361,7 +361,8 @@ button.row{width:100%;text-align:left;border-radius:var(--r-tile)}
 /* ======================================================================
    v2 (2026-11-12): website brand skin, top bar, hero, live, portal zone
    ====================================================================== */
-em.sf{font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:-.01em;color:var(--key)}
+/* BENAS 11-23: the serif italic has a ~15% smaller x-height than the sans next to it, so at the same font-size it looked a size smaller. 1.14em matches the lowercase heights; line-height 1 keeps the line box unchanged */
+em.sf{font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:-.01em;color:var(--key);font-size:1.14em;line-height:1}
 /* atmosphere: a slow colour drift behind everything (each look has its own --bd), plus grain on the dark looks */
 body::before,body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1}
 body::before{inset:-20%;background:var(--bd);animation:aurora 38s ease-in-out infinite alternate;will-change:transform}
@@ -455,7 +456,7 @@ body::before{inset:-20%;background:var(--bd);animation:aurora 38s ease-in-out in
 
 /* ---------- zone heading ---------- */
 .zone-h{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;font-size:26px;font-weight:600;letter-spacing:-.03em;margin:22px 4px 14px}
-.zone-h em.sf{font-size:1.12em}
+.zone-h em.sf{font-size:1.14em}
 .zone-h span{font-size:13.5px;font-weight:400;color:var(--mute);letter-spacing:0}
 
 /* ---------- expand button + modal ---------- */
