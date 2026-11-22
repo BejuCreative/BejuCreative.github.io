@@ -1286,3 +1286,64 @@ html:not([data-tab="home"]) .asof{display:none}
 .hold-line .row-main b{white-space:normal}
 /* Forms card rows: the stage / 30-mo / phone chips wrap instead of being cut on phones */
 .frow .tagline{flex-wrap:wrap;overflow:visible;row-gap:4px}
+
+/* ---------- 11-22 minimal pass (SIMAS: "cleaner and more minimalistic, but keep it informative") ----------
+   Card face = title, one number or a short flat list, one quiet line. Calmer type, one number style, fewer boxes, no idle loops. */
+#grid .card{padding:20px 20px 18px}
+#grid .ch{margin-bottom:14px}
+#grid .card:not(.feat) .ct{color:var(--ink);font-weight:600;font-size:15px;letter-spacing:-.01em}
+.ct.go{display:inline-flex;align-items:center;gap:3px;min-width:0;border-radius:8px;text-align:left}
+.ct.go .ic{width:15px;height:15px;opacity:.4;transition:transform .2s var(--ease),opacity .2s}
+.ct.go:hover .ic,.ct.go:focus-visible .ic{opacity:1;transform:translateX(2px)}
+#grid .big{font-size:30px;letter-spacing:-.035em}
+#grid .big small{font-size:12.5px}
+.lst{display:grid;grid-template-columns:minmax(0,1fr)}
+#grid .big+.lst,#grid .qt+.lst,#grid .days+.lst{margin-top:12px}
+.li{display:flex;align-items:center;gap:12px;width:100%;min-width:0;padding:9px 2px;text-align:left;border-top:1px solid var(--line);font-size:14px;color:var(--ink);border-radius:0;transition:color .2s}
+.lst>.li:first-child{border-top:0}
+button.li:hover .li-n{color:var(--blue)} :root[data-mode="dark"] button.li:hover .li-n{color:var(--key)}
+.li-n{flex:1;min-width:0;display:flex;align-items:center;gap:8px;font-weight:500;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .2s}
+.li-n>span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.li-v{flex:none;font-family:var(--mono);font-weight:500;font-size:13.5px;letter-spacing:-.02em;color:var(--ink-2)}
+.li-v.up{color:var(--green)}
+.li-v.mu{font-family:var(--sans);font-weight:400;font-size:12.5px;letter-spacing:0;color:var(--mute)}
+.li-dot{width:7px;height:7px;border-radius:50%;background:var(--red);flex:none}
+.li-ph{display:inline-flex;flex:none;color:var(--mute)} .li-ph .ic{width:14px;height:14px}
+.li .act{height:28px;padding:0 10px;font-size:12px;flex:none}
+.qt{display:block;max-width:100%;margin-top:6px;text-align:left;color:var(--mute);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:6px;transition:color .2s}
+button.qt:hover{color:var(--ink)}
+.qt .dn{color:var(--red)}
+#grid .more{margin-top:6px}
+@media (min-width:840px){.lst.two{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px}.lst.two>.li:nth-child(2){border-top:0}}
+.feed.lite .it{display:none}
+.feed.lite .fe{padding:8px 2px;border-radius:0;border-top:1px solid var(--line)} .feed.lite .fe:first-child{border-top:0}
+.lgt b{font-family:var(--mono);font-weight:500;color:var(--ink);letter-spacing:-.02em;margin-left:2px}
+#c-funnel .fun .fb i{background:var(--blue)}
+#c-funnel .fun .fb{height:14px;border-radius:5px} #c-funnel .fun .fb i{border-radius:5px}
+.fphone{margin:0 0 12px}
+/* hero: odometer, one quiet line, four period numbers, the track */
+.hero-sub{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--mute);font-size:13.5px;text-align:left}
+.hero-sub .dl{margin:0}
+.kpi{background:transparent;border:0;border-left:1px solid var(--line);border-radius:0;padding:4px 0 4px 14px}
+.kpi:hover{transform:none} .kpi:hover b{color:var(--blue)}
+.kpi>span i{display:none}
+.kpis{margin-top:0;row-gap:16px}
+@media (min-width:601px){.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.hero-sub>span::before{content:"·";margin:0 8px 0 2px;color:var(--faint)}
+.hero-sub>span:first-child::before{content:none}
+.trk-w{margin-bottom:34px}
+/* summary row: label + one number */
+.mt.sum{padding:14px 16px 12px}
+.mt.sum .big small{display:inline;margin-left:3px}
+/* idle cards stay still: the opening animation and hover stay, the loops go */
+html[data-motion="full"] .card .sheen::before,html[data-motion="full"] .hero .sheen::before,html[data-motion="full"] .card .spark::after,html[data-motion="full"] .card .bar i::after,html[data-motion="full"] .card .fun .fb i::after,html[data-motion="full"] .trk .fill::after,html[data-motion="full"] #c-hot .tile::after,html[data-motion="full"] .trk .head::after{animation:none;content:none}
+html[data-motion="full"] .card.inview .it svg{animation:none}
+@media (max-width:600px){
+  #grid .card{padding:18px 16px 16px}
+  .li{min-height:44px;font-size:15px} .li-v{font-size:14px} .li-v.mu,.qt{font-size:13px}
+  .qt{min-height:36px;display:flex;align-items:center;margin-top:2px}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))} .kpi:nth-child(odd){border-left:0;padding-left:0}
+  #grid .big{font-size:28px}
+}
+/* side.css has its own small .ring (22 px conic dot) that loads after this file and squashed the Emails to close ring: undo it here */
+.card button.ring{width:100%;height:auto;border-radius:18px;background:none;-webkit-mask:none;mask:none}
