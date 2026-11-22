@@ -31,9 +31,9 @@
 .skl-hr b{height:102px;border-radius:16px;background:var(--tile);border:1px solid var(--line)}
 .skl-hr b:nth-child(-n+3){height:72px}
 .skl-trk{grid-column:1/-1;height:12px;border-radius:99px;margin-top:34px}
-.skl-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--gap);margin-bottom:var(--gap)}
-.skl-tiles .skl-p{height:171px;padding:16px;display:grid;align-content:start;gap:12px}
-.skl-tiles .w1{width:34%;height:12px}.skl-tiles .w2{width:58%;height:28px}.skl-tiles .w3{width:100%;height:60px;border-radius:10px;opacity:.6}
+.skl-tiles{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:var(--gap)}
+.skl-tiles .skl-p{height:83px;padding:14px;display:grid;align-content:start;gap:10px}
+.skl-tiles .w1{width:60%;height:11px}.skl-tiles .w2{width:70%;height:26px}
 .skl-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--gap)}
 .skl-cards .skl-p{height:236px;padding:18px;display:grid;align-content:start;gap:12px}
 .skl-cards .wide{grid-column:1/-1;height:380px}.skl-cards .tall{height:727px}
@@ -53,14 +53,14 @@ html:not([data-tab="home"]) .skl-hero,html:not([data-tab="home"]) .skl-tiles{dis
 }
 @media (min-width:1300px){ html:not([data-skr]) .skl{padding-left:var(--sn-room)} html:not([data-skr]) .skl-rail{width:var(--sn-w)} html:not([data-skr]) .skl-rail b{left:16px} }
 @media (max-width:1358px){ .skl-hero{grid-template-columns:minmax(0,1fr);row-gap:22px} .skl-hl{padding-bottom:0} .skl-hl .w2{width:52%} }
-@media (max-width:820px){ .skl-tiles{grid-template-columns:minmax(0,1fr);gap:10px} }
+@media (max-width:1100px){ .skl-tiles{grid-template-columns:repeat(3,minmax(0,1fr))} }
 @media (max-width:600px){
   .skl{padding:calc(8px + env(safe-area-inset-top)) 12px 0}
   .skl-top{height:64px;border-radius:18px;margin-bottom:12px}
   .skl-hero{border-radius:22px;padding:16px 14px 60px;min-height:800px;align-content:start;align-items:start}
   .skl-hl .w2{width:72%;height:72px}
   .skl-hr{grid-template-columns:repeat(6,minmax(0,1fr));gap:8px} .skl-hr b{grid-column:span 3;height:62px} .skl-hr b:nth-child(-n+3){grid-column:span 2;height:62px}
-  .skl-tiles .skl-p{height:195px} .skl-cards{grid-template-columns:minmax(0,1fr)} .skl-cards .wide{grid-column:auto}
+  .skl-tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px} .skl-cards{grid-template-columns:minmax(0,1fr)} .skl-cards .wide{grid-column:auto}
   .skl-tabs{display:block;position:fixed;left:0;right:0;bottom:0;height:calc(65px + env(safe-area-inset-bottom));background:var(--over);border-top:1px solid var(--line)}
 }
 /* the mark: fades up with a soft glow while the data loads */
@@ -117,7 +117,7 @@ html.soft .top,html.soft .hero,html.soft .mt,html.soft .card,html.soft .tabs,htm
 
 /* ---------- page / tab switches: the new page's panes rise in (inside the view transition's cross-fade where the browser has one) ---------- */
 html.pg-in .hero{animation:a-fade .3s ease-out backwards,a-up .5s var(--out) backwards}
-html.pg-in .mt,html.pg-in #grid>.card{animation:a-fade .3s ease-out backwards,a-up .5s var(--out) backwards;animation-delay:calc(var(--n,0)*30ms)}
+html.pg-in .mt,html.pg-in .grid>.card{animation:a-fade .3s ease-out backwards,a-up .5s var(--out) backwards;animation-delay:calc(var(--n,0)*30ms)}
 html.pg-in #spage>*{animation:a-fade .3s ease-out backwards,a-up .5s var(--out) backwards}
 html.pg-in #spage>:nth-child(2){animation-delay:.04s}html.pg-in #spage>:nth-child(3){animation-delay:.08s}html.pg-in #spage>:nth-child(n+4){animation-delay:.12s}
 .spage.sp-in>:not(.sp-h){animation:a-fade .35s ease-out backwards}   /* a side page's skeleton gives way to its content */
@@ -128,8 +128,8 @@ html.vt-pg .top{view-transition-name:vt-top}   /* the top bar morphs if its widt
 ::view-transition-group(vt-top){animation-duration:.34s;animation-timing-function:cubic-bezier(.4,0,.2,1)}
 ::view-transition-group(vt-pill),::view-transition-group(vt-tpill){animation-duration:.5s;animation-timing-function:var(--spr)}
 ::view-transition-old(vt-pill),::view-transition-new(vt-pill),::view-transition-old(vt-tpill),::view-transition-new(vt-tpill){animation-duration:.3s;height:100%}
-::view-transition-old(vt-o0),::view-transition-old(vt-o1),::view-transition-old(vt-o2),::view-transition-old(vt-o3),::view-transition-old(vt-o4){animation:a-out .15s cubic-bezier(.4,0,1,1) both}
-::view-transition-new(vt-n0),::view-transition-new(vt-n1),::view-transition-new(vt-n2),::view-transition-new(vt-n3),::view-transition-new(vt-n4){animation:a-fade .3s ease-out .1s both}
+::view-transition-old(vt-o0),::view-transition-old(vt-o1),::view-transition-old(vt-o2),::view-transition-old(vt-o3),::view-transition-old(vt-o4),::view-transition-old(vt-o5),::view-transition-old(vt-o6){animation:a-out .15s cubic-bezier(.4,0,1,1) both}
+::view-transition-new(vt-n0),::view-transition-new(vt-n1),::view-transition-new(vt-n2),::view-transition-new(vt-n3),::view-transition-new(vt-n4),::view-transition-new(vt-n5),::view-transition-new(vt-n6){animation:a-fade .3s ease-out .1s both}
 @keyframes a-out{to{opacity:0;transform:scale(.992)}}
 
 /* ---------- drill sheets ---------- */
@@ -181,8 +181,8 @@ button.kv{transition:background-color .2s,scale .4s var(--spr)}
 button.chip{transition:filter .2s,transform .2s var(--ease),scale .4s var(--spr)}
 .btn-go{transition:transform .15s var(--ease),filter .2s,scale .4s var(--spr)}
 .mag{transition:transform .35s var(--ease),scale .4s var(--spr)}
-.btn-ghost,.mt-h,.stat,.more{transition:scale .4s var(--spr)}
-.act:active,.icon-btn:active,.kpi:active,button.hf:active,button.tile:active,.tile.tap:active,.seg button:active,button.kv:active,.xp:active,.pal-btn:active,button.chip:active,.btn-go:active,.btn-ghost:active,.mt-h:active,.stat:active,.more:active{scale:.98;transition-duration:.08s}
+.btn-ghost,.stat,.more{transition:scale .4s var(--spr)}
+.act:active,.icon-btn:active,.kpi:active,button.hf:active,button.tile:active,.tile.tap:active,.seg button:active,button.kv:active,.xp:active,.pal-btn:active,button.chip:active,.btn-go:active,.btn-ghost:active,.stat:active,.more:active{scale:.98;transition-duration:.08s}
 /* a number that changed (live update, period or owner switch) rolls up into place while it counts */
 .n.tick{display:inline-block;animation:n-tick .7s var(--out)}
 @keyframes n-tick{from{transform:translateY(.32em);opacity:.3}}

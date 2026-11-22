@@ -928,13 +928,16 @@ const CARDS = [
 { id: "pclients", grid: 2, title: "Portal: sign-ups", focus: ["pclients", ""], render: d => `${head("Sign-ups", "", true)}<div class="stack">${d.pClients.slice(0, 3).map(clientTile).join("") || empty("No client has signed up yet.")}</div>${d.pClients.length > 3 ? dB("pclients", "", `Show all ${d.pClients.length}`, "more") : ""}` },
 ].filter(c => !HIDDEN.has(c.id));
 const byId = id => CARDS.find(c => c.id === id);
-/* tabs: each shows only its cards, on phones (bottom bar) and on the desktop (Money / Leads / Outreach in the side menu).
-   BENAS 11-21 19:2x (pro-CRM main page, supersedes "Main keeps Reply rate + Funnel"): Main = the $ hero + Big deals, Waiting for approval,
-   Do next, Activity. Charts and lists live in their tab. "clients" cards (On hold, In production) sit on top of the Clients page (crm.css);
-   the bottom "Clients" tab opens that page. Paid clients + Retainers go to Money: the Clients page already counts clients and retainers. */
-const TABS = { home: ["forms", "bigdeals", "approvals", "next", "activity"], money: ["close", "buyers", "topc", "alltime", "moneypage", "price", "videos", "paidc", "retainers"], leads: ["attention", "hot", "followups", "moods", "samples", "turn", "speed", "away", "pipeline"],
-  outreach: ["today", "outreach", "rate", "funnel", "total", "heat", "clock", "camps", "deliv", "inboxes", "sync"], clients: ["holds", "prod", "portal", "psamples", "pvideos", "pnotes", "pclients"], none: ["brand"] };
+/* 11-22 (SIMAS, Benas handed the dashboard over): ONE long Dashboard. The $ hero stays as it is; under it a summary row of the key numbers
+   (updateTiles), then labelled sections Work · Money · Leads · Outreach as a bento. Only the best 12 Money / Leads / Outreach cards, and every
+   number shows once on the page: a card whose number is already in the hero, the summary row or another card is cut ("cut": built but never
+   shown; its lists still open from the summary number or the drill sheets). Money / Leads / Outreach left the side menu and the phone bar.
+   "clients" cards (On hold, In production) still sit on top of the Clients page (crm.css). */
+const SECS = { work: ["forms", "bigdeals", "approvals", "next", "activity"], money: ["buyers", "topc", "paidc", "close"], leads: ["hot", "pipeline", "turn", "followups"], outreach: ["outreach", "funnel", "camps", "inboxes"] };
+const TABS = { home: Object.values(SECS).flat(), clients: ["holds", "prod", "portal", "psamples", "pvideos", "pnotes", "pclients"],
+  cut: ["retainers", "alltime", "rate", "speed", "deliv", "total", "today", "videos", "attention", "moods", "samples", "away", "heat", "clock", "sync", "price", "moneypage"], none: ["brand"] };
 const TABOF = {}; Object.entries(TABS).forEach(([t, ids]) => ids.forEach(id => { TABOF[id] = t; }));
+const SECOF = {}; Object.entries(SECS).forEach(([s, ids]) => ids.forEach(id => { SECOF[id] = s; }));
 
 /* ---------------- chart painters (hover, tap and arrow keys share them) ---------------- */
 function paintOut(days, max, H, pad, i) {
@@ -988,32 +991,32 @@ function updateHero(d) {
   $$("#hero .per button").forEach(b => { const on = b.dataset.p === STATE.period; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
 }
 
-/* ---------------- 11-22: Money / Leads / Outreach tiles under the hero (SIMAS: "should be inside the dashboard like it was earlier") ----------------
-   Home only. Every number opens the rows behind it; the tile's name opens the full tab (still in the side menu too). */
+/* ---------------- 11-22: summary row under the hero (SIMAS: key business numbers, each number once on the page) ----------------
+   Only numbers no hero tile and no card shows. Money says paid. Each one opens the rows behind it (the cut cards' lists). */
 let TILES = "";
 function updateTiles(d) {
   const el = $("#mtiles"); if (!el) return;
-  const fuDue = d.fuOver.length + d.fuDays[0].list.length, smM = d.delivered.filter(p => dayOf(p.delivered_at).slice(0, 7) === d.ym).length;
-  const tile = (t, label, icon, bigHtml, rows) => `<div class="mt"><button type="button" class="mt-h" data-act="tab" data-t="${t}" title="Open the whole ${label} tab">${ic(icon)}<span>${label}</span>${ic("chev")}</button>${bigHtml}<div class="mt-rows">${rows.join("")}</div></div>`;
-  const html = tile("money", "Money", "cash", big("pays", "month", `${N(d.month, "usd")}<small>${d.monthName} so far</small>`, `Money in ${d.monthName}. Open the payments.`, "mt-big"),
-      [kv("Monthly clients", `${nf0.format(d.ret.live.length)} · ${usd(d.ret.mrr)}/mo`, "retainers", ""), kv("All time", N(d.allTime, "usd"), "pays", "all")])
-    + tile("leads", "Leads", "user", big("rwait", "", `${N(d.replyWait.length)}<small>replies waiting</small>`, "Replies waiting on us. Open them.", "mt-big"),
-      [kv("Hot leads", N(d.hot.length), "hotlist", ""), kv("Follow-ups due", N(fuDue), "fu", "due"), kv(`Samples · ${d.monthName}`, N(smM), "samples", "m:" + d.ym)])
-    + tile("outreach", "Outreach", "send", big("day", d.t, `${N(d.todayNew)}<small>/ ${nf0.format(d.target)} new leads today</small>`, "Today's new leads per campaign. Open the day.", "mt-big"),
-      [kv("Sent today", N(d.todaySent), "day", d.t), kv("Reply rate", N(d.replyRate, "pct1"), "sent", "rate")]);
+  const cell = (label, tag, k, a, val, sub, title) => `<div class="mt sum"><span class="sum-l">${label}${tag ? ` <span class="chip g">${tag}</span>` : ""}</span>${big(k, a, `${val}${sub ? `<small>${sub}</small>` : ""}`, title, "mt-big")}</div>`;
+  const html = cell("Monthly recurring", "paid", "retainers", "", N(d.ret.mrr, "usd"), "/mo", "Live retainers, per month. Open them.")
+    + cell("All time", "paid", "pays", "all", N(d.allTime, "usd"), "", "Every payment so far. Open them.")
+    + cell("Reply rate", "", "sent", "rate", N(d.replyRate, "pct1"), "all time", "Reply rate per campaign. Open it.")
+    + cell("Speed to reply", "", "speed", "", d.speed.all == null ? "—" : esc(fmtMin(d.speed.all)), "typical", "Every answered reply with its waiting time")
+    + cell("Bounce rate", "", "deliv", "", N(d.deliv.rate, "pct1"), "inbox health", "Bounces per campaign")
+    + cell("Leads queued", "", "queued", "", N(d.queued), "not emailed yet", "Leads loaded but not contacted yet");
   if (TILES !== html) { TILES = html; el.innerHTML = html; countUp({ id: "mtiles", el }); }
+  const asof = LAST_OK ? `as of ${timeOf(LAST_OK)}` : ""; $$("[data-asof]").forEach(x => { x.textContent = asof; });   // Benas: every section says how fresh it is
 }
 
 /* ---------------- render ---------------- */
 const IO = new IntersectionObserver(es => es.forEach(e => e.target.classList.toggle("inview", e.isIntersecting)), { rootMargin: "60px" });   // ambient loops run only on cards in view
 function build() {
-  const g1 = $("#grid"), g2 = $("#grid2"); g1.innerHTML = g2.innerHTML = ""; IO.disconnect();
+  const g1 = $("#grid"), g2 = $("#grid2"), gs = { money: $("#grid-money"), leads: $("#grid-leads"), outreach: $("#grid-outreach") }; g1.innerHTML = g2.innerHTML = ""; Object.values(gs).forEach(g => { g.innerHTML = ""; }); IO.disconnect();
   const ro = new ResizeObserver(es => es.forEach(e => fit(e.target)));
   CARDS.forEach((c, i) => {
     const el = document.createElement("section"); el.id = "c-" + c.id; el.className = "card " + (c.cls || ""); el.dataset.tab = TABOF[c.id] || "home"; el.style.setProperty("--i", c.grid === 2 ? i - 30 : i); el.setAttribute("aria-label", c.title || c.id);
     el.style.setProperty("--j", i % 8); c.sh = document.createElement("i"); c.sh.className = "sheen"; c.sh.setAttribute("aria-hidden", "true");
     c.lf = document.createElement("i"); c.lf.className = "lift"; c.lf.setAttribute("aria-hidden", "true");   // 11-22 motion: hover shadow
-    c.el = el; c.last = null; if (c.mount) c.mount(el); el.append(c.sh, c.lf); (c.grid === 2 ? g2 : g1).appendChild(el); ro.observe(el); IO.observe(el);
+    c.el = el; c.last = null; if (c.mount) c.mount(el); el.append(c.sh, c.lf); (c.grid === 2 ? g2 : gs[SECOF[c.id]] || g1).appendChild(el); ro.observe(el); IO.observe(el);
   });
 }
 function fit(el) { el.style.gridRowEnd = "span " + Math.ceil((el.offsetHeight + 16) / 4); }
@@ -1035,6 +1038,7 @@ function paintStatus() {
 }
 function jump(id) {
   const el = $("#c-" + id); if (!el) return; const tb = el.dataset.tab, paged = document.documentElement.classList.contains("paged");
+  if (tb === "cut") { const c = byId(id); if (c && c.focus) openDrill(c.focus[0], c.focus[1]); return; }   // 11-22: cut from the page, its list still opens
   if (tb === "none") { if (PHONE.matches) return; }
   else if (tb === "clients") { const l = $('#snav a[data-nav="clients"]'); if (l && l.getAttribute("aria-current") !== "page") l.click(); }   // these cards sit on the Clients page
   else { const l = $('#snav a[data-nav="dashboard"]'); if (l && paged) l.click(); setTab(tb, true); }
@@ -1043,12 +1047,11 @@ function jump(id) {
 }
 function syncChrome() {   // header owner switch + tab badges
   $$("#top-owner button").forEach(b => { const on = b.dataset.o === STATE.owner; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
-  const bd = { home: D.todoN, clients: D.pOpen, leads: D.realWaiting }; $$("#tabs button").forEach(b => { const n = bd[b.dataset.t] || 0, i = $("i", b); i.hidden = !n; i.textContent = n > 99 ? "99+" : n; });
+  const bd = { home: D.todoN }; $$("#tabs button").forEach(b => { const n = bd[b.dataset.t] || 0, i = $("i", b); i.hidden = !n; i.textContent = n > 99 ? "99+" : n; });   // 11-22: Home · To-dos · Clients (To-dos keeps the menu's own badge)
 }
 function setTab(t, quiet) {
-  if (!TABS[t] || t === "none" || (t === "clients" && !PORTAL_ON)) t = "home"; STATE.tab = t; document.documentElement.dataset.tab = t; store.set("beju-crm-tab", t);
+  if (!TABS[t] || t === "none" || t === "cut" || (t === "clients" && !PORTAL_ON)) t = "home"; STATE.tab = t; document.documentElement.dataset.tab = t; store.set("beju-crm-tab", t);
   $$("#tabs button").forEach(b => { const on = b.dataset.t === t; b.classList.toggle("on", on); b.setAttribute("aria-current", on ? "page" : "false"); });
-  $$('#snav button[data-act="tab"]').forEach(b => b.dataset.t === t ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));   // desktop: Money / Leads / Outreach in the side menu
   if (!quiet) scrollTo(0, 0);
   requestAnimationFrame(() => { CARDS.forEach(c => { if (c.el) fit(c.el); }); Object.values(PLOT).forEach(p => { try { p.paint(clamp(p.i, 0, p.n - 1)); } catch {} }); });
 }
@@ -1683,7 +1686,7 @@ function palItems(q) {
     cmd("Open the website", "new tab", "link", () => window.open(SITE, "_blank", "noopener")), ...(PORTAL_ON ? [cmd("Open the client portal", "new tab", "link", () => window.open(PORTAL, "_blank", "noopener"))] : []),
     ...(NT ? [cmd("Notifications", "N", "bell", () => openDrill("notifs", ""))] : []), cmd("Slack", "#claude-sync · #red-alert", "hash", () => goPage("slack")), cmd("Contacts", "everyone we talk to, one row per person", "users", () => goPage("contacts")),
     cmd("Wall mode on / off", "W", "expand", toggleWall), cmd("Celebrate", "confetti", "bolt", confetti), cmd("Sign out", "", "out", signOut)];
-  const jumps = CARDS.filter(c => c.title && !(PHONE.matches && TABOF[c.id] === "none")).map(c => ({ g: "Jump to", label: c.title, hint: c.grid === 2 ? "client portal" : "card", icon: "chev", run: () => jump(c.id) }));
+  const jumps = CARDS.filter(c => c.title && !(PHONE.matches && TABOF[c.id] === "none") && !(TABOF[c.id] === "cut" && !c.focus)).map(c => ({ g: "Jump to", label: c.title, hint: c.grid === 2 ? "client portal" : "card", icon: "chev", run: () => jump(c.id) }));
   const leads = q ? RAW.pipeline.filter(p => [p.name, p.show, p.email].some(v => lc(v).includes(q))).slice(0, 7).map(p => ({ g: "Leads", label: p.name || p.email, hint: cut(p.show || p.email, 40), icon: "user", run: () => openLead(p.email) })) : [];
   const cls = q ? D.pClients.filter(c => [c.name, c.email].some(v => lc(v).includes(q))).slice(0, 4).map(c => ({ g: "Portal clients", label: c.name || c.email, hint: c.email, icon: "user", run: () => openDrill("client", "e:" + lc(c.email)) })) : [];
   const f = x => !q || lc(x.label + " " + x.hint).includes(q);
@@ -1823,7 +1826,7 @@ function pageGo(update) {
   /* the page's content regions leave as their own groups (vt-o*) and the new ones arrive as others (vt-n*): a fade through, so the menu,
      the top bar and the backdrop stay perfectly still and old and new content never double-expose */
   const h = document.documentElement, my = ++PG_SEQ, name = (el, n) => { el.style.setProperty("view-transition-name", n); PG_NAMED.push(el); }, untag = () => PG_NAMED.splice(0).forEach(el => el.style.removeProperty("view-transition-name")),
-    tag = pre => { pills().forEach((el, i) => { if (el) name(el, i ? "vt-tpill" : "vt-pill"); }); ["#hero", "#mtiles", "#grid", "#spage", "#app>.foot"].forEach((q, i) => { const el = $(q); if (el && el.offsetParent !== null) name(el, pre + i); });
+    tag = pre => { pills().forEach((el, i) => { if (el) name(el, i ? "vt-tpill" : "vt-pill"); }); ["#hero", "#mtiles", "#grid", "#spage", "#app>.foot", "#sec-work", "#secs"].forEach((q, i) => { const el = $(q); if (el && el.offsetParent !== null) name(el, pre + i); });
       [["#snav", "vt-nav"], ["#tabs", "vt-tabs"], ["#toasts", "vt-toasts"], ["#sn-tip", "vt-tip"]].forEach(([q, n]) => { const el = $(q); if (el && el.getClientRects().length) name(el, n); }); };   // fixed overlays keep painting above the content
   untag(); tag("vt-o"); h.classList.add("vt-pg");   // untag first: a switch clicked during the previous one starts clean
   const vt = vtGo(() => { untag(); VT_PASS = true; try { update(); } finally { VT_PASS = false; } tag("vt-n"); pageIn(); });
