@@ -1738,9 +1738,9 @@ async function refresh(manual) {
   catch (e) { if (!RAW) throw e; offline(true); }
   finally { setTimeout(() => btns.forEach(b => b.classList.remove("spinning")), 500); }
 }
-function startLoop() { stopLoop(); TIMER = setInterval(() => { if (!document.hidden && Date.now() - LAST_OK >= 55000) refresh().catch(() => {}); }, 60000); }   // 11-22 (prod DB overload): skip a tick when a realtime refresh just ran
+function startLoop() { stopLoop(); TIMER = setInterval(() => { if (!document.hidden && Date.now() - LAST_OK >= 295000) refresh().catch(() => {}); }, 300000); }   // 11-22 bug hunt: every 5 min (was 60 s); one full read = ~45 requests incl. 1-2 s views on the free-plan database   // 11-22 (prod DB overload): skip a tick when a realtime refresh just ran
 function stopLoop() { if (TIMER) clearInterval(TIMER); TIMER = null; }
-document.addEventListener("visibilitychange", () => { if (!document.hidden && RAW && Date.now() - LAST_OK > 60000) refresh().catch(() => {}); });
+document.addEventListener("visibilitychange", () => { if (!document.hidden && RAW && Date.now() - LAST_OK > 300000) refresh().catch(() => {}); });
 function startRealtime() {
   stopRealtime();
   try { CH = sb.channel("crm-live");
@@ -1762,7 +1762,7 @@ function onChange(tb, p) {
   else if (tb === "video_notes" && ins) toast("New change request", "alert", "c-red", cut(n.text, 90));
   /* 11-22 (prod DB overload): one full read is ~45 requests, so realtime events no longer each force one. They coalesce into at most one
      full refresh per 60 s (the toasts above stay instant); only a new payment refreshes at once. */
-  const soon = tb === "payments" && ins, wait = soon ? 1500 : Math.max(1500, 60000 - (Date.now() - LAST_OK));
+  const soon = tb === "payments" && ins, wait = soon ? 1500 : Math.max(1500, 300000 - (Date.now() - LAST_OK));
   if (RT_T && !soon) return; clearTimeout(RT_T); RT_T = setTimeout(() => { RT_T = null; refresh().catch(() => {}); }, wait);
 }
 
