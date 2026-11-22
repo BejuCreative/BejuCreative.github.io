@@ -799,16 +799,20 @@ button.clc-m{cursor:pointer} button.clc-m:hover{background:var(--tile)}
 .sd-desc-t{white-space:pre-wrap;font-size:13px;line-height:1.5;color:var(--ink-2);background:var(--card-2,rgba(0,0,0,.03));border:1px solid var(--line);border-radius:12px;padding:10px 12px;max-height:38vh;overflow:auto}
 
 /* ---------- 11-22 Email campaigns (BENAS): overview board in the Home look, "Needs a look", one tile per campaign, side panels.
-   Type: 13 (captions, pills, buttons) · 15 (body, labels, names) · 30 (titles) · 44 / 56 (numbers). Colour = meaning only:
-   green = the A/B winner, amber = a change to make, red = something is wrong, grey = running / neutral. ---------- */
+   Type: 13 (captions, pills, buttons) · 15 (body, labels, names) · 30 (titles) · numbers clamp(28-48) / clamp(28-40). Colour = meaning only:
+   green = the A/B winner, amber = a change to make, red = something is wrong, blue (--blue, so every look recolours it) = live data and
+   what you can open: today's sending, the best campaign, test progress, A/B in progress. Grey = neutral.
+   v2 (BENAS 11-22 "blue ... clean Apple style like the dashboard and expenses ... bento ... when you open, it's moving"): the overview is the
+   Expenses hero card (card sp-card); the blocks and tiles rise in with anim.css's keyframes (a-fade, a-up, m-grow, sheet-up). ---------- */
 .spage:has(.ec-hero) .sp-h p{font-size:15px}
 .spage:has(.ec-hero) .sp-src{font-size:13px}
 .spage:has(#ec-pan .sd-panel){animation:none}   /* same fix as the to-dos panel: a transform on .spage would pin the fixed panel to the page */
-.ec-hero{position:relative;isolation:isolate;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"hh btns" "board board";gap:16px 12px;align-items:center;border-radius:28px;background:var(--hero);box-shadow:var(--edge);padding:20px 22px 22px;-webkit-backdrop-filter:var(--blurv);backdrop-filter:var(--blurv)}
+.ec-hero{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"hh btns" "board board";gap:16px 12px;align-items:center;padding:22px 24px}
 .ec-hero>.ec-hh{grid-area:hh} .ec-hero>.ec-btns{grid-area:btns} .ec-hero>.ec-board{grid-area:board}
 .ec-hh,.ec-ch{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;min-width:0}
 .ec-hh h2,.ec-ch h2{font-size:15px;font-weight:600;letter-spacing:-.01em;margin:0}
 .ec-asof{font-family:var(--mono);font-size:13px;color:var(--mute)}
+.ec-asof.old{color:var(--orange)}
 .ec-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .spage .ec-hero .act,.spage .ec-look .act,.spage .ec-panel .act{font-size:13px;height:36px}
 .ec-board{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.15fr);grid-template-areas:"chg best rev" "tst tst rev";gap:12px}
@@ -819,13 +823,14 @@ button.clc-m{cursor:pointer} button.clc-m:hover{background:var(--tile)}
 .ec-l strong{color:var(--ink);font-weight:600}
 .ec-t small,.ec-num small,.ec-r small{font-size:13px;color:var(--mute);line-height:1.35;overflow-wrap:anywhere}
 .ec-n,.ec-n2{display:block;font-family:var(--mono);font-weight:500;letter-spacing:-.05em;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
-.ec-n{font-size:56px;margin:4px 0 2px}
-.ec-n2{font-size:44px}
+.ec-n{font-size:clamp(28px,3.6vw,48px);margin:4px 0 2px}
+.ec-n2{font-size:clamp(28px,3vw,40px)}
+.ec-best .ec-n,.ec-c:not(.off) .ec-nl .ec-n2{color:var(--blue)}
 .ec-t.ec-due .ec-n{color:var(--orange)}
 .ec-r3{display:grid;gap:8px;margin-top:4px}
 .ec-r{display:grid;gap:2px;min-width:0}
 .ec-tst .ec-tr{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-.ring.ec-ring{width:56px;height:56px;--c:var(--ink-2);-webkit-mask:radial-gradient(circle,transparent 20px,#000 21px);mask:radial-gradient(circle,transparent 20px,#000 21px)}
+.ring.ec-ring{width:56px;height:56px;--c:var(--blue);-webkit-mask:radial-gradient(circle,transparent 20px,#000 21px);mask:radial-gradient(circle,transparent 20px,#000 21px)}
 .ec-look{display:grid;gap:12px}
 .ec-flags{display:grid;gap:8px}
 .ec-f{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;background:var(--panel);font-size:15px;line-height:1.4;min-width:0}
@@ -846,6 +851,8 @@ button.clc-m{cursor:pointer} button.clc-m:hover{background:var(--tile)}
 .ec-num.win .ec-n2{color:var(--green)}
 .ec-pill{display:inline-flex;align-items:center;flex:none;font-size:13px;font-weight:600;line-height:1.2;padding:3px 10px;border-radius:999px;background:var(--panel);color:var(--ink-2);white-space:nowrap}
 .ec-pill.win{background:var(--green-soft);color:var(--green)}
+.ec-pill.ab{background:var(--blue-soft);color:var(--blue)}
+.ec-pill.warn{background:var(--red-soft);color:var(--red)}
 .ec-pill.off{background:none;box-shadow:inset 0 0 0 1px var(--line-2);color:var(--mute)}
 /* side panels (the to-dos .sd-panel) */
 .sd-panel.ec-panel{width:min(560px,calc(100vw - 24px));display:grid;gap:16px;align-content:start}
@@ -869,7 +876,7 @@ button.clc-m{cursor:pointer} button.clc-m:hover{background:var(--tile)}
 .ec-pg{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;font-size:13px;color:var(--ink-2)}
 .ec-pg .v{font-family:var(--mono)}
 .ec-bar{grid-column:1/-1;display:block;height:6px;border-radius:99px;background:var(--line);overflow:hidden}
-.ec-bar i{display:block;height:100%;width:var(--w,0%);border-radius:99px;background:var(--ink-2)}
+.ec-bar i{display:block;height:100%;width:var(--w,0%);border-radius:99px;background:var(--blue);transition:width 1.1s var(--ease)}
 .ec-panel .sp-tbl,.ec-panel .sp-tbl th{font-size:13px}
 .ec-tbl td small{font-size:13px;color:var(--mute)}
 .ec-tbl th[scope=row]{color:var(--ink-2);font-weight:500;border-bottom:1px solid var(--line);padding:10px}
@@ -887,16 +894,27 @@ button.clc-m{cursor:pointer} button.clc-m:hover{background:var(--tile)}
 .ec-rules{margin:0;padding-left:18px;display:grid;gap:6px;font-size:15px;line-height:1.5;color:var(--ink-2)}
 @media (max-width:1100px){.ec-board{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"chg best" "rev tst"}}
 @media (max-width:600px){
-  .ec-hero{padding:16px;border-radius:24px}
+  .ec-hero{padding:16px}
   .ec-hero{grid-template-columns:minmax(0,1fr);grid-template-areas:"hh" "board" "btns"}
   .ec-btns{justify-content:stretch} .ec-btns .act{flex:1 1 40%}
   .spage .ec-hero .act,.spage .ec-look .act,.spage .ec-panel .act{min-height:44px;height:auto}
   .ec-board{grid-template-areas:"chg best" "rev rev" "tst tst"}
   .ec-t{padding:14px}
-  .ec-n{font-size:44px}
   .ec-grid{grid-template-columns:minmax(0,1fr)}
   .ec-c{padding:16px}
   .sd-panel.ec-panel,.sd-panel.ec-panel.wide{width:100%}
   .ec-ph{font-size:30px}
   .ec-li{flex-wrap:wrap}
 }
+/* Email campaigns motion (v2): anim.css keyframes only, transform + opacity; crm.css's reduced-motion rule makes them instant.
+   When the data replaces the skeleton (.sp-in, crm.js) or the page is switched to (html.pg-in): the overview, Needs a look and Campaigns rise
+   in that order and their tiles follow in reading order (--n, set in wireEmail). The side panel grows in from the right edge like the
+   dashboard's drill sheets (a bottom sheet rises on a phone), only when it opens, not on every redraw inside it. */
+#spage.sp-in>.ec-hero,#spage.sp-in>.ec-look,#spage.sp-in>.ec-camps{animation:a-fade .3s ease-out backwards,a-up .5s var(--out) backwards}
+#spage.sp-in>.ec-look{animation-delay:.08s} #spage.sp-in>.ec-camps{animation-delay:.14s}   /* on a page switch anim.css staggers #spage>* the same way */
+#spage.sp-in .ec-t,html.pg-in #spage .ec-t{animation:a-fade .3s ease-out backwards,a-up .5s var(--out) backwards;animation-delay:calc(.06s + var(--n,0)*45ms)}
+#spage.sp-in .ec-c,html.pg-in #spage .ec-c{animation:a-fade .3s ease-out backwards,a-up .5s var(--out) backwards;animation-delay:calc(.2s + var(--n,0)*30ms)}
+html #spage>#ec-pan{animation:none}   /* a transform on the panel's parent would pin the fixed panel to the page */
+.sd-scrim.in{animation:a-fade .26s ease-out both}
+@media (min-width:601px){ .sd-panel.ec-panel.in{transform-origin:100% 50%;animation:a-fade .22s ease-out both,m-grow .5s var(--spr) both} }
+@media (max-width:600px){ .sd-panel.ec-panel.in{animation:a-fade .2s ease-out backwards,sheet-up .5s var(--out) backwards} }
