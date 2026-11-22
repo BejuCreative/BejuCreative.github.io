@@ -33,7 +33,7 @@ const initials = s => { const w = String(s || "?").replace(/[^\p{L}\p{N} ]/gu, "
 const NAV = $("#snav"), PAGE_EL = $("#spage"), APP = $("#app"), TIP = $("#sn-tip"), SCRIM = $("#sn-scrim"), MENU = $("#sn-menu"), TOG = $("#sn-tog");
 if (!NAV || !PAGE_EL || !APP) return;
 const HTML = document.documentElement, BASE_TITLE = document.title;
-const PAGES = { dashboard: "Dashboard", expenses: "Expenses", email: "Email tests", clients: "Clients", perf: "Client performance", weekly: "Weekly analysis", todos: "To-dos", slack: "Slack" };
+const PAGES = { dashboard: "Dashboard", expenses: "Expenses", email: "Email campaigns", clients: "Clients", perf: "Client performance", weekly: "Weekly analysis", todos: "To-dos", slack: "Slack" };
 const K_NAV = "beju-crm-nav";
 let PAGE = "dashboard", ME = null, CACHE = {}, TIMER = null, CH = null, DRAG = null, SEQ = 0, EDIT = null, ON = false;
 const sb = () => window.BEJU_CRM_SB;
@@ -110,7 +110,7 @@ addEventListener("popstate", () => { if (ON) show(pageFromUrl()); });
 document.addEventListener("click", ev => { if (ON && PAGE !== "dashboard" && ev.target.closest('[data-act="tab"]')) go("dashboard"); }, true);
 
 function show(p) {
-  const was = PAGE; PAGE = p; EDIT = null; if (p !== "expenses") EXM = null;
+  const was = PAGE; PAGE = p; EDIT = null; if (p !== "expenses") EXM = null; if (p !== "email") EPAN = null;
   $$("a[data-nav]", NAV).forEach(a => a.dataset.nav === p && !a.classList.contains("sn-brand") ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
   HTML.classList.toggle("paged", p !== "dashboard"); PAGE_EL.hidden = p === "dashboard";
   document.title = (document.title.match(/^\(\d+\+?\) /) || [""])[0] + (p === "dashboard" ? BASE_TITLE : `${PAGES[p]} · BEJÚ`);   // keeps the bell's unread count in front
@@ -128,6 +128,7 @@ document.addEventListener("keydown", ev => {
   const ae = document.activeElement, typing = /^(INPUT|TEXTAREA|SELECT)$/.test(ae?.tagName || "") || ae?.isContentEditable;
   if (ev.key === "Escape" && NAV.classList.contains("open")) { ev.stopPropagation(); drawer(false); MENU.focus(); return; }
   if (ev.key === "Escape" && EDIT && PAGE === "todos") { closePanel(); return; }
+  if (ev.key === "Escape" && EPAN && PAGE === "email") { ev.preventDefault(); closeEPan(); return; }
   if (!typing && !ev.metaKey && !ev.ctrlKey && !ev.altKey && ev.key === "[" && !PHONE.matches) { ev.preventDefault(); toggleRail(); }
 }, true);
 
@@ -152,7 +153,7 @@ const LOAD = { expenses: loadExpenses, email: loadEmail, clients: loadClients, p
 const VIEW = { expenses: viewExpenses, email: viewEmail, clients: viewClients, perf: viewPerf, weekly: viewWeekly, todos: viewTodos, slack: viewSlack };
 const HEAD = {
   expenses: ["Expenses <em class=\"sf\">&amp; profit</em>", "Tick what's paid this month and see the profit that's left."],
-  email: ["Email <em class=\"sf\">tests</em>", "Which variant wins in each campaign, and whether the change has been made."],
+  email: ["Email <em class=\"sf\">campaigns</em>", "What to change, which campaign works best, and how each one is sending."],
   clients: ["Clients <em class=\"sf\">&amp; videos</em>", "Everyone who paid or got videos from us, and every video we delivered."],
   perf: ["Client <em class=\"sf\">performance</em>", "Monthly clients' YouTube, TikTok and Instagram: views and trend, which of our Shorts they posted, what works."],
   weekly: ["Weekly <em class=\"sf\">business review</em>", "Health line, money, funnel, campaigns, A/B tests, engine, sales, clients and what we changed: this week against last week and the 4 weeks before."],
@@ -388,102 +389,239 @@ function wireExpenses() {
   if (!EX_CH && sb()) EX_CH = sb().channel("side-exp").on("postgres_changes", { event: "*", schema: "public", table: "expense_status" }, async () => { if (PAGE !== "expenses" || !CACHE.expenses || EXE) return; try { CACHE.expenses.status = await all("expense_status", "*"); const a = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.tick : null; rer(); if (a) $(`[data-tick="${CSS.escape(a)}"]`)?.focus(); } catch {} }).subscribe();
 }
 
-/* 2. email tests (SIMAS 11-19 18:5x: "show the winner, highlight the winner. And also say the changes are done or not") */
+/* 2. email campaigns (SIMAS 11-19 18:5x: "show the winner, highlight the winner. And also say the changes are done or not").
+   BENAS 11-22 redesign ("Email tests" -> "Email campaigns"): an overview board (Changes to make · Best campaign · Revenue by campaign ·
+   Tests running), a "Needs a look" strip only when something is flagged, then one tile per campaign (new leads emailed today or
+   yesterday + positive-reply rate). Everything else (A vs B, the emails, rules, change log, full table, partners, subject lines, history)
+   opens in a side panel (a bottom sheet on a phone). Same data and requests as before.
+   Today / yesterday: campaign_daily.day is Instantly's sending day (America/Chicago, like instantly-sync's sent_today). Sends run in the
+   Chicago daytime (Vilnius late afternoon to about 01:00), so the tiles show the last full day until today's row has sends > 0.
+   "Draft a challenger" adds an ab_actions row with action 'challenger_requested' and no done_at, for the Claude ops agents to pick up;
+   "Mark change done" turns that row into the done change. The switch in Instantly is never automated. */
 async function loadEmail() {
   await me();
   const [ab, m, acts, arms, cd, il, rev] = await Promise.all([panel("ab_tests"), panel("metrics").catch(() => null), all("ab_actions", "*", q => q.order("id", { ascending: false })).catch(() => []), panel("arms").catch(() => null),
     all("campaign_daily", "campaign_id,day,sent,new_leads,replies,opportunities", q => q.gte("day", addDays(dayOf(Date.now()), -13))).catch(() => []), all("interested_leads", "campaign_id,interest_changed_at,last_reply_at,created_at").catch(() => []),
     must(sb().from("campaign_revenue").select("campaign_id,campaign_name,revenue_usd,payers,payments,first_paid_at,last_paid_at")).catch(() => null)]);
-  return { ab, m, acts, arms, cd: fixOpp(cd, il), rev };
+  return { ab, m, acts, arms, cd: fixOpp(cd, il), rev, at: Date.now() };
 }
 const abAct = (acts, key, step) => acts.find(a => a.campaign === key && a.step === step) || null;   // newest first
+const CHREQ = "challenger_requested";
 function abStatus(c, s, acts) {
   const a = abAct(acts, c.key, s.step), win = s.state === "winner" ? s.lead : null;
   if (a && a.done_at) return { k: "done", chip: "chip g", text: `Change done ${dLabel(dayOf(a.done_at))}${a.done_by ? ` by ${a.done_by}` : ""}: ${a.action || `variant ${a.loser || "?"} dropped`}${a.note ? ` · ${a.note}` : ""}`, a };
-  if (win || a) { const w = win || (a && a.winner), l = w === "B" ? "A" : "B"; return { k: "due", chip: "chip o", text: `Change due: drop ${l}, write a new challenger against ${w}`, a, w, l }; }
+  if (win || a) { const w = win || (a && a.winner), l = w === "B" ? "A" : "B"; return { k: "due", chip: "chip o", text: `Change due: drop ${l}, write a new challenger against ${w}`, a, w, l, req: !!a && a.action === CHREQ }; }
   return { k: "none", chip: "chip", text: "No change needed yet", a: null };
 }
-function subjCard(S, vt) {   /* subject-line test (council 11-19): arms greyed out until each has `look` sends; no verdict before that */
-  if (!S || !S.since) return "";
-  const R = S.rules || {}, LOOK = R.look || 600, WIN = R.win || 1000, TIE = R.tie || 1500, GAP = R.gap || 2;
-  const row = g => { const early = g.state === "too_early";
-    return `<div class="ab-test"><div class="ab-th"><b>${esc(g.name)}</b><span class="chip${g.state === "winner" ? " g" : g.state === "looking" || g.state === "no_winner" ? " b" : ""}">${esc(g.verdict)}</span></div>
-    <div class="ab-tri">${g.arms.map(a => { const grey = a.sent < LOOK, win = !early && g.lead === a.arm && (g.state === "winner" || g.state === "tie");
-      return `<div class="ab-v${grey ? " grey" : ""}${win ? " win" : !early && g.lead === a.arm ? " lead" : ""}"><div class="ab-vh"><span class="sp-tag">${esc(a.label)}</span>${win ? `<em class="ab-badge w">${g.state === "tie" ? "Keep (shortest)" : "Winner"}</em>` : ""}</div>
-      <b>${grey ? `${int(a.sent)} <small class="ab-unit">sent</small>` : a.pos_rate == null ? "0.0%" : a.pos_rate.toFixed(1) + "%"}</b><small>${a.sent ? `${int(a.positives)} positive · ${int(a.replies)} replies` : "0 sends since the split"}${grey ? ` · positive rate shown at ${LOOK} sends (no peeking)` : ""}</small>
-      <div class="ab-prog" title="${int(a.sent)} of ${LOOK} sends before any look"><i data-v="w:${Math.min(100, Math.round(100 * a.sent / LOOK))}%"></i></div><span class="ab-pn">${int(Math.min(a.sent, LOOK))} / ${LOOK} sends${a.sent >= LOOK ? " ✓" : ""} · ${int(a.leads)} leads</span></div>`; }).join("")}</div></div>`; };
-  const sk = (S.groups || []).some(g => (g.arms || []).filter(a => a.sent > 0).length >= 2) ? "ab" : "on";
-  return `<section class="card sp-card ab-subj camp-st st-${sk}"><h2>Subject lines <small>email 1 · pooled across campaigns · since ${esc(vt(S.since))}</small></h2>${(S.groups || []).map(row).join("")}
-  <p class="sp-note">No verdict before ${int(LOOK)} sends per arm; winner needs ${int(WIN).toLocaleString("en-US")}–${int(TIE).toLocaleString("en-US")} sends and a ${GAP}-point gap. No gap by ${int(TIE).toLocaleString("en-US")} = tie, keep the shortest subject. A send counts only when its subject matches the lead's arm.</p></section>`;
+const SEND_TZ = "America/Chicago";
+const sParts = new Intl.DateTimeFormat("en-GB", { timeZone: SEND_TZ, year: "numeric", month: "2-digit", day: "2-digit" });
+const sendDay = t => { const p = Object.fromEntries(sParts.formatToParts(new Date(t)).map(x => [x.type, x.value])); return `${p.year}-${p.month}-${p.day}`; };
+const ecName = n => String(n || "").replace(/ — test\b/, " (test)").replace(/^TEST — /, "Test: ").replace(/ — V1 Batch 1$/, "").replace(/ \(\d\d-\d\d\)$/, "").replace(/^ARM (T\d) — /, "$1 · ").replace(/ — /g, " · ");
+const ecAsOf = t => t ? `as of ${dayOf(t) === dayOf(Date.now()) ? "" : dLabel(dayOf(t)) + ", "}${hm(t)}` : "";
+const ecWhen = t => t ? `${dLabel(dayOf(t))}, ${hm(t)}` : "—";
+const r1 = v => v == null || !isFinite(v) ? "—" : (+v).toFixed(1) + "%";
+const median = a => { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y), i = s.length >> 1; return s.length % 2 ? s[i] : (s[i - 1] + s[i]) / 2; };
+const ecPill = (t, k = "") => `<span class="ec-pill${k ? " " + k : ""}">${esc(t)}</span>`;
+let EPAN = null, EFOCUS = null;   // the open side panel ({ k, id }) and the overview control that opened it ([section class, data-ecopen])
+function emailModel(x) {
+  const d = x.ab.data, M = (x.m && x.m.data) || {}, acts = x.acts || [], R = d.rules || {}, MIN = R.min_sends || 300, MINP = R.min_pos || 8;
+  const abC = d.campaigns, mC = Array.isArray(M.campaigns) ? M.campaigns : [];
+  const tests = abC.flatMap(c => (c.steps || []).map(s => ({ c, s, st: abStatus(c, s, acts) })));
+  const due = tests.filter(z => z.st.k === "due");
+  const running = tests.filter(z => z.s.in_test !== false && z.c.since && z.s.A && z.s.B && z.s.A.sent > 0 && z.s.B.sent > 0);
+  const prog = s => Math.min(1, Math.min(s.A.sent, s.B.sent) / MIN, ((+s.A.positives || 0) + (+s.B.positives || 0)) / MINP);   // the gate that is further away
+  const open = running.filter(z => z.s.state !== "winner"), early = open.filter(z => z.s.state === "too_early"), near = open.filter(z => prog(z.s) < 1).sort((a, b) => prog(b.s) - prog(a.s))[0] || null;
+  /* 11-21 (SIMAS: "how much has the campaigns generated revenue each"): public.campaign_revenue. While the view is missing, no revenue part shows */
+  const REV = Array.isArray(x.rev) ? x.rev : null, revUn = r => !r.campaign_id || r.campaign_id === "unattributed";
+  const revBy = Object.fromEntries((REV || []).filter(r => !revUn(r)).map(r => [r.campaign_id, r]));
+  /* the day the campaign tiles show (see the note above loadEmail) */
+  const now = Date.now(), vt = dayOf(now), sd = sendDay(now), cd = x.cd || [];
+  const started = cd.some(r => r.day === sd && (+r.sent || 0) > 0);
+  const day = sd === vt && !started ? addDays(sd, -1) : sd, isToday = day === vt, full = isToday ? addDays(day, -1) : day;
+  const rowsOf = {}; cd.forEach(r => (rowsOf[r.campaign_id] = rowsOf[r.campaign_id] || []).push(r));
+  const sumIn = (id, a, b, k) => (rowsOf[id] || []).filter(r => r.day >= a && r.day <= b).reduce((s, r) => s + (+r[k] || 0), 0);
+  const normB = (id, end) => { const v = (rowsOf[id] || []).filter(r => r.day < end && r.day >= addDays(end, -13) && (+r.sent || 0) > 0).map(r => +r.new_leads || 0); return v.length >= 3 ? median(v) : 0; };
+  /* one tile per campaign: everything in the Instantly metrics sync, plus any A/B campaign it doesn't have */
+  const abBy = Object.fromEntries(abC.filter(c => c.campaign).map(c => [c.campaign, c])), seen = new Set();
+  const T = mC.map(m => { const ab = abBy[m.name] || null; if (ab) seen.add(ab.key); return { id: String(m.id), full: m.name, m, ab, st: m.status }; })
+    .concat(abC.filter(c => !seen.has(c.key)).map(c => ({ id: "ab-" + c.key, full: c.campaign || c.name, m: null, ab: c, st: c.status })));
+  T.forEach(t => {
+    const r = (rowsOf[t.id] || []).find(z => z.day === day), steps = (t.ab && t.ab.steps) || [], live = t.ab && t.ab.since ? steps.filter(s => s.in_test !== false && s.A && s.B) : [], win = steps.find(s => s.state === "winner");
+    Object.assign(t, { name: ecName(t.full), on: t.st === 1, nl: r ? +r.new_leads || 0 : 0, fu: r ? Math.max(0, (+r.sent || 0) - (+r.new_leads || 0)) : 0, norm: normB(t.id, isToday ? sd : day),
+      rev: REV && t.m ? revBy[t.m.id] || { revenue_usd: 0, payers: 0 } : null, flags: [] });
+    t.pill = !t.on ? (t.st === 3 ? "Finished" : "Paused") : win ? `Winner ${win.lead}` : !live.length ? "One version" : live.some(s => s.A.sent >= MIN && s.B.sent >= MIN) ? "Testing A/B" : "Too early";
+    t.pk = !t.on ? "off" : win ? "win" : "";
+  });
+  const tileOf = c => T.find(t => t.ab === c) || null;
+  /* Needs a look: act = a change to make (amber), warn = something is wrong (red), info = worth a look (grey) */
+  due.forEach(z => { const t = tileOf(z.c); if (t) t.flags.push({ kind: "act", text: `${z.s.step}: ${z.st.w} beat ${z.st.l}. ${z.st.req ? "A new challenger is being drafted." : `Drop ${z.st.l}, write a new challenger.`}`, btn: "Review change" }); });
+  const act = T.filter(t => t.on), exp = isToday ? Math.min(1, act.reduce((a, t) => a + t.nl, 0) / Math.max(1, act.reduce((a, t) => a + t.norm, 0))) : 1;   // how far today's sending is, across all lanes
+  act.forEach(t => {
+    const f = (kind, text) => t.flags.push({ kind, text, btn: "Open" }), s0 = ((t.ab && t.ab.steps) || [])[0];
+    if (t.norm >= 10 && (isToday ? exp >= .25 && t.nl < .4 * t.norm * exp : t.nl < .5 * t.norm)) f("warn", `${int(t.nl)} new leads emailed ${isToday ? "so far today" : "yesterday"}, usually about ${int(t.norm)} a day`);
+    const q = s0 && typeof s0.queued === "number" ? s0.queued : t.m && isFinite(t.m.leads) ? t.m.leads - t.m.contacted : null;
+    if (q != null && q <= 0) f("warn", "out of new leads: none waiting for email 1");
+    const z = t.ab && t.ab.since && (t.ab.steps || []).find(s => s.in_test !== false && s.A && s.B && Math.max(s.A.sent, s.B.sent) >= 30 && Math.min(s.A.sent, s.B.sent) === 0);
+    if (z) f("warn", `${z.step}: ${z.A.sent ? "B" : "A"} has sent 0 emails since the split`);
+    if (t.m && t.m.bounce_rate >= 3) f("warn", `bounce rate ${r1(t.m.bounce_rate)}, all time`);
+    if (t.m && t.m.contacted >= 150 && !(+t.m.opportunities)) f("warn", `dead lane: ${int(t.m.contacted)} leads contacted, 0 positive replies`);
+    const r3 = sumIn(t.id, addDays(full, -2), full, "replies"), base = sumIn(t.id, addDays(full, -12), addDays(full, -3), "replies") * 3 / 10;
+    if (r3 >= 5 && r3 >= 2.5 * base) f("info", `${int(r3)} replies in the last 3 days, usually about ${int(base)}`);
+    else if (base >= 6 && r3 <= .25 * base) f("warn", `${int(r3)} replies in the last 3 days, usually about ${int(base)}`);
+  });
+  const KO = { act: 0, warn: 1, info: 2 };
+  T.forEach(t => { t.flags.sort((a, b) => KO[a.kind] - KO[b.kind]); t.sev = t.flags.some(f => f.kind === "warn") ? "warn" : t.flags[0] ? t.flags[0].kind : ""; });
+  T.sort((a, b) => (b.on - a.on) || (!!b.sev - !!a.sev) || (b.nl - a.nl) || a.name.localeCompare(b.name));   // flagged first, then today's sending, paused last
+  const S = d.subjects && d.subjects.since ? d.subjects : null;
+  const flags = [...(S ? (S.groups || []).filter(g => g.state === "winner" || g.state === "tie").map(g => ({ kind: "act", subj: g, btn: "Open" })) : []), ...T.flatMap(t => t.flags.map(f => ({ ...f, t })))]
+    .sort((a, b) => KO[a.kind] - KO[b.kind]);
+  /* v7 rule (SIMAS 11-21), renamed "Best campaign" (BENAS 11-22): the best all-time positive rate among campaigns with 100+ leads contacted */
+  const best = mC.filter(c => c.contacted >= 100 && c.pos_rate != null).sort((a, b) => b.pos_rate - a.pos_rate || b.contacted - a.contacted)[0] || null;
+  const nameOfId = id => { const t = T.find(y => y.m && String(y.m.id) === String(id)); return t ? t.name : ""; };
+  const top3 = REV ? REV.filter(r => !revUn(r) && +r.revenue_usd > 0).sort((a, b) => b.revenue_usd - a.revenue_usd).slice(0, 3).map(r => ({ ...r, name: nameOfId(r.campaign_id) || ecName(r.campaign_name) || "Unnamed" })) : [];
+  return { d, M, acts, R, MIN, MINP, tests, due, running, early, near, prog, REV, revUn, nameOfId, T, tileOf, flags, best, bestT: best ? T.find(t => t.m === best) : null, top3, day, isToday, S };
 }
 function viewEmail(x) {
-  const d = x.ab && x.ab.data, M = x.m && x.m.data, acts = x.acts || [];
+  const d = x.ab && x.ab.data;
   if (!d || !Array.isArray(d.campaigns)) return empty("No A/B data yet. It arrives with the next sync (hourly).");
-  const r = d.rules || {}, MIN = r.min_sends || 300, tests = d.campaigns.flatMap(c => (c.steps || []).map(s => ({ c, s, st: abStatus(c, s, acts) })));
-  const live = tests.filter(t => t.s.in_test !== false && t.c.since), running = live.filter(t => t.s.A.sent > 0 && t.s.B.sent > 0).length, waiting = live.length - running;
-  const vt = t => t ? `${dLabel(dayOf(t))}, ${new Date(t).toLocaleTimeString("en-GB", { timeZone: TZ, hour: "2-digit", minute: "2-digit" })}` : "—";
-  const vcard = (c, s, v) => { const o = s[v], lead = s.lead === v && s.state !== "too_early", win = s.lead === v && s.state === "winner", ahead = s.lead === v && s.margin_pts != null;
-    return `<div class="ab-v${win ? " win" : lead ? " lead" : ""}"><div class="ab-vh"><span class="sp-tag">${v}</span><span>${v === "A" ? "Line-first" : "Question-first"}</span>${win ? `<em class="ab-badge w">Winner${s.margin_pts != null ? ` · +${s.margin_pts.toFixed(1)} pts` : ""}</em>` : lead ? `<em class="ab-badge">Leading${s.margin_pts != null ? ` · +${s.margin_pts.toFixed(1)} pts` : ""}</em>` : ahead && s.state === "too_early" ? `<em class="ab-badge e">ahead, too early</em>` : ""}</div>
-      <b>${o.sent ? (o.pos_rate == null ? "0.0%" : o.pos_rate.toFixed(1) + "%") : `n/a <small class="ab-unit">(0 sends)</small>`}</b><small>${o.sent ? `${int(o.positives)} positive of ${int(o.sent)} sent · ${int(o.replies)} replies` : "0 sends since the split restarted"}</small>
-      <div class="ab-prog" title="${int(o.sent)} of ${MIN} sends needed"><i data-v="w:${Math.min(100, Math.round(100 * o.sent / MIN))}%"></i></div><span class="ab-pn">${int(Math.min(o.sent, MIN))} / ${MIN} sends${o.sent >= MIN ? " ✓" : ""}</span></div>`; };
-  /* 11-21 (SIMAS: "the follow-ups ... not working right?"): the A/B counts restarted at the split, so each step also shows Instantly's own step numbers (all versions, all time + 14 days), how many leads wait for it, and the follow-up delay */
-  const isN = v => typeof v === "number" && isFinite(v), fStep = (c, s) => ((c.funnel && c.funnel.steps) || []).find(f => f.idx === (c.steps || []).indexOf(s)) || null;
-  const fPart = o => o && isN(o.sent) ? `${int(o.sent)} sent${isN(o.replies) ? ` · ${int(o.replies)} repl${o.replies === 1 ? "y" : "ies"}${o.sent > 0 ? ` (${(100 * o.replies / o.sent).toFixed(1)}%)` : ""}` : ""}${isN(o.positives) ? ` · ${int(o.positives)} positive` : ""}` : "";
-  const fLine = (c, s) => { const f = fStep(c, s), a = f && fPart(f.all), b = f && fPart(f.d14); return a || b ? `<p class="sp-note" title="Straight from Instantly, A and B together. Replies leave out auto-replies.">${a ? `All versions, all time: ${a}${b ? ` · last 14 days: ${b}` : ""}` : `All versions, last 14 days: ${b}`}</p>` : ""; };
-  const sMeta = (c, s, pre) => { const dl = c.funnel && c.funnel.fu_delay_days, m = [pre, isN(s.queued) ? `${int(s.queued)} waiting` : "", (c.steps || []).indexOf(s) === 1 && isN(dl) ? `sends ${dl} day${dl === 1 ? "" : "s"} after email 1` : ""].filter(Boolean); return m.length ? ` <small class="mut">${m.join(" · ")}</small>` : ""; };
-  const fuShare = c => { const F = c.funnel || {}, v = F.fu_share_of_replies; return isN(v) && (F.steps || []).some(f => f.idx >= 1 && f.all && f.all.sent > 0) ? ` · follow-ups bring ${Math.round(v)}% of replies` : ""; };
-  const test = (c, s) => { const st = abStatus(c, s, acts), stateTxt = s.state === "winner" ? "Winner found" : s.state === "leading" ? `Leading, not yet certain (${Math.round(100 * (s.lead === "B" ? s.p_b : 1 - s.p_b))}% likely)` : !s.A.sent && !s.B.sent ? "No sends since the split yet" : !s.B.sent ? "B hasn't sent yet" : !s.A.sent ? "A hasn't sent yet" : "Too early";
-    if (!c.since) return `<div class="ab-test"><div class="ab-th"><b>${esc(s.step)}${sMeta(c, s)}</b><span class="chip">Not split yet</span></div>${fLine(c, s)}<p class="sp-note">This campaign's leads haven't been given their A / B version yet.</p></div>`;
-    if (s.in_test === false) return `<div class="ab-test"><div class="ab-th"><b>${esc(s.step)}${sMeta(c, s)}</b><span class="chip">Not in this test</span></div>${fLine(c, s)}<p class="sp-note">No real B for this step, so every lead gets A.</p></div>`;
-    return `<div class="ab-test" data-ab="${esc(c.key)}|${esc(s.step)}"><div class="ab-th"><b>${esc(s.step)}${sMeta(c, s, s.leads ? `leads A ${int(s.leads.A)} · B ${int(s.leads.B)}` : "")}</b><span class="chip${s.state === "winner" ? " g" : s.state === "leading" ? " b" : ""}">${esc(stateTxt)}</span></div>
-      ${fLine(c, s)}<div class="ab-pair">${vcard(c, s, "A")}${vcard(c, s, "B")}</div>
-      <div class="ab-st"><span class="${st.chip}">${st.k === "done" ? "Change done" : st.k === "due" ? "Change due" : "No change yet"}</span><span class="grow">${esc(st.text)}</span>${st.k === "due" ? `<button type="button" class="act go" data-abdone="${esc(c.key)}|${esc(s.step)}">${ic("check")}Mark change done</button>` : st.k === "done" ? `<button type="button" class="act" data-abundo="${st.a.id}">Undo</button>` : `<button type="button" class="act" data-abdone="${esc(c.key)}|${esc(s.step)}" title="Use this if you swapped a variant by hand before a winner was called">Log a change</button>`}</div></div>`; };
-  const smp = c => c.sample ? `<details class="ab-txt"><summary>What A and B say <small>one real lead's emails</small></summary><div class="ab-pair">${["A", "B"].map(v => `<div class="ab-copy"><span class="sp-tag">${v}</span><b>${esc(c.sample[v].subject || "(no subject)")}</b><p>${esc(c.sample[v].body || "")}</p><small>Follow-up: ${esc((c.sample[v].fu || "").slice(0, 260))}</small></div>`).join("")}</div></details>` : "";
-  /* 11-21 (SIMAS: "how much has the campaigns generated revenue each"): public.campaign_revenue. While the view is missing, no revenue part shows */
-  const REV = Array.isArray(x.rev) ? x.rev : null, revUn = r => !r.campaign_id || r.campaign_id === "unattributed", revBy = Object.fromEntries((REV || []).filter(r => !revUn(r)).map(r => [r.campaign_id, r]));
-  const revOf = id => (REV && id ? revBy[id] || { revenue_usd: 0, payers: 0 } : null), revS = id => +((revOf(id) || {}).revenue_usd) || 0, bySort = list => (REV && ESORT === "rev" ? [...list].sort((a, b) => revS(b.id) - revS(a.id)) : list);
-  const revCard = id => { const r = revOf(id); return r ? `<div class="ab-rev"><b>${usd(r.revenue_usd)}</b><span>revenue</span><small>${int(r.payers)} client${+r.payers === 1 ? "" : "s"}</small></div>` : ""; };
-  const camps = M && Array.isArray(M.campaigns) ? bySort(M.campaigns.filter(c => c.contacted >= 30)) : [], rmx = Math.max(1, ...camps.map(c => c.reply_rate || 0));
-  const part = x.arms && x.arms.data ? (x.arms.data.arms || []).filter(a => (a.campaigns || []).some(n => /PARTNER/i.test(n))) : null, pmx = part ? Math.max(1, ...part.map(a => a.reply_rate || 0)) : 1;
-  const done = acts.filter(a => a.done_at);
-  /* SIMAS 11-20, colours from v7 (SIMAS 11-21): GREEN = testing all variants (A and B both sending), PURPLE = one variant only, GOLD = the winner, plain + dimmed = paused/finished */
-  const abOn = c => !!c && (c.steps || []).some(s => s.in_test !== false && s.A && s.B && s.A.sent > 0 && s.B.sent > 0), abByName = Object.fromEntries(d.campaigns.filter(c => c.campaign).map(c => [c.campaign, c]));
-  const cst = (status, ab) => ab ? "ab" : status === 1 ? "on" : "off", CSL = { ab: "Testing all variants", on: "One variant only", off: "Paused" }, mSt = c => cst(c.status, abOn(abByName[c.name]));
-  const cName = n => String(n || "").replace(/ — test\b/, " (test)").replace(/^TEST — /, "Test: ").replace(/ — V1 Batch 1$/, "").replace(/ \(\d\d-\d\d\)$/, "").replace(/^ARM (T\d) — /, "$1 · ").replace(/ — /g, " · ");
-  const cTag = c => { const k = mSt(c); return `<em class="cs-tag ${k}">${k === "off" ? esc((c.status_label || "paused").replace(/^./, x => x.toUpperCase())) : CSL[k]}</em>`; };
-  /* coordinator 11-20 (Simas: "I don't see any numbers there at all, only minus"): A/B counts restarted at the split, so every campaign also shows its real numbers */
-  const t0 = dayOf(Date.now()), w0e = monday(t0), d14 = addDays(t0, -13), idByName = Object.fromEntries(((M && M.campaigns) || []).map(c => [c.name, c.id])), cdE = x.cd || [];
-  const cnum = (id, from) => { const r = cdE.filter(z => z.campaign_id === id && z.day >= from && z.day <= t0), sm = k => r.reduce((a, z) => a + (+z[k] || 0), 0); return { sent: sm("sent"), nl: sm("new_leads"), rep: sm("replies"), opp: sm("opportunities") }; };
-  const pc = (a, b) => b ? (100 * a / b).toFixed(1) + "%" : "n/a (0 new leads)";
-  const nline = (lab, o) => `<div class="ab-num"><span class="mut">${lab}</span><b>${int(o.sent)}</b><small>sent</small><b>${int(o.nl)}</b><small>new leads</small><b>${int(o.rep)}</b><small>replies · ${pc(o.rep, o.nl)}</small><b>${int(o.opp)}</b><small>positive · ${pc(o.opp, o.nl)}</small></div>`;
-  const cstats = c => { const id = idByName[c.campaign]; return id ? `<div class="ab-nums" title="From Instantly's daily numbers. Replies leave out auto-replies.">${nline("This week", cnum(id, w0e))}${nline("Last 14 days", cnum(id, d14))}</div>` : ""; };
-  const reset = `<p class="ab-reset">${ic("refresh")}<span>A/B counts restarted ${esc(vt(d.split_since))} when we fixed the 50/50 split; each day's sends start ~16:00 Vilnius. The real numbers per campaign are on each card below.</span></p>`;
-  const legend = `<p class="camp-legend" aria-label="Campaign colours"><span><i class="cs ab"></i>Testing all variants</span><span><i class="cs on"></i>One variant only</span><span><i class="cs win"></i>Winner</span><span><i class="cs off"></i>Paused</span></p>`;
-  /* v7 (SIMAS 11-21): the winner in gold = the best all-time positive rate (Instantly, once per lead) among campaigns with 100+ leads contacted, at least 2% */
-  const elig = ((M && M.campaigns) || []).filter(c => c.contacted >= 100 && c.pos_rate != null).sort((a, b) => b.pos_rate - a.pos_rate || b.contacted - a.contacted), LEADC = elig[0] || null, WINC = LEADC && LEADC.pos_rate >= 2 ? LEADC : null, isWin = n => !!WINC && n === WINC.name;
-  const winCard = `<section class="card sp-card win-card${WINC ? "" : " none"}"><span class="win-k">${WINC ? "Winner" : "No winner yet"}</span>${WINC ? `<h2 class="win-n">${esc(cName(WINC.name))}</h2><div class="win-big"><b>${WINC.pos_rate.toFixed(1)}%</b><span>positive replies<small>${int(WINC.opportunities)} of ${int(WINC.contacted)} leads · ${WINC.reply_rate == null ? "0" : WINC.reply_rate.toFixed(1)}% replied${WINC.status === 1 ? "" : " · paused now"}</small></span></div>${elig[1] ? `<p class="win-r">Next: ${esc(cName(elig[1].name))} at ${elig[1].pos_rate.toFixed(1)}%${elig[2] ? ` · then ${esc(cName(elig[2].name))} at ${elig[2].pos_rate.toFixed(1)}%` : ""}</p>` : ""}` : `<h2 class="win-n">${LEADC ? `${esc(cName(LEADC.name))} leads at ${LEADC.pos_rate.toFixed(1)}%` : "No campaign has 100 leads yet"}</h2>`}
-    <p class="sp-note">Rule: the best positive-reply rate among campaigns with 100+ leads contacted, and at least 2% positive. All time, from Instantly.</p></section>`;
-  return `${winCard}${reset}<div class="sp-kpis">${kpi("Tests running", cu(running, "int", "ab-run"), waiting ? `${waiting} more waiting for first sends since the split` : "A and B both sending")}${kpi("Winners found", cu(tests.filter(t => t.s.state === "winner").length, "int", "ab-win"), `needs ${MIN}+ sends per side and ${r.min_pos || 8}+ positives`)}${kpi("Changes due", cu(tests.filter(t => t.st.k === "due").length, "int", "ab-due"), "loser to drop, new challenger to write")}${kpi("Changes done", cu(done.length, "int", "ab-done"), done[0] ? `last ${esc(dLabel(dayOf(done[0].done_at)))}` : "none yet")}</div>
-  <p class="sp-note ab-split"><b>Split 50/50 by lead since ${esc(vt(d.split_since))}</b> · each lead keeps one version per email, and A vs B is counted by that version, not by Instantly's variant numbers.</p>
-  ${legend}${subjCard(d.subjects, vt)}
-  <div class="ab-grid">${d.campaigns.map(c => { const k = cst(c.status, abOn(c)); return `<section class="card sp-card ab-card camp-st st-${k}${isWin(c.campaign) ? " st-win" : ""}"><h2><span>${esc(c.name)} ${isWin(c.campaign) ? `<em class="cs-tag win">Winner</em> ` : ""}<em class="cs-tag ${k}">${CSL[k]}</em></span> <small>${c.since ? `split since ${esc(vt(c.since))}` : "not split yet"}${fuShare(c)}</small></h2>${revCard(idByName[c.campaign])}${cstats(c)}${(c.steps || []).map(s => test(c, s)).join("")}${smp(c)}</section>`; }).join("")}</div>
-  <section class="card sp-card"><h2>Partner campaigns <small>arms are tags, not Instantly variants</small></h2>${part && part.length ? `<div class="sp-bars">${part.map(a => `<div class="sp-bar"><span>${esc(a.arm)} <small class="mut">${esc((a.campaigns || []).filter(n => /PARTNER/i.test(n)).map(n => n.replace(/^PARTNER\s*/i, "")).join(", "))}</small></span><span class="v">${a.reply_rate == null ? "0% replied" : a.reply_rate.toFixed(1) + "% replied"} · ${int(a.positive)} positive · ${int(a.contacted)} contacted</span><div class="bar"><i data-v="w:${Math.max(2, Math.round(100 * (a.reply_rate || 0) / pmx))}%"></i></div></div>`).join("")}</div><p class="sp-note">Too early for a winner: every partner arm is under 100 leads contacted.</p>` : empty("No data yet: no partner-campaign leads are tagged in the arms sync.")}</section>
-  <section class="card sp-card"><h2>Reply rate by campaign <small>all time · Instantly API${x.m ? ` · synced ${esc(ago(x.m.updated_at))}` : ""}</small></h2>${camps.length ? `${REV ? `<div class="seg rev-sort" role="group" aria-label="Order">${[["default", "Default order"], ["rev", "By revenue"]].map(([k, l]) => `<button type="button" data-esort="${k}" class="${ESORT === k ? "on" : ""}" aria-pressed="${ESORT === k}">${l}</button>`).join("")}</div>` : ""}<div class="sp-bars">${camps.map(c => `<div class="sp-bar camp-st st-${mSt(c)}${isWin(c.name) ? " st-win" : ""}"><span title="${esc(c.name)}">${esc(cName(c.name))} ${isWin(c.name) ? `<em class="cs-tag win">Winner</em> ` : ""}${cTag(c)}</span><span class="v">${c.reply_rate == null ? "0%" : c.reply_rate.toFixed(1) + "%"} replied · ${c.pos_rate == null ? "0%" : c.pos_rate.toFixed(1) + "%"} positive${REV ? ` · ${usd(revS(c.id))}` : ""}</span><div class="bar"><i data-v="w:${Math.max(2, Math.round(100 * (c.reply_rate || 0) / rmx))}%"></i></div></div>`).join("")}</div>
-    <details class="ab-txt"><summary>Details <small>table</small></summary><div class="sp-scroll"><table class="sp-tbl"><thead><tr><th>Campaign</th><th class="num">Sent</th><th class="num">Contacted</th><th class="num">Replies</th><th class="num">Reply rate</th><th class="num">Positive</th><th class="num">Positive rate</th>${REV ? `<th class="num">Revenue</th>` : ""}<th class="num">Bounced</th><th>Opens</th></tr></thead><tbody>${bySort(M.campaigns).map(c => `<tr class="camp-st st-${mSt(c)}${isWin(c.name) ? " st-win" : ""}"><td>${esc(c.name)}</td><td class="num">${int(c.sent)}</td><td class="num">${int(c.contacted)}</td><td class="num">${int(c.replies)}</td><td class="num">${c.reply_rate == null ? "n/a" : c.reply_rate.toFixed(1) + "%"}</td><td class="num">${int(c.opportunities)}</td><td class="num">${c.pos_rate == null ? "n/a" : c.pos_rate.toFixed(1) + "%"}</td>${REV ? `<td class="num">${usd(revS(c.id))}</td>` : ""}<td class="num">${c.bounce_rate == null ? "n/a" : c.bounce_rate.toFixed(1) + "%"}</td><td class="mut">not tracked (plain text)</td></tr>`).join("")}</tbody></table></div></details>
-    <p class="sp-note">Reply rate = unique human replies ÷ leads contacted. Opens aren't tracked: the emails are plain text with open tracking off. That doesn't affect reply rate.</p>${REV ? `<p class="rev-un">Not from a campaign: <b>${usd((REV || []).filter(revUn).reduce((a, r) => a + (+r.revenue_usd || 0), 0))}</b></p>` : ""}` : empty("No data yet.")}</section>
-  <section class="card sp-card"><h2>Past changes <small>history</small></h2>${done.length ? `<div class="wk-log">${done.map(a => `<div class="wk-ch"><span class="mono">${esc(dLabel(dayOf(a.done_at)))}</span><span class="chip g">${esc(a.campaign)}</span><span class="w">${esc(a.step)}: ${esc(a.action || `kept ${a.winner || "?"}, dropped ${a.loser || "?"}`)}${a.note ? ` · ${esc(a.note)}` : ""}</span><span class="mut">${esc(a.done_by || "")}</span></div>`).join("")}</div>` : empty("No test has been decided yet. The 50/50 split by lead started on Nov 19; the first verdicts come once each side has 300 sends.")}</section>`;
+  const E = emailModel(x), bAt = [x.ab && x.ab.updated_at, x.m && x.m.updated_at].filter(Boolean).sort()[0], dayW = E.isToday ? "today" : "yesterday";
+  const d1 = E.due.length === 1 ? E.tileOf(E.due[0].c) : null, np = E.near ? Math.round(100 * E.prog(E.near.s)) : 0;
+  const board = `<button type="button" class="tile ec-t${E.due.length ? " ec-due" : ""}" data-ecopen="${d1 ? "camp:" + esc(d1.id) : "changes"}" title="Tests with a winner waiting: drop the loser and write a new challenger"><span class="ec-l">Changes to make</span><b class="ec-n">${cu(E.due.length, "int", "ec-due")}</b><small>${E.due.length ? d1 ? `${esc(d1.name)} · ${esc(E.due[0].s.step)}` : `in ${new Set(E.due.map(z => z.c.key)).size} campaigns` : "nothing waiting"}</small></button>`
+    + `<button type="button" class="tile ec-t" ${E.bestT ? `data-ecopen="camp:${esc(E.bestT.id)}"` : 'data-ecopen="table"'} title="Highest positive-reply rate among campaigns with 100+ leads contacted, all time, from Instantly"><span class="ec-l">Best campaign</span><b class="ec-n">${E.best ? cu(E.best.pos_rate, "pct", "ec-best") : "—"}</b><small>${E.best ? `${esc(ecName(E.best.name))} · positive replies` : "no campaign has 100 leads yet"}</small></button>`
+    + `<button type="button" class="tile ec-t ec-rev" data-ecopen="rev" title="Paid revenue credited to each campaign"><span class="ec-l">Revenue by campaign</span>${E.REV ? E.top3.length ? `<span class="ec-r3">${E.top3.map((r, i) => `<span class="ec-r"><b class="ec-n2">${cu(r.revenue_usd, "usd", "ec-rev" + i)}</b><small>${esc(r.name)}</small></span>`).join("")}</span>` : `<b class="ec-n">$0</b><small>no campaign has revenue yet</small>` : `<b class="ec-n">—</b><small>the revenue view isn't live yet</small>`}</button>`
+    + `<button type="button" class="tile ec-t ec-tst" data-ecopen="tests" title="A and B both sending since the split. A verdict needs ${E.MIN}+ sends per side and ${E.MINP}+ positives.${E.near ? ` Closest: ${esc((E.tileOf(E.near.c) || {}).name || "")}, ${esc(E.near.s.step)}.` : ""}"><span class="ec-l">Tests running</span><span class="ec-tr"><b class="ec-n">${cu(E.running.length, "int", "ec-run")}</b>${E.near ? `<i class="ring ec-ring" data-v="p:${np}" aria-hidden="true"></i>` : ""}</span><small>${int(E.early.length)} too early${E.near ? ` · the closest is ${np}% of the way to a verdict` : ""}</small></button>`;
+  const hero = `<section class="ec-hero" aria-labelledby="ec-ov"><div class="ec-hh"><h2 id="ec-ov">Overview</h2><span class="ec-asof">${esc(ecAsOf(bAt))}</span></div><div class="ec-btns">${[["subj", "Subject lines"], ["table", "Full table"], ["partners", "Partners"], ["history", "History"]].map(([k, l]) => `<button type="button" class="act" data-ecopen="${k}">${l}</button>`).join("")}</div><div class="ec-board">${board}</div></section>`;
+  const look = E.flags.length ? `<section class="card sp-card ec-look" aria-labelledby="ec-lk"><div class="ec-ch"><h2 id="ec-lk">Needs a look</h2><span class="ec-asof">${esc(ecAsOf(x.at))}</span></div><div class="ec-flags">${E.flags.slice(0, 5).map(ecFlag).join("")}</div>${E.flags.length > 5 ? `<button type="button" class="act ec-more" data-ecopen="look">All ${E.flags.length} flags</button>` : ""}</section>` : "";
+  const tile = t => `<button type="button" class="mt ec-c${t.on ? "" : " off"}" data-ecopen="camp:${esc(t.id)}" title="${esc(t.full)}"><span class="ec-ct"><span class="ec-cn">${esc(t.name)}</span>${t.sev ? `<i class="ec-dot k-${t.sev}" title="In Needs a look"></i>` : ""}${ecPill(t.pill, t.pk)}</span>
+    <span class="ec-two"><span class="ec-num"><b class="ec-n2">${cu(t.nl, "int", esc("ec-nl-" + t.id))}</b><span class="ec-l">New leads emailed <strong>${dayW}</strong></span><small>${t.fu ? `+${int(t.fu)} follow-up${t.fu === 1 ? "" : "s"}` : "no follow-ups"}</small></span><span class="ec-num"><b class="ec-n2">${t.m && t.m.pos_rate != null ? cu(t.m.pos_rate, "pct", esc("ec-pr-" + t.id)) : "—"}</b><span class="ec-l">Positive-reply rate</span><small>${t.m ? `${int(t.m.opportunities)} of ${int(t.m.contacted)} leads` : "not in the metrics sync"}</small></span></span></button>`;
+  const camps = `<section class="ec-camps" aria-labelledby="ec-cs"><div class="ec-ch"><h2 id="ec-cs">Campaigns</h2><span class="ec-asof">${esc(ecAsOf(x.at))}</span></div><div class="ec-grid">${E.T.map(tile).join("")}</div></section>`;
+  return `${hero}${look}${camps}<div id="ec-pan">${ecPanel(E, x)}</div>`;
 }
+const ecFlag = f => `<div class="ec-f k-${f.kind}"><i aria-hidden="true"></i><span>${f.subj ? `<b>Subject lines</b> · ${esc(f.subj.name)}: ${esc(f.subj.verdict || "")}` : `<b>${esc(f.t.name)}</b> · ${esc(f.text)}`}</span><button type="button" class="act" data-ecopen="${f.subj ? "subj" : "camp:" + esc(f.t.id)}">${esc(f.btn)}</button></div>`;
+/* the side panels: the to-dos board's .sd-panel (bottom sheet on a phone), Esc or the scrim closes it */
+function ecPanel(E, x) {
+  if (!EPAN) return "";
+  const k = EPAN.k, li = (main, side) => `<div class="ec-li"><span>${main}</span>${side || ""}</div>`, go = id => `<button type="button" class="act" data-ecopen="camp:${esc(id)}">Open</button>`;
+  let top = "", title = "", body = "", wide = false;
+  if (k === "camp") {
+    const t = E.T.find(y => y.id === EPAN.id); if (!t) { EPAN = null; return ""; }
+    top = `${ecPill(t.pill, t.pk)}${t.on ? "" : `<span class="mut">${esc((t.m && t.m.status_label) || "paused")}</span>`}`; title = esc(t.name); body = ecCamp(E, x, t);
+  } else if (k === "changes") {
+    title = "Changes to make";
+    body = E.due.length ? `<div class="ec-list">${E.due.map(z => { const t = E.tileOf(z.c); return li(`<b>${esc(t ? t.name : z.c.name)}</b> · ${esc(z.s.step)}: ${z.st.w} beat ${z.st.l}${z.st.req ? " · challenger requested" : ""}`, t ? go(t.id) : ""); }).join("")}</div>` : `<p class="ec-p">No test has a winner waiting. Past changes are in History.</p>`;
+  } else if (k === "look") {
+    title = "Needs a look"; body = `<div class="ec-flags">${E.flags.map(ecFlag).join("")}</div>`;
+  } else if (k === "rev") {
+    title = "Revenue by campaign"; const rows = E.REV ? E.REV.filter(r => !E.revUn(r)).sort((a, b) => b.revenue_usd - a.revenue_usd) : [];
+    body = !E.REV ? `<p class="ec-p">The campaign_revenue view isn't live yet.</p>` : `<div class="ec-list">${rows.map(r => li(`<b>${esc(E.nameOfId(r.campaign_id) || ecName(r.campaign_name) || "Unnamed")}</b><small>${int(r.payers)} paying client${+r.payers === 1 ? "" : "s"}</small>`, `<span class="ec-v">${usd(r.revenue_usd)}</span>`)).join("")}${li(`<b>Not from a campaign</b>`, `<span class="ec-v">${usd(E.REV.filter(E.revUn).reduce((a, r) => a + (+r.revenue_usd || 0), 0))}</span>`)}</div>`;
+  } else if (k === "tests") {
+    title = "Tests"; const all = [...E.tests].sort((a, b) => (b.s.state === "winner") - (a.s.state === "winner") || (E.running.includes(b) - E.running.includes(a)) || (E.running.includes(b) ? E.prog(b.s) - E.prog(a.s) : 0));
+    body = `<p class="ec-p">A verdict needs ${E.MIN}+ sends on each side and ${E.MINP}+ positive replies${E.R.p_win ? `, and ${Math.round(100 * E.R.p_win)}% certainty that the leader is better` : ""}.</p><div class="ec-list">${all.map(z => { const t = E.tileOf(z.c), s = z.s, on = E.running.includes(z);
+      return li(`<b>${esc(t ? t.name : z.c.name)}</b> · ${esc(s.step)}<small>${on ? `A ${r1(s.A.pos_rate || 0)} · B ${r1(s.B.pos_rate || 0)} · ${int(Math.min(s.A.sent, s.B.sent))}/${E.MIN} sends on the smaller side · ${int((+s.A.positives || 0) + (+s.B.positives || 0))}/${E.MINP} positives` : !z.c.since ? "not split yet" : s.in_test === false ? "one version" : "waiting for both sides to send"}</small>`,
+        `${s.state === "winner" ? ecPill(`Winner ${s.lead}`, "win") : ecPill(on ? (s.state === "leading" ? `${s.lead} ahead` : "Too early") : "Not running")}${t ? go(t.id) : ""}`); }).join("")}</div>`;
+  } else if (k === "subj") {
+    title = "Subject lines"; body = ecSubj(E.S);
+  } else if (k === "table") {
+    title = "All campaigns"; wide = true; body = ecTable(E, x);
+  } else if (k === "partners") {
+    title = "Partner campaigns";
+    const part = x.arms && x.arms.data ? (x.arms.data.arms || []).filter(a => (a.campaigns || []).some(n => /PARTNER/i.test(n))) : null;
+    body = part && part.length ? `<p class="ec-p">Arms are tags on the leads, not Instantly variants.${part.every(a => (a.contacted || 0) < 100) ? " Too early for a winner: every arm is under 100 leads contacted." : ""}</p><div class="ec-list">${part.map(a => li(`<b>${esc(a.arm)}</b><small>${esc((a.campaigns || []).filter(n => /PARTNER/i.test(n)).map(n => ecName(n.replace(/^PARTNER\s*/i, ""))).join(", "))}</small>`, `<span class="ec-v">${a.reply_rate == null ? "0%" : a.reply_rate.toFixed(1) + "%"} replied<small>${int(a.positive)} positive · ${int(a.contacted)} contacted</small></span>`)).join("")}</div>` : `<p class="ec-p">No data yet: no partner-campaign leads are tagged in the arms sync.</p>`;
+  } else if (k === "history") {
+    title = "History"; const done = E.acts.filter(a => a.done_at), req = E.acts.filter(a => !a.done_at && a.action === CHREQ);
+    body = `${req.length ? `<h3 class="ec-h3">Waiting for Claude</h3>${ecLog(E, req)}` : ""}<h3 class="ec-h3">Past changes</h3>${done.length ? ecLog(E, done) : `<p class="ec-p">No test has been decided yet. The first verdicts come once each side has ${E.MIN} sends.</p>`}`;
+  } else { EPAN = null; return ""; }
+  return `<div class="sd-scrim" data-ecclose></div><aside class="sd-panel ec-panel${wide ? " wide" : ""}" role="dialog" aria-modal="true" aria-labelledby="ec-pt" data-keep>
+    <div class="sd-pt"><span class="ec-ptop">${top}</span><button type="button" class="mini" data-ecclose aria-label="Close" title="Close (Esc)"><svg aria-hidden="true"><use href="#i-x"/></svg></button></div>
+    <h2 class="ec-ph" id="ec-pt">${title}</h2>${body}</aside>`;
+}
+const ecLog = (E, rows) => `<div class="ec-list">${rows.map(a => { const t = E.T.find(y => y.ab && y.ab.key === a.campaign);
+  return `<div class="ec-li"><span><b>${esc(t ? t.name : a.campaign)}</b> · ${esc(a.step)}: ${esc(a.action === CHREQ ? `new challenger against ${a.winner || "?"} requested from Claude` : a.action || `kept ${a.winner || "?"}, dropped ${a.loser || "?"}`)}${a.note ? ` · ${esc(a.note)}` : ""}<small>${esc(ecWhen(a.done_at || a.decided_at))}${a.done_by ? ` · ${esc(a.done_by)}` : ""}</small></span>${a.done_at ? "" : `<button type="button" class="act" data-abcancel="${esc(a.id)}">Cancel request</button>`}</div>`; }).join("")}</div>`;
+function ecCamp(E, x, t) {
+  const c = t.ab, MIN = E.MIN, MINP = E.MINP, dayW = E.isToday ? "today" : "yesterday", isN = v => typeof v === "number" && isFinite(v);
+  const out = [t.full !== t.name ? `<p class="ec-p mut">${esc(t.full)}</p>` : ""];
+  /* the change to make, with its two actions */
+  (c ? E.due.filter(z => z.c === c) : []).forEach(z => { const st = z.st;
+    out.push(`<div class="ec-do"><p><b>${esc(z.s.step)}: ${st.w} beat ${st.l}.</b> Drop ${st.l} and write a new challenger against ${st.w}. Switch it in Instantly by hand, then mark it done.</p>
+      <div class="ec-acts"><button type="button" class="act go" data-abdone="${esc(c.key)}|${esc(z.s.step)}">${ic("check")}Mark change done</button>${st.req ? `<span class="ec-req">Challenger requested ${esc(ecWhen(st.a.decided_at))}: waiting for Claude</span><button type="button" class="act" data-abcancel="${esc(st.a.id)}">Cancel request</button>` : `<button type="button" class="act" data-abreq="${esc(c.key)}|${esc(z.s.step)}">${ic("send")}Draft a challenger</button>`}</div></div>`); });
+  /* numbers */
+  const t0 = dayOf(Date.now()), cn = from => { const r = (x.cd || []).filter(z => String(z.campaign_id) === t.id && z.day >= from && z.day <= t0), sm = k => r.reduce((a, z) => a + (+z[k] || 0), 0); return { sent: sm("sent"), nl: sm("new_leads"), rep: sm("replies"), opp: sm("opportunities") }; };
+  const pc = (a, b) => b ? ` <small>${(100 * a / b).toFixed(1)}%</small>` : "", row = (lab, o) => `<tr><th scope="row">${lab}</th><td class="num">${int(o.sent)}</td><td class="num">${int(o.nl)}</td><td class="num">${int(o.rep)}${pc(o.rep, o.nl)}</td><td class="num">${int(o.opp)}${pc(o.opp, o.nl)}</td></tr>`;
+  const m = t.m;
+  out.push(`<section class="ec-sec"><h3 class="ec-h3">Numbers</h3><div class="ec-two"><span class="ec-num"><b class="ec-n2">${t.rev ? usd(t.rev.revenue_usd) : "—"}</b><span class="ec-l">Revenue</span><small>${t.rev ? `${int(t.rev.payers)} paying client${+t.rev.payers === 1 ? "" : "s"}` : "not available"}</small></span><span class="ec-num"><b class="ec-n2">${m && m.reply_rate != null ? r1(m.reply_rate) : "—"}</b><span class="ec-l">Reply rate</span><small>all time</small></span></div>
+    <div class="sp-scroll"><table class="sp-tbl ec-tbl"><thead><tr><th></th><th class="num">Sent</th><th class="num">New leads</th><th class="num">Replies</th><th class="num">Positive</th></tr></thead><tbody>${row("This week", cn(monday(t0)))}${row("Last 14 days", cn(addDays(t0, -13)))}</tbody></table></div>
+    ${m ? `<p class="ec-p mut">All time: ${int(m.contacted)} leads contacted · ${int(m.opportunities)} positive (${r1(m.pos_rate)}) · bounce rate ${r1(m.bounce_rate)} · ${int(t.nl)} new leads emailed ${dayW}${t.fu ? ` + ${int(t.fu)} follow-ups` : ""}.</p>` : ""}</section>`);
+  /* A vs B per step */
+  const fStep = s => ((c.funnel && c.funnel.steps) || []).find(f => f.idx === (c.steps || []).indexOf(s)) || null;
+  const fPart = o => o && isN(o.sent) ? `${int(o.sent)} sent${isN(o.replies) ? ` · ${int(o.replies)} repl${o.replies === 1 ? "y" : "ies"}` : ""}${isN(o.positives) ? ` · ${int(o.positives)} positive` : ""}` : "";
+  const step = s => { const st = abStatus(c, s, E.acts), dl = c.funnel && c.funnel.fu_delay_days, f = fStep(s), fa = f && fPart(f.all), fb = f && fPart(f.d14);
+    const meta = [s.leads ? `leads A ${int(s.leads.A)} · B ${int(s.leads.B)}` : "", isN(s.queued) ? `${int(s.queued)} waiting` : "", (c.steps || []).indexOf(s) === 1 && isN(dl) ? `sends ${dl} day${dl === 1 ? "" : "s"} after email 1` : ""].filter(Boolean).join(" · ");
+    const inst = fa || fb ? `<p class="ec-p mut" title="Straight from Instantly, A and B together. Replies leave out auto-replies.">All versions${fa ? `, all time: ${fa}` : ""}${fb ? `${fa ? " ·" : ","} last 14 days: ${fb}` : ""}</p>` : "";
+    const head = pill => `<div class="ec-abh"><b>${esc(s.step)}</b>${pill}</div>${meta ? `<p class="ec-p mut">${meta}</p>` : ""}`;
+    if (!c.since) return `<div class="ec-ab">${head(ecPill("Not split yet"))}<p class="ec-p">This campaign's leads haven't been given their A / B version yet.</p>${inst}</div>`;
+    if (s.in_test === false) return `<div class="ec-ab">${head(ecPill("One version"))}<p class="ec-p">No real B for this step, so every lead gets A.</p>${inst}</div>`;
+    const v = k => { const o = s[k] || {}, win = s.state === "winner" && s.lead === k; return `<span class="ec-num${win ? " win" : ""}"><span class="ec-l"><b>${k}</b> · ${k === "A" ? "Line-first" : "Question-first"}</span><b class="ec-n2">${o.sent ? r1(o.pos_rate || 0) : "—"}</b><small>${o.sent ? `${int(o.positives)} positive of ${int(o.sent)} sent · ${int(o.replies)} replies` : "0 sends since the split"}</small></span>`; };
+    const lo = Math.min(s.A.sent, s.B.sent), pos = (+s.A.positives || 0) + (+s.B.positives || 0);
+    const bar = (lab, n, of) => `<div class="ec-pg"><span>${lab}</span><span class="v">${int(Math.min(n, of))} / ${int(of)}${n >= of ? " ✓" : ""}</span><span class="ec-bar"><i data-v="w:${Math.min(100, Math.round(100 * n / of))}%"></i></span></div>`;
+    const verdict = s.state === "winner" ? ecPill(`Winner ${s.lead}`, "win") : s.state === "leading" && s.p_b != null ? ecPill(`${s.lead} ahead, ${Math.round(100 * (s.lead === "B" ? s.p_b : 1 - s.p_b))}% likely`) : ecPill("Too early");
+    const chg = st.k === "done" ? `<div class="ec-li"><span>${esc(st.text)}</span><button type="button" class="act" data-abundo="${esc(st.a.id)}">Undo</button></div>` : st.k === "none" ? `<div class="ec-acts"><button type="button" class="act" data-abdone="${esc(c.key)}|${esc(s.step)}" title="Use this if you swapped a variant by hand before a winner was called">Log a change</button></div>` : "";
+    return `<div class="ec-ab">${head(verdict)}<div class="ec-two">${v("A")}${v("B")}</div><div class="ec-pgs">${bar("Sends, smaller side", lo, MIN)}${bar("Positives, A + B", pos, MINP)}</div>${inst}${chg}</div>`; };
+  out.push(`<section class="ec-sec"><h3 class="ec-h3">A vs B</h3>${c ? (c.steps || []).map(step).join("") : `<p class="ec-p">This campaign sends one version, so there is no A/B test.</p>`}</section>`);
+  /* the emails, in full (paragraph breaks kept) */
+  const W = E.d.what || {};
+  if (c && c.sample) out.push(`<section class="ec-sec"><h3 class="ec-h3">The emails <small>as sent to one lead</small></h3>${["A", "B"].map(v => { const sm = c.sample[v] || {};
+    return `<div class="ec-copy"><b>${v} · ${v === "A" ? "Line-first" : "Question-first"}</b>${W[v] ? `<p class="ec-p mut">${esc(W[v])}</p>` : ""}<p class="ec-p"><span class="mut">Subject:</span> ${esc(sm.subject || "(no subject)")}</p><div class="ec-body">${esc(sm.body || "")}</div>${sm.fu ? `<p class="ec-p"><span class="mut">Follow-up${W["F" + v] ? ` · ${esc(W["F" + v])}` : ""}</span></p><div class="ec-body">${esc(sm.fu)}</div>` : ""}</div>`; }).join("")}</section>`);
+  /* change log + the rules in plain words */
+  const log = c ? E.acts.filter(a => a.campaign === c.key) : [];
+  out.push(`<section class="ec-sec"><h3 class="ec-h3">Change log</h3>${log.length ? ecLog(E, log) : `<p class="ec-p mut">No change logged yet.</p>`}</section>`);
+  if (c) { const dl = c.funnel && c.funnel.fu_delay_days;
+    out.push(`<section class="ec-sec"><h3 class="ec-h3">How this test works</h3><ul class="ec-rules"><li>Split 50/50 by lead since ${esc(ecWhen(c.since || E.d.split_since))}. Each lead keeps one version per email, and A vs B is counted by that version, not by Instantly's variant numbers.</li>
+      <li>A verdict needs ${MIN}+ sends on each side and ${MINP}+ positive replies${E.R.p_win ? `, and ${Math.round(100 * E.R.p_win)}% certainty that the leader is better` : ""}. Before that it is too early.</li>
+      <li>Positive = a sample yes, interested, or a price ask, credited to the version of the email they replied after.</li>${isN(dl) ? `<li>Follow-up 1 goes out ${dl} day${dl === 1 ? "" : "s"} after email 1.</li>` : ""}
+      <li>Sends run in the Chicago daytime (Vilnius late afternoon to about 01:00). The tile shows yesterday until today's first sends arrive.</li>
+      <li>When a winner is found: switch it in Instantly by hand, then Mark change done. Draft a challenger asks the Claude ops agents to write a new version against the winner; nothing changes in Instantly by itself.</li></ul></section>`); }
+  return out.join("");
+}
+function ecSubj(S) {   /* subject-line test (council 11-19): no verdict before `look` sends per arm */
+  if (!S) return `<p class="ec-p">No subject-line test is running.</p>`;
+  const R = S.rules || {}, LOOK = R.look || 600, WIN = R.win || 1000, TIE = R.tie || 1500, GAP = R.gap || 2;
+  return `<p class="ec-p">Email 1, pooled across campaigns, since ${esc(ecWhen(S.since))}. No verdict before ${int(LOOK)} sends per subject; a winner needs ${int(WIN)}–${int(TIE)} sends and a ${GAP}-point gap. No gap by ${int(TIE)} sends = a tie: keep the shortest subject.</p>
+    ${(S.groups || []).map(g => `<div class="ec-ab"><div class="ec-abh"><b>${esc(g.name)}</b>${ecPill(g.verdict || "", g.state === "winner" ? "win" : "")}</div><div class="ec-list">${(g.arms || []).map(a => { const early = a.sent < LOOK, win = g.lead === a.arm && (g.state === "winner" || g.state === "tie");
+      return `<div class="ec-li"><span><b>${esc(a.arm)}</b> · ${esc(a.label)}<small>${a.sent ? `${int(a.positives)} positive · ${int(a.replies)} replies · ${int(a.sent)} sent` : "0 sends yet"}</small></span><span class="ec-v">${early ? `${int(a.sent)}/${int(LOOK)}<small>sends before a look</small>` : `${a.pos_rate == null ? "0.0%" : a.pos_rate.toFixed(1) + "%"}<small>positive</small>`}</span>${win ? ecPill(g.state === "tie" ? "Keep (shortest)" : "Winner", "win") : ""}</div>`; }).join("")}</div></div>`).join("")}`;
+}
+function ecTable(E, x) {
+  const M = E.M, mC = Array.isArray(M.campaigns) ? M.campaigns : [], rv = c => E.REV ? +((E.REV.find(r => String(r.campaign_id) === String(c.id)) || {}).revenue_usd) || 0 : 0;
+  const list = E.REV && ESORT === "rev" ? [...mC].sort((a, b) => rv(b) - rv(a)) : mC, n = v => v == null ? "n/a" : v.toFixed(1) + "%";
+  if (!mC.length) return `<p class="ec-p">No data yet.</p>`;
+  return `${E.REV ? `<div class="seg rev-sort" role="group" aria-label="Order">${[["default", "Default order"], ["rev", "By revenue"]].map(([k, l]) => `<button type="button" data-esort="${k}" class="${ESORT === k ? "on" : ""}" aria-pressed="${ESORT === k}">${l}</button>`).join("")}</div>` : ""}
+    <div class="sp-scroll"><table class="sp-tbl ec-tbl"><thead><tr><th>Campaign</th><th class="num">Sent</th><th class="num">Contacted</th><th class="num">Replies</th><th class="num">Reply rate</th><th class="num">Positive</th><th class="num">Positive rate</th>${E.REV ? `<th class="num">Revenue</th>` : ""}<th class="num">Bounced</th></tr></thead>
+    <tbody>${list.map(c => `<tr${c.status === 1 ? "" : ' class="off"'}><td title="${esc(c.name)}">${esc(ecName(c.name))}${c.status === 1 ? "" : ` <span class="mut">${esc(c.status_label || "paused")}</span>`}</td><td class="num">${int(c.sent)}</td><td class="num">${int(c.contacted)}</td><td class="num">${int(c.replies)}</td><td class="num">${n(c.reply_rate)}</td><td class="num">${int(c.opportunities)}</td><td class="num">${n(c.pos_rate)}</td>${E.REV ? `<td class="num">${usd(rv(c))}</td>` : ""}<td class="num">${n(c.bounce_rate)}</td></tr>`).join("")}</tbody></table></div>
+    <p class="ec-p mut">All time, from Instantly${x.m ? `, synced ${esc(ago(x.m.updated_at))}` : ""}. Reply rate = unique human replies ÷ leads contacted. Opens aren't tracked: the emails are plain text with open tracking off, which doesn't affect reply rate.${E.REV ? ` Revenue not from a campaign: ${usd(E.REV.filter(E.revUn).reduce((a, r) => a + (+r.revenue_usd || 0), 0))}.` : ""}</p>`;
+}
+function closeEPan() { if (!EPAN) return; EPAN = null; const f = EFOCUS; EFOCUS = null; const p = $("#ec-pan"); if (p) p.innerHTML = ""; if (f) ($(`.${f[0]} [data-ecopen="${CSS.escape(f[1])}"]`, PAGE_EL) || $(`[data-ecopen="${CSS.escape(f[1])}"]`, PAGE_EL))?.focus(); }
 function wireEmail() {
-  const rer = () => { const y = scrollY; PAGE_EL.innerHTML = header("email", CACHE.email) + viewEmail(CACHE.email); applyVars(PAGE_EL); countUps(PAGE_EL); wireEmail(); scrollTo(0, y); };
+  const rer = () => { const y = scrollY; PAGE_EL.innerHTML = header("email", CACHE.email) + viewEmail(CACHE.email); applyVars(PAGE_EL); countUps(PAGE_EL); wireEmail(); scrollTo(0, y); if (EPAN) $("#ec-pan .mini")?.focus({ preventScroll: true }); };
   const who = () => (ME && ME.who !== "Both" ? ME.who : (ME && ME.name)) || null;
+  $$("[data-ecopen]", PAGE_EL).forEach(b => b.addEventListener("click", () => { if (!b.closest("#ec-pan")) { const sec = b.closest(".ec-hero,.ec-look,.ec-camps"); EFOCUS = [sec ? ["ec-hero", "ec-look", "ec-camps"].find(c => sec.classList.contains(c)) : "spage", b.dataset.ecopen]; } const [k, ...r] = b.dataset.ecopen.split(":"); EPAN = { k, id: r.join(":") || null }; rer(); }));
+  $$("[data-ecclose]", PAGE_EL).forEach(b => b.addEventListener("click", closeEPan));
   $$("[data-esort]", PAGE_EL).forEach(b => b.addEventListener("click", () => { ESORT = b.dataset.esort; rer(); }));
+  const find = v => { const [key, step] = v.split("|"), D = CACHE.email, c = D.ab.data.campaigns.find(z => z.key === key), s = c && c.steps.find(z => z.step === step); return { key, step, D, c, s, st: s ? abStatus(c, s, D.acts) : null }; };
   $$("[data-abdone]", PAGE_EL).forEach(b => b.addEventListener("click", async () => {
-    const [key, step] = b.dataset.abdone.split("|"), D = CACHE.email, c = D.ab.data.campaigns.find(z => z.key === key), s = c.steps.find(z => z.step === step), st = abStatus(c, s, D.acts);
+    const { key, step, D, st } = find(b.dataset.abdone); if (!st) return;
     const note = st.k === "none" ? prompt("What changed? (one line)") : ""; if (st.k === "none" && !note) return;
-    try { const row = st.a && !st.a.done_at ? await must(sb().from("ab_actions").update({ done_at: new Date().toISOString(), done_by: who() }).eq("id", st.a.id).select().single())
+    try { const row = st.a && !st.a.done_at ? await must(sb().from("ab_actions").update({ done_at: new Date().toISOString(), done_by: who(), ...(st.a.action === CHREQ ? { action: `dropped ${st.l}, new challenger against ${st.w}` } : {}) }).eq("id", st.a.id).select().single())
         : await must(sb().from("ab_actions").insert({ campaign: key, step, winner: st.w || null, loser: st.l || null, action: st.k === "due" ? `dropped ${st.l}, new challenger against ${st.w}` : "manual change", note: note || null, done_at: new Date().toISOString(), done_by: who() }).select().single());
       D.acts = [row, ...D.acts.filter(a => a.id !== row.id)]; rer(); toast("Marked as done"); } catch (e) { toast("Couldn't save that. Check your connection."); }
   }));
+  /* BENAS 11-22: "Draft a challenger" = a request row the Claude ops agents pick up (ab_actions, action 'challenger_requested', done_at empty) */
+  $$("[data-abreq]", PAGE_EL).forEach(b => b.addEventListener("click", async () => {
+    const { key, step, D, st } = find(b.dataset.abreq); if (!st || st.k !== "due" || st.req) return; b.disabled = true;
+    try { const row = await must(sb().from("ab_actions").insert({ campaign: key, step, winner: st.w, loser: st.l, action: CHREQ, note: `${who() || "A founder"} asked for a new challenger against ${st.w}`, done_at: null, done_by: null }).select().single());
+      D.acts = [row, ...D.acts]; rer(); toast("Sent to Claude: a new challenger gets drafted. The switch in Instantly stays manual."); } catch (e) { b.disabled = false; toast("Couldn't send that. Check your connection."); }
+  }));
+  $$("[data-abcancel]", PAGE_EL).forEach(b => b.addEventListener("click", async () => { const id = +b.dataset.abcancel, D = CACHE.email, a = D.acts.find(z => z.id === id);
+    if (!a || a.done_at || a.action !== CHREQ) return;
+    try { await must(sb().from("ab_actions").delete().eq("id", id)); D.acts = D.acts.filter(z => z.id !== id); rer(); toast("Request cancelled"); } catch (e) { toast("Couldn't cancel that."); } }));
   $$("[data-abundo]", PAGE_EL).forEach(b => b.addEventListener("click", async () => { const id = +b.dataset.abundo, D = CACHE.email, a = D.acts.find(z => z.id === id);
     try { if (a && !a.winner && a.action === "manual change") { await must(sb().from("ab_actions").delete().eq("id", id)); D.acts = D.acts.filter(z => z.id !== id); }
       else { const row = await must(sb().from("ab_actions").update({ done_at: null, done_by: null }).eq("id", id).select().single()); D.acts = D.acts.map(z => z.id === id ? row : z); }
@@ -1067,7 +1205,7 @@ function viewWeekly(d) {
   const abT = abS.length ? `<div class="sp-scroll"><table class="sp-tbl"><thead><tr><th>Test</th><th class="num">A sends</th><th class="num">A positive</th><th class="num">B sends</th><th class="num">B positive</th><th class="num" title="B's positive rate vs A's">Lift</th><th title="How sure we can be, from a two-proportion test (shown in words)">Confidence</th><th>Status</th></tr></thead><tbody>${abS.map(x => `<tr><td>${esc(x.camp)}<span class="sub">${esc(x.step)}</span></td><td class="num">${int(x.A.sent)}</td><td class="num">${f1(x.pa)}</td><td class="num">${int(x.B.sent)}</td><td class="num">${f1(x.pb)}</td><td class="num">${x.lift == null || !isFinite(x.lift) ? "—" : (x.lift > 0 ? "+" : "") + Math.round(x.lift * 100) + "%"}</td><td>${esc(x.conf)}</td><td><span class="chip${/wins/.test(x.status) ? " g" : /leading/.test(x.status) ? " b" : ""}">${esc(x.status)}</span></td></tr>`).join("")}</tbody></table></div>` : empty("No test has sent both A and B since the 50/50 split started.");
   const subj = W.SUBJ.map(g => `<div class="wbr-subj"><b>Subject lines · ${esc(g.name)}</b>${(g.arms || []).map(a => `<span class="chip">${esc(a.label)} · ${int(a.sent)} sent · ${a.pos_rate == null ? "—" : (+a.pos_rate).toFixed(1) + "%"}</span>`).join("")}<small class="mut">${esc(g.verdict || "")}</small></div>`).join("");
   const abSec = sec(5, "A/B tests", wins ? "g" : "x", `${W.AB.length} tests set up, ${abS.length} sending both sides, ${wins} winner${wins === 1 ? "" : "s"}. A winner needs ${int(W.minS)}+ sends per side and a clear gap.`,
-    `<p class="sp-note">${esc(W.ABW.A ? "A: " + W.ABW.A : "")} ${esc(W.ABW.B ? "B: " + W.ABW.B : "")}</p>${abT}${subj}<p class="sp-note"><a class="lk" href="?p=email" data-go="email">Open Email tests</a> for the winner cards and whether each change was made.</p>`,
+    `<p class="sp-note">${esc(W.ABW.A ? "A: " + W.ABW.A : "")} ${esc(W.ABW.B ? "B: " + W.ABW.B : "")}</p>${abT}${subj}<p class="sp-note"><a class="lk" href="?p=email" data-go="email">Open Email campaigns</a> for the winner cards and whether each change was made.</p>`,
     wins ? "Roll each winner out to its campaign and log the change below." : "Keep the split running and don't change copy mid-test, or the result resets.");
   /* 6. engine + deliverability */
   const E = W.ENG, emx = Math.max(1, ...E.lanes.map(x => x.cur.nl));
