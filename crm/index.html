@@ -23,6 +23,7 @@
 <link rel="stylesheet" href="crm.css?v=20261122sf1">
 <link rel="stylesheet" href="side.css?v=20261122ec4">
 <link rel="stylesheet" href="contacts.css?v=20261121zd">
+<link rel="stylesheet" href="replies.css?v=20261122rp1">
 <link rel="stylesheet" href="anim.css?v=20261122mn1">
 </head>
 <body>
@@ -60,6 +61,7 @@
   <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15zM10 20.5a2 2 0 0 0 4 0"/></symbol>
   <symbol id="i-hash" viewBox="0 0 24 24"><path d="M10 4 8 20M16 4l-2 16M4.5 9h15M4 15h15"/></symbol>
   <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M15.5 4.7a3.5 3.5 0 0 1 0 6.6M18 14.3a6.5 6.5 0 0 1 3.5 5.7"/></symbol>
+  <symbol id="i-reply" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
   <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
 </svg>
 
@@ -167,6 +169,7 @@
   <span class="sn-cap"><span class="sn-lbl">Menu</span></span>
   <ul class="sn-list">
     <li><a href="./" data-nav="dashboard" data-act="tab" data-t="home" data-tip="Dashboard"><svg aria-hidden="true"><use href="#i-home"/></svg><span class="sn-lbl">Dashboard</span></a></li>
+    <li><a href="?p=replies" data-nav="replies" data-tip="Replies"><svg aria-hidden="true"><use href="#i-reply"/></svg><span class="sn-lbl">Replies</span><i class="sn-badge" id="sn-rep-n" hidden></i></a></li>
     <li><a href="?p=expenses" data-nav="expenses" data-tip="Expenses"><svg aria-hidden="true"><use href="#i-cash"/></svg><span class="sn-lbl">Expenses</span></a></li>
     <li><a href="?p=email" data-nav="email" data-tip="Email campaigns"><svg aria-hidden="true"><use href="#i-mail"/></svg><span class="sn-lbl">Email campaigns</span></a></li>
     <li><a href="?p=clients" data-nav="clients" data-tip="Clients"><svg aria-hidden="true"><use href="#i-film"/></svg><span class="sn-lbl">Clients</span></a></li>
@@ -205,8 +208,9 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="config.js?v=20261112p3"></script>
-<script src="crm.js?v=20261122sf1"></script>
+<script src="crm.js?v=20261122rp1"></script>
 <script src="contacts.js?v=20261121zd"></script>
+<script src="replies.js?v=20261122rp1"></script>
 <script src="side.js?v=20261122ec4"></script>
 </body>
 </html>

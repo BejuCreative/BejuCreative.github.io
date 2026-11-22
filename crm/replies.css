@@ -1,0 +1,56 @@
+/* BEJÚ founder CRM: Replies page (?p=replies, replies.js) + the clickable new-reply pop-up (crm.js toast with a lead key). BENAS 11-22.
+   Tokens and sizes from the Email campaigns page (15 px text, 13 px meta, pills like .ec-pill); motion is opacity only and respects
+   reduced motion (crm.css makes every animation instant) and Calm motion (no highlight animation, the "New" pill stays). */
+.rp-card{display:grid;gap:16px;padding:22px 24px}
+.rp-hh{display:flex;align-items:baseline;gap:8px 12px;flex-wrap:wrap;min-width:0}
+.rp-card .rp-hh h2{font-size:15px;font-weight:600;letter-spacing:-.01em;margin:0}
+.rp-n{font-size:15px;color:var(--ink-2)} .rp-n b{font-family:var(--mono);font-weight:600;color:var(--blue)}
+.rp-asof{font-family:var(--mono);font-size:13px;color:var(--mute)}
+.rp-chips{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto;align-self:center}
+.rp-f{display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line-2);background:var(--panel);color:var(--ink-2);font:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:background-color .2s,color .2s,border-color .2s}
+.rp-f:hover{border-color:var(--blue)}
+.rp-f.on{background:var(--blue-soft);border-color:var(--blue);color:var(--blue)}
+:root[data-mode="dark"] .rp-f.on{color:var(--blue-2)}
+.rp-cnt{font-family:var(--mono);font-weight:500;font-variant-numeric:tabular-nums}
+.rp-cnt:empty{display:none}
+
+.rp-list{gap:10px}
+.rp-row{position:relative;display:grid;gap:6px;min-height:44px;padding:14px 16px;color:var(--ink)}
+.rp-row:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.rp-top{display:flex;align-items:baseline;gap:6px 10px;flex-wrap:wrap;min-width:0}
+.rp-name{flex:1 1 auto;min-width:0;font-size:15px;font-weight:600;line-height:1.3;overflow-wrap:anywhere}
+.rp-when{font-size:13px;color:var(--mute);white-space:nowrap;font-variant-numeric:tabular-nums}
+.rp-words{font-size:15px;line-height:1.45;color:var(--ink-2);overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.rp-mute{color:var(--mute);font-size:13px}
+.rp-meta{display:flex;align-items:center;gap:8px;min-width:0;font-size:13px;color:var(--mute)}
+.rp-ib{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rp-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.sd-av.rp-av{width:24px;height:24px;font-size:13px}
+.rp-pill{display:inline-flex;align-items:center;flex:none;font-size:13px;font-weight:600;line-height:1.2;padding:3px 10px;border-radius:999px;background:none;box-shadow:inset 0 0 0 1px var(--line-2);color:var(--mute);white-space:nowrap}
+.rp-pill.wait{background:var(--blue-soft);box-shadow:none;color:var(--blue)}
+.rp-pill.new{background:var(--blue);box-shadow:none;color:var(--on-accent)}
+:root[data-mode="dark"] .rp-pill.wait{color:var(--blue-2)}
+.rp-empty{font-size:15px;padding:18px 4px}
+
+/* a reply that arrived live: one soft blue wash that fades out (opacity only) */
+.rp-row.rp-new::after{content:"";position:absolute;inset:-1px;border-radius:inherit;background:var(--blue-soft);box-shadow:0 0 0 2px var(--blue-2);pointer-events:none;opacity:0;animation:rp-wash 2.6s ease-out both}
+html[data-motion="calm"] .rp-row.rp-new::after{animation:none}
+@keyframes rp-wash{0%,25%{opacity:1}100%{opacity:0}}
+/* entrance: the rows rise in reading order with the page, like the Email campaigns tiles */
+#spage.sp-in .rp-row,html.pg-in #spage .rp-row{animation:a-fade .3s ease-out backwards,a-up .5s var(--out) backwards;animation-delay:calc(.08s + var(--n,0)*30ms)}
+
+@media (max-width:600px){
+  .rp-card{padding:16px}
+  .rp-chips{margin-left:0;width:100%}
+  .rp-f{min-height:44px;flex:1 1 0;justify-content:center;padding:0 10px}
+  .rp-row{padding:12px 14px}
+  .rp-when{white-space:normal}
+}
+
+/* the new-reply pop-up reads as a link: "Open ›" on the right */
+.toast-lead{cursor:pointer}
+.toast-lead>span:nth-child(2){flex:1;min-width:0}
+.toast-go{display:inline-flex;align-items:center;gap:2px;flex:none;align-self:center;font-size:13px;font-weight:600;color:var(--blue)}
+.toast-go svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+:root[data-mode="dark"] .toast-go{color:var(--blue-2)}
+.toast-lead:hover .toast-go{text-decoration:underline;text-underline-offset:3px}

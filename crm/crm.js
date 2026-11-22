@@ -1043,7 +1043,7 @@ function renderAll(fromData) {
         const sig = $$(".n[data-n]", c.el).map(x => x.dataset.n).join("|"); if (fromData && c.sig !== undefined && c.sig !== sig && !RM) { c.el.classList.remove("chg"); void c.el.offsetWidth; c.el.classList.add("chg"); } c.sig = sig; } }
     if (c.update) c.update(D);
   });
-  updateHero(D); updateTiles(D); paintStatus(); syncChrome(); Object.values(PLOT).forEach(p => { try { p.paint(clamp(p.i, 0, p.n - 1)); } catch {} }); refreshDrill();
+  updateHero(D); updateTiles(D); paintStatus(); syncChrome(); Object.values(PLOT).forEach(p => { try { p.paint(clamp(p.i, 0, p.n - 1)); } catch {} }); refreshDrill(); dispatchEvent(new Event("beju-crm:data"));   // replies.js: the Replies page + its menu badge
   $("#zone-sub").textContent = D.pOpen ? `${D.pOpen} open request${D.pOpen === 1 ? "" : "s"} · what you do here shows in the client's portal at once` : "What you do here shows in the client's portal at once.";
 }
 function paintStatus() {
@@ -1328,13 +1328,19 @@ function closeLead() {
   if (OPENER && OPENER.isConnected) OPENER.focus(); OPENER = null;
 }
 
+/* 11-22 (BENAS "I can't find the new replies"): read-only handle for the Replies page (replies.js). The same rows and the one replyWait
+   list the dashboard counts, so the page's number matches it; no extra query. */
+window.BEJU_CRM_REPLIES = { get raw() { return RAW; }, get d() { return D; }, get at() { return LAST_OK; }, get owner() { return STATE.owner; }, nameOf, ownerOfInbox, auto: s => autoText(ownWords(s)), pass: s => HARD_PASS.test(ownWords(s)) };
+
 /* ---------------- toasts + confetti ---------------- */
 function toast(title, icon = "check", c = "c-green", sub = "", key = "") {
   const box = $("#toasts"); if (key && $$(".nt-toast", box).some(t => t.dataset.key === key || t.dataset.kind === key)) return;   // 11-21: the action toast about the same lead already shows
-  const el = document.createElement("button"); el.type = "button"; el.className = "toast"; el.title = "Dismiss"; if (key) el.dataset.key = key;
-  el.innerHTML = `<span class="it ${c}"><svg><use href="#i-${icon}"/></svg></span><span><b>${esc(title)}</b>${sub ? `<small>${esc(sub)}</small>` : ""}</span>`;
+  const lead = key.includes("@");   // 11-22 (BENAS "I want the live pop-up to be clickable"): a toast about a lead opens its drawer (the conversation)
+  const el = document.createElement("button"); el.type = "button"; el.className = "toast" + (lead ? " toast-lead" : ""); el.title = lead ? "Open the conversation" : "Dismiss"; if (key) el.dataset.key = key;
+  if (lead) el.setAttribute("aria-label", `${title}. Open the conversation`);
+  el.innerHTML = `<span class="it ${c}"><svg><use href="#i-${icon}"/></svg></span><span><b>${esc(title)}</b>${sub ? `<small>${esc(sub)}</small>` : ""}</span>${lead ? `<span class="toast-go" aria-hidden="true">Open<svg><use href="#i-chev"/></svg></span>` : ""}`;
   const kill = () => { if (!el.isConnected) return; el.classList.add("out"); setTimeout(() => el.remove(), RM ? 0 : 300); };
-  el.addEventListener("click", kill); box.appendChild(el); setTimeout(kill, 6500); while (box.children.length > 4) box.firstElementChild.remove();
+  el.addEventListener("click", () => { if (lead) openLead(key); kill(); }); box.appendChild(el); setTimeout(kill, lead ? 12000 : 6500); while (box.children.length > 4) box.firstElementChild.remove();
 }
 function confetti() {
   if (RM) return; const cv = $("#fx"), ctx = cv.getContext("2d"), dpr = Math.min(2, devicePixelRatio || 1), W = cv.width = innerWidth * dpr, H = cv.height = innerHeight * dpr;
@@ -1761,7 +1767,7 @@ function onChange(tb, p) {
   if (tb === "crm_events") { if (ins) ntArrive(n); return; }   // 11-21: the bell
   if (tb === "crm_event_state") { clearTimeout(NT_T); NT_T = setTimeout(() => loadInbox().catch(() => {}), 800); return; }   // my state changed in another tab
   if (tb === "payments" && ins && !n.refunded && !CELEB.has(n.id)) { CELEB.add(n.id); toast(`+${usd(n.amount)} from ${n.payer_name || n.email || "a client"}`, "cash", "c-green", PACK[n.package] || "New payment", lc(n.email)); confetti(); }
-  else if (tb === "reply_queue" && ins && n.kind === "REAL") toast(`New reply from ${nameOf(n.lead_email)}`, "mail", "c-blue", cut(n.snippet, 90), lc(n.lead_email));
+  else if (tb === "reply_queue" && ins && n.kind === "REAL") { toast(`New reply from ${nameOf(n.lead_email)}`, "mail", "c-blue", cut(n.snippet, 90), lc(n.lead_email)); dispatchEvent(new CustomEvent("beju-crm:reply", { detail: n })); }   // replies.js adds the row at once
   else if (tb === "profiles" && ins && !n.is_admin) toast(`Portal sign-up: ${n.name || n.email || "new client"}`, "user", "c-purple", n.email || "");
   else if (tb === "sample_requests" && ins) toast("New free-sample request", "film", "c-purple", cut(n.video_url, 70), "k:sample");
   else if (tb === "videos" && ins) toast(`New video request: ${cut(n.title || "Untitled", 40)}`, "play", "c-purple");
