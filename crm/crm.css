@@ -1347,3 +1347,6 @@ html[data-motion="full"] .card.inview .it svg{animation:none}
 }
 /* side.css has its own small .ring (22 px conic dot) that loads after this file and squashed the Emails to close ring: undo it here */
 .card button.ring{width:100%;height:auto;border-radius:18px;background:none;-webkit-mask:none;mask:none}
+
+/* 11-22 (SIMAS): the phone number on the Forms card face */
+.li-nm{display:flex;flex-direction:column;min-width:0} .li-tel{font-family:var(--mono);font-size:11.5px;color:var(--mute);letter-spacing:-.01em;white-space:nowrap}
