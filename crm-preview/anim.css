@@ -128,8 +128,8 @@ html.vt-pg .top{view-transition-name:vt-top}   /* the top bar morphs if its widt
 ::view-transition-group(vt-top){animation-duration:.34s;animation-timing-function:cubic-bezier(.4,0,.2,1)}
 ::view-transition-group(vt-pill),::view-transition-group(vt-tpill){animation-duration:.5s;animation-timing-function:var(--spr)}
 ::view-transition-old(vt-pill),::view-transition-new(vt-pill),::view-transition-old(vt-tpill),::view-transition-new(vt-tpill){animation-duration:.3s;height:100%}
-::view-transition-old(vt-o0),::view-transition-old(vt-o1),::view-transition-old(vt-o2),::view-transition-old(vt-o3),::view-transition-old(vt-o4),::view-transition-old(vt-o5),::view-transition-old(vt-o6){animation:a-out .15s cubic-bezier(.4,0,1,1) both}
-::view-transition-new(vt-n0),::view-transition-new(vt-n1),::view-transition-new(vt-n2),::view-transition-new(vt-n3),::view-transition-new(vt-n4),::view-transition-new(vt-n5),::view-transition-new(vt-n6){animation:a-fade .3s ease-out .1s both}
+::view-transition-old(vt-o0),::view-transition-old(vt-o1),::view-transition-old(vt-o2),::view-transition-old(vt-o3),::view-transition-old(vt-o4),::view-transition-old(vt-o5){animation:a-out .15s cubic-bezier(.4,0,1,1) both}
+::view-transition-new(vt-n0),::view-transition-new(vt-n1),::view-transition-new(vt-n2),::view-transition-new(vt-n3),::view-transition-new(vt-n4),::view-transition-new(vt-n5){animation:a-fade .3s ease-out .1s both}
 @keyframes a-out{to{opacity:0;transform:scale(.992)}}
 
 /* ---------- drill sheets ---------- */

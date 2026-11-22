@@ -763,12 +763,12 @@ const CARDS = [
 /* 11-22 (SIMAS 16:4x "home page must track the forms: lots of money sleeping there"; BENAS "Brief responses"): the top card on Home */
 { id: "forms", cls: "w2", title: "Forms: money sleeping", focus: ["forms", ""], render: d => { const F = d.forms;
     if (!F) return `${head(`Forms: <em class="sf">money sleeping</em>`, "", true)}${empty("The forms list isn't there yet.")}`;
-    return `${head(`Forms: <em class="sf">money sleeping</em>`, dB("forms", "", `${usd(d.formsOpen)} open`, `chip ${d.formsOpen ? "o" : "g"}`, `Open every form: stage, value, what they need${d.formsThirty ? ` (${d.formsThirty} post daily: 30/mo candidates)` : ""}`), true)}<div class="stack two">${F.slice(0, 6).map(formRow).join("") || empty("No brief form yet.")}</div>
+    return `${head(`Forms: <em class="sf">money sleeping</em>`, dB("forms", "", `${usd(d.formsOpen)} potential`, `chip ${d.formsOpen ? "o" : "g"}`, `Open every form: stage, value, what they need${d.formsThirty ? ` (${d.formsThirty} post daily: 30/mo candidates)` : ""}`), true)}<div class="stack two">${F.slice(0, 6).map(formRow).join("") || empty("No brief form yet.")}</div>
     ${F.length > 6 ? dB("forms", "", `Show all ${F.length}`, "more") : ""}`; } },
 { id: "bigdeals", title: "Big deals", focus: ["deals", ""], render: d => { const B = d.deals;   // source: public.big_deals_v2 (fetchAll)
     if (!B) return `${head(`Big <em class="sf">deals</em>`, "", true)}${empty("The big-deals list isn't there yet.")}`;
     const st = B.filter(x => !x.on_hold && x.days_quiet >= 7).length;
-    return `${head(`Big <em class="sf">deals</em>`, dB("deals", "", B.length ? `${B.length} open · ${usd(sum(B, x => +x.value_usd || 0))}${st ? ` · ${st} gone quiet` : ""}` : "none", `chip ${st ? "r" : B.length ? "g" : ""}`, "Open every big deal: the quote, their words, their last reply, holds"), true)}<div class="stack">${B.slice(0, 6).map(bigRow).join("") || empty("No real quote of $600+ a month is open. Deals show here from a sent scope, a deal in the CRM, or the lead's own words.")}</div>
+    return `${head(`Big <em class="sf">deals</em>`, dB("deals", "", B.length ? `${B.length} open · ${usd(sum(B, x => +x.value_usd || 0))} quoted${st ? ` · ${st} gone quiet` : ""}` : "none", `chip ${st ? "r" : B.length ? "g" : ""}`, "Open every big deal: the quote, their words, their last reply, holds"), true)}<div class="stack">${B.slice(0, 6).map(bigRow).join("") || empty("No real quote of $600+ a month is open. Deals show here from a sent scope, a deal in the CRM, or the lead's own words.")}</div>
     ${B.length > 6 ? dB("deals", "", `Show all ${B.length}`, "more") : ""}`; } },
 { id: "approvals", title: "Waiting for approval", focus: ["approvals", ""], render: d => { const A = d.drafts;   // nothing waiting (or no view) = "" = no card at all
     if (!A || !A.length) return "";
@@ -928,8 +928,9 @@ const CARDS = [
 { id: "pclients", grid: 2, title: "Portal: sign-ups", focus: ["pclients", ""], render: d => `${head("Sign-ups", "", true)}<div class="stack">${d.pClients.slice(0, 3).map(clientTile).join("") || empty("No client has signed up yet.")}</div>${d.pClients.length > 3 ? dB("pclients", "", `Show all ${d.pClients.length}`, "more") : ""}` },
 ].filter(c => !HIDDEN.has(c.id));
 const byId = id => CARDS.find(c => c.id === id);
-/* 11-22 (SIMAS, Benas handed the dashboard over): ONE long Dashboard. The $ hero stays as it is; under it a summary row of the key numbers
-   (updateTiles), then labelled sections Work · Money · Leads · Outreach as a bento. Only the best 12 Money / Leads / Outreach cards, and every
+/* 11-22 (SIMAS, Benas handed the dashboard over; "bento style like it was but updated based on me and Benas"): ONE long Dashboard. The $ hero
+   stays as it is; under it a summary row of the key numbers (updateTiles), then ONE dense bento of mixed card sizes, in the order Work ·
+   Money · Leads · Outreach (no boxed sections). Only the best 12 Money / Leads / Outreach cards, and every
    number shows once on the page: a card whose number is already in the hero, the summary row or another card is cut ("cut": built but never
    shown; its lists still open from the summary number or the drill sheets). Money / Leads / Outreach left the side menu and the phone bar.
    "clients" cards (On hold, In production) still sit on top of the Clients page (crm.css). */
@@ -937,7 +938,6 @@ const SECS = { work: ["forms", "bigdeals", "approvals", "next", "activity"], mon
 const TABS = { home: Object.values(SECS).flat(), clients: ["holds", "prod", "portal", "psamples", "pvideos", "pnotes", "pclients"],
   cut: ["retainers", "alltime", "rate", "speed", "deliv", "total", "today", "videos", "attention", "moods", "samples", "away", "heat", "clock", "sync", "price", "moneypage"], none: ["brand"] };
 const TABOF = {}; Object.entries(TABS).forEach(([t, ids]) => ids.forEach(id => { TABOF[id] = t; }));
-const SECOF = {}; Object.entries(SECS).forEach(([s, ids]) => ids.forEach(id => { SECOF[id] = s; }));
 
 /* ---------------- chart painters (hover, tap and arrow keys share them) ---------------- */
 function paintOut(days, max, H, pad, i) {
@@ -1010,14 +1010,15 @@ function updateTiles(d) {
 /* ---------------- render ---------------- */
 const IO = new IntersectionObserver(es => es.forEach(e => e.target.classList.toggle("inview", e.isIntersecting)), { rootMargin: "60px" });   // ambient loops run only on cards in view
 function build() {
-  const g1 = $("#grid"), g2 = $("#grid2"), gs = { money: $("#grid-money"), leads: $("#grid-leads"), outreach: $("#grid-outreach") }; g1.innerHTML = g2.innerHTML = ""; Object.values(gs).forEach(g => { g.innerHTML = ""; }); IO.disconnect();
+  const g1 = $("#grid"), g2 = $("#grid2"); g1.innerHTML = g2.innerHTML = ""; IO.disconnect();
   const ro = new ResizeObserver(es => es.forEach(e => fit(e.target)));
   CARDS.forEach((c, i) => {
     const el = document.createElement("section"); el.id = "c-" + c.id; el.className = "card " + (c.cls || ""); el.dataset.tab = TABOF[c.id] || "home"; el.style.setProperty("--i", c.grid === 2 ? i - 30 : i); el.setAttribute("aria-label", c.title || c.id);
     el.style.setProperty("--j", i % 8); c.sh = document.createElement("i"); c.sh.className = "sheen"; c.sh.setAttribute("aria-hidden", "true");
     c.lf = document.createElement("i"); c.lf.className = "lift"; c.lf.setAttribute("aria-hidden", "true");   // 11-22 motion: hover shadow
-    c.el = el; c.last = null; if (c.mount) c.mount(el); el.append(c.sh, c.lf); (c.grid === 2 ? g2 : gs[SECOF[c.id]] || g1).appendChild(el); ro.observe(el); IO.observe(el);
+    c.el = el; c.last = null; if (c.mount) c.mount(el); el.append(c.sh, c.lf); (c.grid === 2 ? g2 : g1).appendChild(el); ro.observe(el); IO.observe(el);
   });
+  TABS.home.forEach(id => { const c = byId(id); if (c && c.el) g1.appendChild(c.el); });   // 11-22: the bento reads Work, Money, Leads, Outreach
 }
 function fit(el) { el.style.gridRowEnd = "span " + Math.ceil((el.offsetHeight + 16) / 4); }
 function renderAll(fromData) {
@@ -1726,7 +1727,7 @@ async function refresh(manual) {
   catch (e) { if (!RAW) throw e; offline(true); }
   finally { setTimeout(() => btns.forEach(b => b.classList.remove("spinning")), 500); }
 }
-function startLoop() { stopLoop(); TIMER = setInterval(() => { if (!document.hidden) refresh().catch(() => {}); }, 60000); }
+function startLoop() { stopLoop(); TIMER = setInterval(() => { if (!document.hidden && Date.now() - LAST_OK >= 55000) refresh().catch(() => {}); }, 60000); }   // 11-22 (prod DB overload): skip a tick when a realtime refresh just ran
 function stopLoop() { if (TIMER) clearInterval(TIMER); TIMER = null; }
 document.addEventListener("visibilitychange", () => { if (!document.hidden && RAW && Date.now() - LAST_OK > 60000) refresh().catch(() => {}); });
 function startRealtime() {
@@ -1736,7 +1737,7 @@ function startRealtime() {
     CH.subscribe(st => { RT = st === "SUBSCRIBED" ? "live" : "poll"; if (D) { paintStatus(); const b = byId("brand"); if (b && b.update) b.update(D); } });
   } catch { RT = "poll"; }
 }
-function stopRealtime() { clearTimeout(RT_T); if (CH) { try { sb.removeChannel(CH); } catch {} CH = null; } RT = "off"; }
+function stopRealtime() { clearTimeout(RT_T); RT_T = null; if (CH) { try { sb.removeChannel(CH); } catch {} CH = null; } RT = "off"; }
 function onChange(tb, p) {
   const n = p.new || {}, ins = p.eventType === "INSERT";
   if (tb === "crm_events") { if (ins) ntArrive(n); return; }   // 11-21: the bell
@@ -1748,7 +1749,10 @@ function onChange(tb, p) {
   else if (tb === "videos" && ins) toast(`New video request: ${cut(n.title || "Untitled", 40)}`, "play", "c-purple");
   else if (tb === "videos" && p.eventType === "UPDATE" && n.status === "revision") toast(`Changes asked on “${cut(n.title || "a video", 40)}”`, "alert", "c-red");
   else if (tb === "video_notes" && ins) toast("New change request", "alert", "c-red", cut(n.text, 90));
-  clearTimeout(RT_T); RT_T = setTimeout(() => refresh().catch(() => {}), 1500);   // coalesce bursts into one refresh
+  /* 11-22 (prod DB overload): one full read is ~45 requests, so realtime events no longer each force one. They coalesce into at most one
+     full refresh per 60 s (the toasts above stay instant); only a new payment refreshes at once. */
+  const soon = tb === "payments" && ins, wait = soon ? 1500 : Math.max(1500, 60000 - (Date.now() - LAST_OK));
+  if (RT_T && !soon) return; clearTimeout(RT_T); RT_T = setTimeout(() => { RT_T = null; refresh().catch(() => {}); }, wait);
 }
 
 /* ---------------- look: five glass themes, motion Full / Calm (both saved on this device) ---------------- */
@@ -1826,7 +1830,7 @@ function pageGo(update) {
   /* the page's content regions leave as their own groups (vt-o*) and the new ones arrive as others (vt-n*): a fade through, so the menu,
      the top bar and the backdrop stay perfectly still and old and new content never double-expose */
   const h = document.documentElement, my = ++PG_SEQ, name = (el, n) => { el.style.setProperty("view-transition-name", n); PG_NAMED.push(el); }, untag = () => PG_NAMED.splice(0).forEach(el => el.style.removeProperty("view-transition-name")),
-    tag = pre => { pills().forEach((el, i) => { if (el) name(el, i ? "vt-tpill" : "vt-pill"); }); ["#hero", "#mtiles", "#grid", "#spage", "#app>.foot", "#sec-work", "#secs"].forEach((q, i) => { const el = $(q); if (el && el.offsetParent !== null) name(el, pre + i); });
+    tag = pre => { pills().forEach((el, i) => { if (el) name(el, i ? "vt-tpill" : "vt-pill"); }); ["#hero", "#mtiles", "#grid", "#spage", "#app>.foot", "#asof"].forEach((q, i) => { const el = $(q); if (el && el.offsetParent !== null) name(el, pre + i); });
       [["#snav", "vt-nav"], ["#tabs", "vt-tabs"], ["#toasts", "vt-toasts"], ["#sn-tip", "vt-tip"]].forEach(([q, n]) => { const el = $(q); if (el && el.getClientRects().length) name(el, n); }); };   // fixed overlays keep painting above the content
   untag(); tag("vt-o"); h.classList.add("vt-pg");   // untag first: a switch clicked during the previous one starts clean
   const vt = vtGo(() => { untag(); VT_PASS = true; try { update(); } finally { VT_PASS = false; } tag("vt-n"); pageIn(); });
