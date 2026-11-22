@@ -20,9 +20,10 @@
 <link rel="preload" href="fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/geist-mono.woff2" as="font" type="font/woff2" crossorigin>
 <script src="theme.js?v=20261112p3"></script>
-<link rel="stylesheet" href="crm.css?v=20261122cp1">
+<link rel="stylesheet" href="crm.css?v=20261122an1">
 <link rel="stylesheet" href="side.css?v=20261121zd">
 <link rel="stylesheet" href="contacts.css?v=20261121zd">
+<link rel="stylesheet" href="anim.css?v=20261122an1">
 </head>
 <body>
 <svg width="0" height="0" class="sprite" aria-hidden="true" focusable="false">
@@ -193,12 +194,23 @@
 <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
 <canvas id="fx" class="fx" hidden aria-hidden="true"></canvas>
 
-<div id="boot" class="boot" aria-label="Loading"><div class="sk"><i class="a"></i><i class="b"></i><i></i><i class="b"></i><i class="c"></i><i></i><i class="c"></i><i></i><i class="b"></i></div></div>
+<!-- loading screen (11-22 motion pass): the dashboard's own layout as glass placeholders, so nothing jumps when the data arrives; the BEJÚ mark flies into the menu -->
+<div id="boot" class="boot" role="status" aria-label="Loading">
+  <i class="skl-rail" aria-hidden="true"><b></b></i>
+  <div class="skl" aria-hidden="true">
+    <i class="skl-top"></i>
+    <div class="skl-p skl-hero"><div class="skl-hl"><b class="w1"></b><b class="w2"></b><b class="w3"></b></div><div class="skl-hr"><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b></div><b class="skl-trk"></b></div>
+    <div class="skl-tiles"><div class="skl-p"><b class="w1"></b><b class="w2"></b><b class="w3"></b></div><div class="skl-p"><b class="w1"></b><b class="w2"></b><b class="w3"></b></div><div class="skl-p"><b class="w1"></b><b class="w2"></b><b class="w3"></b></div></div>
+    <div class="skl-cards"><div class="skl-p wide"><b class="w1"></b><b class="w4"></b><b class="w4"></b></div><div class="skl-p"><b class="w1"></b><b class="w4"></b></div><div class="skl-p tall"><b class="w1"></b><b class="w4"></b><b class="w4"></b></div></div>
+  </div>
+  <i class="skl-tabs" aria-hidden="true"></i>
+  <span class="skl-mark" aria-hidden="true"><img src="icon-192.png?v=20261119i1" alt="" width="56" height="56"></span>
+</div>
 <noscript><p class="gate">This page needs JavaScript turned on.</p></noscript>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="config.js?v=20261112p3"></script>
-<script src="crm.js?v=20261122cp1"></script>
+<script src="crm.js?v=20261122an1"></script>
 <script src="contacts.js?v=20261121zd"></script>
 <script src="side.js?v=20261121zd"></script>
 </body>

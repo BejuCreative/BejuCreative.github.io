@@ -61,10 +61,10 @@ const N = (v, f = "int") => v == null || !isFinite(v) ? "—" : `<span class="n"
 const PREV = new Map();
 function countUp(card) {
   $$(".n[data-n]", card.el).forEach((el, i) => {
-    const key = card.id + ":" + i, to = +el.dataset.n, f = FMT[el.dataset.f] || FMT.int, from = PREV.has(key) ? PREV.get(key) : 0;
+    const key = card.id + ":" + i, to = +el.dataset.n, f = FMT[el.dataset.f] || FMT.int, had = PREV.has(key), from = had ? PREV.get(key) : 0;
     PREV.set(key, to);
     if (RM || from === to) { el.textContent = f(to); return; }
-    el.textContent = f(from);
+    el.textContent = f(from); if (had) el.classList.add("tick");   // 11-22 motion: a number that changed rolls up into place while it counts
     const t0 = performance.now(), dur = 900;
     const step = now => { const k = clamp((now - t0) / dur, 0, 1), e = 1 - Math.pow(1 - k, 3); el.textContent = f(from + (to - from) * e); if (k < 1 && el.isConnected) requestAnimationFrame(step); };
     requestAnimationFrame(step);
@@ -958,7 +958,7 @@ const HERO = {};
 function setOdo(el, str) {
   const sig = str.replace(/\d/g, "0");
   if (el.dataset.sig !== sig) { el.dataset.sig = sig; el.innerHTML = [...str].map(ch => /\d/.test(ch) ? `<span class="od"><span class="os">${"0123456789".split("").map(x => `<span>${x}</span>`).join("")}</span></span>` : `<span class="oc${ch === "$" ? " u" : ""}">${ch}</span>`).join(""); }
-  const cols = $$(".od", el), digits = str.replace(/\D/g, ""), go = () => cols.forEach((c, i) => c.style.setProperty("--d", digits[i]));
+  const cols = $$(".od", el), digits = str.replace(/\D/g, ""), go = () => cols.forEach((c, i) => { c.style.setProperty("--oi", i); c.style.setProperty("--d", digits[i]); });
   RM ? go() : requestAnimationFrame(() => requestAnimationFrame(go));
 }
 function mountHero() {
@@ -1012,14 +1012,15 @@ function build() {
   CARDS.forEach((c, i) => {
     const el = document.createElement("section"); el.id = "c-" + c.id; el.className = "card " + (c.cls || ""); el.dataset.tab = TABOF[c.id] || "home"; el.style.setProperty("--i", c.grid === 2 ? i - 30 : i); el.setAttribute("aria-label", c.title || c.id);
     el.style.setProperty("--j", i % 8); c.sh = document.createElement("i"); c.sh.className = "sheen"; c.sh.setAttribute("aria-hidden", "true");
-    c.el = el; c.last = null; if (c.mount) c.mount(el); el.appendChild(c.sh); (c.grid === 2 ? g2 : g1).appendChild(el); ro.observe(el); IO.observe(el);
+    c.lf = document.createElement("i"); c.lf.className = "lift"; c.lf.setAttribute("aria-hidden", "true");   // 11-22 motion: hover shadow
+    c.el = el; c.last = null; if (c.mount) c.mount(el); el.append(c.sh, c.lf); (c.grid === 2 ? g2 : g1).appendChild(el); ro.observe(el); IO.observe(el);
   });
 }
 function fit(el) { el.style.gridRowEnd = "span " + Math.ceil((el.offsetHeight + 16) / 4); }
 function renderAll(fromData) {
   D = derive();
   CARDS.forEach(c => {
-    if (c.render) { const html = c.render(D); if (html !== c.last) { c.last = html; c.el.innerHTML = html; c.el.hidden = !html; c.el.appendChild(c.sh); if (c.focus) { const h = $(".ch", c.el); if (h) h.insertAdjacentHTML("beforeend", `<button type="button" class="xp" data-act="drill" data-k="${c.focus[0]}" data-a="${c.focus[1]}" aria-label="Expand ${esc(c.title)}" title="Expand">${ic("expand")}</button>`); } countUp(c); applyVars(c.el);
+    if (c.render) { const html = c.render(D); if (html !== c.last) { c.last = html; c.el.innerHTML = html; c.el.hidden = !html; c.el.append(c.sh, c.lf); if (c.focus) { const h = $(".ch", c.el); if (h) h.insertAdjacentHTML("beforeend", `<button type="button" class="xp" data-act="drill" data-k="${c.focus[0]}" data-a="${c.focus[1]}" aria-label="Expand ${esc(c.title)}" title="Expand">${ic("expand")}</button>`); } countUp(c); applyVars(c.el);
         const sig = $$(".n[data-n]", c.el).map(x => x.dataset.n).join("|"); if (fromData && c.sig !== undefined && c.sig !== sig && !RM) { c.el.classList.remove("chg"); void c.el.offsetWidth; c.el.classList.add("chg"); } c.sig = sig; } }
     if (c.update) c.update(D);
   });
@@ -1202,14 +1203,22 @@ function openDrill(k, a = "", opener, back) {
   if (fresh) { M_OPENER = opener || document.activeElement; STACK.length = 0; }
   if (!back) STACK.push({ k, a }); STATE.drill = { k, a };
   const run = () => { veil.hidden = false; let r; try { r = DR[k](a); } catch (e) { r = { title: "Couldn't open this", html: empty("Something went wrong building this list.") }; }
-    if (r && typeof r.then === "function") { showDrill({ title: "Loading…", html: `<div class="boot-in"><span class="spin"></span> Loading…</div>` }, seq); r.then(x => showDrill(x, seq)).catch(() => showDrill({ title: "Couldn't load this", html: empty("Check your connection and try again.") }, seq)); } else showDrill(r, seq);
+    if (r && typeof r.then === "function") { showDrill({ title: "Loading…", html: `<div class="skl-list" aria-label="Loading"><i></i><i></i><i></i><i></i><i></i></div>` }, seq); r.then(x => showDrill(x, seq)).catch(() => showDrill({ title: "Couldn't load this", html: empty("Check your connection and try again.") }, seq)); } else showDrill(r, seq);
     if (fresh) $("#m-close").focus(); };
-  const src = fresh && opener && opener.closest ? opener.closest(".card,.hero") : null;
-  if (fresh && document.startViewTransition && !RM) { if (src) src.classList.add("vt-src"); M_SRC = src; document.startViewTransition(() => { if (src) src.classList.remove("vt-src"); run(); }); } else run();
+  /* 11-22 motion: the sheet grows out of the tapped pane (View Transitions shared element) and the page behind blurs in; without a pane
+     (top-bar buttons, the palette) or without the API it scales up from the control that opened it. .vtm keeps the sheet's own CSS entrance off. */
+  const src = fresh && opener && opener.closest ? opener.closest(".kpi,.hf,.mt,.card,.hero") : null, h = document.documentElement;
+  if (src && VT && !RM && inView(src)) { M_SRC = src; src.classList.add("vt-src"); veil.classList.add("vtm"); h.classList.add("vt-open");
+    const vt = vtGo(() => { src.classList.remove("vt-src"); run(); }), done = () => h.classList.remove("vt-open"); vt.finished.then(done, done); }
+  else { if (fresh) { M_SRC = null; veil.classList.remove("vtm"); } run(); if (fresh && !RM) growFrom(opener); }
+}
+function growFrom(o) {
+  const m = $("#veil .modal"), ok = o && o.isConnected && o.getBoundingClientRect && !PHONE.matches; if (!ok) { m.style.removeProperty("--ox"); m.style.removeProperty("--oy"); return; }
+  const a = o.getBoundingClientRect(), b = m.getBoundingClientRect(); m.style.setProperty("--ox", Math.round(a.left + a.width / 2 - b.left) + "px"); m.style.setProperty("--oy", Math.round(a.top + a.height / 2 - b.top) + "px");
 }
 function refreshDrill() { const s = STATE.drill; if (!s || $("#veil").hidden || s.k === "inbox" || s.k === "client" || s.k === "notifs" || document.activeElement?.classList.contains("pg-q") || $("#m-body .draft-ed:not([hidden])")) return; try { const r = DR[s.k](s.a); if (r && !r.then) showDrill(r, SEQ, true); } catch {} }
-function closeDrill() { const veil = $("#veil"); if (veil.hidden) return; const src = M_SRC && M_SRC.isConnected ? M_SRC : null, go = () => { veil.hidden = true; STATE.drill = null; STACK.length = 0; SEQ++; CONVS.delete("m"); if (src) src.classList.add("vt-src"); };
-  if (document.startViewTransition && !RM) { const vt = document.startViewTransition(go); const done = () => { if (src) src.classList.remove("vt-src"); }; vt.finished.then(done, done); } else { go(); if (src) src.classList.remove("vt-src"); } M_SRC = null; if (M_OPENER && M_OPENER.isConnected) M_OPENER.focus(); M_OPENER = null; }
+function closeDrill() { const veil = $("#veil"); if (veil.hidden) return; const h = document.documentElement, src = M_SRC && M_SRC.isConnected && inView(M_SRC) ? M_SRC : null, go = () => { veil.hidden = true; veil.classList.remove("vtm"); STATE.drill = null; STACK.length = 0; SEQ++; CONVS.delete("m"); if (src) src.classList.add("vt-src"); };
+  if (VT && !RM) { const cls = src ? "vt-back" : "vt-drop"; h.classList.add(cls); const vt = vtGo(go); const done = () => { if (src) src.classList.remove("vt-src"); h.classList.remove(cls); }; vt.finished.then(done, done); } else { go(); if (src) src.classList.remove("vt-src"); } M_SRC = null; if (M_OPENER && M_OPENER.isConnected) M_OPENER.focus(); M_OPENER = null; }
 
 /* ---------------- conversations: every message of a lead or client, oldest first ---------------- */
 const CONVS = new Map();   // "dr" (drawer) / "m" (modal) -> messages
@@ -1252,7 +1261,7 @@ async function openLead(email, opener, keepNav) {
       ${nextSec(email, p)}${dealRow(email, st, null, null)}
       <div class="acts sp"><button type="button" class="act" data-act="copy" data-t="${esc(email)}">${ic("copy")}Copy email</button>${link ? `<a class="act" href="${esc(link)}" target="_blank" rel="noopener noreferrer">${ic("link")}Open sample</a>` : ""}${acct ? dB("client", "e:" + email, `${ic("user")}Portal account`, "act") : ""}${p && isBuyer(p) ? dB("client", "e:" + email, `${ic("cash")}Payments`, "act") : ""}</div>
       ${NAV.length > 1 ? `<div class="dr-navr"><button type="button" class="act" data-act="nav" data-d="-1" ${at <= 0 ? "disabled" : ""} aria-label="Previous lead in the list">←</button><span class="mut mono">${at + 1} / ${NAV.length}</span><button type="button" class="act" data-act="nav" data-d="1" ${at >= NAV.length - 1 ? "disabled" : ""} aria-label="Next lead in the list">→</button><span class="mut">arrow keys move through the list</span></div>` : ""}</div>
-    <div class="dr-sec" id="dr-conv"><h3>Conversation</h3><div class="boot-in"><span class="spin"></span> Loading the thread…</div></div>
+    <div class="dr-sec" id="dr-conv"><h3>Conversation</h3><div class="skl-list conv" aria-label="Loading the thread"><i></i><i></i><i></i></div></div>
     ${p ? `<div class="dr-sec"><div class="dr-chips"><span class="chip b">${esc(p.status || "—")}</span>${cvChip(D.tc[email] || 0)}${dB("mood", m, esc(MOOD_LABEL[m] || m), "chip", "Open every lead with this mood")}${p.inbox ? `<span class="chip">${esc(p.inbox)}</span>` : ""}${f && f.touches_total ? `<span class="chip">follow-ups ${f.touches_done || 0}/${f.touches_total}</span>` : ""}</div></div>
     <div class="dr-sec"><h3>Timeline</h3><div class="kv"><span>Said yes</span><span>${fDT(p.yes_at)}</span></div><div class="kv"><span>Sample delivered</span><span>${fDT(p.delivered_at)}</span></div><div class="kv"><span>Last reply</span><span>${fDT(p.last_reply_at)}</span></div>${p.paid ? `<div class="kv"><span>Paid</span><span class="up">${esc(cut(p.paid, 40))}</span></div>` : ""}</div>
     ${p.notes ? `<div class="dr-sec"><h3>Notes</h3><p class="dr-txt">${esc(cut(p.notes, 900))}</p></div>` : ""}` : ""}
@@ -1423,7 +1432,7 @@ window.BEJU_CRM_CALLCARD = callCard;   // side.js: the full card under a row of 
 /* ---------------- 11-21: notification centre (public.crm_inbox = crm_events + MY crm_event_state) ----------------
    Founders: "add greater notifications in the crm, make them interactive also". The bell shows only once crm_inbox answers.
    Writes: my own crm_event_state rows (read / snooze / done) and touches. Desktop alerts only after a click, only hot / money / alert. */
-let NT = null, NT_T = null, NT_SN = null;
+let NT = null, NT_T = null, NT_SN = null, BELL = null;
 const NTS = { open: null, form: null, all: false }, TOASTED = new Map(), SLACK = { ok: null }, DESK = "beju-crm-desk";
 const SEV = { hot: "c-orange", money: "c-green", alert: "c-red", info: "c-blue" };
 const KICON = { form: "edit", reply: "mail", hot: "bolt", payment: "cash", booking: "phone", sample: "film", hold: "flag", task: "check", touch: "edit", stage: "chev", slack: "hash", alert: "alert" };
@@ -1446,6 +1455,7 @@ function paintBell() {
   const b = $("#nt-btn"), i = $("#nt-n"); if (!b || !i) return;
   b.hidden = NT == null; const n = NT ? NT.filter(ntUnread).length : 0, t = n > 99 ? "99+" : String(n);
   i.hidden = !n; i.textContent = n ? t : ""; b.setAttribute("aria-label", n ? `Notifications: ${n} unread` : "Notifications");
+  if (NT == null) BELL = null; else { if (BELL != null && n > BELL && !RM) { b.classList.remove("ring"); void b.offsetWidth; b.classList.add("ring"); } BELL = n; }   // 11-22 motion: a new unread item rings the bell once
   const base = document.title.replace(/^\(\d+\+?\) /, ""); document.title = n ? `(${t}) ${base}` : base;
 }
 const ntBtn = (x, op, label, cls = "", icon = "") => `<button type="button" class="act ${cls}" data-act="nt" data-op="${op}" data-id="${esc(String(x.id))}">${icon ? ic(icon) : ""}${label}</button>`;
@@ -1772,6 +1782,66 @@ if (COARSE && !RM && "DeviceOrientationEvent" in window) {
       h.style.setProperty("--sx", (clamp(e.gamma / 30, -1, 1) * 30).toFixed(1) + "%"); h.style.setProperty("--sy", (clamp((e.beta - 40) / 30, -1, 1) * 18).toFixed(1) + "%"); }); }, { passive: true });
 }
 
+/* ---------------- 11-22 motion pass (SIMAS "crazy opening animations and transitions, very smooth, very clean, with a WOW effect") ----------------
+   Transform and opacity only (plus a short blur on the logo). Opening: the full sequence once per browser session (sessionStorage), a light fade
+   on later loads. Page switches and drill sheets use the View Transitions API where the browser has it; elsewhere a CSS entrance. Reduced motion:
+   everything instant. The classes on <html> (intro, soft, pg-in, vt-*) only switch the CSS in anim.css on and off; no data logic here. */
+const VT = typeof document.startViewTransition === "function", INTRO = "beju-crm-intro";
+const PG = ["home", "money", "leads", "outreach", "expenses", "email", "clients", "contacts", "perf", "weekly", "todos", "slack"];
+let VT_PASS = false, PG_T = null, SP_T = null, PG_SEQ = 0; const PG_NAMED = [];
+{ const s = store.get("beju-crm-nav"); document.documentElement.dataset.skr = (s ? s === "x" : innerWidth >= 1300) ? "x" : "m"; }   // the loading screen draws the menu rail at its saved width (side.js's rule)
+const vtGo = cb => { const vt = document.startViewTransition(cb); vt.ready.catch(() => {}); return vt; };   // a skipped transition (a new one started, the tab hid) is not an error
+const inView = el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.bottom > 0 && r.top < innerHeight; };
+function order() {   // --n = a pane's place in reading order (top to bottom, then left to right) for the staggered entrances
+  const els = [...$$("#mtiles>.mt"), ...CARDS.map(c => c.el)].filter(el => el && el.offsetParent !== null), r = new Map(els.map(el => [el, el.getBoundingClientRect()]));
+  els.sort((a, b) => (Math.round(r.get(a).top / 8) - Math.round(r.get(b).top / 8)) || (r.get(a).left - r.get(b).left)).forEach((el, i) => el.style.setProperty("--n", Math.min(i, 8)));
+}
+function intro() {
+  if (RM) return; const h = document.documentElement;
+  let seen = false; try { seen = sessionStorage.getItem(INTRO) === "1"; sessionStorage.setItem(INTRO, "1"); } catch {}
+  CARDS.forEach(c => { if (c.el) fit(c.el); }); order();
+  const k = seen ? "soft" : "intro"; h.classList.add(k); setTimeout(() => h.classList.remove(k), seen ? 700 : 1600);
+  if (!seen) requestAnimationFrame(() => {   // the loading screen's BEJÚ mark flies into the menu's logo (phones: it blooms away)
+    const boot = $("#boot"), mk = $(".skl-mark", boot), lg = $("#snav .sn-logo"); if (!mk || !lg || PHONE.matches || !inView(lg) || !boot.classList.contains("out")) return;
+    const b = lg.getBoundingClientRect(), mx = mk.offsetLeft + mk.offsetWidth / 2, my = mk.offsetTop + mk.offsetHeight / 2;   // layout boxes: the entrances' own scaling does not move a centre
+    mk.style.setProperty("--fx", Math.round(b.left + b.width / 2 - mx) + "px"); mk.style.setProperty("--fy", Math.round(b.top + b.height / 2 - my) + "px"); mk.style.setProperty("--fs", (lg.offsetWidth / mk.offsetWidth).toFixed(3));
+    boot.classList.add("fly"); });
+}
+function pageIn() {   // the new page's panes rise in, in reading order
+  if (RM) return; const h = document.documentElement; order(); h.classList.add("pg-in"); clearTimeout(PG_T); PG_T = setTimeout(() => h.classList.remove("pg-in"), 900);
+}
+const pgCur = () => $('#snav .sn-list a[data-nav][aria-current="page"]');   // side.js marks the open page
+const pgNow = () => { const a = pgCur(); return document.documentElement.classList.contains("paged") && a ? a.dataset.nav : STATE.tab || "home"; };
+const pgTo = t => t.dataset.act === "tab" ? t.dataset.t || "home" : t.dataset.act === "page" ? t.dataset.p : t.dataset.nav === "dashboard" ? "home" : t.dataset.nav;
+function pills() {   // the highlighted menu item and phone tab: they slide to their new place during a page switch
+  const p = pgNow(), paged = document.documentElement.classList.contains("paged"), vis = el => el && el.offsetParent !== null ? el : null, ok = PG.includes(p);
+  return [PHONE.matches || !ok ? null : vis(paged ? pgCur() : p === "home" ? $('#snav .sn-list a[data-nav="dashboard"]') : $(`#snav .sn-list button[data-t="${p}"]`)),
+    !ok ? null : vis(paged ? $(`#tabs [data-p="${p}"]`) : $("#tabs button.on"))];
+}
+function pageGo(update) {
+  if (!VT || RM || $("#snav").classList.contains("open")) { update(); pageIn(); return; }   // the phone drawer slides away on its own; a snapshot would freeze it
+  /* the page's content regions leave as their own groups (vt-o*) and the new ones arrive as others (vt-n*): a fade through, so the menu,
+     the top bar and the backdrop stay perfectly still and old and new content never double-expose */
+  const h = document.documentElement, my = ++PG_SEQ, name = (el, n) => { el.style.setProperty("view-transition-name", n); PG_NAMED.push(el); }, untag = () => PG_NAMED.splice(0).forEach(el => el.style.removeProperty("view-transition-name")),
+    tag = pre => { pills().forEach((el, i) => { if (el) name(el, i ? "vt-tpill" : "vt-pill"); }); ["#hero", "#mtiles", "#grid", "#spage", "#app>.foot"].forEach((q, i) => { const el = $(q); if (el && el.offsetParent !== null) name(el, pre + i); });
+      [["#snav", "vt-nav"], ["#tabs", "vt-tabs"], ["#toasts", "vt-toasts"], ["#sn-tip", "vt-tip"]].forEach(([q, n]) => { const el = $(q); if (el && el.getClientRects().length) name(el, n); }); };   // fixed overlays keep painting above the content
+  untag(); tag("vt-o"); h.classList.add("vt-pg");   // untag first: a switch clicked during the previous one starts clean
+  const vt = vtGo(() => { untag(); VT_PASS = true; try { update(); } finally { VT_PASS = false; } tag("vt-n"); pageIn(); });
+  const done = () => { if (my !== PG_SEQ) return; h.classList.remove("vt-pg"); untag(); }; vt.finished.then(done, done);   // a newer switch owns the names now
+}
+document.addEventListener("click", ev => {   // capture phase, before side.js and the handlers below: a page switch replays its click inside a view transition
+  if (VT_PASS || !ev.isTrusted || ev.button > 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || $("#app").hidden || !$("#veil").hidden) return;
+  const t = ev.target.closest && ev.target.closest('#snav a[data-nav], [data-act="tab"], [data-act="page"]'); if (!t || pgTo(t) === pgNow()) return;
+  ev.preventDefault(); ev.stopImmediatePropagation(); pageGo(() => t.click());
+}, true);
+addEventListener("popstate", ev => {   // back / forward between pages: the same transition (side.js routes the replayed event)
+  if (VT_PASS || !VT || RM || $("#app").hidden) return;
+  const a = pgCur(), was = a ? a.dataset.nav : "dashboard", to = new URLSearchParams(location.search).get("p") || "dashboard"; if (was === to) return;
+  ev.stopImmediatePropagation(); pageGo(() => dispatchEvent(new PopStateEvent("popstate", { state: ev.state })));
+});
+{ const sp = $("#spage"); let sk = false;   // a side page's skeleton gives way to its content with a short fade
+  new MutationObserver(() => { const now = !!$(".sp-sk", sp); if (sk && !now && !RM) { sp.classList.add("sp-in"); clearTimeout(SP_T); SP_T = setTimeout(() => sp.classList.remove("sp-in"), 800); } sk = now; }).observe(sp, { childList: true }); }
+
 /* ---------------- events ---------------- */
 const layer = () => PAL ? $("#pal") : !$("#dlg").hidden ? $("#dlg") : !$("#drawer").hidden ? $("#drawer") : !$("#veil").hidden ? $("#veil") : null;
 document.addEventListener("click", ev => {
@@ -1950,7 +2020,12 @@ async function mfaManage() {
 }
 
 /* ---------------- auth gate ---------------- */
-const show = id => { ["boot", "gate", "wait", "mfa", "app"].forEach(x => { $("#" + x).hidden = x !== id; }); $("#tabs").hidden = id !== "app"; };
+let BOOT_T = null;
+const show = id => { ["gate", "wait", "mfa", "app"].forEach(x => { $("#" + x).hidden = x !== id; }); $("#tabs").hidden = id !== "app";
+  const boot = $("#boot"), was = !boot.hidden && !boot.classList.contains("out"); clearTimeout(BOOT_T);
+  if (id === "boot") { boot.classList.remove("out", "fly"); boot.hidden = false; }
+  else if (id === "app" && was && !RM) { boot.classList.add("out"); BOOT_T = setTimeout(() => { boot.hidden = true; boot.classList.remove("out", "fly"); }, 800); }   // 11-22 motion: the skeleton fades while the dashboard rises in under it
+  else { boot.hidden = true; boot.classList.remove("out", "fly"); } };
 let MODE = "in", JUST_UP = false;
 function setMode(m) {
   MODE = m; $("#tab-in")?.classList.toggle("on", m === "in"); $("#tab-up")?.classList.toggle("on", m === "up");
@@ -1999,7 +2074,7 @@ async function enter(user) {
   catch (e) { ME = null; show("gate"); msg("The 2-step login check didn't work. Check your connection and log in again."); return; }
   $("#nav-site").href = $("#nav-web").href = SITE; $("#nav-portal").href = PORTAL; $("#nav-portal").hidden = !PORTAL_ON;
   show("boot"); build(); mountHero();
-  try { await refresh(); show("app"); startLoop(); startRealtime(); slackProbe(); requestAnimationFrame(() => CARDS.forEach(c => fit(c.el))); measureFx();
+  try { await refresh(); show("app"); intro(); startLoop(); startRealtime(); slackProbe(); requestAnimationFrame(() => CARDS.forEach(c => fit(c.el))); measureFx();
     if (FIRST_LOOK && !store.get("beju-crm-look")) { store.set("beju-crm-look", lookOf()[0]); openDrill("look", "first"); } }
   catch (e) { show("gate"); msg("Couldn't load the CRM data. Check your connection and log in again."); }
 }

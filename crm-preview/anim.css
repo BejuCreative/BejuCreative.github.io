@@ -1,0 +1,205 @@
+/* BEJÚ founder CRM: motion pass (2026-11-22, SIMAS "crazy opening animations and transitions, very smooth, very clean, with a WOW effect").
+   Loads after crm.css, side.css and contacts.css. Only transform and opacity animate (plus a short blur on the logo mark), so everything
+   stays on the compositor. crm.js switches these on with classes on <html>:
+     intro  the opening, once per browser session     soft   later loads in the same session: a light fade
+     pg-in  a page / tab switch (panes rise in)        vt-*   View Transitions (page switch, drill sheet open / close)
+   An entrance lives only while its class is on, so removing the class never replays it. Reduced motion: crm.css makes every animation instant
+   and crm.js adds none of the classes. */
+:root{
+  --out:cubic-bezier(.16,1,.3,1);   /* expo out: fast start, long soft landing */
+  /* a damped spring (damping .72): 3.8% overshoot, settled by the end */
+  --spr:linear(0,.037,.129,.25,.381,.51,.629,.733,.819,.889,.942,.981,1.008,1.025,1.034,1.038,1.038,1.035,1.031,1.026,1.021,1.016,1.012,1.008,1.005,1.003,1.001,1,.999,.999,1);
+  --skl-sh:rgba(255,255,255,.6);
+}
+:root[data-mode="dark"]{--skl-sh:rgba(255,255,255,.06)}
+
+/* the panes' old always-on entrances are off: the classes below own them now */
+.card,.hero,.mt,.spage{animation:none}
+
+/* ---------- loading screen: the dashboard's layout as glass placeholders + the BEJÚ mark ---------- */
+.boot{display:block;position:fixed;inset:0;z-index:40;overflow:hidden;padding:0;background:transparent}
+.skl{max-width:1720px;margin:0 auto;padding:28px 28px 0}
+.skl i,.skl b,.skl-rail b{display:block}
+.skl-top,.skl-p,.skl-rail{position:relative;overflow:hidden;background:var(--glass),var(--tint-lite);box-shadow:var(--edge)}
+.skl-top{height:50px;border-radius:999px;margin-bottom:18px;background:var(--over);box-shadow:none;border:1px solid var(--line)}
+.skl-p{border-radius:var(--r-card)}
+.skl b{border-radius:8px;background:var(--panel)}
+.skl-hero{border-radius:28px;margin-bottom:var(--gap);padding:26px 28px 70px;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);column-gap:26px;align-items:end}
+.skl-hl{display:grid;gap:14px;padding-bottom:52px}
+.skl-hl .w1{width:44%;height:14px}.skl-hl .w2{width:66%;height:96px;border-radius:18px}.skl-hl .w3{width:30%;height:12px}
+.skl-hr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.skl-hr b{height:102px;border-radius:16px;background:var(--tile);border:1px solid var(--line)}
+.skl-hr b:nth-child(-n+3){height:72px}
+.skl-trk{grid-column:1/-1;height:12px;border-radius:99px;margin-top:34px}
+.skl-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--gap);margin-bottom:var(--gap)}
+.skl-tiles .skl-p{height:171px;padding:16px;display:grid;align-content:start;gap:12px}
+.skl-tiles .w1{width:34%;height:12px}.skl-tiles .w2{width:58%;height:28px}.skl-tiles .w3{width:100%;height:60px;border-radius:10px;opacity:.6}
+.skl-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--gap)}
+.skl-cards .skl-p{height:236px;padding:18px;display:grid;align-content:start;gap:12px}
+.skl-cards .wide{grid-column:1/-1;height:380px}.skl-cards .tall{height:727px}
+.skl-cards .w1{width:28%;height:14px}.skl-cards .w4{width:100%;height:72px;border-radius:var(--r-tile);opacity:.7}
+html:not([data-tab="home"]) .skl-hero,html:not([data-tab="home"]) .skl-tiles{display:none}
+/* one light sweep across every pane, left to right */
+.skl-top::after,.skl-p::after,.skl-rail::after,.skl-list i::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,var(--skl-sh) 50%,transparent 70%);transform:translateX(-100%);animation:skl-shim 2s cubic-bezier(.4,0,.2,1) infinite;animation-delay:var(--sd,0s)}
+.skl-tiles .skl-p:nth-child(2),.skl-cards .skl-p:nth-child(2){--sd:.1s}.skl-tiles .skl-p:nth-child(3),.skl-cards .skl-p:nth-child(3){--sd:.2s}.skl-hero{--sd:.05s}
+@keyframes skl-shim{0%{transform:translateX(-100%)}60%,100%{transform:translateX(100%)}}
+/* the menu rail's place (desktop): its width follows the saved menu state (data-skr from crm.js; the 1300 px default otherwise) */
+.skl-rail,.skl-tabs{display:none}
+@media (min-width:601px){
+  .skl{padding-left:var(--sn-room-mini)}
+  .skl-rail{display:block;position:fixed;left:var(--sn-gap-left);top:50%;translate:0 -50%;width:var(--sn-w-mini);height:min(880px,calc(100dvh - 32px));border-radius:28px;border:1.5px solid var(--sn-rim)}
+  .skl-rail b{position:absolute;left:8px;top:16px;width:40px;height:40px;border-radius:13px;background:var(--panel)}
+  html[data-skr="x"] .skl{padding-left:var(--sn-room)} html[data-skr="x"] .skl-rail{width:var(--sn-w)} html[data-skr="x"] .skl-rail b{left:16px}
+}
+@media (min-width:1300px){ html:not([data-skr]) .skl{padding-left:var(--sn-room)} html:not([data-skr]) .skl-rail{width:var(--sn-w)} html:not([data-skr]) .skl-rail b{left:16px} }
+@media (max-width:1358px){ .skl-hero{grid-template-columns:minmax(0,1fr);row-gap:22px} .skl-hl{padding-bottom:0} .skl-hl .w2{width:52%} }
+@media (max-width:820px){ .skl-tiles{grid-template-columns:minmax(0,1fr);gap:10px} }
+@media (max-width:600px){
+  .skl{padding:calc(8px + env(safe-area-inset-top)) 12px 0}
+  .skl-top{height:64px;border-radius:18px;margin-bottom:12px}
+  .skl-hero{border-radius:22px;padding:16px 14px 60px;min-height:800px;align-content:start;align-items:start}
+  .skl-hl .w2{width:72%;height:72px}
+  .skl-hr{grid-template-columns:repeat(6,minmax(0,1fr));gap:8px} .skl-hr b{grid-column:span 3;height:62px} .skl-hr b:nth-child(-n+3){grid-column:span 2;height:62px}
+  .skl-tiles .skl-p{height:195px} .skl-cards{grid-template-columns:minmax(0,1fr)} .skl-cards .wide{grid-column:auto}
+  .skl-tabs{display:block;position:fixed;left:0;right:0;bottom:0;height:calc(65px + env(safe-area-inset-bottom));background:var(--over);border-top:1px solid var(--line)}
+}
+/* the mark: fades up with a soft glow while the data loads */
+.skl-mark{position:fixed;left:50%;top:46%;width:56px;height:56px;margin:-28px 0 0 -28px;z-index:2;animation:mark-in .8s var(--out) both}
+.skl-mark img{position:relative;display:block;width:56px;height:56px;border-radius:17px;box-shadow:0 14px 34px rgba(36,99,240,.38),inset 0 1px 0 rgba(255,255,255,.4)}
+.skl-mark::before{content:"";position:absolute;inset:-34px;border-radius:50%;background:radial-gradient(circle,rgba(74,134,255,.5),transparent 66%);opacity:.35;animation:mark-glow 2.6s ease-in-out .6s infinite}
+@keyframes mark-in{from{opacity:0;transform:translateY(12px) scale(.8);filter:blur(8px)}}
+@keyframes mark-glow{50%{opacity:.8;transform:scale(1.14)}}
+/* hand-off: the placeholders fade while the dashboard rises in under them; the mark flies into the menu's logo (.fly) or blooms away */
+.boot.out{pointer-events:none}
+.boot.out .skl,.boot.out .skl-rail,.boot.out .skl-tabs{animation:skl-out .36s ease-out forwards}
+.boot.out .skl-mark{animation:mark-bloom .45s cubic-bezier(.4,0,.2,1) forwards}
+.boot.out.fly .skl-mark{animation:mark-fly .62s cubic-bezier(.55,0,.15,1) forwards}
+.boot.out .skl-mark::before{animation:skl-out .3s ease-out forwards}
+@keyframes skl-out{to{opacity:0}}
+@keyframes mark-bloom{to{opacity:0;transform:scale(1.3);filter:blur(6px)}}
+@keyframes mark-fly{75%{opacity:1}100%{opacity:0;transform:translate(var(--fx,0px),var(--fy,0px)) scale(var(--fs,1))}}
+
+/* ---------- the opening (html.intro, ≤1.2 s, never blocks a click) ---------- */
+@keyframes a-fade{from{opacity:0}}
+@keyframes a-drop{from{transform:translateY(-16px) scale(.98)}}
+@keyframes a-slide{from{transform:translateX(-10px)}}
+@keyframes a-rise{from{transform:translateY(28px) scale(.97)}}
+@keyframes a-up{from{transform:translateY(12px)}}
+@keyframes a-logo{from{opacity:0;transform:scale(.7);filter:blur(4px)}}
+@keyframes a-glow{0%{opacity:0;transform:scale(.6)}30%{opacity:1}100%{opacity:0;transform:scale(1.7)}}
+@keyframes a-fill{from{transform:scaleX(0)}}
+@keyframes a-pop{from{opacity:0;transform:scale(.2)}}
+@keyframes a-tabs{from{transform:translateY(110%)}}
+html.intro .top{animation:a-fade .45s ease-out .04s backwards,a-drop .75s var(--spr) .04s backwards}
+@media (min-width:601px){ html.intro .snav{animation:a-fade .45s ease-out backwards} }   /* fade only: the mark flies into its logo, so the rail itself holds still */
+html.intro .sn-list>li{animation:a-fade .4s ease-out backwards,a-slide .55s var(--out) backwards;animation-delay:.12s}
+html.intro .sn-list>li:nth-child(2){animation-delay:.15s}html.intro .sn-list>li:nth-child(3){animation-delay:.18s}html.intro .sn-list>li:nth-child(4){animation-delay:.21s}
+html.intro .sn-list>li:nth-child(5){animation-delay:.24s}html.intro .sn-list>li:nth-child(6){animation-delay:.27s}html.intro .sn-list>li:nth-child(7){animation-delay:.3s}
+html.intro .sn-list>li:nth-child(8){animation-delay:.33s}html.intro .sn-list>li:nth-child(9){animation-delay:.36s}html.intro .sn-list>li:nth-child(n+10){animation-delay:.39s}
+html.intro .sn-foot>li{animation-delay:.42s}html.intro .sn-foot>li:nth-child(2){animation-delay:.45s}html.intro .sn-foot>li:nth-child(3){animation-delay:.48s}
+.sn-logo{position:relative}
+html.intro .sn-logo{animation:a-logo .45s var(--out) .44s backwards}
+html.intro .sn-logo::after{content:"";position:absolute;inset:-6px;border-radius:18px;background:radial-gradient(circle,rgba(74,134,255,.6),transparent 70%);opacity:0;pointer-events:none;animation:a-glow 1s ease-out .48s}
+html.intro .hero{animation:a-fade .5s ease-out .08s backwards,a-rise .85s var(--spr) .08s backwards}
+html.intro .hero .hf,html.intro .hero .kpi{animation:a-fade .4s ease-out backwards,a-up .6s var(--out) backwards;animation-delay:.22s}
+html.intro .hero .hf:nth-child(2){animation-delay:.26s}html.intro .hero .hf:nth-child(3){animation-delay:.3s}
+html.intro .hero .kpi:nth-child(1){animation-delay:.3s}html.intro .hero .kpi:nth-child(2){animation-delay:.34s}html.intro .hero .kpi:nth-child(3){animation-delay:.38s}
+html.intro .hero .kpi:nth-child(4){animation-delay:.42s}html.intro .hero .kpi:nth-child(5){animation-delay:.46s}html.intro .hero .kpi:nth-child(n+6){animation-delay:.5s}
+html.intro .odo .os{transition:transform .85s var(--out);transition-delay:calc(.1s + var(--oi,0)*45ms)}
+html.intro .trk .fill{transform-origin:left center;animation:a-fill .9s var(--out) .2s backwards}
+html.intro .trk .head{animation:a-pop .45s var(--spr) .75s backwards}
+html.intro .mt,html.intro .card{animation:a-fade .45s ease-out backwards,a-rise .7s var(--spr) backwards;animation-delay:calc(.14s + var(--n,0)*42ms)}
+html.intro #spage>*{animation:a-fade .45s ease-out .12s backwards,a-up .6s var(--out) .12s backwards}
+html.intro .tabs{animation:a-fade .4s ease-out .1s backwards,a-tabs .7s var(--spr) .1s backwards}
+/* later loads in the same session: a light fade only */
+html.soft .top,html.soft .hero,html.soft .mt,html.soft .card,html.soft .tabs,html.soft #spage>*{animation:a-fade .35s ease-out backwards}
+@media (min-width:601px){ html.soft .snav{animation:a-fade .35s ease-out backwards} }
+
+/* ---------- page / tab switches: the new page's panes rise in (inside the view transition's cross-fade where the browser has one) ---------- */
+html.pg-in .hero{animation:a-fade .3s ease-out backwards,a-up .5s var(--out) backwards}
+html.pg-in .mt,html.pg-in #grid>.card{animation:a-fade .3s ease-out backwards,a-up .5s var(--out) backwards;animation-delay:calc(var(--n,0)*30ms)}
+html.pg-in #spage>*{animation:a-fade .3s ease-out backwards,a-up .5s var(--out) backwards}
+html.pg-in #spage>:nth-child(2){animation-delay:.04s}html.pg-in #spage>:nth-child(3){animation-delay:.08s}html.pg-in #spage>:nth-child(n+4){animation-delay:.12s}
+.spage.sp-in>:not(.sp-h){animation:a-fade .35s ease-out backwards}   /* a side page's skeleton gives way to its content */
+/* View Transitions (crm.js pageGo): the old content fades out (vt-o*), the new fades in a beat later (vt-n*), the menu, top bar, tab bar and
+   backdrop hold still, and the highlighted menu item / phone tab slides to its new place on a spring */
+html.vt-pg::view-transition-old(root),html.vt-pg::view-transition-new(root){animation-duration:.34s;animation-timing-function:cubic-bezier(.4,0,.2,1)}
+html.vt-pg .top{view-transition-name:vt-top}   /* the top bar morphs if its width changes (scrollbar comes or goes) instead of double-exposing */
+::view-transition-group(vt-top){animation-duration:.34s;animation-timing-function:cubic-bezier(.4,0,.2,1)}
+::view-transition-group(vt-pill),::view-transition-group(vt-tpill){animation-duration:.5s;animation-timing-function:var(--spr)}
+::view-transition-old(vt-pill),::view-transition-new(vt-pill),::view-transition-old(vt-tpill),::view-transition-new(vt-tpill){animation-duration:.3s;height:100%}
+::view-transition-old(vt-o0),::view-transition-old(vt-o1),::view-transition-old(vt-o2),::view-transition-old(vt-o3),::view-transition-old(vt-o4){animation:a-out .15s cubic-bezier(.4,0,1,1) both}
+::view-transition-new(vt-n0),::view-transition-new(vt-n1),::view-transition-new(vt-n2),::view-transition-new(vt-n3),::view-transition-new(vt-n4){animation:a-fade .3s ease-out .1s both}
+@keyframes a-out{to{opacity:0;transform:scale(.992)}}
+
+/* ---------- drill sheets ---------- */
+/* with View Transitions: the tapped pane grows into the sheet on a spring while the page behind dims and blurs in; closing runs it back */
+::view-transition-group(drill){animation-duration:.5s;animation-timing-function:var(--spr)}
+/* the small pane's image is clipped (its own shadow would grow into a halo) and hands over fast, so its enlarged text never ghosts */
+html.vt-open::view-transition-old(drill){animation:a-out .16s ease-out both;mix-blend-mode:normal;overflow:clip}
+html.vt-open::view-transition-new(drill){animation:a-fade .12s ease-out both;mix-blend-mode:normal}
+html.vt-back::view-transition-old(drill){animation:a-out .2s ease-in .06s both;mix-blend-mode:normal}
+html.vt-back::view-transition-new(drill){animation:a-fade .16s ease-out .1s both;mix-blend-mode:normal;overflow:clip}
+html.vt-drop::view-transition-old(drill){animation:vt-drop .24s cubic-bezier(.4,0,1,1) both}
+html.vt-open::view-transition-old(root),html.vt-open::view-transition-new(root),html.vt-back::view-transition-old(root),html.vt-back::view-transition-new(root){animation-duration:.4s}
+html.vt-drop::view-transition-old(root),html.vt-drop::view-transition-new(root){animation-duration:.26s}
+@keyframes vt-drop{to{opacity:0;transform:scale(.95)}}
+@keyframes vt-drop-ph{to{opacity:0;transform:translateY(28%)}}
+#veil.vtm,#veil.vtm .modal{animation:none}   /* the view transition animates this sheet; its CSS entrance stays off */
+/* without View Transitions (or opened from a button outside a pane): the veil fades in and the sheet scales up out of the control that opened it */
+.veil:not(.vtm){animation:a-fade .26s ease-out both}
+@media (min-width:601px){ #veil:not(.vtm) .modal{transform-origin:var(--ox,50%) var(--oy,50%);animation:a-fade .22s ease-out both,m-grow .5s var(--spr) both} }
+@media (max-width:600px){ #veil:not(.vtm) .modal{animation:a-fade .2s ease-out backwards,sheet-up .5s var(--out) backwards} html.vt-drop::view-transition-old(drill){animation-name:vt-drop-ph} }
+@keyframes m-grow{from{transform:scale(.86)}}
+@keyframes sheet-up{from{transform:translateY(70%)}}
+/* drill lists and the lead's conversation load behind shimmering rows, not a spinner */
+.skl-list{display:grid;gap:8px}
+.skl-list i{display:block;position:relative;overflow:hidden;height:58px;border-radius:var(--r-tile);background:var(--panel)}
+.skl-list i:nth-child(2){--sd:.08s;opacity:.85}.skl-list i:nth-child(3){--sd:.16s;opacity:.7}.skl-list i:nth-child(4){--sd:.24s;opacity:.55}.skl-list i:nth-child(5){--sd:.32s;opacity:.4}
+.skl-list.conv i{height:64px;width:78%;border-radius:16px 16px 16px 5px}
+.skl-list.conv i:nth-child(2){justify-self:end;border-radius:16px 16px 5px 16px}
+
+/* ---------- micro-interactions ---------- */
+/* hover: panes lift 3 px and a soft shadow fades in (its own layer: opacity only, no box-shadow animation) */
+.lift,.mt::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1;opacity:0;box-shadow:0 30px 60px -22px rgba(30,50,130,.34),0 10px 24px -12px rgba(30,50,130,.18);transition:opacity .4s var(--out)}
+:root[data-mode="dark"] .lift,:root[data-mode="dark"] .mt::before{box-shadow:0 30px 60px -20px rgba(0,0,0,.75),0 12px 26px -14px rgba(0,0,0,.5)}
+@media (hover:hover) and (pointer:fine){
+  .card,.mt{transition:transform .5s var(--out),background-color .3s}
+  .card:not(.bare):not(.sp-card):hover,.mt:hover{transform:translateY(-3px)}
+  .card:not(.bare):not(.sp-card):hover>.lift,.mt:hover::before{opacity:1}
+}
+/* press: everything tappable sinks to 98 % at once and springs back (the scale property, so hover lifts and magnets keep working) */
+.act{transition:transform .2s var(--ease),border-color .2s,background-color .2s,scale .4s var(--spr)}
+.icon-btn{transition:transform .2s var(--ease),color .2s,scale .4s var(--spr)}
+.kpi{transition:transform .25s var(--ease),border-color .2s,background-color .2s,scale .4s var(--spr)}
+button.hf{transition:transform .25s var(--ease),border-color .2s,scale .4s var(--spr)}
+.tile{transition:transform .25s var(--ease),box-shadow .25s,border-color .2s,background-color .3s,scale .4s var(--spr)}
+.seg button{transition:background-color .2s,color .2s,box-shadow .2s,scale .4s var(--spr)}
+button.kv{transition:background-color .2s,scale .4s var(--spr)}
+.xp{transition:color .2s,background-color .2s,scale .4s var(--spr)}
+.pal-btn{transition:color .2s,border-color .2s,scale .4s var(--spr)}
+button.chip{transition:filter .2s,transform .2s var(--ease),scale .4s var(--spr)}
+.btn-go{transition:transform .15s var(--ease),filter .2s,scale .4s var(--spr)}
+.mag{transition:transform .35s var(--ease),scale .4s var(--spr)}
+.btn-ghost,.mt-h,.stat,.more{transition:scale .4s var(--spr)}
+.act:active,.icon-btn:active,.kpi:active,button.hf:active,button.tile:active,.tile.tap:active,.seg button:active,button.kv:active,.xp:active,.pal-btn:active,button.chip:active,.btn-go:active,.btn-ghost:active,.mt-h:active,.stat:active,.more:active{scale:.98;transition-duration:.08s}
+/* a number that changed (live update, period or owner switch) rolls up into place while it counts */
+.n.tick{display:inline-block;animation:n-tick .7s var(--out)}
+@keyframes n-tick{from{transform:translateY(.32em);opacity:.3}}
+/* the bell: a new unread item rings it once, the badge pops, a red ring spreads */
+.nt-btn.ring svg{transform-origin:50% 14%;animation:bell-ring .9s cubic-bezier(.36,.07,.19,.97)}
+.nt-btn.ring .nt-n{animation:a-pop .55s var(--spr)}
+.nt-btn.ring::after{content:"";position:absolute;inset:2px;border-radius:50%;border:2px solid var(--red);opacity:0;pointer-events:none;animation:bell-halo 1s ease-out}
+@keyframes bell-ring{0%,100%{transform:none}12%{transform:rotate(16deg)}26%{transform:rotate(-14deg)}40%{transform:rotate(9deg)}54%{transform:rotate(-6deg)}68%{transform:rotate(3deg)}82%{transform:rotate(-1deg)}}
+@keyframes bell-halo{0%{opacity:.6;transform:scale(.7)}100%{opacity:0;transform:scale(1.55)}}
+/* toasts slide up on a spring and leave to the right */
+.toast{animation:a-fade .28s ease-out both,toast-in .6s var(--spr) both}
+.toast.out{animation:toast-out .26s cubic-bezier(.4,0,1,1) forwards}
+@keyframes toast-in{from{transform:translate3d(0,22px,0) scale(.92)}}
+@keyframes toast-out{to{opacity:0;transform:translate3d(26px,0,0) scale(.96)}}
+
+/* ---------- reduced motion: no loops on the loading screen (crm.css already makes every other animation instant) ---------- */
+@media (prefers-reduced-motion:reduce){
+  .skl-top::after,.skl-p::after,.skl-rail::after,.skl-list i::after,.skl-mark::before{display:none}
+  .card,.mt{transform:none!important}
+}
