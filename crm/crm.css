@@ -424,7 +424,7 @@ body::before{inset:-20%;background:var(--bd);animation:aurora 38s ease-in-out in
 .odo .os span{display:block;height:1em}
 .odo .oc{display:inline-block;height:1em}
 .odo .oc.u{font-size:.56em;margin:.12em .06em 0 0;opacity:.85}
-#hero .odo{display:flex} #hero .odo .oc.u{margin-top:.19em}   /* BENAS 11-23 "dollar sign placed poorly": .tapn (later, same weight) set display:block, so the small $ sat on the digit boxes' bottom edge instead of the top-aligned row this rule was written for */
+#hero .odo{display:flex;align-items:flex-end} #hero .odo .oc.u{height:auto;line-height:1;margin:0 .06em .2em 0}   /* BENAS 11-23 "dollar sign placed poorly": .tapn (later, same weight) set display:block, so the small $ sat on the digit boxes' bottom edge ; BENAS picked a small $ sitting on the digits' baseline */
 .hero-sub{color:var(--ink-2);font-size:14.5px;max-width:46ch}
 .hero-sub .mono{color:var(--ink)}
 .hero-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
