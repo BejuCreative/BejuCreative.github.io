@@ -159,7 +159,7 @@ footer{margin-top:28px;font-size:.85rem;color:var(--muted)}
 
     <div class="q">
       <label for="phone">Phone <span class="hint">(for a quick call about your sample)</span></label>
-      <input type="tel" id="phone" name="phone" autocomplete="tel" inputmode="tel">
+      <input type="tel" id="phone" name="phone" autocomplete="tel" inputmode="tel" required aria-required="true" placeholder="+1 555 123 4567">
       <label class="check"><input type="checkbox" name="updates"> Email me BEJÚ Creative tips and updates.</label>
     </div>
 
@@ -201,16 +201,21 @@ form.addEventListener('submit', async e => {
   e.preventDefault();
   if (val('website_url')) return;                                   // bot trap
   const a = { ...known, goal: val('goal'), captions: val('captions'), graphics: val('graphics'), brand: val('brand'),
-    reference: val('reference'), sells: val('sells'), cadence: val('cadence'), need: val('need'), phone: val('phone') || 'not given',   /* founder request 11-23: the Google Form requires a phone and rejected every answer without one, while this page showed "thank you"; blank = "not given" so no answer is lost */
+    reference: val('reference'), sells: val('sells'), cadence: val('cadence'), need: val('need'), phone: val('phone'),   /* founder request 11-23: the Google Form requires a phone and rejected every answer without one, while this page showed "thank you"; blank = "not given" so no answer is lost */
     source: 'Email from BEJÚ' };
   if (!known.email) { a.name = val('name'); a.email = val('email'); }
   if (!a.email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(a.email)) { say('Please add the email we wrote to you on.'); document.getElementById('email').focus(); return; }
   if (!a.goal && !a.captions && !a.graphics) { say('Please answer at least the first three questions.'); return; }
+  if ((a.phone.match(/\d/g) || []).length < 7) { say('Please add your phone number, with the country code.'); document.getElementById('phone').focus(); return; }   /* SIMAS 11-23: phone is required */
   const body = new URLSearchParams();
   Object.keys(a).forEach(k => a[k] && ENTRY[k] && body.append(ENTRY[k], a[k]));
   if (form.elements.updates.checked) body.append(ENTRY.updates, 'Yes');
   send.disabled = true; send.textContent = 'Sending…';
   try {
+    /* SIMAS 11-23: the answers also go straight into the CRM (brief-intake), so the founders see them within seconds even when
+       the sheet sync is off; the sheet copy merges into that row later. Never blocks the thank-you. */
+    fetch('https://zfnpvcrnujxlycmqukqs.supabase.co/functions/v1/brief-intake', { method: 'POST', keepalive: true, headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ ...a, updates: form.elements.updates.checked ? 'Yes' : '' }) }).catch(() => {});
     await fetch(FORM, { method: 'POST', mode: 'no-cors', body });
     form.hidden = true; document.getElementById('done').hidden = false; window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (err) {

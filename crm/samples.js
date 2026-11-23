@@ -71,6 +71,8 @@ function model() {
   const C = X(), R = C && C.raw; if (!R || !R.pipeline) return null;
   const now = Date.now(), today = dayOf(now), B = {};
   (R.briefs || []).forEach(b => { const k = lc(b.email); if (k && (!B[k] || ms(b.submitted_at) > ms(B[k].submitted_at))) B[k] = b; });
+  /* 11-23 (SIMAS): the delivery email a Claude drafted for a Ready sample (public.drafts_waiting, category sample); newest per lead */
+  const DR = {}; (R.drafts || []).filter(x => x.category === "sample").forEach(x => { const k = lc(x.lead_email); if (!DR[k] || ms(x.created_at) > ms(DR[k].created_at)) DR[k] = x; });
   const deskHold = new Set((R.desk || []).filter(x => x.kind === "hold").flatMap(x => (x.emails || []).map(lc)));   // the CRM's own holds (desk_items), as the dashboard counts them
   const cards = [], quiet = { lost: 0, done: 0, held: [] }, seen = new Set(), P = [];
   R.pipeline.forEach(p => {
@@ -82,7 +84,7 @@ function model() {
     if (s === "LOST") quiet.lost++; else if (s === "DONE") quiet.done++;
     const col = colOf(p); if (!col) return;
     const t = stageAt(p), ev = EVENT[col](p), yes = ms(p.yes_at), late = PRE.has(col) && !p.delivered_at && !!yes && now - yes > LATE_H * H;
-    cards.push({ k, p, s, col, t, ev, late, lateBy: late ? now - yes - LATE_H * H : 0, hot: s === "HOT", brief: B[k] || null, id: driveId(p.drive_link),
+    cards.push({ k, p, s, col, t, ev, late, lateBy: late ? now - yes - LATE_H * H : 0, hot: s === "HOT", brief: B[k] || null, draft: DR[k] || null, id: driveId(p.drive_link),
       owner: /^s/i.test(p.owner || "") ? "S" : /^b/i.test(p.owner || "") ? "B" : (C.ownerOfInbox(p.inbox) || "")[0] || "",
       old: ev ? now - ev > FOLD_DAYS * DAY : NODATE_FOLDS.has(col) });
   });
@@ -106,7 +108,17 @@ let IMGIO = null;
 const watchImgs = el => { if (!IMGIO) IMGIO = new IntersectionObserver(es => es.forEach(e => { if (!e.isIntersecting) return; const i = e.target; IMGIO.unobserve(i); if (!i.getAttribute("src") && i.dataset.src) i.src = i.dataset.src; }), { rootMargin: "200px 0px" });
   el.querySelectorAll("img.sm-img[data-src]:not([src])").forEach(i => IMGIO.observe(i)); };
 /* marks: on the frame in a narrow column (late / hot top right, brief bottom left); as chips under the clock in a wide one (CSS picks) */
-const marks = c => ({ top: `${c.late ? `<span class="sm-bd late">Late · ${esc(span(c.lateBy + LATE_H * H))}</span>` : ""}${c.hot ? `<span class="sm-bd hot">Hot</span>` : ""}`,
+const DST = { pending: ["Email ready", "ok"], held: ["Changes asked", "wait"], approved: ["Sending", "go"], sending: ["Sending", "go"], failed: ["Not sent", "bad"], stale: ["They wrote again", "bad"], unknown: ["Check Instantly", "bad"] };
+/* 11-23 (SIMAS): "a timer of 30 minutes; if we don't check it and add revisions, you send it without our request". auto_send_at is kept by the
+   drafts_guard trigger (30 min from ready; an edit restarts it; "What to change" stops it); draft-sender approves and sends it when it's up */
+const autoLeft = d => { const t = d && d.status === "pending" ? ms(d.auto_send_at) : 0; return t ? t - Date.now() : null; };
+/* SIMAS 11-23 "add a timer of the 30 mins on the ready sample so we know how much time we got": a live mm:ss countdown, ticking each
+   second on the card chip and in the panel (text nodes only: [data-cd] holds the send time; no repaint, no layout work) */
+const clock = l => { const s = Math.max(0, Math.ceil(l / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
+const autoTxt = d => { const l = autoLeft(d); return l == null ? "" : l > 0 ? `Sends in ${clock(l)}` : "Sending now"; };
+const cdSpan = d => { const l = autoLeft(d); return l == null ? "" : `<span data-cd="${ms(d.auto_send_at)}">${esc(autoTxt(d))}</span>`; };
+const emChip = d => { if (!d || !DST[d.status]) return ""; const a = cdSpan(d); return `<span class="sm-bd em ${a ? "go cd" : DST[d.status][1]}">${a || esc(DST[d.status][0])}</span>`; };
+const marks = c => ({ top: `${emChip(c.draft)}${c.late ? `<span class="sm-bd late">Late · ${esc(span(c.lateBy + LATE_H * H))}</span>` : ""}${c.hot ? `<span class="sm-bd hot">Hot</span>` : ""}`,
   bot: `${c.brief ? `<span class="sm-bd brief" title="Brief form filled${c.brief.busyness ? `: graphics ${esc(c.brief.busyness)}` : ""}">Brief${c.brief.busyness ? ` · ${esc(String(c.brief.busyness).slice(0, 14))}` : ""}</span>` : ""}` });
 function thumbHTML(c) {
   const nm = c.p.name || c.k, m = marks(c);
@@ -284,6 +296,54 @@ function briefHTML(c) {
   const rows = BRIEF.filter(([k]) => b[k] != null && String(b[k]).trim()).map(([k, l]) => { const v = String(b[k]).trim(), u = webUrl(v); return `<div class="sm-kv"><dt>${l}</dt><dd>${u ? `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(v.length > 60 ? v.slice(0, 59) + "…" : v)}</a>` : esc(v.length > 600 ? v.slice(0, 599) + "…" : v)}</dd></div>`; });
   return `<dl class="sm-brief">${rows.join("") || `<div class="sm-kv"><dt>Answers</dt><dd>none stored</dd></div>`}</dl>${b.submitted_at ? `<p class="sm-pe">Form sent ${esc(when(ms(b.submitted_at)))}</p>` : ""}`;
 }
+/* 11-23 (SIMAS): "when it's Ready, we review it, the email you'd send is attached, a Send button sends it to the lead at once, and a box for
+   revisions or what to change in the email". The email is a public.drafts row (category sample) a Claude created; Send = the founder's
+   approval of the exact text on screen (sha256, same rule as the approvals card); draft-sender sends it within a minute with its thread
+   checks. "What to change" holds the draft with the note, and the Claude that drafted it is woken to fix the video or the email. */
+const EM_ST = { pending: "", held: "Sent back with changes. Claude is on it; it comes back here when fixed.", approved: "Approved. It goes out within a minute.", sending: "Sending now.",
+  failed: "Not sent: Instantly refused it. Read the reason, then send again or close it.", stale: "Not sent: the thread moved after this was drafted. Claude is writing a fresh one; it comes back here with a new 30 minutes.", unknown: "Unclear if it went out. Check Instantly before anything else." };
+function emailHTML(c) {
+  const d = c.draft;
+  if (!d) return `<h3>Delivery email</h3><p class="sm-pe">${c.col === "ready" ? "No email drafted yet. Claude adds it here when the Short is ready." : "No delivery email waiting."}</p>`;
+  const st = d.status, can = /^(pending|held|failed)$/.test(st), edit = /^(pending|held)$/.test(st);   // stale = a new draft is needed (its thread anchor is fixed): no Send
+  return `<h3>Delivery email</h3>
+    <p class="sm-emh"><span>From <b>${esc(d.inbox)}</b></span><span>To <b>${esc([d.to_email, ...(d.cc_list || [])].join(", "))}</b></span></p>
+    ${autoTxt(d) ? `<p class="sm-ems timer"><b class="sm-cdb">${cdSpan(d)}</b> unless you send it, edit it or send it back. An edit restarts the 30 minutes.</p>` : ""}
+    ${EM_ST[st] ? `<p class="sm-ems ${st}">${esc(EM_ST[st])}${d.error && /^(failed|unknown|stale)$/.test(st) ? ` <small>${esc(String(d.error).slice(0, 200))}</small>` : ""}</p>` : ""}
+    ${d.founder_note ? `<p class="sm-emn"><b>Your note</b> ${esc(d.founder_note)}</p>` : ""}
+    <pre class="sm-emb" id="sm-emb">${esc(d.body)}</pre>
+    <div class="sm-emed" id="sm-emed" hidden><textarea class="sm-emta" id="sm-emta" rows="10" aria-label="Edit the email"></textarea><div class="acts sm-pacts"><button type="button" class="act go" data-em="save">${ic("check")}Save</button><button type="button" class="act" data-em="cancel">Cancel</button></div></div>
+    <div class="sm-emch" id="sm-emch" hidden><label class="sm-eml" for="sm-chta">What should change? The video, the email, or both.</label><textarea class="sm-emta" id="sm-chta" rows="4" maxlength="1000" placeholder="e.g. start on the second sentence; make the captions bigger; drop the last line of the email"></textarea><div class="acts sm-pacts"><button type="button" class="act go" data-em="back">${ic("send")}Send to Claude</button><button type="button" class="act" data-em="cancel">Cancel</button></div></div>
+    <p class="sm-emerr" id="sm-emerr" role="alert" hidden></p>
+    ${can ? `<div class="acts sm-pacts sm-emacts" id="sm-emacts"><button type="button" class="act go" data-em="send">${ic("send")}Send</button>${edit ? `<button type="button" class="act" data-em="edit">${ic("edit")}Edit</button>` : ""}<button type="button" class="act" data-em="change">${ic("refresh")}What to change</button></div>` : ""}`;
+}
+async function emailOp(op, btn) {
+  const C = X(), c = M && PAN && M.cards.find(x => x.k === PAN.k), d = c && c.draft, pan = PAN && PAN.pan; if (!C || !d || !pan) return;
+  const $p = q => pan.querySelector(q), err = $p("#sm-emerr"), say = m => { err.hidden = false; err.textContent = m; }; err.hidden = true;
+  const show = w => { $p("#sm-emed").hidden = w !== "edit"; $p("#sm-emch").hidden = w !== "change"; $p("#sm-emb").hidden = w === "edit"; const a = $p("#sm-emacts"); if (a) a.hidden = !!w; };
+  if (op === "edit") { show("edit"); const t = $p("#sm-emta"); t.value = d.body; t.focus(); return; }
+  if (op === "change") { show("change"); $p("#sm-chta").focus(); return; }
+  if (op === "cancel") { show(""); return; }
+  let body = null, done = "";
+  if (op === "send") {
+    /* read the email fresh first: if Claude changed it since this panel painted, show the new text and ask to read it */
+    if (C.drafts) { const before = d.body_sha256; await C.drafts().catch(() => {}); const c2 = M && M.cards.find(x => x.k === PAN.k), d2 = c2 && c2.draft;
+      if (!d2 || d2.id !== d.id || d2.body_sha256 !== before || d2.status !== d.status) { const em = pan.querySelector("#sm-pem"); if (em && c2) em.innerHTML = emailHTML(c2); const e2 = pan.querySelector("#sm-emerr"); if (e2) { e2.hidden = false; e2.textContent = "This email just changed. Read the new version, then press Send."; } return; } }
+    const shown = $p("#sm-emb").textContent;
+    if (shown !== String(d.body).replace(/\r\n?/g, "\n")) return say("The email on screen is not the saved one any more. Close this and open it again.");
+    const r = await C.ask({ title: `Send this to ${c.p.name || c.k}?`, warn: `It goes out within a minute from ${d.inbox} to ${[d.to_email, ...(d.cc_list || [])].join(", ")}, word for word.`, sees: shown, cta: "Send it" }); if (!r) return;
+    body = { status: "approved", approved_sha256: await C.sha256hex(d.body) }; done = "Sending. It goes out within a minute.";
+  } else if (op === "save") {
+    const v = $p("#sm-emta").value; if (!v.trim()) return say("The email can't be empty.");
+    body = { body: v, ...(d.status === "pending" ? {} : { status: "pending" }) }; done = "Saved. Read it once more, then send.";
+  } else if (op === "back") {
+    const v = $p("#sm-chta").value.trim(); if (!v) return say("Write what should change first.");
+    body = { status: "held", founder_note: v.slice(0, 1000) }; done = "Sent to Claude. The fixed version comes back here.";
+  }
+  if (!body) return; if (btn) btn.disabled = true;
+  try { await C.upd("drafts", +d.id, body); C.toast(done, "check", "c-green", c.p.name || c.k); show(""); await (C.drafts ? C.drafts() : C.refresh()); }
+  catch (e) { say(String(e && e.message || e)); if (btn && btn.isConnected) btn.disabled = false; }
+}
 function videoHTML(c) {
   const nm = c.p.name || c.k;
   if (c.id) return `<div class="sm-vf"><iframe class="sm-frame" src="${esc(frameUrl(c.id))}" title="Sample video: ${esc(nm)}" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="no-referrer"></iframe></div>`;
@@ -297,6 +357,7 @@ function openPanel(k, opener) {
   pan.innerHTML = `<div class="sm-pv">${videoHTML(c)}</div>
     <div class="sm-pd"><header class="sm-phd"><div class="sm-phh"><h2 id="sm-pt">${esc(nm)}</h2><p class="mut">${esc([p.show, p.email].filter(Boolean).join(" · "))}</p></div><button type="button" class="icon-btn sm-x" id="sm-x" aria-label="Close"><svg><use href="#i-x"/></svg></button></header>
       <div class="sm-psec" id="sm-pst">${statusLine(c)}${history(c)}</div>
+      <section class="sm-psec sm-em" id="sm-pem">${emailHTML(c)}</section>
       <section class="sm-psec"><h3>Brief</h3><div id="sm-pbr">${briefHTML(c)}</div></section>
       <section class="sm-psec" id="sm-pconv"><h3>Conversation</h3><div class="skl-list conv" aria-label="Loading the thread"><i></i><i></i><i></i></div></section>
       <div class="acts sm-pacts"><button type="button" class="act go" data-act="lead" data-email="${esc(k)}">${ic("user")}Open the lead</button>${link ? `<a class="act" href="${esc(link)}" target="_blank" rel="noopener noreferrer">${ic("link")}Open in Drive</a>` : ""}</div></div>`;
@@ -307,12 +368,15 @@ function openPanel(k, opener) {
   pan.querySelector("#sm-x").focus({ preventScroll: true });
   scrim.addEventListener("click", () => closePanel());
   pan.querySelector("#sm-x").addEventListener("click", () => closePanel());
+  pan.addEventListener("click", ev => { const b = ev.target.closest("[data-em]"); if (b) emailOp(b.dataset.em, b); });
   const C = X(); if (C && C.loadConv) C.loadConv([p.email || k]).then(msgs => { if (!PAN || PAN.k !== k) return; const s = pan.querySelector("#sm-pconv"); s.innerHTML = `<h3>Conversation</h3>${C.convBlock(msgs, "sm", "No email conversation synced for this address yet.")}`; })
     .catch(() => { const s = PAN && PAN.k === k && pan.querySelector("#sm-pconv"); if (s) s.innerHTML = `<h3>Conversation</h3><p class="sm-pe">Couldn't load the thread. Close and open the sample again.</p>`; });
 }
 function panelRefresh() {   // a data refresh while the panel is open: its status line and history follow; the video and the thread stay
   const c = M && M.cards.find(x => x.k === PAN.k), s = PAN.pan.querySelector("#sm-pst"); if (!c || !s) return;
   const h = statusLine(c) + history(c); if (s.innerHTML !== h) s.innerHTML = h;
+  const em = PAN.pan.querySelector("#sm-pem"), busy = em && [...em.querySelectorAll("#sm-emed,#sm-emch")].some(x => !x.hidden), eh = emailHTML(c);
+  if (em && !busy && em.innerHTML !== eh) em.innerHTML = eh;
   const b = PAN.pan.querySelector("#sm-pbr"), bh = briefHTML(c); if (b && b.innerHTML !== bh) b.innerHTML = bh;
 }
 function closePanel(quick) {
@@ -355,6 +419,7 @@ function wire(api) {
   new ResizeObserver(edges).observe(b); edges();
 }
 addEventListener("beju-crm:data", () => { if (root()) paint(); });
+setInterval(() => { document.querySelectorAll("[data-cd]").forEach(el => { const l = +el.dataset.cd - Date.now(), t = l > 0 ? `Sends in ${clock(l)}` : "Sending now"; if (el.textContent !== t) el.textContent = t; el.closest(".sm-bd,.sm-cdb")?.classList.toggle("soon", l < 5 * 6e4); }); }, 1000);   // the live countdown
 /* the side page rerenders on its 5-minute timer only without [data-keep]; this page keeps its nodes and repaints from crm.js's refresh */
 addEventListener("popstate", () => { if (PAN && !root()) closePanel(true); });
 new MutationObserver(() => { if (PAN && !root()) closePanel(true); }).observe(document.getElementById("spage") || document.body, { childList: true });

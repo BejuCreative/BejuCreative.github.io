@@ -1018,7 +1018,7 @@ html[data-motion="calm"] .ticker-t{animation:none;white-space:normal;flex-wrap:w
 /* ---------- 11-21: notification bell + panel + action toasts, touch form, touchpoints, Pipeline card (existing tokens only) ---------- */
 .nt-btn{position:relative}
 .nt-btn[hidden]{display:none}
-.nt-n{position:absolute;top:-4px;right:-5px;min-width:17px;height:17px;border-radius:99px;background:var(--red);color:var(--on-accent);font:600 10px/17px var(--mono);font-style:normal;text-align:center;padding:0 4px;pointer-events:none}
+.nt-n{position:absolute;top:-1px;right:-6px;min-width:16px;height:16px;border-radius:99px;background:var(--red);color:var(--on-accent);font:600 9.5px/16px var(--mono);font-style:normal;text-align:center;padding:0 4px;pointer-events:none}   /* 11-23 (SIMAS "glitched"): inside the top bar, never cut off by its edge */
 .nt-n[hidden]{display:none}
 .nt-tools{margin-bottom:2px}
 .nt .row-end{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--mute)}
@@ -1425,3 +1425,4 @@ html.pg-in .wof{animation:a-fade .3s ease-out backwards,a-up .5s var(--out) back
   .mt.sum .big small,.mt .big small,#grid .big small{font-size:13px}   /* "/mo", "potential", "to do", ... */
   .sum-l,#asof>span{font-size:13px}
 }
+@media (max-width:600px){.top-tools .nt-n,.nt-n{top:0;right:-1px;height:16px;min-width:16px;font-size:9.5px;line-height:16px}}   /* 11-23: after the phone rule that made tab badges 20 px */
