@@ -943,6 +943,25 @@ button.cl-t-attn{text-align:left;font:inherit;cursor:pointer;border:1px solid va
 .cl-dot.k-wait{background:var(--blue)}
 .cl-dot.k-past{background:var(--faint)}
 #cl-list .cl-item[aria-current="true"] .cl-dot{box-shadow:0 0 0 2px var(--sn-pill-ink)}
+/* 11-23: Clients list rows read like the Replies rows (bordered tile, 15 px / 600 name, gap between rows). Name, money and both dots share the first line. */
+#cl-list{gap:8px}
+#cl-list .cl-item{align-items:flex-start;background:var(--tile);border:1px solid var(--line);border-radius:var(--r-tile);box-shadow:var(--shadow);padding:10px 14px}
+#cl-list .cl-item:hover{border-color:var(--line-2)}
+#cl-list .cl-item[aria-current="true"],#cl-list .cl-item[aria-current="true"]:hover{background:var(--sn-pill);color:var(--sn-pill-ink);border-color:transparent;box-shadow:var(--sn-pill-glow)}
+:root[data-mode="dark"] #cl-list .cl-item:not([aria-current="true"]){box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+#cl-list .cl-item .t{font-size:15px;font-weight:600;line-height:1.3}
+#cl-list .cl-item .cl-mn{line-height:19.5px}
+#cl-list .cl-item .cl-dot{margin-top:5px}
+/* activity dot (days since the newest sign of life): a 9 px dot with a soft halo, inside a 45 px tap area centred on the name's line (WebKit rounds 44 down to 43.999) */
+.cl-ad{--ad:var(--faint);flex:none;width:45px;height:45px;margin:-12px -17px 0 -14px;display:grid;place-items:center;border-radius:50%}
+.cl-ad>i{width:9px;height:9px;border-radius:50%;background:var(--ad);box-shadow:0 0 0 3px color-mix(in srgb,var(--ad) 18%,transparent)}
+.cl-ad.a-g{--ad:var(--green)}
+.cl-ad.a-o{--ad:var(--orange)}
+.cl-ad.a-r{--ad:var(--red)}
+#cl-list .cl-item[aria-current="true"] .cl-ad>i{box-shadow:0 0 0 2px var(--sn-pill-ink)}
+.cl-an{display:block;font-size:13px;line-height:1.35;margin-top:2px;color:var(--ink-2)}
+.cl-an[hidden]{display:none}
+.cl-item[aria-current="true"] .cl-an{color:inherit}
 .cl-past,.cl-nomatch{margin-top:8px;font-size:13px}
 /* the chosen client */
 #cl-detail .cl-head{align-items:center;margin-bottom:16px;flex-wrap:nowrap}
