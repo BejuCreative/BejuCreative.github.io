@@ -790,6 +790,11 @@ const ctcRow = x => { const v = x.at ? esc(rel(x.at)) : ""; return x.client ? li
    client: a paying client's hold / client problem / client work (red after) · reply: a pending or held draft to a lead (red after)
    check: a "Check:" approval (amber after) · deal: a deal with no next step (amber after). A passed due date is always red. */
 const WOF_URG = { client: 240, reply: 30, check: 240, deal: 1440 };
+/* recent only (BENAS 11-23 "it should only show recent relevant stuff, not overstayed"): minutes a row stays on the card from when it started
+   waiting. Past that a hold lives on the Clients page's holds list only, a deal in the Big deals card, client work on the Clients page; it is
+   out of the count, the split line, the colours, the badge and the toasts. Replies and "Check:" cards have no limit (they stay until answered). Tune here. */
+const WOF_MAX = { hold: 48 * 60, deal: 7 * 1440, prod: 7 * 1440 };
+const wofFresh = (kind, t) => !WOF_MAX[kind] || Date.now() - t <= WOF_MAX[kind] * 6e4;
 const WOF_UL = ["", "Today", "Act now"];
 const wofUrg = r => { const m = (Date.now() - r.at) / 6e4, U = [0];
   if (r.due && +new Date(r.due) < Date.now()) U.push(2);
@@ -813,13 +818,14 @@ function wofOf(R, paid) {
     rows.push({ key: "d:" + x.id, kind: "reply", who: nameOf(x.lead_email), what: [WOF_ST[x.status], DRAFT_L[x.category] || x.category, x.reason].filter(Boolean).join(" · "), at: at(x.created_at),
       value: dl ? +dl.value_usd || 0 : 0, mo: !!(dl && dl.monthly), paying: pays([e]) || !!(dl && dl.current_mrr), owner: /^(new_terms|client_problem)$/.test(x.category) ? ownerOfInbox(x.inbox) : "", go: { t: "lead", e }, draft: x }); });
   (R.deals || []).forEach(x => { const es = (x.emails || [x.email]).filter(Boolean).map(lc);
-    if (!es.length || es.some(e => seen.has(e)) || !(x.on_hold || !es.some(e => next.has(e)))) return; es.forEach(e => seen.add(e));
-    rows.push({ key: "b:" + es[0], kind: "deal", who: x.name || x.email, what: x.on_hold ? `On hold, ${lifts({ set_by: x.hold_by }, "decide")}` : "No next step set", at: at(x.last_in_at, x.quoted_at, x.scope_at),
+    const t = at(x.last_in_at, x.quoted_at, x.scope_at);   // waiting since their last message (else the quote, else the scope)
+    if (!es.length || es.some(e => seen.has(e)) || !(x.on_hold || !es.some(e => next.has(e))) || !wofFresh("deal", t)) return; es.forEach(e => seen.add(e));   // a stale deal stays in the Big deals card
+    rows.push({ key: "b:" + es[0], kind: "deal", who: x.name || x.email, what: x.on_hold ? `On hold, ${lifts({ set_by: x.hold_by }, "decide")}` : "No next step set", at: t,
       value: +x.value_usd || 0, mo: !!x.monthly, paying: pays(es) || !!x.current_mrr, owner: "", nonext: !es.some(e => next.has(e)), go: { t: "lead", e: es[0] } }); });
   (R.desk || []).forEach(x => { const es = (x.emails || []).map(lc);
-    if (x.kind === "hold") { if (es.some(e => seen.has(e))) return;   // a draft or a deal row already covers this lead; two holds on one client stay two rows
+    if (x.kind === "hold") { if (es.some(e => seen.has(e)) || !wofFresh("hold", at(x.created_at))) return;   // age from when the hold was SET (created_at), never updated_at   // a draft or a deal row already covers this lead; two holds on one client stay two rows
       rows.push({ key: "h:" + x.id, kind: "hold", who: x.client, what: x.title, at: at(x.created_at), value: 0, paying: pays(es, x.client), owner: founderOf(x.set_by), go: { t: "page", p: "clients", c: "holds" } }); }
-    else if (x.kind === "production" && x.stage === "founder_check")
+    else if (x.kind === "production" && x.stage === "founder_check" && wofFresh("prod", at(x.updated_at, x.created_at)))   // updated_at = when the stage was last logged (no stage-change column)
       rows.push({ key: "p:" + x.id, kind: "prod", who: x.client, what: x.title, at: at(x.updated_at, x.created_at), value: 0, paying: pays(es, x.client), owner: founderOf(x.set_by), go: { t: "page", p: "clients", c: "prod" } }); });
   (R.checks || []).filter(x => x.status === "todo" && /^check:/i.test(String(x.title || "").trim())).forEach(x => rows.push({ key: "t:" + x.id, kind: "check", who: String(x.title).trim().replace(/^check:\s*/i, "") || "Check",
     what: `Claude's work${x.lead_email ? " · " + nameOf(x.lead_email) : ""}`, at: at(x.created_at), due: x.due_at || null, value: 0, paying: !!x.lead_email && pays([lc(x.lead_email)]), owner: founderOf(x.owner), go: { t: "todo", id: x.id } }));
