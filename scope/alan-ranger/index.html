@@ -1,0 +1,920 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Alan Ranger Plan · BEJÚ Creative</title>
+<meta name="theme-color" content="#FFFFFF">
+<link rel="preload" href="https://bejucreative.digital/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+/* Scope for Alan Ranger, on the approved white scope template. Private link, noindex. */
+@font-face{font-family:'Geist';font-style:normal;font-weight:300 600;font-display:swap;src:url(https://bejucreative.digital/fonts/geist-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Geist';font-style:normal;font-weight:300 600;font-display:swap;src:url(https://bejucreative.digital/fonts/geist-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
+:root{
+  --bg:#FFFFFF; --soft:#F7F6F1; --ink:#11150E; --body:#3A4135; --muted:#646C5C; --dim:#7A8272;
+  --gold:#22D16F; --gold-text:#0E7A44; --gold-soft:#E7FBEF; --green-head:#11A85A; --hair:#E7E4DA; --hair-2:#D9D5C8;
+  --sans:"Geist",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{background:var(--bg);-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--body);font-size:18px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{position:relative;width:min(960px,calc(100% - 32px));margin-inline:auto}
+section{position:relative;padding:clamp(52px,7vw,92px) 0}
+h1,h2,h3{color:var(--ink);margin:0;text-wrap:balance;font-weight:600}
+h1{font-size:clamp(40px,6.6vw,68px);line-height:1.04;letter-spacing:-.035em}
+h2{font-size:clamp(28px,3.6vw,40px);line-height:1.12;letter-spacing:-.025em}
+h3{font-size:19px;line-height:1.3;letter-spacing:-.01em}
+p{margin:0}
+.gold{color:var(--green-head)}
+.eyebrow{font-size:13px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-text)}
+.head{display:grid;gap:12px}
+.lede{font-size:clamp(18px,1.6vw,20px);line-height:1.6;max-width:36em;color:var(--body)}
+.small{font-size:15px;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;justify-content:center;height:62px;padding:0 38px;border-radius:999px;font:500 18px var(--sans);text-decoration:none;white-space:nowrap;transition:background .15s ease,border-color .15s ease}
+.btn.primary{background:var(--ink);color:#fff;box-shadow:0 14px 34px -18px rgba(17,21,14,.55)}
+.btn.primary:hover{background:#2A3322}
+.btn.ghost{color:var(--ink);background:#fff;border:1px solid var(--hair-2)}
+.btn.ghost:hover{border-color:var(--ink)}
+.btn.sm{height:42px;padding:0 18px;font-size:15px;box-shadow:none}
+.btn:focus-visible,summary:focus-visible{outline:3px solid rgba(34,209,111,.55);outline-offset:3px}
+.btns{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:34px}
+.card{border-radius:20px;padding:24px 26px;background:#fff;border:1px solid var(--hair);box-shadow:0 1px 2px rgba(17,21,14,.04),0 10px 30px -22px rgba(17,21,14,.18)}
+
+/* top bar */
+.nav{position:relative;z-index:2;padding-top:18px}
+.nav .wrap{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:16px;border-bottom:1px solid var(--hair)}
+.brand{font-weight:600;font-size:17px;color:var(--ink);text-decoration:none;letter-spacing:-.01em}
+.nav .for{font-size:14px;color:var(--muted)}
+
+/* hero (centred) */
+.hero{padding-top:clamp(64px,10vw,124px);padding-bottom:clamp(40px,5vw,60px);text-align:center}
+.hero .lede{margin:18px auto 0}
+.meta{margin:36px auto 0;display:flex;justify-content:center;gap:10px 28px;flex-wrap:wrap;font-size:14px;color:var(--muted);max-width:52em}
+.meta b{color:var(--ink);font-weight:500}
+
+/* facts */
+.facts{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);text-align:center}
+.facts div{padding:26px 12px;display:grid;gap:4px}
+.facts div+div{border-left:1px solid var(--hair)}
+.facts b{font-size:clamp(24px,2.6vw,30px);font-weight:600;color:var(--ink);letter-spacing:-.02em;line-height:1.15}
+.facts span{font-size:15px;color:var(--muted)}
+
+/* goal */
+.quotes{display:grid;gap:14px;margin-top:26px}
+.quote{margin:0;padding:4px 0 4px 22px;border-left:3px solid var(--gold);font-size:clamp(20px,2.2vw,25px);line-height:1.4;font-weight:500;color:var(--ink);max-width:36em}
+
+/* engine */
+.split{margin-top:30px;display:grid;gap:10px}
+.bar{display:grid;grid-template-columns:1fr 1fr;height:14px;border-radius:999px;overflow:hidden;border:1px solid var(--hair-2)}
+.bar span:first-child{background:var(--gold)}
+.bar span:last-child{background:#E6EAE4}
+.bar-legend{display:flex;justify-content:space-between;gap:12px;font-size:15px;color:var(--muted)}
+.bar-legend b{color:var(--ink);font-weight:600}
+.grid4{margin-top:22px;display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.grid4 .card{display:grid;gap:8px;align-content:start}
+.tag{justify-self:start;font-size:12px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-text)}
+.wide{margin-top:14px;padding:30px 30px;display:grid;gap:10px;background:var(--gold-soft);border-color:rgba(34,209,111,.55)}
+.wide h3{font-size:clamp(20px,2.2vw,24px)}
+
+/* list */
+.list{margin-top:28px;border-top:1px solid var(--hair)}
+.item{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.3fr);gap:24px;padding:22px 0;border-bottom:1px solid var(--hair);align-items:baseline}
+
+/* steps */
+.grid3{margin-top:28px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.step{display:grid;gap:8px;align-content:start}
+.num{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--ink);color:#fff;font-weight:600;font-size:14px}
+
+/* faq */
+.cols{display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);gap:clamp(24px,5vw,72px);align-items:start}
+details{border-bottom:1px solid var(--hair);padding:18px 0}
+details:first-of-type{border-top:1px solid var(--hair)}
+summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;gap:16px;color:var(--ink);font-weight:500;font-size:18px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";color:var(--muted);font-weight:300;font-size:22px;line-height:1}
+details[open] summary::after{content:"–"}
+details p{margin-top:8px;color:var(--body);max-width:36em}
+
+/* close */
+.close{text-align:center;padding-bottom:clamp(70px,10vw,130px)}
+.close .card{padding:clamp(34px,5vw,56px) clamp(20px,4vw,48px);background:var(--soft)}
+.close .lede{margin:14px auto 0}
+.call{margin-top:28px;padding-top:24px;border-top:1px solid var(--hair-2);display:grid;justify-items:center;gap:14px}
+.call p{color:var(--muted);font-size:16px}
+.terms{margin:26px auto 0;max-width:42em;font-size:14px;color:var(--muted)}
+.terms a{color:var(--muted)}
+.site-btn{border:1px solid var(--hair-2)}
+@media (max-width:760px){.nav .site-btn{display:inline-flex}}
+/* proof v2 (Benas 11-19 ~00:28): bigger, its own section, logos at wordmark size, big numbers */
+.proof{padding:clamp(36px,5vw,64px) 0}
+.proof-card{display:grid;justify-items:center;gap:26px;text-align:center;padding:clamp(30px,4vw,48px) 24px;border:1px solid var(--hair);border-radius:24px;background:var(--soft,#F7F6F1)}
+.proof-logos{display:flex;align-items:center;justify-content:center;gap:28px 56px;flex-wrap:wrap}
+.proof-logos img{height:48px;width:auto;filter:brightness(0);display:block}
+.proof-wordmark{font-size:44px;font-weight:700;letter-spacing:-.035em;line-height:1;color:var(--ink);text-decoration:none}
+.proof-logos a:hover{opacity:.75}
+.proof-nums{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 56px;border-top:1px solid var(--hair);padding-top:24px;width:min(640px,100%)}
+.proof-nums b{display:block;font-size:clamp(44px,5.6vw,56px);font-weight:700;letter-spacing:-.03em;line-height:1;color:var(--ink)}
+.proof-nums span{display:block;margin-top:6px;font-size:15px;color:var(--muted)}
+@media (max-width:560px){.proof-nums{grid-template-columns:1fr}.proof-logos{flex-direction:column}}
+/* BEJÚ mark (dark on the white pages) */
+.brand{display:inline-flex;align-items:center;gap:10px}
+.brand img{height:26px;width:auto;filter:brightness(0);display:block}
+.foot-mark{height:18px;width:auto;filter:brightness(0);vertical-align:-3px;margin-right:8px;opacity:.85}
+/* polish (Benas 11-19 ~00:45): no sideways drift, readable small text on phones, proof a bit smaller, TikTok links, comms grid */
+html,body{overflow-x:hidden;max-width:100%}
+img{max-width:100%}
+.proof-logos img{height:40px}
+.proof-wordmark{font-size:36px}
+.proof-nums b{font-size:clamp(36px,4.6vw,46px)}
+.proof-item{display:flex;flex-direction:column;align-items:center;gap:8px;text-decoration:none}
+.tt{font-size:13px;font-weight:500;color:var(--muted);letter-spacing:.02em}
+.proof-item:hover .tt{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+.comm{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-top:26px}
+.comm .card{display:grid;gap:6px;align-content:start}
+.accept{margin-top:16px;font-size:15px;color:var(--muted)}
+.accept a{color:var(--ink)}
+@media (max-width:560px){
+  .meta{font-size:15px;flex-direction:column;align-items:center;gap:4px}
+  .small,.card p{font-size:16px}
+  .tag,.eyebrow{font-size:13px}
+  .facts span{font-size:15px}
+  .proof-logos img{height:34px}
+  .proof-wordmark{font-size:32px}
+  .item p,.bar-legend{font-size:15px}
+}
+/* Benas fixes 11-19 01:0x: 50/50 as two equal cards, readable text everywhere */
+.split2{margin-top:28px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.split2 .half{display:grid;gap:8px;align-content:start;padding:28px 26px}
+.split2 .big{font-size:clamp(40px,5vw,52px);font-weight:700;letter-spacing:-.03em;line-height:1;color:var(--green-head,#11A85A)}
+.split2 h3{font-size:22px}
+.split2 p{font-size:17px;color:var(--ink);line-height:1.5}
+.small,.card p{font-size:16px;color:var(--body)}
+.meta{font-size:15px;color:var(--body)}
+.facts span{font-size:16px;color:var(--body)}
+.terms{font-size:15px;color:var(--body)}
+.accept{color:var(--body)}
+.tag{font-size:13px}
+.proof-nums span{font-size:16px;color:var(--body)}
+@media (max-width:640px){.split2{grid-template-columns:1fr}}
+footer{border-top:1px solid var(--hair);padding:24px 0 40px}
+footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:14px;color:var(--dim)}
+
+@media (max-width:760px){
+  body{font-size:17px}
+  .facts{grid-template-columns:1fr}
+  .facts div+div{border-left:0;border-top:1px solid var(--hair)}
+  .item{grid-template-columns:1fr;gap:4px}
+  .grid3,.grid4{grid-template-columns:1fr}
+  .cols{grid-template-columns:1fr}
+  .nav .for{display:none}
+  .btns{flex-direction:column;align-items:stretch}
+  .btn{width:100%}
+  .btn.sm,.call .btn{width:auto}
+}
+
+/* PDF / print */
+@media print{
+  @page{size:A4;margin:16mm 14mm}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body{font-size:11.5pt}
+  .wrap{width:100%}
+  .noprint,.call{display:none!important}
+  section{padding:16px 0}
+  .hero{padding:26px 0 10px}
+  h1{font-size:30pt} h2{font-size:18pt} h3{font-size:12.5pt}
+  .card{box-shadow:none;border-radius:12px;padding:14px 16px}
+  .facts div{padding:14px 8px}
+  details{padding:10px 0}
+  summary::after{content:""}
+  .close{padding-bottom:10px}
+  .item,.card,.facts,.quote,details,.split{break-inside:avoid}
+  h2,.head{break-after:avoid}
+}
+
+/* ---- additions on top of the white template ---- */
+.wrapw{width:min(1120px,calc(100% - 32px))}
+/* top bar: stays in view, with the three actions */
+.nav{position:sticky;top:0;z-index:20;background:#fff;padding-top:12px}
+.nav .wrap{padding-bottom:12px}
+.navbtns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+section[id],header .toc,.evid li{scroll-margin-top:84px}
+.nav .sh{display:none}
+@media (max-width:760px){
+  .nav{padding-top:8px}
+  .nav .wrap{flex-wrap:nowrap;gap:8px;padding-bottom:8px}
+  .navbtns{flex:1;justify-content:flex-end;gap:6px;flex-wrap:nowrap}
+  .navbtns .btn.sm{height:44px;padding:0 14px;font-size:15px}
+  .navbtns .site-btn{display:none!important}
+  .nav .lg{display:none}.nav .sh{display:inline}
+  .brand{min-height:44px}
+  section[id],header .toc,.evid li,#promise{scroll-margin-top:76px}
+}
+.band{background:var(--soft)}
+.head{max-width:44em}
+.secno{display:inline-block;min-width:2.1em;color:var(--dim);font-weight:500}
+.hero h1{font-size:clamp(34px,5.2vw,58px);max-width:17em;margin-inline:auto}
+.hero .ans{font-size:clamp(20px,2vw,24px);color:var(--ink);font-weight:500;max-width:30em;margin:22px auto 0;line-height:1.4}
+.hero .ans b{color:var(--green-head);font-weight:600}
+.toc{margin:34px auto 0;max-width:46em;text-align:left;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 28px;border-top:1px solid var(--hair)}
+.toc a{display:flex;gap:10px;font-size:16px;color:var(--ink);text-decoration:none;padding:11px 2px;border-bottom:1px solid var(--hair)}
+.toc a:hover{color:var(--green-head)}
+.toc a span{color:var(--dim);font-variant-numeric:tabular-nums}
+.subh{margin-top:44px;font-size:24px;letter-spacing:-.02em}
+
+/* call summary, in the style of a meeting recap */
+.purpose{margin-top:30px;background:#fff;border:1px solid var(--hair);border-radius:18px;padding:20px 24px;font-size:19px;color:var(--ink);line-height:1.5}
+.purpose b{display:block;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-text);margin-bottom:6px}
+.take{margin-top:16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.take div{background:#fff;border:1px solid var(--hair);border-radius:18px;padding:18px 22px}
+.take b{display:block;color:var(--ink);font-size:18px;font-weight:600}
+.take span{display:block;font-size:17px;line-height:1.55;color:var(--body);margin-top:5px}
+.topics{margin-top:16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.topic{background:#fff;border:1px solid var(--hair);border-radius:20px;padding:24px 24px 22px;display:grid;gap:12px;align-content:start}
+.topic h4{margin:0;font-size:21px;font-weight:600;color:var(--ink);letter-spacing:-.015em}
+.topic ul{margin:0;padding-left:20px;display:grid;gap:7px;font-size:17px;line-height:1.5;color:var(--body)}
+.topic .q{font-size:17px;line-height:1.45;color:var(--ink);font-weight:500;border-left:3px solid var(--gold);padding-left:14px}
+.topic .q small{display:block;font-size:13px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.topic .do{background:var(--gold-soft);border-radius:14px;padding:12px 16px;font-size:16.5px;line-height:1.5;color:#0A3D24}
+.topic .do b{display:block;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-text);margin-bottom:3px}
+.nexts{margin-top:16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.nexts div{background:#fff;border:1px solid var(--hair);border-radius:20px;padding:22px 24px}
+.nexts b{display:block;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-text)}
+.nexts .nx{margin-top:8px;font-size:16px;color:var(--muted)}
+.nexts ul{margin:10px 0 0;padding-left:20px;display:grid;gap:7px;font-size:17px;color:var(--body);line-height:1.5}
+
+/* plain data tables (what we found, terms, roadmap) */
+.tb{margin-top:26px;width:100%;border-collapse:separate;border-spacing:0;background:#fff;border:1px solid var(--hair);border-radius:24px;overflow:hidden;font-size:17px}
+.tb th,.tb td{text-align:left;vertical-align:top;padding:18px 22px;border-bottom:1px solid var(--hair);line-height:1.55}
+.tb tr:last-child th,.tb tr:last-child td{border-bottom:0}
+.tb thead th{font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-text);background:var(--soft)}
+.tb tbody th{color:var(--ink);font-weight:600;width:27%}
+.tb td{color:var(--body)}
+.tb.three tbody th{width:30%}.tb.three td{width:35%}
+
+/* path: vertical timeline */
+.path{margin-top:34px;display:grid;gap:0;max-width:46em}
+.path .st{display:grid;grid-template-columns:52px 1fr;gap:20px;position:relative;padding-bottom:30px}
+.path .st:last-child{padding-bottom:0}
+.path .st::before{content:"";position:absolute;left:25px;top:52px;bottom:0;width:2px;background:var(--gold-soft)}
+.path .st:last-child::before{display:none}
+.path .n{width:52px;height:52px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-weight:600;font-size:20px;position:relative;z-index:1}
+.path h3{font-size:22px;margin-top:10px}
+.path p{font-size:18px;line-height:1.6;color:var(--body);margin-top:6px}
+.bubble{margin-top:12px;display:inline-block;background:var(--gold-soft);color:#0A3D24;border-radius:16px 16px 16px 4px;padding:12px 16px;font-size:17px;line-height:1.5;max-width:30em}
+.twice{margin-top:30px;max-width:46em;border:1px solid var(--gold);background:var(--gold-soft);border-radius:18px;padding:20px 24px}
+.twice b{display:block;color:#0A3D24;font-size:20px;font-weight:600}
+.twice p{color:#0A3D24;font-size:17px;margin-top:6px}
+
+/* trust: two phones */
+.works{margin-top:22px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
+.work{display:grid;grid-template-columns:190px 1fr;gap:22px;align-items:center;background:#fff;border:1px solid var(--hair);border-radius:24px;padding:22px}
+.phone{width:190px;aspect-ratio:9/16;border-radius:22px;overflow:hidden;background:#000}
+.phone video{display:block;width:100%;height:100%;object-fit:cover}
+.work h3{font-size:21px}
+.work p{font-size:16px;color:var(--body);margin-top:6px;line-height:1.55}
+
+/* plan table */
+.cmpwrap{margin-top:30px;overflow-x:auto;border:1px solid var(--hair);border-radius:24px;background:#fff}
+.cmp{width:100%;min-width:760px;border-collapse:separate;border-spacing:0;font-size:17px}
+.cmp th,.cmp td{text-align:left;vertical-align:top;padding:18px 20px;border-bottom:1px solid var(--hair)}
+.cmp thead th{vertical-align:top;padding:26px 20px 22px;border-bottom:1px solid var(--hair-2)}
+.cmp thead .pill{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:5px 10px;border-radius:999px;background:var(--soft);color:var(--muted)}
+.cmp thead th.main .pill{background:var(--ink);color:#fff}
+.cmp thead b{display:block;font-size:21px;font-weight:600;color:var(--ink);margin-top:12px;line-height:1.25}
+.cmp thead .was{display:block;margin-top:10px;font-size:15px;font-weight:400;color:var(--body);line-height:1.4}
+.cmp thead .was s{color:var(--muted)}
+.cmp thead .only{display:block;margin-top:8px;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-text)}
+.cmp thead .pr{display:block;font-size:44px;font-weight:600;letter-spacing:-.035em;color:var(--ink);line-height:1.05;margin-top:4px}
+.cmp thead .pr small{display:block;font-size:16px;font-weight:400;color:var(--muted);letter-spacing:0;margin-top:4px}
+.cmp thead .sub{display:block;font-size:15px;font-weight:400;color:var(--body);margin-top:8px;line-height:1.45}
+.cmp .main,.cmp td.yes{background:var(--gold-soft)}
+.cmp thead th.main{box-shadow:inset 0 4px 0 var(--gold)}
+.cmp tbody th{width:44%;font-weight:400}
+.cmp tbody th b{display:block;color:var(--ink);font-weight:600;font-size:18px}
+.cmp tbody th span{display:block;color:var(--body);font-size:15.5px;margin-top:5px;line-height:1.5}
+.cmp td{width:28%;color:var(--ink);font-weight:500;line-height:1.45}
+.cmp td .ok{display:flex;gap:10px;align-items:flex-start}
+.cmp td .ok::before{content:"";flex:0 0 22px;height:22px;margin-top:1px;border-radius:50%;background:var(--green-head) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Cpath d='M6 11.5l3.2 3.2L16 8' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/22px no-repeat}
+.cmp td .no{color:var(--dim);font-weight:400}
+.cmp td.val{color:var(--body);font-weight:400;font-size:16px}
+.cmp td.val b{display:block;color:var(--ink);font-weight:600}
+.cmp td.val sup,.src sup{font-size:11px;color:var(--gold-text);font-weight:600}
+.cmp tr.grp th{background:var(--soft);padding:12px 20px;font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-text)}
+.cmp tr.tot th,.cmp tr.tot td{border-bottom:0;border-top:2px solid var(--ink);padding-top:22px;padding-bottom:24px}
+.cmp tr.tot td{font-size:24px;font-weight:600;letter-spacing:-.02em}
+.cmp tr.tot td small{display:block;font-size:15px;font-weight:400;color:var(--body);letter-spacing:0;margin-top:4px}
+.cmp tr.tot td.val{font-size:18px;font-weight:600;color:var(--ink);letter-spacing:0}
+.note{margin-top:14px;font-size:15px;color:var(--body);max-width:62em}
+.src{margin-top:18px;font-size:14px;color:var(--body);line-height:1.6;max-width:70em}
+.src a{color:var(--body)}
+
+.cmp thead .mini{display:block;margin-top:12px;background:#fff;border:1px solid var(--gold);border-radius:12px;padding:10px 12px;font-size:14.5px;font-weight:400;color:var(--body);line-height:1.45}
+.cmp thead .mini b{display:block;margin:0 0 2px;font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-text)}
+.cmp thead th.quiet b{font-size:18px;font-weight:500;color:var(--body)}
+.cmp thead th.quiet .pr{font-size:28px;color:var(--body)}
+.cmp td.q2{color:var(--body);font-weight:400}
+.cmp td.q2 .ok::before{background-color:var(--dim)}
+.cmp tr.tot td.q2{font-size:20px;font-weight:500;color:var(--body)}
+.urge{margin:18px auto 0;font-size:17px;color:var(--ink);font-weight:500;max-width:30em}
+
+/* plan cards above the table */
+.plans2{margin-top:30px;display:grid;grid-template-columns:minmax(0,1fr);gap:16px;max-width:720px}
+.febline{margin-top:16px;max-width:720px;border:1px dashed var(--hair-2);border-radius:18px;padding:16px 20px;font-size:17px;color:var(--body);line-height:1.5}
+.febline b{color:var(--ink)}
+.yourpart{margin-top:22px;max-width:720px;background:var(--gold-soft);border-radius:20px;padding:20px 24px}
+.yourpart h3{font-size:21px}.yourpart ul{margin:10px 0 0;padding-left:20px;display:grid;gap:6px;color:var(--body);font-size:17px}
+details.more{margin-top:8px}details.more>summary{font-size:18px;font-weight:600;color:var(--ink);padding:14px 0;cursor:pointer}
+.pl .pr{font-size:46px}
+.pl{background:#fff;border:1px solid var(--hair);border-radius:24px;padding:28px;display:grid;gap:12px;align-content:start}
+.pl.main{border:2px solid var(--gold);box-shadow:0 20px 44px -30px rgba(17,21,14,.35)}
+.pl .pill{justify-self:start;font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:5px 10px;border-radius:999px;background:var(--soft);color:var(--muted)}
+.pl.main .pill{background:var(--ink);color:#fff}
+.pl h3{font-size:26px;letter-spacing:-.02em}
+.pl .was{font-size:15.5px;color:var(--body)}
+.pl .was s{color:var(--muted)}
+.pl .only{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-text)}
+.pl .pr{font-size:54px;font-weight:600;letter-spacing:-.035em;color:var(--ink);line-height:1}
+.pl .pr small{font-size:17px;font-weight:400;color:var(--muted);letter-spacing:0}
+.pl .sub{font-size:17px;color:var(--body);line-height:1.5}
+.pl .mini{background:var(--gold-soft);border-radius:14px;padding:12px 16px;font-size:16px;color:#0A3D24;line-height:1.5}
+.pl .mini b{display:block;font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-text);margin-bottom:2px}
+.pl .btn{margin-top:6px;justify-self:start}
+.pl.quiet h3{font-size:22px;font-weight:500;color:var(--body)}
+.pl.quiet .pr{font-size:38px;color:var(--body)}
+.cmp thead th{padding:16px 20px;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);vertical-align:bottom}
+.cmp thead th.main{color:var(--gold-text);box-shadow:inset 0 4px 0 var(--gold)}
+.cmp td.val a{display:block;margin-top:4px;font-size:14px;font-weight:600;color:var(--gold-text);text-decoration:none}
+.evid li:target{background:var(--gold-soft);border-radius:8px}
+.evid{margin-top:16px;background:#fff;border:1px solid var(--hair);border-radius:18px;padding:6px 22px}
+.evid summary{padding:14px 0;font-size:17px}
+.evid ol{margin:0 0 16px;padding-left:22px;display:grid;gap:10px;font-size:15.5px;color:var(--body);line-height:1.55}
+.evid q{color:var(--ink)}
+.evid a{color:var(--gold-text)}
+.dmex{margin-top:16px;display:grid;grid-template-columns:260px 1fr;gap:22px;align-items:center;max-width:44em}
+.dmex img{width:260px;height:auto;border-radius:22px;border:1px solid var(--hair);display:block}
+.dmex p{font-size:16.5px;color:var(--body);line-height:1.55}
+@media (max-width:900px){.plans2{grid-template-columns:minmax(0,1fr)}.dmex{grid-template-columns:1fr;justify-items:start}}
+@media print{.plans2{grid-template-columns:minmax(0,1fr)!important}.pl{padding:16px;break-inside:avoid}.pl .pr{font-size:26pt}.pl .btn{display:none!important}.evid{break-inside:auto}.dmex{grid-template-columns:120px 1fr!important;gap:14px}.dmex img{width:120px;border-radius:12px}}
+
+/* guarantee: a light document box, no dark band */
+.guar{margin-top:26px;background:#fff;border:2px solid var(--gold);border-radius:24px;padding:clamp(26px,4vw,42px);display:grid;gap:14px}
+.guar h3{font-size:clamp(26px,3.2vw,36px);line-height:1.15;letter-spacing:-.025em;max-width:22em}
+.guar h3 span{color:var(--green-head)}
+.guar ul{margin:6px 0 0;padding:0;list-style:none;display:grid;gap:10px;max-width:48em}
+.guar li{position:relative;padding-left:32px;color:var(--body);font-size:17.5px;line-height:1.5}
+.guar li::before{content:"";position:absolute;left:0;top:3px;width:20px;height:20px;border-radius:50%;background:var(--green-head) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Cpath d='M6 11.5l3.2 3.2L16 8' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/20px no-repeat}
+
+/* break-even */
+.be{margin-top:26px;background:#fff;border:1px solid var(--hair);border-radius:24px;padding:clamp(24px,3.4vw,36px);display:grid;gap:16px}
+.be h3{font-size:24px;letter-spacing:-.02em}
+.be .ctl{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:20px;align-items:end}
+.be label{display:block;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.be select{width:100%;height:50px;border-radius:12px;border:1px solid var(--hair-2);background:#fff;font:500 17px var(--sans);color:var(--ink);padding:0 12px}
+.be input[type=range]{width:100%;accent-color:var(--green-head);height:28px}
+.be .out{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.be .out div{background:var(--soft);border-radius:16px;padding:16px 18px}
+.be .out b{display:block;font-size:30px;font-weight:600;letter-spacing:-.03em;color:var(--ink);line-height:1.1;font-variant-numeric:tabular-nums}
+.be .out span{display:block;font-size:15px;color:var(--body);margin-top:6px}
+.be .out div.pos b{color:var(--green-head)}
+.be .static{display:none}
+
+/* detail */
+.dt{margin-top:30px;display:grid;gap:16px}
+.dcard{background:#fff;border:1px solid var(--hair);border-radius:24px;padding:28px;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:28px;align-items:start}
+.dcard .k{font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-text)}
+.dcard h3{font-size:25px;letter-spacing:-.02em;margin-top:6px}
+.dcard .lbl{font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:16px}
+.dcard p{font-size:17.5px;line-height:1.62;color:var(--body);margin-top:6px}
+.dcard .ex{background:var(--gold-soft);border-radius:18px;padding:20px 22px;align-self:start;margin-top:6px}
+.dcard .ex .lbl{margin-top:0;color:var(--gold-text)}
+.dcard .ex p{color:#0A3D24;font-size:17px}
+
+/* per-site cards */
+.sites{margin-top:16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.site{background:#fff;border:1px solid var(--hair);border-radius:24px;padding:26px;display:grid;gap:12px;align-content:start}
+.site h3{font-size:20px;overflow-wrap:anywhere}
+.site .what{font-size:16px;color:var(--body)}
+.site ul{margin:0;padding-left:20px;display:grid;gap:7px;font-size:16.5px;color:var(--body);line-height:1.5}
+.pick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:4px}
+.pick label{position:relative;display:block;cursor:pointer}
+.pick input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.pick span{display:block;text-align:center;padding:11px 6px;border-radius:12px;border:1px solid var(--hair-2);font-size:15.5px;font-weight:500;color:var(--ink);background:#fff}
+.pick input:checked+span{background:var(--ink);color:#fff;border-color:var(--ink)}
+.pick input:focus-visible+span{outline:3px solid rgba(34,209,111,.55);outline-offset:2px}
+.levels{margin-top:28px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.levels div{background:var(--soft);border-radius:16px;padding:16px 18px}
+.levels b{display:block;color:var(--ink);font-size:17px}
+.levels span{display:block;font-size:15.5px;color:var(--body);margin-top:4px;line-height:1.5}
+.picksum{margin-top:18px;font-size:16px;color:var(--body)}
+
+/* after you pay */
+.comm{grid-template-columns:repeat(3,minmax(0,1fr))}
+.steps4{margin-top:28px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.steps4 .card{display:grid;gap:10px;align-content:start}
+.steps4 .num{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--ink);color:#fff;font-weight:600;font-size:15px}
+.steps4 h3{font-size:19px}
+
+@media (max-width:900px){
+  .works,.take,.topics,.nexts,.sites,.levels,.be .ctl,.be .out,.toc{grid-template-columns:1fr}
+  .comm{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .steps4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dcard{grid-template-columns:1fr;padding:22px}
+  .tb th,.tb td{display:block;width:auto!important}
+  .tb tbody th{border-bottom:0;padding-bottom:2px}
+  .tb tbody td{padding-top:4px}
+  .tb thead{display:none}
+}
+@media (max-width:560px){
+  .steps4,.comm{grid-template-columns:1fr}
+  .work{grid-template-columns:1fr;justify-items:center;text-align:center}
+  .path .st{grid-template-columns:44px 1fr;gap:14px}
+  .path .n{width:44px;height:44px;font-size:17px}
+  .path .st::before{left:21px;top:44px}
+}
+
+/* ---------- phone ---------- */
+html,body{overflow-x:clip}   /* 'hidden' on both turns body into a scroll box and the sticky top bar stops sticking */
+@media screen and (max-width:760px){
+  .btn:not(.sm){white-space:normal;height:auto;min-height:56px;padding:13px 22px;text-align:center;line-height:1.3}
+  details{padding:8px 0}
+  summary{min-height:48px;align-items:center;padding:6px 0}
+  .evid summary{padding:6px 0}
+  .pl{padding:22px 20px;min-width:0}
+  .pl .pr{font-size:46px}
+  .pl .btn{justify-self:stretch}
+  .guar{padding:24px 20px}
+  .nexts div{padding:20px}
+  .dmex img{width:min(260px,100%)}
+  /* the plan table becomes one card per row: no sideways scrolling */
+  .cmpwrap{overflow:visible;border:0;background:none;border-radius:0;margin-top:22px}
+  .cmp{display:block;min-width:0}
+  .cmp thead{display:none}
+  .cmp tbody{display:grid;gap:12px}
+  .cmp tr{display:block;background:#fff;border:1px solid var(--hair);border-radius:20px;overflow:hidden}
+  .cmp tr.grp{background:none;border:0;border-radius:0;margin-top:14px}
+  .cmp tr.grp th{display:block;background:none;padding:0 4px}
+  .cmp tbody th,.cmp td{display:block;width:auto;border-bottom:0}
+  .cmp tbody th{padding:18px 18px 14px}
+  .cmp tbody th span{font-size:16px}
+  .cmp td{padding:12px 18px;border-top:1px solid var(--hair)}
+  .cmp td::before{content:attr(data-l);display:block;font-size:12.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+  .cmp td.yes::before{color:var(--gold-text)}
+  .cmp td.val:empty{display:none}
+  .cmp td.val a{display:flex;align-items:center;min-height:44px;padding:0;margin-top:2px;font-size:15px}
+  .pl .mini b{font-size:13px}
+  .cmp tr.tot{border:2px solid var(--ink)}
+  .cmp tr.tot th,.cmp tr.tot td{border-top:0;padding-top:16px;padding-bottom:16px}
+  .cmp tr.tot td{border-top:1px solid var(--hair)}
+  /* stacked tables get their column names back as small labels */
+  .tb td[data-l]::before{content:attr(data-l);display:block;font-size:12.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-text);margin-bottom:3px}
+  .tb td[data-l]{padding-top:12px}
+  .tb tr:last-child td[data-l]:not(:last-child){border-bottom:1px solid var(--hair)}
+}
+
+/* PDF: Chrome prints at about 680 px wide, so the phone rules above would apply. Force the desktop grids back. */
+@media print{
+  @page{size:A4;margin:14mm 12mm 18mm;
+    @bottom-center{content:"Scope BEJ-2026-0124 · Alan Ranger · issued 23 Nov 2026 · BEJÚ Creative · page " counter(page) " of " counter(pages);font-family:Geist,Helvetica,Arial,sans-serif;font-size:8pt;color:#646C5C}}
+  body{font-size:10.5pt}
+  .facts{grid-template-columns:repeat(3,1fr)!important}
+  .facts div+div{border-left:1px solid var(--hair)!important;border-top:0!important}
+  .head{break-inside:avoid}
+  #detail,#sites{break-before:page}
+  .cmp tr.grp{break-after:avoid}
+  .site h3{font-size:11.5pt;word-break:normal;overflow-wrap:anywhere}
+  .steps4 h3{font-size:10.5pt}.steps4 .card p{font-size:9pt}
+  section{padding:14px 0!important;border:0}
+  .band{background:#fff}
+  .noprint,.toc,.pick,.picksum,.be .ctl,.be .out,.phone{display:none!important}
+  .be .static{display:table}
+  .hero{padding:18px 0 6px}
+  .hero h1{font-size:24pt}
+  h2{font-size:17pt}
+  .wrap,.wrapw{width:100%}
+  .take,.topics,.nexts,.sites,.works{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .levels,.comm{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .steps4{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  .dcard{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)!important;padding:14px 16px;gap:16px}
+  .work{grid-template-columns:1fr!important}
+  .tb th,.tb td{display:table-cell!important;padding:9px 12px;font-size:9.5pt}
+  .tb thead{display:table-header-group!important}
+  .tb tbody th{border-bottom:1px solid var(--hair)!important}
+  .cmpwrap{overflow:visible;border-radius:12px}
+  .cmp{min-width:0;font-size:9pt}
+  .cmp th,.cmp td{padding:8px 10px}
+  .cmp thead{display:table-row-group}
+  .cmp thead tr,.cmp tr.grp{break-after:avoid}
+  .plans2{break-after:auto}
+  .cmp thead th{padding:12px 10px}
+  .cmp thead b{font-size:11.5pt;margin-top:8px}
+  .cmp thead .sub,.cmp thead .was{font-size:8.5pt}
+  .cmp thead .only{font-size:7pt}
+  .cmp thead .pill{font-size:7pt}
+  .cmp thead .pr{font-size:20pt}
+  .cmp tbody th b{font-size:10pt}.cmp tbody th span{font-size:8.5pt}
+  .cmp td.val{font-size:8.5pt}
+  .cmp tr.tot td{font-size:13pt}
+  .take div,.topic,.nexts div,.site,.dcard,.work,.guar,.be,.path .st,.tb tr,.cmp tr,.steps4 .card,.comm .card,.levels div,.purpose,.twice{break-inside:avoid}
+  .dcard p,.topic ul,.topic .q,.topic .do,.take span,.site ul,.path p,.guar li,.nexts ul{font-size:9.8pt}
+  .dcard h3{font-size:14pt}.topic h4{font-size:12.5pt}
+  .subh,h2,.head{break-after:avoid}
+  a{text-decoration:none}
+}
+</style>
+<style>
+/* v9: one plan, one width */
+.plan1{margin-top:30px;display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:18px;align-items:stretch}
+.plan1 .pl{height:100%}
+.incl{background:#fff;border:1px solid var(--hair);border-radius:24px;padding:26px 28px;display:grid;gap:18px;align-content:start}
+.incl h4{margin:0;font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-text)}
+.incl ul{margin:8px 0 0;padding:0;list-style:none;display:grid;gap:8px}
+.incl li{position:relative;padding-left:30px;font-size:16.5px;line-height:1.45;color:var(--ink)}
+.incl li::before{content:"";position:absolute;left:0;top:1px;width:20px;height:20px;border-radius:50%;background:var(--green-head) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Cpath d='M6 11.5l3.2 3.2L16 8' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/20px no-repeat}
+.mypart{margin-top:auto;background:var(--gold-soft);border-radius:18px;padding:18px 20px}
+.mypart h4{margin:0;font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-text)}
+.mypart ul{margin:8px 0 0;padding-left:20px;display:grid;gap:5px;color:var(--ink);font-size:16px}.mypart p{margin:8px 0 0;color:var(--body);font-size:15px}
+.plan1 .pl{display:flex;flex-direction:column;gap:12px}
+.plan1 .pl .pill,.plan1 .pl .btn{align-self:flex-start}
+.why{margin-top:26px;max-width:46em;border:1px solid var(--gold);background:var(--gold-soft);border-radius:18px;padding:20px 24px}
+.why b{display:block;color:#0A3D24;font-size:19px;font-weight:600;margin-bottom:6px}.why p{margin:0;color:#0A3D24;font-size:16.5px;line-height:1.55}
+.priv{margin-top:26px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.priv div{background:#fff;border:1px solid var(--hair);border-radius:20px;padding:20px 22px}
+.priv b{display:block;color:var(--ink);font-size:18px;font-weight:600}.priv span{display:block;color:var(--body);font-size:16px;margin-top:4px;line-height:1.5}
+.later{margin-top:18px;max-width:46em;color:var(--body);font-size:17px}
+.safe{margin-top:14px;display:inline-block;background:var(--gold-soft);border-radius:12px;padding:10px 16px;color:#0A3D24;font-size:16.5px}.safe b{color:#0A3D24}
+.tb.road3 tbody th{width:15%;white-space:nowrap}.tb.road3 td{width:58%;color:var(--ink)}.tb.road3 td:last-child{width:28%;color:var(--body);background:var(--gold-soft)}
+.seo{margin-top:16px;background:var(--gold-soft);border-radius:20px;padding:20px 24px;max-width:62em}.seo>b{display:block;font-size:19px;color:#0A3D24;margin-bottom:6px}.seo p{margin:6px 0 0;color:#0A3D24;font-size:16.5px;line-height:1.55}
+.tierhead{margin-top:34px}.tierhead h3{font-size:22px}.tierhead p{margin:6px 0 0;color:var(--body);font-size:16.5px}
+.both{margin-top:12px;color:var(--body);font-size:16px}
+.cmp tbody th span{font-weight:400}
+.cmp td .no{font-size:20px;color:var(--muted)}
+details.more{margin-top:10px}details.more>summary{font-size:18px;font-weight:600;color:var(--ink);padding:14px 0;cursor:pointer}
+@media (max-width:900px){.plan1,.priv{grid-template-columns:minmax(0,1fr)}.incl{padding:22px 20px}.mypart{margin-top:6px}}
+@media print{.plan1{grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr)!important}.priv{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .plan1,.incl,.mypart,.priv div,.why{break-inside:avoid}.incl li,.priv span{font-size:9.8pt}.plan1 .pl .btn{display:none!important}}
+</style>
+<style id="phone-pass-1123">/* phone pass 11-23: 44px tap targets, readable labels */
+details>summary{min-height:44px;align-items:center;padding-top:10px;padding-bottom:10px}
+.nav .brand{display:inline-flex;align-items:center;min-height:44px}
+.pill{font-size:13px!important}
+.take a{display:inline-block;padding:10px 0;margin:-10px 0}
+@media (max-width:600px){.btn{min-height:44px}}
+</style>
+</head>
+<body>
+<nav class="nav" aria-label="Scope">
+  <div class="wrap">
+    <a class="brand" href="https://bejucreative.digital/" aria-label="BEJÚ Creative"><img src="https://bejucreative.digital/assets/beju-mark-640.png" alt="BEJÚ Creative" width="44" height="26"></a>
+    <div class="navbtns noprint">
+      <a class="btn ghost sm" href="#plan"><span class="lg">See the plan</span><span class="sh">Plan</span></a>
+      <a class="btn ghost sm" href="Alan-Ranger-Plan-BEJU-Creative.pdf" download><span class="lg">Download PDF</span><span class="sh">PDF</span></a>
+      <a class="btn ghost sm site-btn" href="https://bejucreative.digital/">Visit our website</a>
+      <a class="btn primary sm" href="https://cal.com/beju-creative/15min-call" target="_blank" rel="noopener">Book a call</a>
+    </div>
+  </div>
+</nav>
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Scope of work · Alan Ranger Photography</p>
+    <h1 style="margin-top:14px">From a Short <span class="gold">to a booked class</span></h1>
+    <p class="ans"><b>Your four questions, answered in writing.</b> How it works, what it costs, how it fits what you already run, and how you measure it.</p>
+    <div class="btns noprint"><a class="btn primary" href="#plan">See your plan</a><a class="btn ghost" href="Alan-Ranger-Plan-BEJU-Creative.pdf" download>Download PDF</a></div>
+    <div class="meta">
+      <span>Prepared for <b>Alan Ranger, Alan Ranger Photography</b></span>
+      <span>Scope <b>BEJ-2026-0124</b></span>
+      <span>Issued <b>23 Nov 2026</b></span>
+      <span>Valid until <b>7 Dec 2026</b></span>
+      <span>Your contact <b>Benas, Co-founder</b></span>
+    </div>
+    <div class="toc noprint"><a href="#call"><span>01</span>Your questions</a><a href="#found"><span>02</span>What you have</a><a href="#how"><span>03</span>The path</a><a href="#impact"><span>04</span>Your numbers</a><a href="#plan"><span>05</span>Your plan</a><a href="#privacy"><span>06</span>Consent and tracking</a><a href="#sites"><span>07</span>Your tools</a><a href="#road"><span>08</span>Your first month</a><a href="#terms"><span>09</span>The terms</a><a href="#detail"><span>10</span>Every detail</a><a href="#trust"><span>11</span>Who we work with</a><a href="#faq"><span>12</span>Questions</a></div>
+  </div>
+</header>
+
+<section style="padding-top:0" aria-label="The plan at a glance">
+  <div class="wrap facts">
+    <div><b>A new funnel every month</b><span>for the offer you pick, and every one keeps running</span></div>
+    <div><b>Built into your tools</b><span>Squarespace, Mailchimp and your booking calendar</span></div>
+    <div><b>Month-to-month</b><span>You own your accounts, your list and every video.</span></div>
+  </div>
+</section>
+
+<section class="band" id="call" aria-labelledby="call-h">
+  <div class="wrap">
+    <div class="head"><p class="eyebrow"><span class="secno">01</span>Your questions</p><h2 id="call-h">What you asked us <span class="gold">to put in writing</span></h2>
+      <p class="lede">You asked for a written outline before any call. This page is that outline, with the four parts you named.</p></div>
+    <p class="purpose"><b>The goal</b>Turn the people who watch your Shorts into people who book your courses, workshops and lessons, and show you which Short brought each booking.</p>
+    <h3 class="subh">Your four questions, in short</h3>
+    <div class="take">
+      <div><b>How it works</b><span>Short → one link → a free gift for an email address → five emails in your voice → a booking. One new funnel like this every month. <a href="#how">See the path</a></span></div>
+      <div><b>What it costs</b><span>$1,100 a month, no setup fee, no software to buy. One new funnel every month. A higher tier plan at $1,800 if you want more. <a href="#plan">See the plan</a></span></div>
+      <div><b>How it fits what you run</b><span>Built inside your own Squarespace site, Mailchimp list and booking calendar. Nothing duplicated. <a href="#sites">See your tools</a></span></div>
+      <div><b>Consent and measurement</b><span>A consent box and unsubscribe on every email, a tagged link for every Short, and bookings traced back to the Short. <a href="#privacy">See how</a></span></div>
+    </div>
+    <h3 class="subh">What we've learned working with you</h3>
+    <div class="take">
+      <div><b>Your Shorts already point to the Academy</b><span>Since your first pack, every Short ends on "Start my free online photography course". The funnel is what catches the people who tap it.</span></div>
+      <div><b>You asked the right question early</b><span>Before your first pack you asked whether Shorts would bring enough click-through to justify them. This plan answers it with numbers: every Short gets its own link, and every booking is traced back.</span></div>
+      <div><b>You like it exact</b><span>Complete photographs, the topic as the title with the lesson number under it, your own narration, and the end card for five seconds. Every Short in the plan keeps all of it, and you still get a proposal first.</span></div>
+      <div><b>You plan ahead</b><span>Your Shorts and marketing are already scheduled. The plan works with them: the Shorts you've lined up get the right funnel link, so nothing you've planned has to change.</span></div>
+    </div>
+    <h3 class="subh">Next steps</h3>
+    <div class="nexts">
+      <div><b>BEJÚ Creative</b><ul><li>Put the plan in writing. This page is that.</li><li>Answer any question you have about it, by email or on a call.</li><li>On day one, map your Squarespace pages, your Mailchimp list and your booking calendar with you.</li></ul></div>
+      <div><b>Alan</b><p class="nx">Small steps. Each one helps us start on day one.</p><ul><li>Read this page, and tell us if the plan fits.</li><li>Tell us which offer gets the first funnel.</li><li>Give us access to Squarespace and Mailchimp on the first call. We never ask for a password by email.</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<section id="found" aria-labelledby="found-h">
+  <div class="wrap">
+    <div class="head"><p class="eyebrow"><span class="secno">02</span>What you have</p><h2 id="found-h">You already have <span class="gold">the pieces</span></h2>
+      <p class="lede">We read your site as a visitor would. You've built a lot already: a free course, a list, a booking calendar and clear prices. We don't rebuild any of it. We connect your Shorts to it, and count what each one brings.</p></div>
+    <table class="tb three">
+      <thead><tr><th>What you have</th><th>What it does today</th><th>What we add</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Your Shorts</th><td data-l="What it does today">Already scheduled on YouTube.</td><td data-l="What we add">One link per Short, so every viewer has one next step.</td></tr>
+        <tr><th scope="row">Your free Academy 101 course</th><td data-l="What it does today">Free with an email address, and a 14-day trial of the full Academy with no card.</td><td data-l="What we add">It becomes the gift at the end of every Short's link.</td></tr>
+        <tr><th scope="row">Your Mailchimp list</th><td data-l="What it does today">Updates from your blog, once or twice a week.</td><td data-l="What we add">A welcome series for new contacts that leads to the course or workshop they watched about.</td></tr>
+        <tr><th scope="row">Your courses, workshops and lessons</th><td data-l="What it does today">Clear prices, from a £50 workshop session to a 12-month Pick n Mix plan of £600 to £1,200.</td><td data-l="What we add">Each one, in turn, gets its own funnel: a page, a gift, emails and Shorts.</td></tr>
+        <tr><th scope="row">Your free chat calendar</th><td data-l="What it does today">People pick a day and time for a free, no-obligation chat.</td><td data-l="What we add">The last email invites them to it, and each chat is traced to its Short.</td></tr>
+        <tr><th scope="row">The missing link</th><td data-l="What it does today">A count of which Short brought which sign-up and booking.</td><td data-l="What we add">Tagged links, tagged sign-ups and a monthly report, per Short and per funnel.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="band" id="how" aria-labelledby="how-h">
+  <div class="wrap">
+    <div class="head"><p class="eyebrow"><span class="secno">03</span>The path</p><h2 id="how-h">From a Short <span class="gold">to a booking, step by step</span></h2>
+      <p class="lede">Your answer to "how would it work". This is one funnel. Once it's set up, it runs by itself, and each month we build one more for another offer. YouTube doesn't send private messages from comments, so the path runs through one link.</p></div>
+    <div class="path">
+      <div class="st"><span class="n">1</span><div><h3>Someone watches your Short</h3><p>A Short about getting off Auto, a sunrise at Chesterton Windmill, or reading the histogram. At the end you tell them where to go next.</p></div></div>
+      <div class="st"><span class="n">2</span><div><h3>They tap one link</h3><p>The link sits in the description and in a pinned comment. It opens a short page on your own site for that topic, with a free gift. For the first funnel, that's your free Academy 101 course.</p></div></div>
+      <div class="st"><span class="n">3</span><div><h3>They give their email for your free course</h3><p>They type their name and email address, tick the consent box and confirm. They land in your Mailchimp list, tagged with the Short they came from.</p></div></div>
+      <div class="st"><span class="n">4</span><div><h3>Five emails in your voice</h3><p>A lesson from the course, a real student story, then the course, workshop or 1-2-1 lessons that fit what they watched, with your next dates. We write them, you approve them once.</p></div></div>
+      <div class="st"><span class="n">5</span><div><h3>They book</h3><p>A beginners course, a workshop, 1-2-1 lessons, the Academy year, or a free chat in your calendar. Each booking is traced back to the Short that started it.</p></div></div>
+    </div>
+    <div class="twice"><b>Your Shorts keep working after the views.</b><p>Today a view is the end of the story. With one link and one gift, every Short you've already scheduled can bring a name to your list and a booking to your calendar.</p></div>
+    <div class="why"><b>Why your free course works as the gift</b><p>People learn from you before they pay you, so trust starts early. And everyone who asks for the course has already shown they want to learn photography.</p></div>
+  </div>
+</section>
+
+<section id="impact" aria-labelledby="impact-h">
+  <div class="wrap">
+    <div class="head"><p class="eyebrow"><span class="secno">04</span>Your numbers</p><h2 id="impact-h">What one funnel a month <span class="gold">adds up to</span></h2>
+      <p class="lede">These are your own prices from your site, not a forecast. They show how few bookings it takes for the plan to pay for itself, and how it builds month after month.</p></div>
+    <table class="tb three">
+      <thead><tr><th>Your offer</th><th>Your price</th><th>Against a $1,100 month</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Pick n Mix, 12-month plan</th><td data-l="Your price">£600, £1,000 or £1,200 a year</td><td data-l="Against a $1,100 month">One £1,000 or £1,200 plan roughly covers a month.</td></tr>
+        <tr><th scope="row">Private lessons, 4 × 2 hours</th><td data-l="Your price">£360</td><td data-l="Against a $1,100 month">Two or three packages cover a month.</td></tr>
+        <tr><th scope="row">A Year at Chesterton</th><td data-l="Your price">£480</td><td data-l="Against a $1,100 month">About two cover a month.</td></tr>
+        <tr><th scope="row">Courses and workshops</th><td data-l="Your price">£99 to £195 a place</td><td data-l="Against a $1,100 month">Five to nine places, across all your dates.</td></tr>
+        <tr><th scope="row">Online Academy</th><td data-l="Your price">£79 a year</td><td data-l="Against a $1,100 month">The first paid step for people new to you.</td></tr>
+      </tbody>
+    </table>
+    <div class="why"><b>Why it grows every month</b><p>Funnels don't switch off. By month six, six of your offers each have their own page, their own emails and their own Shorts, all feeding your list every day. Your list keeps growing with people who asked to learn from you, and every new date you announce lands on more of them.</p></div>
+    <div class="twice"><b>And you'll know exactly what worked.</b><p>Every booking is traced to the Short and the funnel it came from. You keep the funnels that sell and we change the rest, so each month's money goes where it already works.</p></div>
+  </div>
+</section>
+
+<section id="plan" aria-labelledby="plan-h">
+  <div class="wrap">
+    <div class="head"><p class="eyebrow"><span class="secno">05</span>Your plan</p><h2 id="plan-h">Your plan, <span class="gold">and room to grow</span></h2>
+      <p class="lede">Your answer to "what it costs". Month-to-month, cancel any time. No setup fee, and no software to buy. One new funnel every month, for the offer you pick.</p></div>
+    <div class="plan1">
+      <div class="pl main">
+        <span class="pill">Recommended for you</span>
+        <h3>A new funnel every month</h3>
+        <p class="pr">$1,100 <small>a month</small></p>
+        <p class="sub">No setup fee. No software to buy. Any tool we add is paid by our team.</p>
+        <a class="btn primary noprint" href="mailto:benas@bejucreative.org?subject=First%20invoice%20for%20Alan%20Ranger%20Photography%20(BEJ-2026-0124)" target="_blank" rel="noopener">Start your plan · $1,100&nbsp;a&nbsp;month</a>
+        <p class="small">Month-to-month. Cancel any time by email.</p>
+        <div class="mypart"><h4>Your part each month</h4><ul><li>Pick the offer for next month's funnel.</li><li>OK the proposal for each Short, and the emails once.</li><li>Send us any new recordings.</li></ul><p>That's it. We do the rest.</p></div>
+      </div>
+      <div class="incl">
+        <div><h4>A new funnel every month</h4><ul><li>One complete funnel for one offer you pick: a topic page on your site, a free gift, tagged links</li><li>Five welcome emails in your voice, inside your Mailchimp</li><li>One email to your whole list when it goes live</li><li>Every funnel we build keeps running</li></ul></div>
+        <div><h4>Your videos</h4><ul><li>15 new Shorts a month, each one pointing to that month's funnel</li><li>A written proposal for each Short before we build it</li><li>Ready to post, with title, description, hashtags and link</li><li>Your Shorts already scheduled get the right funnel link</li></ul></div>
+        <div><h4>Measuring it</h4><ul><li>A consent box, confirmation and unsubscribe, the way your list already works</li><li>A tagged link for every Short, and every sign-up tagged with its Short and funnel</li><li>A report every month, per Short and per funnel</li></ul></div>
+        <div><h4>Working with us</h4><ul><li>Built into your Squarespace, Mailchimp and booking calendar</li><li>A strategy call with Benas and Simas every month</li><li>Any extra tool paid for and run by our team</li></ul></div>
+      </div>
+    </div>
+    <div class="tierhead"><h3>Everything in your plan, row by row</h3><p>The grey column shows the higher tier plan, for when you want more. You move up from your next billing date, and everything we built keeps running.</p></div>
+    <div class="cmpwrap"><table class="cmp">
+      <thead><tr><th>What you get</th><th class="main">Your plan · $1,100 a month</th><th class="quiet">Higher tier plan · $1,800 a month</th></tr></thead>
+      <tbody>
+        <tr class="grp"><th colspan="3">A new funnel every month</th></tr>
+        <tr><th scope="row"><b>One complete funnel for one of your offers</b><span>Each month we build one full path for one offer you pick: a topic page on your site, a free gift, the welcome emails, tagged links and the Shorts that point to it. Every funnel we build keeps running.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>1 new funnel a month</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>2 new funnels a month</span></span></td></tr>
+        <tr><th scope="row"><b>Welcome emails in your voice</b><span>New contacts get a short series inside your own Mailchimp: a lesson, a real student story, then the offer that fits what they watched. We write them, you approve them once.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>5 per funnel</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>5 per funnel</span></span></td></tr>
+        <tr><th scope="row"><b>Your list hears about it</b><span>An email to your whole list when a new funnel goes live, built around your next dates. You approve each one.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>1 a month</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>2 a month</span></span></td></tr>
+        <tr><th scope="row"><b>Launches for your dates</b><span>A short run of Shorts and emails before a course, a residential workshop or a Chesterton year fills up: dates, places left and the booking link.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="no" aria-label="Not included">-</span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>1 a month</span></span></td></tr>
+        <tr class="grp"><th colspan="3">Your videos</th></tr>
+        <tr><th scope="row"><b>New Shorts for each funnel</b><span>Shorts from your long videos, talks and workshop footage, each one pointing to that month's funnel. You get a written proposal for each one first: timecodes, opening and closing words, images and length.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>15 a month</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>30 a month</span></span></td></tr>
+        <tr><th scope="row"><b>Ready to post, or posted for you</b><span>Each Short comes with its title, description, hashtags and its own link.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>Ready to post</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>Posted for you</span></span></td></tr>
+        <tr><th scope="row"><b>Your Shorts already scheduled</b><span>The Shorts you already have lined up get a link to the right funnel, so they count from the first day.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>Included</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>Included</span></span></td></tr>
+        <tr class="grp"><th colspan="3">Measuring it</th></tr>
+        <tr><th scope="row"><b>Consent done properly</b><span>Sign-ups tick a consent box, confirm their address the way your list already works, and can unsubscribe from every email.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>Included</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>Included</span></span></td></tr>
+        <tr><th scope="row"><b>Every booking traced to its Short</b><span>Each Short has its own tagged link, and each sign-up is tagged in Mailchimp with the Short and the funnel it came from. Bookings are matched back.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>Included</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>Included</span></span></td></tr>
+        <tr><th scope="row"><b>You see what is working</b><span>A report: views, clicks, sign-ups, enquiries and bookings, per Short and per funnel, and what we change next.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>Every month</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>Every two weeks</span></span></td></tr>
+        <tr class="grp"><th colspan="3">Working with us</th></tr>
+        <tr><th scope="row"><b>Built into the tools you already run</b><span>We build inside your Squarespace site, your Mailchimp list and your booking calendar. Nothing is copied, nothing runs twice.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>Included</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>Included</span></span></td></tr>
+        <tr><th scope="row"><b>Any extra tool, paid by our team</b><span>If a step needs a tool you don't have, our team pays for it and runs it. You pay nothing extra.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>Included</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>Included</span></span></td></tr>
+        <tr><th scope="row"><b>Strategy call with Benas and Simas</b><span>Time with us to pick next month's funnel and plan the dates.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>1 a month</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>Whenever you want one</span></span></td></tr>
+        <tr><th scope="row"><b>Our 30-day promise</b><span>No booking traced to the system in the first 30 days of the higher tier plan? You choose: one more month free, or that month back.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="no" aria-label="Not included">-</span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>Included</span></span></td></tr>
+        <tr class="tot"><th scope="row"><b>Every month</b><span>No setup fee. No software to buy. Month-to-month.</span></th><td class="yes" data-l="Your plan">$1,100</td><td class="q2" data-l="Higher tier plan">$1,800</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<section class="band" id="privacy" aria-labelledby="privacy-h">
+  <div class="wrap">
+    <div class="head"><p class="eyebrow"><span class="secno">06</span>Consent and tracking</p><h2 id="privacy-h">Consent, tracking <span class="gold">and attribution</span></h2>
+      <p class="lede">Your answer to "how would we measure it". You see enquiries and actual bookings, and which Short brought each one.</p></div>
+    <div class="priv">
+      <div><b>Consent first</b><span>Every sign-up ticks a consent box and confirms their address, the same way your list already works. Every email has an unsubscribe link.</span></div>
+      <div><b>A tagged link for every Short</b><span>Each Short gets its own link, so we can count the clicks it brings. Your Shorts already scheduled get one too.</span></div>
+      <div><b>Every sign-up tagged</b><span>In your Mailchimp, each new contact carries the name of the Short they came from. You can see it yourself, any time.</span></div>
+      <div><b>Bookings traced back</b><span>When a contact books a course, a workshop, lessons or a free chat, we match it to their Short. The monthly report shows enquiries and bookings per Short and per funnel.</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="sites" aria-labelledby="sites-h">
+  <div class="wrap">
+    <div class="head"><p class="eyebrow"><span class="secno">07</span>Your tools</p><h2 id="sites-h">Built into what you <span class="gold">already run</span></h2>
+      <p class="lede">Your answer to "how it fits". We work inside your own accounts, so your list, your Academy and your campaigns stay in one place. Nothing goes live without your OK.</p></div>
+    <div class="sites">
+      <div class="site"><h3>Your Squarespace site</h3><p class="what">Your site stays as it is. We add a few short topic pages.</p><ul><li>One page per Short topic, in your look, with your free Academy 101 course as the gift.</li><li>The sign-up form feeds your existing Mailchimp list.</li><li>Every link on the page goes to your own course, workshop and booking pages.</li></ul></div>
+      <div class="site"><h3>Your Mailchimp list and campaigns</h3><p class="what">No second list, no second sender.</p><ul><li>New contacts join your existing list, tagged with their Short.</li><li>The welcome series runs only for new contacts from Shorts.</li><li>Your blog updates keep going as they do today. Our list emails sit alongside them, built around your next dates.</li></ul></div>
+      <div class="site"><h3>Your Academy and your calendar</h3><p class="what">We send people to them, and count what comes back.</p><ul><li>The free course and the 14-day trial stay exactly as you set them up.</li><li>Your free chat calendar takes the bookings, as it does today.</li><li>Bookings are matched to their Short for the monthly report.</li></ul></div>
+    </div>
+    <div class="seo"><b>Software, in short</b>
+      <p>You already have the main tools: your site, your list, your Academy and your calendar. If a step needs something extra, like a link tracker, our team pays for it and runs it.</p>
+      <p>You pay nothing extra for software while the plan runs.</p></div>
+  </div>
+</section>
+
+<section class="band" id="road" aria-labelledby="road-h">
+  <div class="wrap">
+    <div class="head"><p class="eyebrow"><span class="secno">08</span>Your first month</p><h2 id="road-h">Your first month: <span class="gold">we do the heavy lifting</span></h2>
+      <p class="lede">Our team works on your account every day of the first month. Your part fits on one hand. And nothing changes on your site or your list without your OK.</p>
+      <p class="safe"><b>These timings are on the safe side.</b> Most of it usually happens faster. We leave room so you never wait on a promise.</p></div>
+    <table class="tb road3">
+      <thead><tr><th>When</th><th>What our team does</th><th>Your part</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Day 1</th><td data-l="What our team does">A call with you. We map your Squarespace pages, your Mailchimp list, your Academy and your booking calendar, and agree the offer for the first funnel.</td><td data-l="Your part">One call with us. That's it.</td></tr>
+        <tr><th scope="row">Week 1</th><td data-l="What our team does">We build the first funnel's topic page, write its five welcome emails and set up the tagged links. We send you proposals for its first Shorts.</td><td data-l="Your part">OK the page, the emails and the proposals.</td></tr>
+        <tr><th scope="row">Weeks 2–3</th><td data-l="What our team does">The funnel goes live, and your list hears about it. The Shorts you already have scheduled get its link. New Shorts come to you ready to post.</td><td data-l="Your part">Send any new recordings when you have them.</td></tr>
+        <tr><th scope="row">Week 4</th><td data-l="What our team does">Your first report: views, clicks, sign-ups, enquiries and bookings, per Short. On the strategy call we pick next month's offer, and the second funnel starts.</td><td data-l="Your part">Join the call, at a time that suits you.</td></tr>
+      </tbody>
+    </table>
+    <p class="later">On the higher tier plan we build two funnels a month, run a launch for your dates each month, and post your Shorts for you. You decide when.</p>
+  </div>
+</section>
+
+<section id="terms" aria-labelledby="terms-h">
+  <div class="wrap">
+    <div class="head"><p class="eyebrow"><span class="secno">09</span>The terms</p><h2 id="terms-h">The terms, <span class="gold">in plain words</span></h2></div>
+    <table class="tb">
+      <tbody>
+        <tr><th scope="row">Billing</th><td>$1,100 a month, paid in advance, by card or invoice. There is no setup fee.</td></tr>
+        <tr><th scope="row">Software</th><td>None to buy. We build inside your own tools. Any extra tool is paid by our team while the plan runs.</td></tr>
+        <tr><th scope="row">Cancel</th><td>Any time before your next billing date, by email. You keep everything delivered. No refunds on delivered work, except the 30-day promise in the higher tier plan.</td></tr>
+        <tr><th scope="row">Moving up</th><td>Move up to the higher tier plan from your next billing date, by email. Everything we built keeps running. There is no setup fee.</td></tr>
+        <tr><th scope="row">If you stop</th><td>Your pages, your list, your emails and your videos stay with you. Any extra tool we paid for: we hand the account over to you, or close it.</td></tr>
+        <tr><th scope="row">What's yours</th><td>Your site, your Mailchimp list, your Academy, your social accounts and every video.</td></tr>
+        <tr><th scope="row">Your word is final</th><td>If you don't like something, we change it. If you're not sure about something, leave it to us.</td></tr>
+        <tr><th scope="row">Approvals</th><td>You OK the proposal for each Short, every email and every new page. Nothing goes live without your OK.</td></tr>
+        <tr><th scope="row">Replies</th><td>You get an answer the same day, every day of the week.</td></tr>
+        <tr><th scope="row">A failed payment</th><td>We tell you at once and keep working for 7 days. After that, new funnels and Shorts pause until it's fixed. Funnels already live keep running.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="band" id="detail" aria-labelledby="detail-h">
+  <div class="wrap">
+    <div class="head"><p class="eyebrow"><span class="secno">10</span>Every detail</p><h2 id="detail-h">How each part works, <span class="gold">step by step</span></h2>
+      <p class="lede">Each card says what we do, what your part is, and gives one example.</p></div>
+    <div class="dt">
+      <div class="dcard"><div><span class="k">01</span><h3>New Shorts for each funnel</h3><p class="lbl">What we do</p><p>We make 15 new Shorts a month from your long videos, talks and workshop footage, each one pointing to that month's funnel. Before we build each one, you get a written proposal: timecodes, opening and closing words, the images and the length. Each Short ends by telling viewers where to go next.</p><p class="lbl">Your part</p><p>OK each proposal, or change it.</p></div>
+        <div class="ex"><p class="lbl">Example</p><p>A Short on getting off Auto, cut from your beginners teaching, ends with "Get my free course, link below".</p></div></div>
+      <div class="dcard"><div><span class="k">02</span><h3>One link on every Short</h3><p class="lbl">What we do</p><p>Every Short, new or already scheduled, gets its own tagged link in the description and a pinned comment. The link opens the topic page on your site.</p><p class="lbl">Your part</p><p>Nothing. We add the links once you've given us access.</p></div>
+        <div class="ex"><p class="lbl">Example</p><p>Your Short on reading the histogram links to the exposure page, which offers your free Academy 101 course.</p></div></div>
+      <div class="dcard"><div><span class="k">03</span><h3>A new funnel every month</h3><p class="lbl">What we do</p><p>Each month, one offer you pick gets its own funnel: a short page in your Squarespace, in your look, with a free gift and the sign-up form that feeds your Mailchimp list, plus its emails and Shorts. Every funnel keeps running after its month.</p><p class="lbl">Your part</p><p>Pick the offer, and OK the page before it goes live.</p></div>
+        <div class="ex"><p class="lbl">Example</p><p>Month 1, the Academy: your free course as the gift. Month 2, your private lessons. Month 3, your Pick n Mix plan. You choose the order.</p></div></div>
+      <div class="dcard"><div><span class="k">04</span><h3>Welcome emails and emails to your list</h3><p class="lbl">What we do</p><p>Every new contact from a Short gets five short emails in their first two weeks: a lesson, a real student story, then the course, workshop or lessons that fit, then your free chat. Your whole list also gets two emails a month built around your next dates.</p><p class="lbl">Your part</p><p>Approve the welcome emails once, and each list email with one reply.</p></div>
+        <div class="ex"><p class="lbl">Example</p><p>Day 1: the course. Day 3: one lesson. Day 6: a student's story. Day 9: your next beginners course dates. Day 12: a free chat.</p></div></div>
+      <div class="dcard"><div><span class="k">05</span><h3>Bookings traced to their Short</h3><p class="lbl">What we do</p><p>Each sign-up carries the name of its Short in Mailchimp. When that person books a course, a workshop, lessons or a free chat, we match it back. You see enquiries and actual bookings per Short.</p><p class="lbl">Your part</p><p>Nothing. It runs in the background.</p></div>
+        <div class="ex"><p class="lbl">Example</p><p>The windmill sunrise Short: 9 sign-ups, 2 free chats, 1 workshop booking. These numbers only show the format.</p></div></div>
+      <div class="dcard"><div><span class="k">06</span><h3>Monthly report and strategy call</h3><p class="lbl">What we do</p><p>Every month you get a full report: which Shorts and which funnels brought sign-ups, enquiries and bookings, and what we change next. Then a strategy call to pick next month's offer.</p><p class="lbl">Your part</p><p>Join the call, at a time that suits you.</p></div>
+        <div class="ex"><p class="lbl">Example</p><p>"This month: 15 Shorts, 41 new sign-ups, 4 free chats, 2 private packages, best Short: getting off Auto." These numbers only show the format.</p></div></div>
+    </div>
+  </div>
+</section>
+<section class="proof" id="trust" aria-labelledby="trust-h">
+  <div class="wrap">
+    <div class="head"><p class="eyebrow"><span class="secno">10</span>Trusted by</p><h2 id="trust-h">Who we already <span class="gold">work with</span></h2></div>
+    <div class="proof-card" style="margin-top:26px">
+      <div class="proof-logos">
+        <a class="proof-item" href="https://www.tiktok.com/@based" target="_blank" rel="noopener"><img src="https://bejucreative.digital/assets/based-wordmark.svg" alt="BASED" width="211" height="48"><span class="tt">View on TikTok ↗</span></a>
+        <a class="proof-item" href="https://www.tiktok.com/@samm.zia" target="_blank" rel="noopener"><span class="proof-wordmark">Sam Zia</span><span class="tt">View on TikTok ↗</span></a>
+      </div>
+      <p class="small" style="max-width:34em"><b style="color:var(--ink)">BASED: 4.6 million followers on TikTok. Sam Zia: 1.1 million.</b> We have run this kind of engine before: steady videos, a path behind them, and one team that handles it all.</p>
+      <div class="proof-nums">
+        <div><b>50+</b><span>clients</span></div>
+        <div><b>97%</b><span>stay after the first month</span></div>
+      </div>
+    </div>
+    <div class="works noprint">
+      <div class="work"><div class="phone"><video src="https://bejucreative.digital/assets/sam-zia-preview.mp4" controls playsinline preload="metadata" poster="https://bejucreative.digital/assets/sam-zia.jpg"></video></div>
+        <div><h3>Sam Zia</h3><p>A Short from our work with Sam Zia. Press play to see the opening, the pace and the captions.</p></div></div>
+      <div class="work"><div class="phone"><video src="https://bejucreative.digital/assets/based-preview.mp4" controls playsinline preload="metadata" poster="https://bejucreative.digital/assets/based.jpg"></video></div>
+        <div><h3>BASED</h3><p>A Short from our work with BASED. Your Shorts get the same care, in your own look.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="after" aria-labelledby="after-h">
+  <div class="wrap">
+    <div class="head"><p class="eyebrow">After you pay</p><h2 id="after-h">We start <span class="gold">the same day</span></h2></div>
+    <div class="steps4">
+      <div class="card"><span class="num">1</span><h3>A call with you</h3><p class="small">We agree which course or workshop comes first, and anything you want done your way.</p></div>
+      <div class="card"><span class="num">2</span><h3>Access, set up together</h3><p class="small">On the call we connect Squarespace and Mailchimp with you. We never ask for a password by email.</p></div>
+      <div class="card"><span class="num">3</span><h3>Your first proposals</h3><p class="small">Written proposals for the first Shorts: timecodes, opening and closing words, images and length.</p></div>
+      <div class="card"><span class="num">4</span><h3>Your first path, for approval</h3><p class="small">The first topic page and the five welcome emails come to you first. Once you like them, they go live.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="faq" aria-labelledby="faq-h">
+  <div class="wrap cols">
+    <div class="head"><p class="eyebrow"><span class="secno">12</span>Good to know</p><h2 id="faq-h">Questions</h2></div>
+    <div>
+      <details open><summary>Do I pay for any software?</summary><p>No. We build inside your Squarespace site, your Mailchimp list and your booking calendar. If a step needs a tool you don't have, our team pays for it and runs it.</p></details>
+      <details><summary>Will this duplicate my Academy, my emails or my list?</summary><p>No. New contacts join your existing Mailchimp list, tagged with their Short. Your blog updates keep going as they do today. The welcome series only runs for new contacts from Shorts, and it points to your own Academy, courses and workshops.</p></details>
+      <details><summary>How do you handle consent?</summary><p>Every sign-up ticks a consent box and confirms their address, the same way your list already works. Every email has an unsubscribe link. We only use what people share on purpose: a name and an email address.</p></details>
+      <details><summary>How will I know what's working?</summary><p>Every Short has its own tagged link, and every sign-up carries the name of its Short. When someone books, we match it back. The monthly report shows clicks, sign-ups, enquiries and bookings, per Short and per funnel.</p></details>
+      <details><summary>I already have Shorts scheduled. What happens to them?</summary><p>They keep going out as planned. We add a link to each one, so they bring sign-ups from the first day. Our new Shorts follow on your calendar.</p></details>
+      <details><summary>Which offer gets the first funnel?</summary><p>You choose. We'd suggest the Academy, since your Shorts already end on your free course. Then the offers you most want to fill, one a month.</p></details>
+      <details><summary>Do I still get a proposal before each Short?</summary><p>Yes. Timecodes, opening and closing words, the images and the length, before we build it.</p></details>
+      <details><summary>Who owns my site, my list and my videos?</summary><p>You do. Your site, your Mailchimp list, your Academy, your social accounts and every video stay yours.</p></details>
+      <details><summary>Can I move to the higher tier plan later?</summary><p>Yes. Email us, and it starts from your next billing date. Everything we built keeps running. The 30-day promise starts the day you pay for the higher tier plan: if no booking is traced to the system in those 30 days, you choose one more month free or that month back.</p></details>
+      <details><summary>What if I don't like a Short or an email?</summary><p>Tell us, and we change it until it's right. Revisions are unlimited.</p></details>
+      <details><summary>Can I cancel?</summary><p>Yes. It's month-to-month. Email us before your next billing date. You keep everything delivered. No refunds on delivered work, except the 30-day promise in the higher tier plan.</p></details>
+    </div>
+  </div>
+</section>
+
+<section id="comm" aria-labelledby="comm-h">
+  <div class="wrap">
+    <div class="head"><p class="eyebrow">Working together</p><h2 id="comm-h">Communication and approvals</h2></div>
+    <div class="comm">
+      <div class="card"><h3>Your account leads</h3><p class="small">Benas and Simas run your account together, with our editing and client success teams behind every piece.</p></div>
+      <div class="card"><h3>Replies the same day</h3><p class="small">Questions get an answer the same day, every day of the week.</p></div>
+      <div class="card"><h3>Approvals</h3><p class="small">You OK the proposal for each Short, every email and every new page before it goes out.</p></div>
+      <div class="card"><h3>Revisions</h3><p class="small">Unlimited. Send your notes, and we send a new version.</p></div>
+      <div class="card"><h3>Your files</h3><p class="small">Every Short lands in your own Drive folder, with its title, description and hashtags.</p></div>
+      <div class="card"><h3>Tools paid by our team</h3><p class="small">Any extra tool we use for you is covered by us. You pay nothing extra.</p></div>
+      <div class="card"><h3>Your word is final</h3><p class="small">Whatever you don't like, we change, the way you want it. You never have to argue for it.</p></div>
+      <div class="card"><h3>Easy for you</h3><p class="small">If you're not sure about something, leave it to us. Our experienced team makes the call and does the work, so you don't have to.</p></div>
+      <div class="card"><h3>One team for everything</h3><p class="small">Shorts, pages, emails and reports sit with one team. You never have to pass a message between people.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="close" id="start" aria-labelledby="ready">
+  <div class="wrap">
+    <div class="card">
+      <p class="eyebrow">Next step</p>
+      <h2 id="ready" style="margin-top:12px">Ready when you are</h2>
+      <p class="lede">Pay the first month, and we start the same day.</p>
+      <p class="urge">Your Shorts are already going out. With the path in place, every one of them can bring a booking.</p>
+      <div class="btns noprint">
+        <a class="btn primary" href="mailto:benas@bejucreative.org?subject=First%20invoice%20for%20Alan%20Ranger%20Photography%20(BEJ-2026-0124)" target="_blank" rel="noopener">Start your plan · $1,100&nbsp;a&nbsp;month</a>
+      </div>
+      <div class="btns noprint" style="margin-top:12px">
+        <a class="btn ghost" href="mailto:benas@bejucreative.org?subject=Invoice%20for%20Alan%20Ranger%20Photography%20(BEJ-2026-0124)">Request an invoice</a>
+        <a class="btn ghost" href="Alan-Ranger-Plan-BEJU-Creative.pdf" download>Download PDF</a>
+      </div>
+      <div class="call">
+        <p>Rather talk it through first?</p>
+        <a class="btn ghost" href="https://cal.com/beju-creative/15min-call" target="_blank" rel="noopener">Book a 15-minute call</a>
+      </div>
+      <p class="accept">Paying the first month, by card or invoice, accepts this scope and our <a href="https://bejucreative.digital/terms.html">terms</a>.</p>
+      <p class="terms">Month-to-month. Cancel any time before your next billing date by email. You keep everything delivered. No refunds on delivered work, except the 30-day promise in the higher tier plan. Payments are processed by Stripe. <a href="https://bejucreative.digital/terms.html">Full terms</a></p>
+    </div>
+  </div>
+</section>
+
+<footer><div class="wrap"><span><img class="foot-mark" src="https://bejucreative.digital/assets/beju-mark-640.png" alt="">BEJÚ Creative · bejucreative.digital</span><span>Scope BEJ-2026-0124 · Questions? Reply to Benas's email.</span></div></footer>
+<script>
+const openAll = () => document.querySelectorAll("details").forEach(d => d.open = true);
+if (location.search.includes("print")) openAll();
+addEventListener("beforeprint", openAll);
+</script>
+</body>
+</html>
