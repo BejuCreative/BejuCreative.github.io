@@ -645,6 +645,27 @@ details>summary{min-height:44px;align-items:center;padding-top:10px;padding-bott
 }
 @media (prefers-reduced-motion:reduce){.rv,.rv.in,.hflow::after,.hflow .ic,.path.vis .rail i,.rep .bar i,.s6 .blk{transition:none!important}}
 @media print{.rv{opacity:1!important;transform:none!important}.hflow::after{transform:scaleX(1)!important}.path.vis .rail i{transform:scaleY(1)!important}.rep .bar i{width:var(--w)!important}.s6 .blk{opacity:1!important;transform:none!important}}
+/* ---- scroll-driven motion (SIMAS 11-23 "the scrolling animation ... that's what I'm talking about") ---- */
+.sprog{position:fixed;left:0;top:0;height:3px;width:100%;background:var(--green-head);transform-origin:left;transform:scaleX(var(--p,0));z-index:9999;pointer-events:none}
+.rv{transform:translateY(40px) scale(.985)}
+.rv.sl{transform:translateX(-48px)}.rv.sr{transform:translateX(48px)}
+.rv.in{transform:none}
+.hero .eyebrow,.hero h1,.hero .ans,.hero .btns,.hero .meta{animation:heroUp .9s cubic-bezier(.2,.7,.2,1) both}
+.hero h1{animation-delay:.08s}.hero .ans{animation-delay:.18s}.hero .btns{animation-delay:.28s}.hero .meta{animation-delay:.36s}
+@keyframes heroUp{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+.path.vis .st::before{display:none}
+.path.vis .rail{left:25px;top:26px;bottom:26px}
+.path.vis .rail i{transform:scaleY(var(--f,0));transition:none}
+.path.vis.in .rail i{transform:scaleY(var(--f,0))}
+.path.vis .n{transition:background .35s,transform .35s,box-shadow .35s;background:#C9CEC2}
+.path.vis .st.on .n{background:var(--green-head);transform:scale(1.08);box-shadow:0 0 0 7px var(--gold-soft)}
+.path.vis .st>div{transition:opacity .45s,transform .45s;opacity:.35;transform:translateX(10px)}
+.path.vis .st.on>div{opacity:1;transform:none}
+.s6.scrub .blk{transition:opacity .25s,transform .25s}
+.phonef{will-change:transform}
+@media (max-width:640px){.path.vis .rail{left:21px;top:22px;bottom:22px}.rv.sl,.rv.sr{transform:translateY(34px)}.rv.in{transform:none}}
+@media (prefers-reduced-motion:reduce){.sprog{display:none}.hero *{animation:none!important}.path.vis .st>div{opacity:1;transform:none}.path.vis .n{background:var(--ink)}}
+@media print{.sprog{display:none}.hero *{animation:none!important}.path.vis .rail i{transform:scaleY(1)!important}.path.vis .st>div{opacity:1!important;transform:none!important}.path.vis .st .n{background:var(--green-head)!important}}
 </style>
 </head>
 <body>
@@ -692,17 +713,17 @@ details>summary{min-height:44px;align-items:center;padding-top:10px;padding-bott
     <p class="purpose"><b>The goal</b>Turn the people who watch your Shorts into people who book your courses, workshops and lessons, and show you which Short brought each booking.</p>
     <h3 class="subh">Your four questions, in short</h3>
     <div class="take">
-      <div><b>How it works</b><span>Short → one link → a free gift for an email address → five emails in your voice → a booking. One new funnel like this every month. <a href="#how">See the path</a></span></div>
-      <div><b>What it costs</b><span>$1,100 a month, no setup fee, no software to buy. One new funnel every month. A higher tier plan at $1,800 if you want more. <a href="#plan">See the plan</a></span></div>
-      <div><b>How it fits what you run</b><span>Built inside your own Squarespace site, Mailchimp list and booking calendar. Nothing duplicated. <a href="#sites">See your tools</a></span></div>
-      <div><b>Consent and measurement</b><span>A consent box and unsubscribe on every email, a tagged link for every Short, and bookings traced back to the Short. <a href="#privacy">See how</a></span></div>
+      <div class="rv sl"><b>How it works</b><span>Short → one link → a free gift for an email address → five emails in your voice → a booking. One new funnel like this every month. <a href="#how">See the path</a></span></div>
+      <div class="rv sr"><b>What it costs</b><span>$1,100 a month, no setup fee, no software to buy. One new funnel every month. A higher tier plan at $1,800 if you want more. <a href="#plan">See the plan</a></span></div>
+      <div class="rv sl"><b>How it fits what you run</b><span>Built inside your own Squarespace site, Mailchimp list and booking calendar. Nothing duplicated. <a href="#sites">See your tools</a></span></div>
+      <div class="rv sr"><b>Consent and measurement</b><span>A consent box and unsubscribe on every email, a tagged link for every Short, and bookings traced back to the Short. <a href="#privacy">See how</a></span></div>
     </div>
     <h3 class="subh">What we've learned working with you</h3>
     <div class="take">
-      <div><b>Your Shorts already point to the Academy</b><span>Since your first pack, every Short ends on "Start my free online photography course". The funnel is what catches the people who tap it.</span></div>
-      <div><b>You asked the right question early</b><span>Before your first pack you asked whether Shorts would bring enough click-through to justify them. This plan answers it with numbers: every Short gets its own link, and every booking is traced back.</span></div>
-      <div><b>You like it exact</b><span>Complete photographs, the topic as the title with the lesson number under it, your own narration, and the end card for five seconds. Every Short in the plan keeps all of it, and you still get a proposal first.</span></div>
-      <div><b>You plan ahead</b><span>Your Shorts and marketing are already scheduled. The plan works with them: the Shorts you've lined up get the right funnel link, so nothing you've planned has to change.</span></div>
+      <div class="rv sl"><b>Your Shorts already point to the Academy</b><span>Since your first pack, every Short ends on "Start my free online photography course". The funnel is what catches the people who tap it.</span></div>
+      <div class="rv sr"><b>You asked the right question early</b><span>Before your first pack you asked whether Shorts would bring enough click-through to justify them. This plan answers it with numbers: every Short gets its own link, and every booking is traced back.</span></div>
+      <div class="rv sl"><b>You like it exact</b><span>Complete photographs, the topic as the title with the lesson number under it, your own narration, and the end card for five seconds. Every Short in the plan keeps all of it, and you still get a proposal first.</span></div>
+      <div class="rv sr"><b>You plan ahead</b><span>Your Shorts and marketing are already scheduled. The plan works with them: the Shorts you've lined up get the right funnel link, so nothing you've planned has to change.</span></div>
     </div>
     <h3 class="subh">Next steps</h3>
     <div class="nexts">
@@ -724,7 +745,7 @@ details>summary{min-height:44px;align-items:center;padding-top:10px;padding-bott
         <tr><th scope="row">Your Mailchimp list</th><td data-l="What it does today">Updates from your blog, once or twice a week.</td><td data-l="What we add">A welcome series for new contacts that leads to the course or workshop they watched about.</td></tr>
         <tr><th scope="row">Your courses, workshops and lessons</th><td data-l="What it does today">Clear prices, from a £50 workshop session to a 12-month Pick n Mix plan of £600 to £1,200.</td><td data-l="What we add">Each one, in turn, gets its own funnel: a page, a gift, emails and Shorts.</td></tr>
         <tr><th scope="row">Your free chat calendar</th><td data-l="What it does today">People pick a day and time for a free, no-obligation chat.</td><td data-l="What we add">The last email invites them to it, and each chat is traced to its Short.</td></tr>
-        <tr><th scope="row">The missing link</th><td data-l="What it does today">A count of which Short brought which sign-up and booking.</td><td data-l="What we add">Tagged links, tagged sign-ups and a monthly report, per Short and per funnel.</td></tr>
+        <tr><th scope="row">The missing link</th><td data-l="What it does today">A count of which Short brought which sign-up and booking.</td><td data-l="What we add">Tagged links, tagged sign-ups and a weekly report, per Short and per funnel.</td></tr>
       </tbody>
     </table>
   </div>
@@ -775,7 +796,7 @@ details>summary{min-height:44px;align-items:center;padding-top:10px;padding-bott
       <div class="pl main">
         <span class="pill">Recommended for you</span>
         <h3>A new funnel every month</h3>
-        <p class="pr">$1,100 <small>a month</small></p>
+        <p class="pr"><span data-count="1100" data-pre="$">$1,100</span> <small>a month</small></p>
         <p class="sub">No setup fee. No software to buy. Any tool we add is paid by our team.</p>
         <a class="btn primary noprint" href="mailto:benas@bejucreative.org?subject=First%20invoice%20for%20Alan%20Ranger%20Photography%20(BEJ-2026-0124)" target="_blank" rel="noopener">Start your plan · $1,100&nbsp;a&nbsp;month</a>
         <p class="small">Month-to-month. Cancel any time by email.</p>
@@ -783,9 +804,9 @@ details>summary{min-height:44px;align-items:center;padding-top:10px;padding-bott
       </div>
       <div class="incl">
         <div><h4>A new funnel every month</h4><ul><li>One complete funnel for one offer you pick: a topic page on your site, a free gift, tagged links</li><li>Five welcome emails in your voice, inside your Mailchimp</li><li>One email to your whole list when it goes live</li><li>Every funnel we build keeps running</li></ul></div>
-        <div><h4>Your videos</h4><ul><li>30 new Shorts a month, each one pointing to that month's funnel</li><li>A written proposal for each Short before we build it</li><li>Ready to post, with title, description, hashtags and link</li><li>Your Shorts already scheduled get the right funnel link</li></ul></div>
-        <div><h4>Measuring it</h4><ul><li>A consent box, confirmation and unsubscribe, the way your list already works</li><li>A tagged link for every Short, and every sign-up tagged with its Short and funnel</li><li>A report every month, per Short and per funnel</li></ul></div>
-        <div><h4>Working with us</h4><ul><li>Built into your Squarespace, Mailchimp and booking calendar</li><li>A strategy call with Benas and Simas every month</li><li>Any extra tool paid for and run by our team</li></ul></div>
+        <div><h4>Your videos</h4><ul><li>30 new Shorts a month, each one pointing to that month's funnel</li><li>A written proposal for each Short before we build it</li><li>Posted for you on YouTube Shorts, plus Instagram and Facebook if you want them</li><li>Your Shorts already scheduled get the right funnel link</li></ul></div>
+        <div><h4>Measuring it</h4><ul><li>A consent box, confirmation and unsubscribe, the way your list already works</li><li>A tagged link for every Short, and every sign-up tagged with its Short and funnel</li><li>A full report every week, per Short and per funnel</li></ul></div>
+        <div><h4>Working with us</h4><ul><li>Built into your Squarespace, Mailchimp and booking calendar</li><li>Strategy calls with Benas and Simas, whenever you want one</li><li>Any extra tool paid for and run by our team</li></ul></div>
       </div>
     </div>
     <div class="tierhead"><h3>Everything in your plan, row by row</h3><p>The grey column shows the higher tier plan, for when you want more. You move up from your next billing date, and everything we built keeps running.</p></div>
@@ -799,16 +820,16 @@ details>summary{min-height:44px;align-items:center;padding-top:10px;padding-bott
         <tr><th scope="row"><b>Launches for your dates</b><span>A short run of Shorts and emails before a course, a residential workshop or a Chesterton year fills up: dates, places left and the booking link.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="no" aria-label="Not included">-</span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>1 a month</span></span></td></tr>
         <tr class="grp"><th colspan="3">Your videos</th></tr>
         <tr><th scope="row"><b>New Shorts for each funnel</b><span>Shorts from your long videos, talks and workshop footage, each one pointing to that month's funnel. You get a written proposal for each one first: timecodes, opening and closing words, images and length.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>30 a month</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>60 a month</span></span></td></tr>
-        <tr><th scope="row"><b>Ready to post, or posted for you</b><span>Each Short comes with its title, description, hashtags and its own link.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>Ready to post</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>Posted for you</span></span></td></tr>
+        <tr><th scope="row"><b>Posted for you</b><span>We post every Short for you on a calendar you can see, each with its own title, description, hashtags and link.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>YouTube Shorts, plus Instagram and Facebook if you want them</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>YouTube Shorts, Instagram, Facebook and TikTok</span></span></td></tr>
         <tr><th scope="row"><b>Your Shorts already scheduled</b><span>The Shorts you already have lined up get a link to the right funnel, so they count from the first day.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>Included</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>Included</span></span></td></tr>
         <tr class="grp"><th colspan="3">Measuring it</th></tr>
         <tr><th scope="row"><b>Consent done properly</b><span>Sign-ups tick a consent box, confirm their address the way your list already works, and can unsubscribe from every email.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>Included</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>Included</span></span></td></tr>
         <tr><th scope="row"><b>Every booking traced to its Short</b><span>Each Short has its own tagged link, and each sign-up is tagged in Mailchimp with the Short and the funnel it came from. Bookings are matched back.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>Included</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>Included</span></span></td></tr>
-        <tr><th scope="row"><b>You see what is working</b><span>A report: views, clicks, sign-ups, enquiries and bookings, per Short and per funnel, and what we change next.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>Every month</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>Every two weeks</span></span></td></tr>
+        <tr><th scope="row"><b>You see what is working</b><span>A report: views, clicks, sign-ups, enquiries and bookings, per Short and per funnel, and what we change next.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>Every week</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>Every week</span></span></td></tr>
         <tr class="grp"><th colspan="3">Working with us</th></tr>
         <tr><th scope="row"><b>Built into the tools you already run</b><span>We build inside your Squarespace site, your Mailchimp list and your booking calendar. Nothing is copied, nothing runs twice.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>Included</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>Included</span></span></td></tr>
         <tr><th scope="row"><b>Any extra tool, paid by our team</b><span>If a step needs a tool you don't have, our team pays for it and runs it. You pay nothing extra.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>Included</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>Included</span></span></td></tr>
-        <tr><th scope="row"><b>Strategy call with Benas and Simas</b><span>Time with us to pick next month's funnel and plan the dates.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>1 a month</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>Whenever you want one</span></span></td></tr>
+        <tr><th scope="row"><b>Strategy call with Benas and Simas</b><span>Time with us to pick the next funnel and plan the dates. You pick the times.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>Whenever you want one</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>Whenever you want one</span></span></td></tr>
         <tr><th scope="row"><b>Our 30-day promise</b><span>No booking traced to the system in the first 30 days of the higher tier plan? You choose: one more month free, or that month back.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="no" aria-label="Not included">-</span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>Included</span></span></td></tr>
         <tr class="tot"><th scope="row"><b>Every month</b><span>No setup fee. No software to buy. Month-to-month.</span></th><td class="yes" data-l="Your plan">$1,100</td><td class="q2" data-l="Higher tier plan">$1,800</td></tr>
       </tbody>
@@ -821,13 +842,13 @@ details>summary{min-height:44px;align-items:center;padding-top:10px;padding-bott
     <div class="head rv"><p class="eyebrow"><span class="secno">06</span>Consent and tracking</p><h2 id="privacy-h">Consent, tracking <span class="gold">and attribution</span></h2>
       <p class="lede">Your answer to "how would we measure it". You see enquiries and actual bookings, and which Short brought each one.</p></div>
     <div class="priv">
-      <div><b>Consent first</b><span>Every sign-up ticks a consent box and confirms their address, the same way your list already works. Every email has an unsubscribe link.</span></div>
-      <div><b>A tagged link for every Short</b><span>Each Short gets its own link, so we can count the clicks it brings. Your Shorts already scheduled get one too.</span></div>
-      <div><b>Every sign-up tagged</b><span>In your Mailchimp, each new contact carries the name of the Short they came from. You can see it yourself, any time.</span></div>
-      <div><b>Bookings traced back</b><span>When a contact books a course, a workshop, lessons or a free chat, we match it to their Short. The monthly report shows enquiries and bookings per Short and per funnel.</span></div>
+      <div class="rv sl"><b>Consent first</b><span>Every sign-up ticks a consent box and confirms their address, the same way your list already works. Every email has an unsubscribe link.</span></div>
+      <div class="rv sr"><b>A tagged link for every Short</b><span>Each Short gets its own link, so we can count the clicks it brings. Your Shorts already scheduled get one too.</span></div>
+      <div class="rv sl"><b>Every sign-up tagged</b><span>In your Mailchimp, each new contact carries the name of the Short they came from. You can see it yourself, any time.</span></div>
+      <div class="rv sr"><b>Bookings traced back</b><span>When a contact books a course, a workshop, lessons or a free chat, we match it to their Short. The weekly report shows enquiries and bookings per Short and per funnel.</span></div>
     </div>
-    <div class="rep"><div class="rh"><b>Your monthly report, per Short</b><span>Example layout</span></div>
-      <table><thead><tr><th>Short</th><th class="n hide">Clicks</th><th class="n">Sign-ups</th><th class="barc"></th><th class="n">Booked</th></tr></thead><tbody><tr><td>Getting off Auto</td><td class="n hide">212</td><td class="n">31</td><td class="barc"><div class="bar"><i style="--w:100%"></i></div></td><td class="n">3</td></tr><tr><td>How much negative space?</td><td class="n hide">148</td><td class="n">19</td><td class="barc"><div class="bar"><i style="--w:61%"></i></div></td><td class="n">2</td></tr><tr><td>Mystery or confusion?</td><td class="n hide">96</td><td class="n">11</td><td class="barc"><div class="bar"><i style="--w:35%"></i></div></td><td class="n">1</td></tr><tr><td>Check the whole frame</td><td class="n hide">74</td><td class="n">7</td><td class="barc"><div class="bar"><i style="--w:23%"></i></div></td><td class="n">0</td></tr></tbody></table>
+    <div class="rep"><div class="rh"><b>Your weekly report, per Short</b><span>Example layout</span></div>
+      <table><thead><tr><th>Short</th><th class="n hide">Clicks</th><th class="n">Sign-ups</th><th class="barc"></th><th class="n">Booked</th></tr></thead><tbody><tr><td>Getting off Auto</td><td class="n hide" data-count="212">212</td><td class="n" data-count="31">31</td><td class="barc"><div class="bar"><i style="--w:100%"></i></div></td><td class="n" data-count="3">3</td></tr><tr><td>How much negative space?</td><td class="n hide" data-count="148">148</td><td class="n" data-count="19">19</td><td class="barc"><div class="bar"><i style="--w:61%"></i></div></td><td class="n" data-count="2">2</td></tr><tr><td>Mystery or confusion?</td><td class="n hide" data-count="96">96</td><td class="n" data-count="11">11</td><td class="barc"><div class="bar"><i style="--w:35%"></i></div></td><td class="n" data-count="1">1</td></tr><tr><td>Check the whole frame</td><td class="n hide" data-count="74">74</td><td class="n" data-count="7">7</td><td class="barc"><div class="bar"><i style="--w:23%"></i></div></td><td class="n" data-count="0">0</td></tr></tbody></table>
       <p class="ft">These numbers only show the format, not a forecast.</p></div>
   </div>
 </section>
@@ -839,7 +860,7 @@ details>summary{min-height:44px;align-items:center;padding-top:10px;padding-bott
     <div class="sites">
       <div class="site rv"><h3>Your Squarespace site</h3><p class="what">Your site stays as it is. We add a few short topic pages.</p><ul><li>One page per Short topic, in your look, with your free Academy 101 course as the gift.</li><li>The sign-up form feeds your existing Mailchimp list.</li><li>Every link on the page goes to your own course, workshop and booking pages.</li></ul></div>
       <div class="site rv"><h3>Your Mailchimp list and campaigns</h3><p class="what">No second list, no second sender.</p><ul><li>New contacts join your existing list, tagged with their Short.</li><li>The welcome series runs only for new contacts from Shorts.</li><li>Your blog updates keep going as they do today. Our list emails sit alongside them, built around your next dates.</li></ul></div>
-      <div class="site rv"><h3>Your Academy and your calendar</h3><p class="what">We send people to them, and count what comes back.</p><ul><li>The free course and the 14-day trial stay exactly as you set them up.</li><li>Your free chat calendar takes the bookings, as it does today.</li><li>Bookings are matched to their Short for the monthly report.</li></ul></div>
+      <div class="site rv"><h3>Your Academy and your calendar</h3><p class="what">We send people to them, and count what comes back.</p><ul><li>The free course and the 14-day trial stay exactly as you set them up.</li><li>Your free chat calendar takes the bookings, as it does today.</li><li>Bookings are matched to their Short for the weekly report.</li></ul></div>
     </div>
     <div class="mockrow"><div class="rv"><div class="phonef" role="img" aria-label="Example of a topic page on a phone: Get off Auto for good"><div class="bar"><i></i></div>
       <div class="mk"><div class="mh"><span>ALAN RANGER</span><span>ACADEMY</span></div><div class="ph"></div>
@@ -861,9 +882,9 @@ details>summary{min-height:44px;align-items:center;padding-top:10px;padding-bott
       <thead><tr><th>When</th><th>What our team does</th><th>Your part</th></tr></thead>
       <tbody>
         <tr><th scope="row">Day 1</th><td data-l="What our team does">A call with you. We map your Squarespace pages, your Mailchimp list, your Academy and your booking calendar, and agree the offer for the first funnel.</td><td data-l="Your part">One call with us. That's it.</td></tr>
-        <tr><th scope="row">Week 1</th><td data-l="What our team does">We build the first funnel's topic page, write its five welcome emails and set up the tagged links. We send you proposals for its first Shorts.</td><td data-l="Your part">OK the page, the emails and the proposals.</td></tr>
-        <tr><th scope="row">Weeks 2–3</th><td data-l="What our team does">The funnel goes live, and your list hears about it. The Shorts you already have scheduled get its link. New Shorts come to you ready to post.</td><td data-l="Your part">Send any new recordings when you have them.</td></tr>
-        <tr><th scope="row">Week 4</th><td data-l="What our team does">Your first report: views, clicks, sign-ups, enquiries and bookings, per Short. On the strategy call we pick next month's offer, and the second funnel starts.</td><td data-l="Your part">Join the call, at a time that suits you.</td></tr>
+        <tr><th scope="row">Week 1</th><td data-l="What our team does">We build the first funnel's topic page, write its five welcome emails and set up the tagged links. We send you proposals for its first Shorts. Your first weekly report arrives.</td><td data-l="Your part">OK the page, the emails and the proposals.</td></tr>
+        <tr><th scope="row">Weeks 2–3</th><td data-l="What our team does">The funnel goes live, and your list hears about it. The Shorts you already have scheduled get its link. New Shorts go out on your calendar, posted by us.</td><td data-l="Your part">Send any new recordings when you have them.</td></tr>
+        <tr><th scope="row">Week 4</th><td data-l="What our team does">We go through every number: views, clicks, sign-ups, enquiries and bookings, per Short. A full report, and a strategy call to pick next month's offer. The second funnel starts.</td><td data-l="Your part">Join the call, at a time that suits you.</td></tr>
       </tbody>
     </table>
     <p class="later">On the higher tier plan we build two funnels a month, run a launch for your dates each month, and post your Shorts for you. You decide when.</p>
@@ -895,18 +916,18 @@ details>summary{min-height:44px;align-items:center;padding-top:10px;padding-bott
     <div class="head rv"><p class="eyebrow"><span class="secno">10</span>Every detail</p><h2 id="detail-h">How each part works, <span class="gold">step by step</span></h2>
       <p class="lede">Each card says what we do, what your part is, and gives one example.</p></div>
     <div class="dt">
-      <div class="dcard rv"><div><span class="k">01</span><h3>New Shorts for each funnel</h3><p class="lbl">What we do</p><p>We make 30 new Shorts a month from your long videos, talks and workshop footage, each one pointing to that month's funnel. Before we build each one, you get a written proposal: timecodes, opening and closing words, the images and the length. Each Short ends by telling viewers where to go next.</p><p class="lbl">Your part</p><p>OK each proposal, or change it.</p></div>
+      <div class="dcard rv sl"><div><span class="k">01</span><h3>New Shorts for each funnel</h3><p class="lbl">What we do</p><p>We make 30 new Shorts a month from your long videos, talks and workshop footage, each one pointing to that month's funnel. Before we build each one, you get a written proposal: timecodes, opening and closing words, the images and the length. Each Short ends by telling viewers where to go next.</p><p class="lbl">Your part</p><p>OK each proposal, or change it.</p></div>
         <div class="ex"><p class="lbl">Example</p><p>A Short on getting off Auto, cut from your beginners teaching, ends with "Get my free course, link below".</p></div></div>
-      <div class="dcard rv"><div><span class="k">02</span><h3>One link on every Short</h3><p class="lbl">What we do</p><p>Every Short, new or already scheduled, gets its own tagged link in the description and a pinned comment. The link opens the topic page on your site.</p><p class="lbl">Your part</p><p>Nothing. We add the links once you've given us access.</p></div>
+      <div class="dcard rv sr"><div><span class="k">02</span><h3>One link on every Short</h3><p class="lbl">What we do</p><p>Every Short, new or already scheduled, gets its own tagged link in the description and a pinned comment. The link opens the topic page on your site.</p><p class="lbl">Your part</p><p>Nothing. We add the links once you've given us access.</p></div>
         <div class="ex"><p class="lbl">Example</p><p>Your Short on reading the histogram links to the exposure page, which offers your free Academy 101 course.</p></div></div>
-      <div class="dcard rv"><div><span class="k">03</span><h3>A new funnel every month</h3><p class="lbl">What we do</p><p>Each month, one offer you pick gets its own funnel: a short page in your Squarespace, in your look, with a free gift and the sign-up form that feeds your Mailchimp list, plus its emails and Shorts. Every funnel keeps running after its month.</p><p class="lbl">Your part</p><p>Pick the offer, and OK the page before it goes live.</p></div>
+      <div class="dcard rv sl"><div><span class="k">03</span><h3>A new funnel every month</h3><p class="lbl">What we do</p><p>Each month, one offer you pick gets its own funnel: a short page in your Squarespace, in your look, with a free gift and the sign-up form that feeds your Mailchimp list, plus its emails and Shorts. Every funnel keeps running after its month.</p><p class="lbl">Your part</p><p>Pick the offer, and OK the page before it goes live.</p></div>
         <div class="ex"><p class="lbl">Example</p><p>Month 1, the Academy: your free course as the gift. Month 2, your private lessons. Month 3, your Pick n Mix plan. You choose the order.</p></div></div>
-      <div class="dcard rv"><div><span class="k">04</span><h3>Welcome emails and emails to your list</h3><p class="lbl">What we do</p><p>Every new contact from a Short gets five short emails in their first two weeks: a lesson, a real student story, then the course, workshop or lessons that fit, then your free chat. Your whole list also gets two emails a month built around your next dates.</p><p class="lbl">Your part</p><p>Approve the welcome emails once, and each list email with one reply.</p></div>
+      <div class="dcard rv sr"><div><span class="k">04</span><h3>Welcome emails and emails to your list</h3><p class="lbl">What we do</p><p>Every new contact from a Short gets five short emails in their first two weeks: a lesson, a real student story, then the course, workshop or lessons that fit, then your free chat. Your whole list also gets two emails a month built around your next dates.</p><p class="lbl">Your part</p><p>Approve the welcome emails once, and each list email with one reply.</p></div>
         <div class="ex"><p class="lbl">Example</p><p>Day 1: the course. Day 3: one lesson. Day 6: a student's story. Day 9: your next beginners course dates. Day 12: a free chat.</p></div></div>
-      <div class="dcard rv"><div><span class="k">05</span><h3>Bookings traced to their Short</h3><p class="lbl">What we do</p><p>Each sign-up carries the name of its Short in Mailchimp. When that person books a course, a workshop, lessons or a free chat, we match it back. You see enquiries and actual bookings per Short.</p><p class="lbl">Your part</p><p>Nothing. It runs in the background.</p></div>
+      <div class="dcard rv sl"><div><span class="k">05</span><h3>Bookings traced to their Short</h3><p class="lbl">What we do</p><p>Each sign-up carries the name of its Short in Mailchimp. When that person books a course, a workshop, lessons or a free chat, we match it back. You see enquiries and actual bookings per Short.</p><p class="lbl">Your part</p><p>Nothing. It runs in the background.</p></div>
         <div class="ex"><p class="lbl">Example</p><p>The windmill sunrise Short: 9 sign-ups, 2 free chats, 1 workshop booking. These numbers only show the format.</p></div></div>
-      <div class="dcard rv"><div><span class="k">06</span><h3>Monthly report and strategy call</h3><p class="lbl">What we do</p><p>Every month you get a full report: which Shorts and which funnels brought sign-ups, enquiries and bookings, and what we change next. Then a strategy call to pick next month's offer.</p><p class="lbl">Your part</p><p>Join the call, at a time that suits you.</p></div>
-        <div class="ex"><p class="lbl">Example</p><p>"This month: 30 Shorts, 41 new sign-ups, 4 free chats, 2 private packages, best Short: getting off Auto." These numbers only show the format.</p></div></div>
+      <div class="dcard rv sr"><div><span class="k">06</span><h3>Weekly reports and strategy calls</h3><p class="lbl">What we do</p><p>Every week you get a full report: what we posted, which Shorts and funnels brought sign-ups, enquiries and bookings, and what we change next. Whenever you want a strategy call, we plan the coming weeks together.</p><p class="lbl">Your part</p><p>Pick the call times that suit you.</p></div>
+        <div class="ex"><p class="lbl">Example</p><p>"This week: 7 Shorts posted, 12 new sign-ups, 2 free chats, 1 private package, best Short: getting off Auto." These numbers only show the format.</p></div></div>
     </div>
   </div>
 </section>
@@ -937,10 +958,10 @@ details>summary{min-height:44px;align-items:center;padding-top:10px;padding-bott
   <div class="wrap">
     <div class="head rv"><p class="eyebrow">After you pay</p><h2 id="after-h">We start <span class="gold">the same day</span></h2></div>
     <div class="steps4">
-      <div class="card"><span class="num">1</span><h3>A call with you</h3><p class="small">We agree which course or workshop comes first, and anything you want done your way.</p></div>
-      <div class="card"><span class="num">2</span><h3>Access, set up together</h3><p class="small">On the call we connect Squarespace and Mailchimp with you. We never ask for a password by email.</p></div>
-      <div class="card"><span class="num">3</span><h3>Your first proposals</h3><p class="small">Written proposals for the first Shorts: timecodes, opening and closing words, images and length.</p></div>
-      <div class="card"><span class="num">4</span><h3>Your first path, for approval</h3><p class="small">The first topic page and the five welcome emails come to you first. Once you like them, they go live.</p></div>
+      <div class="card rv"><span class="num">1</span><h3>A call with you</h3><p class="small">We agree which course or workshop comes first, and anything you want done your way.</p></div>
+      <div class="card rv"><span class="num">2</span><h3>Access, set up together</h3><p class="small">On the call we connect Squarespace and Mailchimp with you. We never ask for a password by email.</p></div>
+      <div class="card rv"><span class="num">3</span><h3>Your first proposals</h3><p class="small">Written proposals for the first Shorts: timecodes, opening and closing words, images and length.</p></div>
+      <div class="card rv"><span class="num">4</span><h3>Your first path, for approval</h3><p class="small">The first topic page and the five welcome emails come to you first. Once you like them, they go live.</p></div>
     </div>
   </div>
 </section>
@@ -952,7 +973,7 @@ details>summary{min-height:44px;align-items:center;padding-top:10px;padding-bott
       <details open><summary>Do I pay for any software?</summary><p>No. We build inside your Squarespace site, your Mailchimp list and your booking calendar. If a step needs a tool you don't have, our team pays for it and runs it.</p></details>
       <details><summary>Will this duplicate my Academy, my emails or my list?</summary><p>No. New contacts join your existing Mailchimp list, tagged with their Short. Your blog updates keep going as they do today. The welcome series only runs for new contacts from Shorts, and it points to your own Academy, courses and workshops.</p></details>
       <details><summary>How do you handle consent?</summary><p>Every sign-up ticks a consent box and confirms their address, the same way your list already works. Every email has an unsubscribe link. We only use what people share on purpose: a name and an email address.</p></details>
-      <details><summary>How will I know what's working?</summary><p>Every Short has its own tagged link, and every sign-up carries the name of its Short. When someone books, we match it back. The monthly report shows clicks, sign-ups, enquiries and bookings, per Short and per funnel.</p></details>
+      <details><summary>How will I know what's working?</summary><p>Every Short has its own tagged link, and every sign-up carries the name of its Short. When someone books, we match it back. The weekly report shows clicks, sign-ups, enquiries and bookings, per Short and per funnel.</p></details>
       <details><summary>I already have Shorts scheduled. What happens to them?</summary><p>They keep going out as planned. We add a link to each one, so they bring sign-ups from the first day. Our new Shorts follow on your calendar.</p></details>
       <details><summary>Which offer gets the first funnel?</summary><p>You choose. We'd suggest the Academy, since your Shorts already end on your free course. Then the offers you most want to fill, one a month.</p></details>
       <details><summary>Do I still get a proposal before each Short?</summary><p>Yes. Timecodes, opening and closing words, the images and the length, before we build it.</p></details>
@@ -968,15 +989,15 @@ details>summary{min-height:44px;align-items:center;padding-top:10px;padding-bott
   <div class="wrap">
     <div class="head rv"><p class="eyebrow">Working together</p><h2 id="comm-h">Communication and approvals</h2></div>
     <div class="comm">
-      <div class="card"><h3>Your account leads</h3><p class="small">Benas and Simas run your account together, with our editing and client success teams behind every piece.</p></div>
-      <div class="card"><h3>Replies the same day</h3><p class="small">Questions get an answer the same day, every day of the week.</p></div>
-      <div class="card"><h3>Approvals</h3><p class="small">You OK the proposal for each Short, every email and every new page before it goes out.</p></div>
-      <div class="card"><h3>Revisions</h3><p class="small">Unlimited. Send your notes, and we send a new version.</p></div>
-      <div class="card"><h3>Your files</h3><p class="small">Every Short lands in your own Drive folder, with its title, description and hashtags.</p></div>
-      <div class="card"><h3>Tools paid by our team</h3><p class="small">Any extra tool we use for you is covered by us. You pay nothing extra.</p></div>
-      <div class="card"><h3>Your word is final</h3><p class="small">Whatever you don't like, we change, the way you want it. You never have to argue for it.</p></div>
-      <div class="card"><h3>Easy for you</h3><p class="small">If you're not sure about something, leave it to us. Our experienced team makes the call and does the work, so you don't have to.</p></div>
-      <div class="card"><h3>One team for everything</h3><p class="small">Shorts, pages, emails and reports sit with one team. You never have to pass a message between people.</p></div>
+      <div class="card rv"><h3>Your account leads</h3><p class="small">Benas and Simas run your account together, with our editing and client success teams behind every piece.</p></div>
+      <div class="card rv"><h3>Replies the same day</h3><p class="small">Questions get an answer the same day, every day of the week.</p></div>
+      <div class="card rv"><h3>Approvals</h3><p class="small">You OK the proposal for each Short, every email and every new page before it goes out.</p></div>
+      <div class="card rv"><h3>Revisions</h3><p class="small">Unlimited. Send your notes, and we send a new version.</p></div>
+      <div class="card rv"><h3>Your files</h3><p class="small">Every Short lands in your own Drive folder, with its title, description and hashtags.</p></div>
+      <div class="card rv"><h3>Tools paid by our team</h3><p class="small">Any extra tool we use for you is covered by us. You pay nothing extra.</p></div>
+      <div class="card rv"><h3>Your word is final</h3><p class="small">Whatever you don't like, we change, the way you want it. You never have to argue for it.</p></div>
+      <div class="card rv"><h3>Easy for you</h3><p class="small">If you're not sure about something, leave it to us. Our experienced team makes the call and does the work, so you don't have to.</p></div>
+      <div class="card rv"><h3>One team for everything</h3><p class="small">Shorts, pages, emails and reports sit with one team. You never have to pass a message between people.</p></div>
     </div>
   </div>
 </section>
@@ -1011,16 +1032,41 @@ const openAll = () => document.querySelectorAll("details").forEach(d => d.open =
 if (location.search.includes("print")) openAll();
 addEventListener("beforeprint", openAll);
 </script>
+<div class="sprog" aria-hidden="true"></div>
 <script>
 (() => {
-  const all = document.querySelectorAll('.rv,.hflow,.path.vis,.rep,.stack6');
-  const show = el => { el.classList.add('in');
-    if (el.classList.contains('stack6')) el.querySelectorAll('.blk').forEach((b, i) => b.style.transitionDelay = (0.15 + (+b.dataset.m) * 0.22 + (+b.dataset.k) * 0.05) + 's'); };
-  const instant = location.search.includes('print') || matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window);
-  if (instant) { all.forEach(el => { el.classList.add('in'); }); return; }
-  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { show(e.target); io.unobserve(e.target); } }), { rootMargin: '0px 0px -12% 0px', threshold: 0.12 });
-  all.forEach(el => io.observe(el));
-  addEventListener('beforeprint', () => all.forEach(el => el.classList.add('in')));
+  const D = document, all = D.querySelectorAll('.rv,.hflow,.path.vis,.rep,.stack6');
+  const still = location.search.includes('print') || matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window);
+  const counts = D.querySelectorAll('[data-count]');
+  const fmt = (v, el) => (el.dataset.pre || '') + Math.round(v).toLocaleString('en-US') + (el.dataset.post || '');
+  const countUp = el => { const to = +el.dataset.count, t0 = performance.now(), d = 1100;
+    const step = t => { const k = Math.min(1, (t - t0) / d), e = 1 - Math.pow(1 - k, 3); el.textContent = fmt(to * e, el); if (k < 1) requestAnimationFrame(step); };
+    requestAnimationFrame(step); };
+  const blks = [...D.querySelectorAll('.s6 .blk')];
+  if (still) { all.forEach(el => el.classList.add('in')); D.querySelectorAll('.path.vis .st').forEach(s => s.classList.add('on'));
+    D.querySelectorAll('.path.vis .rail i').forEach(i => i.style.setProperty('--f', 1)); counts.forEach(el => el.textContent = fmt(+el.dataset.count, el)); return; }
+  counts.forEach(el => el.textContent = fmt(0, el));
+  const io = new IntersectionObserver(es => es.forEach(e => { if (!e.isIntersecting) return; const el = e.target;
+      el.classList.add('in'); el.querySelectorAll && el.querySelectorAll('[data-count]').forEach(countUp); if (el.dataset && el.dataset.count) countUp(el); io.unobserve(el); }),
+    { rootMargin: '0px 0px -10% 0px', threshold: 0.1 });
+  all.forEach(el => io.observe(el)); counts.forEach(el => { if (!el.closest('.rv,.rep,.stack6')) io.observe(el); });
+  D.querySelector('.s6') && D.querySelector('.s6').classList.add('scrub');
+  const bar = D.querySelector('.sprog'), path = D.querySelector('.path.vis'), rail = path && path.querySelector('.rail i'),
+        sts = path ? [...path.querySelectorAll('.st')] : [], s6 = D.querySelector('.stack6'), ph = D.querySelector('.phonef');
+  const order = blks.map(b => b).sort((a, b) => (+a.dataset.m * 10 + +a.dataset.k) - (+b.dataset.m * 10 + +b.dataset.k));
+  let tick = false;
+  const frame = () => { tick = false; const vh = innerHeight, H = D.documentElement.scrollHeight - vh;
+    bar.style.setProperty('--p', H > 0 ? scrollY / H : 0);
+    if (path) { const r = path.getBoundingClientRect(), f = Math.max(0, Math.min(1, (vh * 0.62 - r.top) / r.height));
+      rail.style.setProperty('--f', f); sts.forEach(s => { const sr = s.getBoundingClientRect(); s.classList.toggle('on', sr.top < vh * 0.66); }); }
+    if (s6) { const r = s6.getBoundingClientRect(), f = Math.max(0, Math.min(1, (vh * 0.9 - r.top) / (r.height * 1.1)));
+      const n = Math.round(f * order.length); order.forEach((b, i) => { b.style.transitionDelay = '0s'; b.style.opacity = i < n ? 1 : 0; b.style.transform = i < n ? 'none' : 'translateY(10px) scale(.96)'; }); }
+    if (ph && innerWidth > 640) { const r = ph.getBoundingClientRect(); ph.style.transform = 'translateY(' + ((r.top + r.height / 2 - vh / 2) * -0.08).toFixed(1) + 'px)'; }
+  };
+  addEventListener('scroll', () => { if (!tick) { tick = true; requestAnimationFrame(frame); } }, { passive: true });
+  addEventListener('resize', frame); frame();
+  addEventListener('beforeprint', () => { all.forEach(el => el.classList.add('in')); sts.forEach(s => s.classList.add('on')); rail && rail.style.setProperty('--f', 1);
+    order.forEach(b => { b.style.opacity = 1; b.style.transform = 'none'; }); counts.forEach(el => el.textContent = fmt(+el.dataset.count, el)); });
 })();
 </script>
 </body>
