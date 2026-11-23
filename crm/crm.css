@@ -125,6 +125,9 @@ button.tile:hover,.tile.tap:hover{transform:translateY(-2px);box-shadow:0 2px 4p
 .chip{font-family:var(--sans);letter-spacing:0;display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:500;border-radius:999px;padding:3px 8px;background:var(--panel);color:var(--ink-2);white-space:nowrap}
 .tile .chip{background:var(--panel)}
 .chip.b{background:var(--blue-soft);color:var(--blue)} .chip.o{background:var(--orange-soft);color:#8f4a05} .chip.g{background:var(--green-soft);color:var(--green)} .chip.r{background:var(--red-soft);color:var(--red)}
+/* 11-23: the "why is it waiting" chip (Do next rows, Replies page): one line, ellipsis when it does not fit; 13 px so a phone can read it */
+.chip.why{display:block;width:fit-content;max-width:100%;min-width:0;flex:0 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;line-height:1.3}
+.row-main .chip.why,.li-nm .chip.why{margin:3px 0 1px} .li-nm>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis}   /* Do next card: the chip sits under the name, so a narrow card keeps both readable */
 :root[data-mode="dark"] .chip.o{color:var(--orange)}
 .delta{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:12.5px;font-weight:500;background:var(--tile);border:1px solid var(--line);border-radius:10px;padding:6px 10px;box-shadow:var(--shadow)}
 .tri{width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:8px solid currentColor}
