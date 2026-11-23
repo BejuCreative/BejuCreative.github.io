@@ -100,17 +100,21 @@ function feedX() {
     soft(sb.from("pack_overrides").select("client_id,order_name,status,set_by,set_at").not("set_at", "is", null)),
   ]).then(([audit, ft, desk, prom, opps, cnotes, ctasks, packs]) => ({ audit, ft, desk, prom, opps, cnotes, ctasks, packs }));
 }
+/* 11-23 (founder request 11-23): the reads the live updates repeat on their own (see "live: samples, deliveries, brief forms") */
+const PIPE_READ = () => all("pipeline", "*", q => q.order("email"));
+const DLV_READ = () => all("deliveries", "id,client_id,title,order_name,delivered_at", q => q.order("id"));
+const BRIEF_COLS = "email,busyness,captions,cta,brand,dream_short,part_ts,submitted_at", FORMS_READ = () => all("form_leads_v2", "*");
 async function fetchAll() {
   const t = today(), since60 = new Date(Date.now() - 60 * 864e5).toISOString(), since14 = new Date(Date.now() - 14 * 864e5).toISOString();
   const [pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk, stages, nextSteps, forecast, fx, deals, drafts, dismiss, flags, forms, inb14, scopes, briefs, checks] = await Promise.all([
-    all("pipeline", "*", q => q.order("email")),
+    PIPE_READ(),
     all("payments", "id,client_id,email,payer_name,amount,currency,package,refunded,paid_at", q => q.order("paid_at", { ascending: false })),
     all("campaign_daily", "campaign_id,day,sent,new_leads,replies,replies_auto,opportunities", q => q.gte("day", addDays(t, -75)).order("day").order("campaign_id")),
     all("campaign_live"),
     all("reply_queue", "lead_email,inbox,received_at,kind,answered,blocklisted,snippet", q => q.gte("received_at", since60).order("received_at", { ascending: false })),
     all("needs_attention"), all("fu_state"), all("inbox_live"),
     all("today_items", "*", q => q.eq("day", t)), all("sync_status"),
-    all("deliveries", "id,client_id,title,order_name,delivered_at", q => q.order("id")), all("clients", "id,name,emails,source,instagram"),
+    DLV_READ(), all("clients", "id,name,emails,source,instagram"),
     all("promises", "*", q => q.eq("status", "open")),
     all("profiles", "id,name,email,is_admin,created_at,channel,sells,frequency,phone"),
     all("sample_requests", "*", q => q.order("created_at", { ascending: false })),
@@ -134,10 +138,10 @@ async function fetchAll() {
     all("drafts_waiting", "*").catch(() => null),   // 11-21 (BENAS): lane-3 drafts for a founder (PR #9). Not live yet = null = the card hides
     all("reply_dismissals", "lead_email,received_at").catch(() => []),   // 11-21: "no reply needed" marks (Do next; needs_attention misses one stamped to the minute)
     all("lead_flags", "email,lost_reason,snoozed_until").catch(() => []),   // 11-21 (BENAS): lost / snoozed by a founder = out of Do next and Hot leads
-    all("form_leads_v2", "*").catch(() => null),   // 11-22 (SIMAS "lots of money sleeping there"): brief forms + how far each lead got
+    FORMS_READ().catch(() => null),   // 11-22 (SIMAS "lots of money sleeping there"): brief forms + how far each lead got
     all("threads", "lead_email,at,snippet", q => q.neq("direction", "out").gte("at", since14).order("at", { ascending: false })).catch(() => []),   // 11-22: their words, last 14 days (Hot leads)
     all("scopes", "email,offer,amount,currency,monthly,sent_at,paid_at,status,url", q => q.order("sent_at", { ascending: false })).catch(() => null),   // 11-22 (SIMAS "we should see the scope that u have sent them"): the Forms person sheet
-    all("briefs", "email,busyness,captions,cta,brand,dream_short,part_ts,submitted_at").catch(() => null),   // 11-22 (BENAS, Samples page): the sample brief per lead (graphics level + answers); one small soft read, null = no brief marks
+    all("briefs", BRIEF_COLS).catch(() => null),   // 11-22 (BENAS, Samples page): the sample brief per lead (graphics level + answers); one small soft read, null = no brief marks
     all("tasks", "id,title,owner,status,lead_email,due_at,created_at,big", q => q.in("source", ["founder_tasks", "board", "deferred", "manual"]).eq("status", "todo").ilike("title", "check:%")).catch(() => []),   // 11-23 (BENAS, Waiting on a founder): "Check:" cards in To do on the To-dos board (its own sources) = Claude's work to approve
   ]);
   /* 11-21 (tracking check, from v7): Instantly's daily "unique opportunities" counts a lead again on each day it is active, so sums over days
@@ -1405,7 +1409,7 @@ async function openLead(email, opener, keepNav) {
   const p = RAW.pipeline.find(x => lc(x.email) === email), f = RAW.fu.find(x => lc(x.email) === email), acct = D.pClients.find(c => lc(c.email) === email);
   if (!keepNav) { OPENER = opener || document.activeElement; const box = opener && opener.closest ? opener.closest(".stack,.feed,.names,.res,.modal-body") : null; NAV = box ? [...new Set($$('[data-act="lead"]', box).map(b => lc(b.dataset.email)))] : [email]; if (!NAV.includes(email)) NAV = [email]; }
   $("#dr-name").textContent = p ? (p.name || p.email) : email; $("#dr-sub").textContent = p ? [p.show, p.email].filter(Boolean).join(" · ") : "Not in the samples pipeline";
-  const m = p ? mood(p) : "", link = p ? safeUrl(p.drive_link) : "", at = NAV.indexOf(email), st = stageOf(email);
+  const link = p ? safeUrl(p.drive_link) : "", at = NAV.indexOf(email), st = stageOf(email);
   const body = $("#dr-body");
   // 11-22 (BENAS "status line, then newest message"): one status line (stage · next step · owner), then the conversation newest first;
   // the 11-21 block (stage, next step with its owner, the deal, the actions) follows the conversation, unchanged
@@ -1415,8 +1419,8 @@ async function openLead(email, opener, keepNav) {
       ${nextSec(email, p)}${dealRow(email, st, null, null)}
       <div class="acts sp"><button type="button" class="act" data-act="copy" data-t="${esc(email)}">${ic("copy")}Copy email</button>${link ? `<a class="act" href="${esc(link)}" target="_blank" rel="noopener noreferrer">${ic("link")}Open sample</a>` : ""}${acct ? dB("client", "e:" + email, `${ic("user")}Portal account`, "act") : ""}${p && isBuyer(p) ? dB("client", "e:" + email, `${ic("cash")}Payments`, "act") : ""}</div>
       ${NAV.length > 1 ? `<div class="dr-navr"><button type="button" class="act" data-act="nav" data-d="-1" ${at <= 0 ? "disabled" : ""} aria-label="Previous lead in the list">←</button><span class="mut mono">${at + 1} / ${NAV.length}</span><button type="button" class="act" data-act="nav" data-d="1" ${at >= NAV.length - 1 ? "disabled" : ""} aria-label="Next lead in the list">→</button><span class="mut">arrow keys move through the list</span></div>` : ""}</div>
-    ${p ? `<div class="dr-sec"><div class="dr-chips"><span class="chip b">${esc(p.status || "—")}</span>${cvChip(D.tc[email] || 0)}${dB("mood", m, esc(MOOD_LABEL[m] || m), "chip", "Open every lead with this mood")}${p.inbox ? `<span class="chip">${esc(p.inbox)}</span>` : ""}${f && f.touches_total ? `<span class="chip">follow-ups ${f.touches_done || 0}/${f.touches_total}</span>` : ""}</div></div>
-    <div class="dr-sec"><h3>Timeline</h3><div class="kv"><span>Said yes</span><span>${fDT(p.yes_at)}</span></div><div class="kv"><span>Sample delivered</span><span>${fDT(p.delivered_at)}</span></div><div class="kv"><span>Last reply</span><span>${fDT(p.last_reply_at)}</span></div>${p.paid ? `<div class="kv"><span>Paid</span><span class="up">${esc(cut(p.paid, 40))}</span></div>` : ""}</div>
+    ${p ? `<div class="dr-sec" id="dr-pchips">${drChips(email, p, f)}</div>
+    <div class="dr-sec" id="dr-ptl">${drTl(p)}</div>
     ${p.notes ? `<div class="dr-sec"><h3>Notes</h3><p class="dr-txt">${esc(cut(p.notes, 900))}</p></div>` : ""}` : ""}
     <div id="dr-more"></div>`;
   body.scrollTop = 0;
@@ -1443,6 +1447,16 @@ async function openLead(email, opener, keepNav) {
       ${calls.length ? `<div class="dr-sec" id="dr-calls"><h3>Calls</h3>${callsList(calls)}</div>` : ""}`;
   } catch (e) { const c2 = $("#dr-conv"); if (c2) c2.innerHTML = `<h3>Conversation</h3>${empty("Couldn't load the thread. Try again.")}`; }
 }
+/* the lead's pipeline row in the drawer (status chips + timeline); drPipe() repaints just these when live samples data arrives (11-23) */
+function drChips(email, p, f) { const m = mood(p);
+  return `<div class="dr-chips"><span class="chip b">${esc(p.status || "—")}</span>${cvChip(D.tc[email] || 0)}${dB("mood", m, esc(MOOD_LABEL[m] || m), "chip", "Open every lead with this mood")}${p.inbox ? `<span class="chip">${esc(p.inbox)}</span>` : ""}${f && f.touches_total ? `<span class="chip">follow-ups ${f.touches_done || 0}/${f.touches_total}</span>` : ""}</div>`; }
+const drTl = p => `<h3>Timeline</h3><div class="kv"><span>Said yes</span><span>${fDT(p.yes_at)}</span></div><div class="kv"><span>Sample delivered</span><span>${fDT(p.delivered_at)}</span></div><div class="kv"><span>Last reply</span><span>${fDT(p.last_reply_at)}</span></div>${p.paid ? `<div class="kv"><span>Paid</span><span class="up">${esc(cut(p.paid, 40))}</span></div>` : ""}`;
+function drPipe() {
+  const dr = $("#drawer"), email = dr.dataset.email; if (dr.hidden || !email) return;
+  const p = RAW.pipeline.find(x => lc(x.email) === email), c = $("#dr-pchips"), t = $("#dr-ptl"); if (!p || !c || !t) return;
+  const ch = drChips(email, p, RAW.fu.find(x => lc(x.email) === email)), th = drTl(p); if (c.innerHTML !== ch) c.innerHTML = ch; if (t.innerHTML !== th) t.innerHTML = th;
+  $("#dr-sub").textContent = [p.show, p.email].filter(Boolean).join(" · ");
+}
 /* phone (BENAS 11-21 "actions reachable with one thumb"): the toolbar + prev/next row move from the top block into a
    footer under the scrolling body; the stage chip sits next to the name in the fixed top. Back in place on a wide screen. */
 function drFoot() {
@@ -1464,7 +1478,7 @@ function closeLead() {
    list the dashboard counts, so the page's number matches it; no extra query. */
 window.BEJU_CRM_REPLIES = { get raw() { return RAW; }, get d() { return D; }, get at() { return LAST_OK; }, get owner() { return STATE.owner; }, nameOf, ownerOfInbox, auto: s => autoText(ownWords(s)), pass: s => HARD_PASS.test(ownWords(s)) };
 /* 11-22 (BENAS): read-only handle for the Samples page (samples.js): the same rows, the drawer's conversation helpers and the payment confetti. No extra query. */
-window.BEJU_CRM_SAMPLES = { get raw() { return RAW; }, get at() { return LAST_OK; }, ownerOfInbox, loadConv, convBlock, confetti: () => confetti() };
+window.BEJU_CRM_SAMPLES = { get raw() { return RAW; }, get at() { return LAST_OK; }, get liveAt() { return LIVE_AT; }, ownerOfInbox, loadConv, convBlock, confetti: () => confetti() };
 
 /* ---------------- toasts + confetti ---------------- */
 function toast(title, icon = "check", c = "c-green", sub = "", key = "", go = null) {
@@ -1901,8 +1915,9 @@ function startRealtime() {
     ["payments", "reply_queue", "sample_requests", "videos", "video_notes", "profiles", "crm_events", "crm_event_state"].forEach(tb => CH.on("postgres_changes", { event: "*", schema: "public", table: tb }, p => onChange(tb, p)));
     CH.subscribe(st => { RT = st === "SUBSCRIBED" ? "live" : "poll"; if (D) { paintStatus(); const b = byId("brand"); if (b && b.update) b.update(D); } });
   } catch { RT = "poll"; }
+  liveStart();
 }
-function stopRealtime() { clearTimeout(RT_T); RT_T = null; if (CH) { try { sb.removeChannel(CH); } catch {} CH = null; } RT = "off"; }
+function stopRealtime() { clearTimeout(RT_T); RT_T = null; if (CH) { try { sb.removeChannel(CH); } catch {} CH = null; } RT = "off"; liveStop(); }
 function onChange(tb, p) {
   const n = p.new || {}, ins = p.eventType === "INSERT";
   if (tb === "crm_events") { if (ins) ntArrive(n); return; }   // 11-21: the bell
@@ -1919,6 +1934,62 @@ function onChange(tb, p) {
   const soon = tb === "payments" && ins, wait = soon ? 1500 : Math.max(1500, 300000 - (Date.now() - LAST_OK));
   if (RT_T && !soon) return; clearTimeout(RT_T); RT_T = setTimeout(() => { RT_T = null; refresh().catch(() => {}); }, wait);
 }
+
+/* ---------------- live: samples, deliveries, brief forms (founder request 11-23: "appear instantly") ----------------
+   pipeline, deliveries and briefs each get their OWN small channel, not crm-live: a table that is not in the supabase_realtime
+   publication yet makes the server reject (and retry every few seconds) every postgres_changes listener of that channel, which
+   would also stop the payments / replies events. A rejected channel (system message status "error") is removed at once and
+   tried again in 15 min, so nothing retries in a loop. Events coalesce like crm-live's: one TARGETED read per table at most
+   every 10 s (pipeline = 1 request, deliveries = 1, briefs = briefs + form_leads_v2 = 2), never the ~45-request fetchAll.
+   Fallback that works without the publication: while the tab is visible, every 60 s ONE small read per table for rows newer than
+   the newest loaded (pipeline updated_at, briefs submitted_at); skipped for a table that had a realtime event in the last 5 min,
+   and right after a full refresh. deliveries has no change time (delivered_at is a day), so it has no poll: realtime or the
+   5-minute full refresh. Targeted reads never move LAST_OK, so the 5-minute safety loop runs exactly as before. */
+const POLL_MS = +CFG.livePollMs || 60000, LIVE_TB = ["pipeline", "deliveries", "briefs"];
+const PIPE_COLS = "email,name,show,owner,inbox,status,fu_stage,yes_at,delivered_at,public_at,last_reply_at,stage_changed_at,updated_at,next_action,next_action_at,paid,drive_link,campaign,builder";   // what the Samples board + the dashboard's sample counts use
+const LIVE = Object.fromEntries(LIVE_TB.map(t => [t, { ch: null, ev: 0, read: 0, t: null, busy: false, retry: null, err: 0 }]));
+let LIVE_AT = 0, LIVE_POLL = null, LIVE_LAST = 0;   // LIVE_AT = when a poll or a realtime event last brought rows (the Samples board's "as of")
+const newest = (rows, k) => (rows || []).reduce((m, r) => r[k] && (!m || +new Date(r[k]) > +new Date(m)) ? r[k] : m, "");   // the raw string: keeps the database's microseconds for gt.
+function liveDone() { LIVE_AT = Date.now(); renderAll(true); drPipe(); }
+async function liveRead(tb) {   // the targeted read after realtime events
+  const L = LIVE[tb]; if (L.busy || !RAW) return; L.busy = true; L.read = Date.now();
+  try {
+    if (tb === "pipeline") { const rows = await PIPE_READ(); if (RAW) RAW.pipeline = rows; }
+    else if (tb === "deliveries") { const rows = await DLV_READ(); if (RAW) RAW.deliveries = rows; }
+    else { const [b, f] = await Promise.all([all("briefs", BRIEF_COLS), FORMS_READ().catch(() => null)]); if (RAW) { RAW.briefs = b; if (f) RAW.forms = f; } }
+    if (RAW) liveDone();
+  } catch {} finally { L.busy = false; }
+}
+function onLive(tb) {
+  const L = LIVE[tb]; L.ev = Date.now(); if (L.t) return;
+  L.t = setTimeout(() => { L.t = null; liveRead(tb); }, Math.max(1500, L.read + 10000 - Date.now()));
+}
+function liveSub(tb) {
+  const L = LIVE[tb]; clearTimeout(L.retry); L.retry = null; if (!sb) return;
+  try { const ch = L.ch = sb.channel("crm-live-" + tb);
+    ch.on("postgres_changes", { event: "*", schema: "public", table: tb }, () => onLive(tb));
+    ch.on("system", {}, m => { if (!m || m.extension !== "postgres_changes" || m.status !== "error" || L.ch !== ch) return;   // not in the publication (yet)
+      L.ch = null; try { sb.removeChannel(ch); } catch {} L.retry = setTimeout(() => liveSub(tb), 15 * 6e4); });
+    ch.subscribe();
+  } catch { L.ch = null; }
+}
+async function livePoll() {
+  if (document.hidden || !RAW || Date.now() - Math.max(LAST_OK, LIVE_LAST) < POLL_MS * 0.9) return;   // a full read or a poll just ran: nothing to ask yet
+  LIVE_LAST = Date.now(); const now = Date.now(), go = tb => now - LIVE[tb].ev >= 300000 && now >= LIVE[tb].err && !LIVE[tb].busy;
+  const P = go("pipeline") && RAW.pipeline, B = go("briefs") && RAW.briefs ? newest(RAW.briefs, "submitted_at") : "";   // briefs null = not readable here: no poll
+  const pc = P ? newest(RAW.pipeline, "updated_at") : "";
+  const [pr, br] = await Promise.all([
+    P ? all("pipeline", PIPE_COLS, q => pc ? q.gt("updated_at", pc) : q).catch(() => { LIVE.pipeline.err = Date.now() + 6e5; return []; }) : [],
+    B ? all("briefs", BRIEF_COLS, q => q.gt("submitted_at", B)).catch(() => { LIVE.briefs.err = Date.now() + 6e5; return []; }) : []]);
+  if (!RAW || (!pr.length && !br.length)) return;
+  if (pr.length) { const by = new Map(RAW.pipeline.map(r => [lc(r.email), r])); pr.forEach(r => { const o = by.get(lc(r.email)); if (o) Object.assign(o, r); else RAW.pipeline.push(r); }); }
+  if (br.length) { const seen = new Set(RAW.briefs.map(b => lc(b.email) + "|" + b.submitted_at)); br.forEach(b => { if (!seen.has(lc(b.email) + "|" + b.submitted_at)) RAW.briefs.push(b); });
+    const f = await FORMS_READ().catch(() => null); if (f && RAW) RAW.forms = f; }   // a new form: the Forms card's view, read once
+  if (RAW) liveDone();
+}
+function liveStart() { liveStop(); LIVE_TB.forEach(liveSub); LIVE_POLL = setInterval(() => livePoll().catch(() => {}), POLL_MS); }
+function liveStop() { clearInterval(LIVE_POLL); LIVE_POLL = null; LIVE_TB.forEach(tb => { const L = LIVE[tb]; clearTimeout(L.t); clearTimeout(L.retry); L.t = L.retry = null; L.ev = 0; if (L.ch) { try { sb.removeChannel(L.ch); } catch {} L.ch = null; } }); }
+document.addEventListener("visibilitychange", () => { if (!document.hidden && LIVE_POLL && RAW && Date.now() - LAST_OK <= 300000) livePoll().catch(() => {}); });   // back on the tab: catch up once (over 5 min away, the full refresh above runs instead)
 
 /* ---------------- look: five glass themes, motion Full / Calm (both saved on this device) ---------------- */
 function syncLook() {

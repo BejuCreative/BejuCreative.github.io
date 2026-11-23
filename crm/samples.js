@@ -2,7 +2,8 @@
    modern … dynamic 60 FPS motion blur, Apple style". Spec: reports/Samples tab spec.md (his decisions, asked one by one).
    A pipeline board of the FREE samples: Said yes → Building → Ready → Sent → Replied → Paid. Cards move by themselves only (no dragging).
    Data: no query of its own. It reads crm.js's rows through window.BEJU_CRM_SAMPLES (public.pipeline "*", public.briefs, sync_status) and
-   repaints on crm.js's "beju-crm:data" event. pipeline is filled by an hourly sheet sync, so the header says the sync's own "as of" time.
+   repaints on crm.js's "beju-crm:data" event. pipeline is filled by an hourly sheet sync, so the header says the sync's own "as of" time,
+   or the time crm.js's live updates (11-23) last brought rows, whichever is later.
    A refresh that brings a row whose column changed glides that card from its old column to the new one (FLIP: measure, move, transform back
    to zero) and glows once; a move into Paid fires the dashboard's confetti. Nothing glides or glows on the first paint.
    The panel (click a card): the Drive preview of the Short on the left, status line + history + brief + conversation (crm.js's loadConv /
@@ -91,8 +92,9 @@ function model() {
   const done = P.filter(p => p.delivered_at), won = done.filter(p => up(p.status) === "WON").length;
   const builtDay = P.map(p => dayOf(ms(p.public_at) || ms(p.delivered_at))), days = Array.from({ length: 14 }, (_, i) => dayOf(now - (13 - i) * DAY));
   const tiles = { today: builtDay.filter(d => d === today).length, days: days.map(d => builtDay.filter(x => x === d).length), week: done.filter(p => now - ms(p.delivered_at) < 7 * DAY).length, won, sent: done.length, pct: done.length ? Math.round(100 * won / done.length) : null };
-  const S = (R.sync || []).find(r => r.name === "sheet"), at = S ? ms(S.ran_at) : Math.max(0, ...P.map(p => ms(p.updated_at))), max = (S && +S.max_age_min) || 90;
-  return { cards, by, quiet, tiles, asof: { at, old: !!at && now - at > max * 6e4, max, src: !!S }, total: cards.length + quiet.lost + quiet.done + quiet.held.length };
+  /* 11-23 (founder request 11-23): crm.js's live updates (realtime, or the 60 s poll) stamp liveAt when they bring rows; the later of that and the sheet sync is the "as of" */
+  const S = (R.sync || []).find(r => r.name === "sheet"), base = S ? ms(S.ran_at) : Math.max(0, ...P.map(p => ms(p.updated_at))), live = +C.liveAt || 0, at = Math.max(base, live), max = (S && +S.max_age_min) || 90;
+  return { cards, by, quiet, tiles, asof: { at, old: !!at && now - at > max * 6e4, max, src: !!S, live: live > base }, total: cards.length + quiet.lost + quiet.done + quiet.held.length };
 }
 
 /* ---------------- card ---------------- */
@@ -158,7 +160,7 @@ function asof(m) {
   const sp = document.querySelector("#spage .sp-h"); if (!sp) return;
   let el = document.getElementById("sm-asof"); if (!el) { el = document.createElement("span"); el.id = "sm-asof"; el.className = "sp-src sm-asof"; sp.append(el); }
   const a = m.asof, t = a.at ? `as of ${dayOf(a.at) === dayOf(Date.now()) ? "" : fD.format(a.at) + ", "}${fT.format(a.at)}` : "sync time unknown";
-  el.classList.toggle("old", a.old); el.title = a.src ? `The board comes from the Samples sheet, synced about every hour${a.old ? `. The last sync is older than ${a.max} min: cards may be out of date` : ""}` : "Newest change in the samples list";
+  el.classList.toggle("old", a.old); el.title = a.live ? "The newest change in the samples list arrived live at this time (the page checks for changes every minute)" : a.src ? `The board comes from the Samples sheet, synced about every hour${a.old ? `. The last sync is older than ${a.max} min: cards may be out of date` : ""}` : "Newest change in the samples list";
   el.innerHTML = `<i></i>Samples sheet · ${esc(t)}${a.old ? " · out of date" : ""}`;
 }
 
