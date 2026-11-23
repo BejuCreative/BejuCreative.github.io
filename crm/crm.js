@@ -1114,11 +1114,15 @@ function mountHero() {
 function part(id, html, cardKey) { if (HERO[id] === html) return; HERO[id] = html; const el = $("#" + id); el.innerHTML = html; if (cardKey) countUp({ id: cardKey, el }); }
 function updateHero(d) {
   const P = d.per, mp = d.dom / d.dim * 100, w = clamp(d.goalPct, 0, 100).toFixed(2) + "%";
-  setOdo($("#odo"), usd(d.month));
-  part("hero-sub", `${dl(pctChg(d.month, d.prevSameNow), "vs last month", { tip: `${d.monthName} 1–${d.dom} against ${d.prevName} 1–${d.dom}, up to this time of day` })}<span>On pace for ${N(d.projected, "usd")}</span>`, "hero-sub");
+  /* BENAS 11-23: the big number follows the period tabs (Today / 7d / 30d / Month), not always the month. The goal title and track stay monthly. */
+  const isM = P.key === "month", odo = $("#odo");
+  setOdo(odo, usd(isM ? d.month : P.rev));
+  odo.dataset.a = isM ? "month" : "period"; odo.setAttribute("aria-label", `Money ${isM ? "this month" : P.label}. Open the payments.`);
+  part("hero-sub", isM ? `${dl(pctChg(d.month, d.prevSameNow), "vs last month", { tip: `${d.monthName} 1–${d.dom} against ${d.prevName} 1–${d.dom}, up to this time of day` })}<span>On pace for ${N(d.projected, "usd")}</span>`
+    : `${dl(pctChg(P.rev, P.prev), P.vs, P.key === "today" ? { part: true, tip: "Today so far against yesterday's full day" } : undefined)}<span>${esc(d.monthName)} so far ${N(d.month, "usd")}</span>`, "hero-sub");
   const isT = P.key === "today", po = { part: isT, tip: isT ? "Today so far against yesterday's full day" : undefined }, pn = P.vsN === "vs last month" ? { tip: `${d.monthName} 1–${d.dom} against ${d.prevName} 1–${d.dom}` } : po,
     nl = isT ? `${N(d.todayNew)}<small>/ ${nf0.format(d.target)}</small>` : N(P.nw) + dl(P.dNw, P.vsN, pn);
-  part("kpis", `${dB("pays", "period", `<span><i class="c-green"></i>Payments · ${P.chip}</span><b>${N(P.revN)}${P.key === "month" ? "" : `<small>${usd(P.rev)}</small>`}</b>`, "kpi")}${dB(isT ? "day" : "days", isT ? d.t : "", `<span><i class="c-blue"></i>New leads · ${P.chip}</span><b>${nl}</b>`, "kpi")}${dB("replies", "real", `<span><i class="c-blue2"></i>Real replies · ${P.chip}</span><b>${N(P.rep)}${dl(P.dRep, P.vsN, pn)}</b>`, "kpi")}${dB("samples", "period", `<span><i class="c-orange"></i>Samples · ${P.chip}</span><b>${N(P.samples)}${dl(P.dSamples, P.vsS, po)}</b>`, "kpi")}`, "hero-kpis");
+  part("kpis", `${dB("pays", "period", `<span><i class="c-green"></i>Payments · ${P.chip}</span><b>${N(P.revN)}</b>`, "kpi")}${dB(isT ? "day" : "days", isT ? d.t : "", `<span><i class="c-blue"></i>New leads · ${P.chip}</span><b>${nl}</b>`, "kpi")}${dB("replies", "real", `<span><i class="c-blue2"></i>Real replies · ${P.chip}</span><b>${N(P.rep)}${dl(P.dRep, P.vsN, pn)}</b>`, "kpi")}${dB("samples", "period", `<span><i class="c-orange"></i>Samples · ${P.chip}</span><b>${N(P.samples)}${dl(P.dSamples, P.vsS, po)}</b>`, "kpi")}`, "hero-kpis");
   const trk = $("#trk"); $(".fill", trk).style.setProperty("--w", w); $(".head", trk).style.setProperty("--w", w); $(".pace", trk).style.setProperty("--x", mp + "%"); $("#trk-pc").style.setProperty("--x", clamp(mp, 12, 88) + "%");
   $$("#hero .per button").forEach(b => { const on = b.dataset.p === STATE.period; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
 }
