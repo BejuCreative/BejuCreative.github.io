@@ -528,10 +528,10 @@ html,body{overflow-x:clip}   /* 'hidden' on both turns body into a scroll box an
 .plan1{margin-top:30px;display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:18px;align-items:stretch}
 .plan1 .pl{height:100%}
 .incl{background:#fff;border:1px solid var(--hair);border-radius:24px;padding:26px 28px;display:grid;gap:18px;align-content:start}
-.incl h4{margin:0;font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-text)}
-.incl ul{margin:8px 0 0;padding:0;list-style:none;display:grid;gap:8px}
-.incl li{position:relative;padding-left:30px;font-size:16.5px;line-height:1.45;color:var(--ink)}
-.incl li::before{content:"";position:absolute;left:0;top:1px;width:20px;height:20px;border-radius:50%;background:var(--green-head) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Cpath d='M6 11.5l3.2 3.2L16 8' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/20px no-repeat}
+.incl h4,.tiers .pl h4{margin:0;font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-text)}
+.incl ul,.tiers .pl ul{margin:8px 0 0;padding:0;list-style:none;display:grid;gap:8px}
+.incl li,.tiers .pl li{position:relative;padding-left:30px;font-size:16.5px;line-height:1.45;color:var(--ink)}
+.incl li::before,.tiers .pl li::before{content:"";position:absolute;left:0;top:1px;width:20px;height:20px;border-radius:50%;background:var(--green-head) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Cpath d='M6 11.5l3.2 3.2L16 8' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/20px no-repeat}
 .mypart{margin-top:auto;background:var(--gold-soft);border-radius:18px;padding:18px 20px}
 .mypart h4{margin:0;font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-text)}
 .mypart ul{margin:8px 0 0;padding-left:20px;display:grid;gap:5px;color:var(--ink);font-size:16px}.mypart p{margin:8px 0 0;color:var(--body);font-size:15px}
@@ -669,7 +669,7 @@ details>summary{min-height:44px;align-items:center;padding-top:10px;padding-bott
 </style>
 <style id="story-1123">
 .sty{position:relative;background:radial-gradient(1200px 600px at 75% 50%,rgba(34,209,111,.10),transparent 60%),linear-gradient(180deg,#fff 0%,var(--soft) 100%);border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);--lp:0;--tx:0;--ty:0}
-.sty:not(.calm){height:calc(100vh + 6 * 75vh)}
+.sty:not(.calm){height:calc(100vh + 5 * 75vh)}
 .sty:not(.calm) .pin{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden}
 .sty .stage{height:100%;max-width:1160px;margin:0 auto;padding:76px 24px 16px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,420px);gap:56px;align-items:center}
 .sty .caps{position:relative;min-height:270px}
@@ -700,103 +700,86 @@ details>summary{min-height:44px;align-items:center;padding-top:10px;padding-bott
 .sty .scr.on{opacity:1;transform:none}.sty .scr.gone{opacity:0;transform:translateX(-34px) scale(.98)}
 .sty .lbl{font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .sty [data-at]{transition:opacity .35s,transform .45s cubic-bezier(.2,.8,.2,1.2)}
-.s1 .vid{margin-top:10px;border-radius:16px;aspect-ratio:16/10;background:linear-gradient(160deg,#2b302a,#0f110e);position:relative;overflow:hidden}
-.s1 .vid .sky{position:absolute;inset:0;background:linear-gradient(180deg,#151a16 0%,#2a2620 50%,rgba(232,112,42,.9) 100%);transform:scale(calc(1.05 + var(--lp) * .12));transform-origin:60% 70%}
-.s1 .vid .hill{position:absolute;left:-5%;right:-5%;bottom:0;height:46%;background:#0d100c;clip-path:polygon(0 60%,18% 32%,36% 58%,55% 22%,74% 52%,100% 30%,100% 100%,0 100%);transform:translateX(calc(var(--lp) * -14px))}
-.s1 .vid b{position:absolute;left:12px;bottom:14px;color:#fff;font-size:14px;line-height:1.25;max-width:78%;z-index:2}
-.s1 .vid .tc{position:absolute;right:10px;top:10px;color:#fff;font-size:13px;background:rgba(0,0,0,.5);padding:3px 7px;border-radius:6px;font-variant-numeric:tabular-nums;z-index:2}
-.s1 .vid .pb{position:absolute;left:0;bottom:0;height:3px;width:calc(var(--lp) * 100%);background:#FF2D2D;z-index:3}
-.s1 .vid .play{position:absolute;left:50%;top:44%;width:44px;height:44px;margin:-22px;border-radius:50%;background:rgba(255,255,255,.18);backdrop-filter:blur(6px);display:grid;place-items:center;z-index:2;opacity:calc(1 - var(--lp) * 4)}
-.s1 .vid .play::after{content:"";border-left:13px solid #fff;border-top:8px solid transparent;border-bottom:8px solid transparent;margin-left:4px}
-.s1 .tl{margin-top:26px;height:52px;border-radius:12px;background:var(--soft);position:relative}
-.s1 .tl .w{position:absolute;inset:8px 8px;display:flex;align-items:center;gap:2px;overflow:hidden}
-.s1 .tl .w i{flex:1;background:#C9CEC2;border-radius:2px;height:var(--h);animation:wv 1.1s ease-in-out infinite alternate;animation-delay:var(--dl);animation-play-state:paused}
-.s1.on .tl .w i{animation-play-state:running}
-@keyframes wv{to{height:calc(var(--h) * .45)}}
-.s1 .tl .mk{position:absolute;top:5px;bottom:5px;left:var(--x);width:var(--w);border-radius:7px;background:rgba(17,168,90,.18);border:2px solid var(--green-head);transform:scale(0,.3);opacity:0}
-.s1 .tl .mk.hit{transform:none;opacity:1}
-.s1 .tl .mk::after{content:attr(data-t);position:absolute;top:-4px;left:50%;transform:translate(-50%,-100%);font-size:13px;font-weight:700;color:var(--green-head);white-space:nowrap}
-.s1 .tl .head{position:absolute;top:0;bottom:0;width:2px;background:#111;left:calc(4% + var(--lp) * 92%)}
-.s1 .note{margin-top:18px;font-size:14px;color:var(--body);display:flex;gap:8px;align-items:center}
-.s1 .note i{width:9px;height:9px;border-radius:50%;background:#FF2D2D;box-shadow:0 0 0 0 rgba(255,45,45,.6);animation:rec 1.4s infinite;flex:none}
-@keyframes rec{to{box-shadow:0 0 0 10px rgba(255,45,45,0)}}
-.s2 .row{margin-top:12px;position:relative;height:64%}
-.s2 .sh{position:absolute;top:0;width:31%;height:100%;border-radius:14px;overflow:hidden;background:linear-gradient(180deg,#3a2a22,#121411);left:34.5%;box-shadow:0 12px 30px -14px rgba(0,0,0,.5);
-  transform:translateX(calc(var(--fx) * min(1, var(--lp) * 2.2) * 108%)) rotate(calc(var(--fr) * (1 - min(1, var(--lp) * 2.2)) * 1deg)) scale(calc(.86 + min(1, var(--lp) * 2.2) * .14))}
-.s2 .sh:nth-child(1){--fx:-1;--fr:-10;z-index:1}.s2 .sh:nth-child(2){--fx:0;--fr:4;z-index:3;background:linear-gradient(180deg,#26302a,#101310)}.s2 .sh:nth-child(3){--fx:1;--fr:12;z-index:2;background:linear-gradient(180deg,#F3B57A,#E8702A 40%,#2a1f19)}
-.s2 .sh p{position:absolute;left:5px;right:5px;top:44%;margin:0;color:#fff;font-weight:800;font-size:14px;line-height:1.1;text-align:center;text-transform:uppercase;letter-spacing:-.01em}
-.s2 .sh p b{color:#FFB37E;display:block}
-.s2 .sh .pr{position:absolute;left:8px;right:8px;bottom:10px;height:3px;border-radius:9px;background:rgba(255,255,255,.3);overflow:hidden}
-.s2 .sh .pr::after{content:"";position:absolute;inset:0;background:#fff;transform-origin:left;animation:prg 3s linear infinite;animation-play-state:paused}
-.s2.on .sh .pr::after{animation-play-state:running}.s2 .sh:nth-child(2) .pr::after{animation-duration:3.6s}.s2 .sh:nth-child(3) .pr::after{animation-duration:2.6s}
-@keyframes prg{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-.s2 .sh .vw{position:absolute;left:5px;right:5px;top:8px;text-align:center;font-size:13px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;text-shadow:0 1px 4px rgba(0,0,0,.6)}
-.s2 .sh .hr{position:absolute;left:50%;margin-left:-11px;bottom:24px;width:22px;height:22px;opacity:0;transform:scale(.3)}
-.s2 .sh .hr.hit{opacity:1;transform:scale(1)}
-.s2 .sh .hr svg{width:100%;height:100%;fill:#ff3b5c}
-.s2 .ok{margin-top:14px;font-size:13.5px;color:var(--gold-text);font-weight:600;opacity:0;transform:translateY(8px)}.s2 .ok.hit{opacity:1;transform:none}
-.s3 .plf{margin-top:14px;display:grid;gap:10px}
-.s3 .plf>div{position:relative;display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--hair);border-radius:16px;overflow:hidden;background:#fff}
-.s3 .plf .up{position:absolute;left:0;top:0;bottom:0;width:calc(var(--u,0) * 100%);background:var(--gold-soft);z-index:0}
-.s3 .plf>div>*:not(.up){position:relative;z-index:1}
-.s3 .plf .ic{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;color:#fff;font-weight:800;font-size:13px;flex:none}
-.s3 .plf b{font-size:15px;color:var(--ink);display:block}.s3 .plf small{font-size:13px;color:var(--muted)}
-.s3 .plf .tk{margin-left:auto;width:24px;height:24px;border-radius:50%;background:var(--green-head);display:grid;place-items:center;transform:scale(0);flex:none}
-.s3 .plf .tk.hit{transform:scale(1)}
-.s3 .plf .tk::after{content:"";width:9px;height:5px;border-left:2.5px solid #fff;border-bottom:2.5px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
-.s4 .desc{margin-top:10px;padding:12px;border-radius:14px;background:#f2f2f2;font-size:13.5px;color:#222;line-height:1.45}
-.s4 .desc u{color:#065fd4;text-decoration:none;font-weight:600}
-.s4 .tap{position:absolute;left:46%;top:126px;width:46px;height:46px;margin:-23px;border-radius:50%;background:rgba(17,21,14,.18);border:2px solid rgba(17,21,14,.35);opacity:0;z-index:6}
-.s4 .tap.hit{animation:tap .6s ease-out forwards}
-@keyframes tap{0%{opacity:0;transform:scale(1.4)}35%{opacity:1;transform:scale(.8)}100%{opacity:0;transform:scale(1.8)}}
-.s4 .page{position:absolute;inset:0;padding:52px 15px 22px;background:#fff;transform:translateX(calc((1 - min(1, max(0, (var(--lp) - .14) * 6))) * 102%));box-shadow:-20px 0 40px -20px rgba(0,0,0,.25);z-index:5}
-.s4 .mh{display:flex;justify-content:space-between;font-size:13px;letter-spacing:.1em;font-weight:800;color:#111}.s4 .mh span:last-child{color:#E8702A}
-.s4 .pic{margin:10px -15px 0;height:26%;background:linear-gradient(180deg,#F3B57A 0%,#E8702A 40%,#5B3A2E 72%,#1F2420 100%);background-size:100% calc(100% + 40px);background-position:0 calc(var(--lp) * -40px)}
-.s4 h4{margin:12px 0 4px;font-size:20px;line-height:1.12;color:#111;text-transform:none;letter-spacing:-.015em}
-.s4 .t{font-size:13.5px;color:#444;line-height:1.4;margin:0}
-.s4 .fld{margin-top:10px;height:40px;border:1.5px solid #ccc;border-radius:10px;display:flex;align-items:center;padding:0 11px;font-size:14.5px;color:#111;transition:border-color .2s}
-.s4 .fld.hit{border-color:#111}
-.s4 .fld .cur{display:inline-block;width:1.5px;height:17px;background:#111;margin-left:1px;animation:blink 1s steps(1) infinite}
+.s1 .vid{margin-top:10px;border-radius:16px;height:62%;background:linear-gradient(160deg,#2b302a,#0f110e);position:relative;overflow:hidden}
+.s1 .vid .sky{position:absolute;inset:0;background:linear-gradient(180deg,#151a16 0%,#2a2620 55%,rgba(232,112,42,.85) 100%);transform:scale(calc(1.05 + var(--lp) * .1));transform-origin:60% 70%}
+.s1 .vid .hill{position:absolute;left:-5%;right:-5%;bottom:0;height:40%;background:#0d100c;clip-path:polygon(0 60%,18% 32%,36% 58%,55% 22%,74% 52%,100% 30%,100% 100%,0 100%);transform:translateX(calc(var(--lp) * -14px))}
+.s1 .vid .ttl{position:absolute;left:12px;right:12px;top:14px;z-index:2;color:#fff}
+.s1 .vid .ttl b{display:block;font-size:17px;line-height:1.15}
+.s1 .vid .ttl small{display:block;font-size:13px;opacity:.85;margin-top:3px}
+.s1 .vid .trio{position:absolute;left:10px;right:10px;top:30%;height:32%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;z-index:2}
+.s1 .vid .trio i{border-radius:7px;background:linear-gradient(180deg,#d8cfb8,#6d7a5e 55%,#1d241b);transform:translateY(calc(var(--lp) * -5px))}
+.s1 .vid .trio i:nth-child(2){background:linear-gradient(180deg,#f0e6d2,#8b8f72 50%,#232a20)}
+.s1 .vid .trio i:nth-child(3){background:linear-gradient(180deg,#e9b98a,#7b6a4d 50%,#1b1f18)}
+.s1 .vid .pb{position:absolute;left:0;bottom:0;height:3px;width:calc(var(--lp) * 100%);background:#FF2D2D;z-index:5}
+.s1 .vid .end{position:absolute;inset:0;z-index:4;background:rgba(12,14,11,.9);display:grid;align-content:center;justify-items:center;gap:12px;text-align:center;padding:0 8px;opacity:0}
+.s1 .vid .end.hit{opacity:1}
+.s1 .vid .end small{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#9fe3bd;font-weight:600}
+.s1 .vid .end b{font-size:15px;color:#fff;padding:9px 12px;border:1.5px solid #fff;border-radius:999px;letter-spacing:-.01em;white-space:nowrap}
+.s1 .cap{margin-top:12px;padding:11px 13px;border-radius:14px;background:var(--soft);font-size:13.5px;line-height:1.45;color:var(--body);opacity:0;transform:translateY(10px)}
+.s1 .cap.hit{opacity:1;transform:none}
+.s1 .cap b{display:block;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-text);margin-bottom:3px}
+.s2 .crow{margin-top:12px;display:grid;grid-template-columns:30px minmax(0,1fr);gap:9px;align-items:center;opacity:0;transform:translateY(8px)}
+.s2 .crow.hit{opacity:1;transform:none}
+.s2 .av2{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#C13584,#E8702A)}
+.s2 .crow b{display:block;font-size:13.5px;color:#111}
+.s2 .crow span{display:block;font-size:15px;color:#111;font-weight:600;letter-spacing:.02em;min-height:20px}
+.s2 .crow .cur{display:inline-block;width:1.5px;height:15px;background:#111;margin-left:1px;vertical-align:-2px;animation:blink 1s steps(1) infinite}
 @keyframes blink{50%{opacity:0}}
-.s4 .tick{margin-top:9px;font-size:13px;color:#444;display:flex;gap:7px;align-items:center}
-.s4 .tick i{width:16px;height:16px;border-radius:4px;border:1.5px solid #E8702A;display:grid;place-items:center;transition:background .2s;flex:none}
-.s4 .tick.hit i{background:#E8702A}.s4 .tick.hit i::after{content:"";width:7px;height:4px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
-.s4 .cta{margin-top:11px;height:44px;border-radius:999px;background:#E8702A;color:#fff;font-weight:800;font-size:15px;display:grid;place-items:center}
-.s4 .cta.hit{animation:press .5s ease}
+.s2 .dmh{margin-top:20px}
+.s2 .bub{margin-top:8px;max-width:90%;padding:10px 12px;border-radius:16px 16px 16px 4px;background:#EFEFEF;font-size:14px;color:#111;line-height:1.4;opacity:0;transform:translateY(10px)}
+.s2 .bub.hit{opacity:1;transform:none}
+.s2 .bub b{display:block;font-size:13px;color:#555;font-weight:600;margin-bottom:2px}
+.s2 .bub u{display:block;margin-top:6px;color:#0A58CA;text-decoration:none;font-weight:600}
+.s2 .chip{margin-top:12px;display:inline-block;font-size:13px;font-weight:600;color:var(--gold-text);background:var(--gold-soft);padding:6px 11px;border-radius:99px;opacity:0;transform:translateY(8px)}
+.s2 .chip.hit{opacity:1;transform:none}
+.s3 .mh{margin-top:8px;display:flex;justify-content:space-between;font-size:13px;letter-spacing:.1em;font-weight:800;color:#111}.s3 .mh span:last-child{color:#E8702A}
+.s3 .pics{margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:6px;height:84px}
+.s3 .pics i{border-radius:10px;background:linear-gradient(180deg,#F3B57A 0%,#E8702A 40%,#5B3A2E 72%,#1F2420 100%)}
+.s3 .pics i:last-child{background:linear-gradient(180deg,#dfe3d6 0%,#8d9a7b 45%,#232a20 100%)}
+.s3 h4{margin:12px 0 4px;font-size:19px;line-height:1.12;color:#111;text-transform:none;letter-spacing:-.015em}
+.s3 .sk{height:7px;border-radius:5px;background:#E4E4E0;margin-top:6px}.s3 .sk.s{width:68%}
+.s3 .t{font-size:13.5px;color:#444;line-height:1.4;margin:10px 0 0}
+.s3 .fld{margin-top:10px;height:40px;border:1.5px solid #ccc;border-radius:10px;display:flex;align-items:center;padding:0 11px;font-size:14.5px;color:#111;transition:border-color .2s}
+.s3 .fld.hit{border-color:#111}
+.s3 .fld .cur{display:inline-block;width:1.5px;height:17px;background:#111;margin-left:1px;animation:blink 1s steps(1) infinite}
+.s3 .tick{margin-top:9px;font-size:13px;color:#444;display:flex;gap:7px;align-items:center}
+.s3 .tick i{width:16px;height:16px;border-radius:4px;border:1.5px solid #E8702A;display:grid;place-items:center;transition:background .2s;flex:none}
+.s3 .tick.hit i{background:#E8702A}.s3 .tick.hit i::after{content:"";width:7px;height:4px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+.s3 .cta{margin-top:11px;height:44px;border-radius:999px;background:#E8702A;color:#fff;font-weight:800;font-size:15px;display:grid;place-items:center}
+.s3 .cta.hit{animation:press .5s ease}
 @keyframes press{30%{transform:scale(.94);filter:brightness(.85)}100%{transform:none;filter:none}}
-.s4 .toast{position:absolute;left:12px;right:12px;bottom:26px;padding:11px 12px;border-radius:14px;background:#111;color:#fff;font-size:13.5px;font-weight:600;display:flex;gap:8px;align-items:center;opacity:0;transform:translateY(30px);z-index:7}
-.s4 .toast.hit{opacity:1;transform:none}.s4 .toast i{width:18px;height:18px;border-radius:50%;background:#2fd36f;flex:none}
-.s5 .bn{position:absolute;left:8px;right:8px;top:8px;padding:10px 11px;border-radius:18px;background:rgba(245,245,245,.95);backdrop-filter:blur(12px);box-shadow:0 10px 30px -12px rgba(0,0,0,.35);display:grid;grid-template-columns:30px minmax(0,1fr);gap:9px;align-items:center;z-index:22;opacity:0;transform:translateY(-130%)}
-.s5 .bn.hit{opacity:1;transform:none}.s5 .bn.out{opacity:0;transform:translateY(-130%) scale(.96)}
-.s5 .bn .ap{width:30px;height:30px;border-radius:8px;background:linear-gradient(180deg,#5ea6ff,#2a6ef0);display:grid;place-items:center}
-.s5 .bn .ap::after{content:"";width:14px;height:10px;border:2px solid #fff;border-radius:2px}
-.s5 .bn b{font-size:13px;color:#111;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.s5 .bn span{font-size:13px;color:#555;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.s5 .ib{margin-top:12px;display:grid;gap:8px}
-.s5 .em{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px;border:1px solid var(--hair);border-radius:14px;opacity:0;transform:translateY(-18px) scale(.97);position:relative}
-.s5 .em:not(.hit){max-height:0;padding-top:0;padding-bottom:0;border-color:transparent;margin:-4px 0}
-.s5 .em{max-height:80px;transition:opacity .35s,transform .45s cubic-bezier(.2,.8,.2,1.2),max-height .45s,padding .45s,margin .45s}
-.s5 .em.hit{opacity:1;transform:none}
-.s5 .em>div{min-width:0}
-.s5 .av{width:34px;height:34px;border-radius:50%;background:#111;color:#fff;font-size:13px;font-weight:700;display:grid;place-items:center}
-.s5 .em b{display:block;font-size:14px;color:var(--ink);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.s5 .em span{display:block;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.s5 small{font-size:13px;color:var(--muted);white-space:nowrap}
-.s5 .em.inv{border-color:var(--green-head);background:var(--gold-soft)}
-.s6x .bk{margin-top:16px;padding:16px;border-radius:18px;background:var(--gold-soft);border:1.5px solid var(--green-head);opacity:0;transform:scale(.6) rotate(-4deg)}
-.s6x .bk.hit{opacity:1;transform:none;transition:opacity .3s,transform .6s cubic-bezier(.2,1.6,.4,1)}
-.s6x .bk b{display:block;font-size:18px;color:var(--ink)}.s6x .bk span{color:var(--body)}
-.s6x .bk .who{display:block;font-size:14px;margin-top:4px}
-.s6x .bk .amt{font-size:30px;font-weight:800;color:var(--green-head);margin-top:6px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
-.s6x .bk .amt span{color:var(--green-head)}
-.s6x .trail{margin-top:14px;display:flex;flex-wrap:wrap;gap:6px}
-.s6x .trail span{font-size:13px;padding:5px 9px;border-radius:99px;background:#fff;border:1px solid var(--hair);color:var(--body);opacity:0;transform:translateY(8px)}
-.s6x .trail span.hit{opacity:1;transform:none}
-.s6x .rep{margin-top:14px;padding:12px;border:1px solid var(--hair);border-radius:14px;font-size:13.5px;color:var(--body)}
-.s6x .rep b{color:var(--ink)}.s6x .rep .bar{margin-top:8px;height:8px;border-radius:9px;background:var(--soft);overflow:hidden}
-.s6x .rep .bar i{display:block;height:100%;background:var(--green-head);border-radius:9px;width:calc(min(1, max(0, (var(--lp) - .6) * 3)) * 78%)}
-.s6x .cf{position:absolute;left:50%;top:30%;width:0;height:0;z-index:9;pointer-events:none}
-.s6x .cf i{position:absolute;width:8px;height:12px;border-radius:2px;background:var(--c);opacity:0}
-.s6x .cf.hit i{animation:cf 1.3s cubic-bezier(.1,.7,.3,1) forwards;animation-delay:var(--d)}
+.s3 .toast{position:absolute;left:12px;right:12px;bottom:26px;padding:11px 12px;border-radius:14px;background:#111;color:#fff;font-size:13.5px;font-weight:600;display:flex;gap:8px;align-items:center;opacity:0;transform:translateY(30px);z-index:7}
+.s3 .toast.hit{opacity:1;transform:none}.s3 .toast i{width:18px;height:18px;border-radius:50%;background:#2fd36f;flex:none}
+.s4 .bn{position:absolute;left:8px;right:8px;top:8px;padding:10px 11px;border-radius:18px;background:rgba(245,245,245,.95);backdrop-filter:blur(12px);box-shadow:0 10px 30px -12px rgba(0,0,0,.35);display:grid;grid-template-columns:30px minmax(0,1fr);gap:9px;align-items:center;z-index:22;opacity:0;transform:translateY(-130%)}
+.s4 .bn.hit{opacity:1;transform:none}.s4 .bn.out{opacity:0;transform:translateY(-130%) scale(.96)}
+.s4 .bn .ap{width:30px;height:30px;border-radius:8px;background:linear-gradient(180deg,#5ea6ff,#2a6ef0);display:grid;place-items:center}
+.s4 .bn .ap::after{content:"";width:14px;height:10px;border:2px solid #fff;border-radius:2px}
+.s4 .bn b{font-size:13px;color:#111;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.s4 .bn span{font-size:13px;color:#555;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s4 .ib{margin-top:12px;display:grid;gap:8px}
+.s4 .em{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px;border:1px solid var(--hair);border-radius:14px;opacity:0;transform:translateY(-18px) scale(.97);position:relative}
+.s4 .em:not(.hit){max-height:0;padding-top:0;padding-bottom:0;border-color:transparent;margin:-4px 0}
+.s4 .em{max-height:80px;transition:opacity .35s,transform .45s cubic-bezier(.2,.8,.2,1.2),max-height .45s,padding .45s,margin .45s}
+.s4 .em.hit{opacity:1;transform:none}
+.s4 .em>div{min-width:0}
+.s4 .av{width:34px;height:34px;border-radius:50%;background:#111;color:#fff;font-size:13px;font-weight:700;display:grid;place-items:center}
+.s4 .em b{display:block;font-size:14px;color:var(--ink);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s4 .em span{display:block;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s4 small{font-size:13px;color:var(--muted);white-space:nowrap}
+.s4 .em.inv{border-color:var(--green-head);background:var(--gold-soft)}
+.s5 .bk{margin-top:16px;padding:16px;border-radius:18px;background:var(--gold-soft);border:1.5px solid var(--green-head);opacity:0;transform:scale(.6) rotate(-4deg)}
+.s5 .bk.hit{opacity:1;transform:none;transition:opacity .3s,transform .6s cubic-bezier(.2,1.6,.4,1)}
+.s5 .bk b{display:block;font-size:18px;color:var(--ink)}.s5 .bk span{color:var(--body)}
+.s5 .bk .who{display:block;font-size:14px;margin-top:4px}
+.s5 .trail{margin-top:14px;display:flex;flex-wrap:wrap;gap:6px}
+.s5 .trail span{font-size:13px;padding:5px 9px;border-radius:99px;background:#fff;border:1px solid var(--hair);color:var(--body);opacity:0;transform:translateY(8px)}
+.s5 .trail span.hit{opacity:1;transform:none}
+.s5 .rpt{margin-top:14px;padding:12px;border:1px solid var(--hair);border-radius:14px;font-size:13.5px;color:var(--body)}
+.s5 .rpt b{color:var(--ink)}.s5 .rpt .bar{display:block;margin-top:8px;height:8px;border:0;border-radius:9px;background:var(--soft);overflow:hidden}
+.s5 .rpt .bar i{display:block;height:100%;background:var(--green-head);border-radius:9px;width:calc(min(1, max(0, (var(--lp) - .6) * 3)) * 40%)}
+.s5 .rpt small{display:block;margin-top:8px;font-size:13px;color:var(--muted)}
+.s5 .cf{position:absolute;left:50%;top:30%;width:0;height:0;z-index:9;pointer-events:none}
+.s5 .cf i{position:absolute;width:8px;height:12px;border-radius:2px;background:var(--c);opacity:0}
+.s5 .cf.hit i{animation:cf 1.3s cubic-bezier(.1,.7,.3,1) forwards;animation-delay:var(--d)}
 @keyframes cf{0%{opacity:1;transform:translate(0,0) rotate(0)}100%{opacity:0;transform:translate(var(--x),var(--y)) rotate(var(--r))}}
 .sty .flo{position:absolute;left:50%;top:50%;z-index:24;padding:10px 13px;border-radius:14px;background:#fff;border:1px solid var(--hair);box-shadow:0 18px 40px -20px rgba(17,21,14,.4);font:600 14px/1.25 var(--sans);color:var(--ink);display:flex;gap:9px;align-items:center;opacity:0;transform:translate(-50%,-50%) scale(.5);transition:opacity .45s,transform .7s cubic-bezier(.2,1.3,.4,1);white-space:nowrap;pointer-events:none}
 .sty .flo.hit{opacity:1;transform:translate(calc(-50% + var(--fx1)),calc(-50% + var(--fy1))) scale(1)}
@@ -805,11 +788,9 @@ details>summary{min-height:44px;align-items:center;padding-top:10px;padding-bott
 .sty .hint{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);font:600 13px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);transition:opacity .3s;display:flex;flex-direction:column;align-items:center;gap:8px}
 .sty .hint i{width:2px;height:26px;background:var(--hair);position:relative;overflow:hidden}.sty .hint i::after{content:"";position:absolute;left:0;top:0;width:100%;height:10px;background:var(--green-head);animation:hn 1.6s ease-in-out infinite}
 @keyframes hn{from{transform:translateY(-10px)}to{transform:translateY(26px)}}
-.sty.calm{padding:48px 0}.sty.calm .stage{display:block}.sty.calm .caps{min-height:0;display:grid;gap:16px}
-.sty.calm .cp{position:static;opacity:1;transform:none;filter:none}.sty.calm .cp h3{font-size:24px}
-.sty.calm .dev,.sty.calm .dots,.sty.calm .hint,.sty.calm .flo{display:none}
+.sty.calm{display:none}
 @media (max-width:760px){
-  .sty:not(.calm){height:calc(100vh + 6 * 80vh)}
+  .sty:not(.calm){height:calc(100vh + 5 * 80vh)}
   .sty .stage{grid-template-columns:1fr;grid-template-rows:auto 1fr;gap:12px;padding:68px 16px 14px;align-items:start}
   .sty .caps{min-height:146px}.sty .cp{top:0;transform:translateY(18px)}.sty .cp.on{transform:none}
   .sty .cp h3{font-size:26px}.sty .cp p{font-size:15.5px;margin-top:8px}.sty .dots{margin-top:12px}
@@ -817,12 +798,74 @@ details>summary{min-height:44px;align-items:center;padding-top:10px;padding-bott
   .sty .isl{height:23px;top:8px}.sty .isl.wide{height:28px}
   .sty .sbar{height:40px;padding:0 20px 0 24px;font-size:13px}
   .sty .scr,.s4 .page{padding:42px 11px 16px}
-  .s1 .vid b{font-size:13px}.s2 .sh p{font-size:13px}.s3 .plf>div{padding:9px}.s3 .plf .ic{width:30px;height:30px}.s3 .plf small{display:none}
-  .s4 .tap{top:108px}.s4 h4{font-size:17px}.s4 .pic{height:22%}
-  .s5 .em{padding:8px;gap:8px}
+  .s1 .vid .ttl b{font-size:15px}.s1 .vid .end b{font-size:14px}.s1 .cap{font-size:13px;padding:9px 11px}
+  .s3 h4{font-size:17px}.s3 .pics{height:62px}.s3 .t{margin-top:8px}
+  .s4 .em{padding:8px;gap:8px}
   .sty .flo,.sty .hint{display:none}
 }
-@media print{.sty{height:auto!important}.sty .pin{position:static!important;height:auto!important}}
+@media print{.sty{display:none!important}}
+</style>
+<style id="v3-1123">
+.incl .lead,.tiers .pl .lead{margin:0;color:var(--body);font-size:16.5px;line-height:1.5}
+.incl .lead+ul,.tiers .pl .lead+ul{margin-top:12px}
+.incl+.incl,.take+.incl,.rep+.incl,.incl+.rep{margin-top:18px}
+.take a{color:var(--gold-text);font-weight:500}
+.lead2{margin-top:30px;font-size:18px;color:var(--ink);font-weight:500;max-width:36em}
+.tb.two tbody th{width:30%}
+.tb.road2 tbody th{width:16%;white-space:nowrap}
+.tb.cost tbody th{width:42%}
+.tb.cost tr.us th,.tb.cost tr.us td{background:var(--gold-soft);color:#0A3D24}
+.tb.single td{color:var(--ink)}
+.tiers{margin-top:30px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:stretch}
+.tiers .pl .pr{font-size:50px}
+.tiers .pl .pr small{display:block;font-size:17px;margin-top:2px}
+.tiers .pl .pill{justify-self:start}
+.pl.tier2{border:2px dashed var(--hair-2);background:var(--soft);box-shadow:none}
+.pl.tier2 h3{color:var(--muted)}
+@media (max-width:900px){.tiers{grid-template-columns:minmax(0,1fr)}}
+.after-lede{margin-top:14px}
+.note2{margin-top:18px;max-width:46em}
+.rep th.n{text-align:right}
+.rep td.sn{font-weight:500}
+.step-ln{font-size:19px;line-height:1.5;color:var(--ink);margin-top:10px}
+.path.vis .step-ln{margin-top:12px}
+.mails{margin:10px 0 0;padding-left:20px;display:grid;gap:8px;font-size:17px;line-height:1.5;color:var(--body)}
+.mails b{color:var(--ink);font-weight:600}
+.close .btns .btn{min-width:240px}
+.accept a,.terms a{display:inline-block;padding:12px 6px;margin:-12px -6px}
+@media (max-width:640px){
+  .take a{padding:10px 4px;margin:-10px -4px}
+  .rep table{font-size:14px}
+  .rep th{font-size:13px;letter-spacing:0;text-transform:none;padding:8px 3px}
+  .rep td{padding:10px 3px}
+  .rep td.n{width:auto}
+  .rep th.n,.rep td.n{text-align:right}
+  .tiers .pl .pr{font-size:44px}
+  .tb.road2 tbody th{white-space:normal;width:auto}
+  .step-ln{font-size:18px}
+}
+@media print{
+  .sty{display:none!important}
+  .rep,.incl,.take div,.path .st,.tb tr,.nexts div,.safe,.twice,.why,.pl{break-inside:avoid}
+  .tb.two tbody th{width:30%}
+  .tb.road2 tbody th{width:16%}
+  .tb.cost tbody th{width:42%}
+  .tiers{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .tiers .pl .pr{font-size:26pt}
+  .step-ln{font-size:10pt;margin-top:8px}
+  .mails{font-size:10pt;gap:4px;margin-top:6px}
+  .twice{padding:12px 18px}
+  .close .btns .btn{min-width:0}
+  .rep table{font-size:10pt}
+  .rep th,.rep td{padding:7px 6px}
+  .tb,.tb.single,#trust .wrap,#faq .wrap,#after .wrap,#start .card{break-inside:avoid}
+  .subh,.note2,.lead2{break-after:avoid}
+  .path .st{padding-bottom:9px}
+  .path .n{width:44px;height:44px;font-size:17px}
+  .path.vis .rail{left:21px;top:22px;bottom:22px}
+  .path .st{grid-template-columns:44px 1fr;gap:16px}
+  .twice,.safe{margin-top:16px}
+}
 </style>
 </head>
 <body>
@@ -840,7 +883,7 @@ details>summary{min-height:44px;align-items:center;padding-top:10px;padding-bott
 <header class="hero">
   <div class="wrap">
     <p class="eyebrow">Scope of work · Alan Ranger Photography</p>
-    <h1 style="margin-top:14px">From a Short <span class="gold">to a booked class</span></h1>
+    <h1 style="margin-top:14px">From a Short <span class="gold">to a booked class, run for you</span></h1>
     <p class="ans"><b>Your four questions, answered in writing.</b> How it works, what it costs, how it fits what you already run, and how you measure it.</p>
     <div class="btns noprint"><a class="btn primary" href="#plan">See your plan</a><a class="btn ghost" href="Alan-Ranger-Plan-BEJU-Creative.pdf" download>Download PDF</a></div>
     <div class="meta">
@@ -850,272 +893,229 @@ details>summary{min-height:44px;align-items:center;padding-top:10px;padding-bott
       <span>Valid until <b>7 Dec 2026</b></span>
       <span>Your contact <b>Benas, Co-founder</b></span>
     </div>
-    <div class="toc noprint"><a href="#call"><span>01</span>Your questions</a><a href="#found"><span>02</span>What you have</a><a href="#how"><span>03</span>The path</a><a href="#impact"><span>04</span>Your numbers</a><a href="#plan"><span>05</span>Your plan</a><a href="#privacy"><span>06</span>Consent and tracking</a><a href="#road"><span>07</span>Your first month</a><a href="#terms"><span>08</span>The terms</a><a href="#detail"><span>09</span>Every detail</a><a href="#trust"><span>10</span>Who we work with</a><a href="#faq"><span>11</span>Questions</a></div>
+    <div class="toc noprint"><a href="#call"><span>01</span>Your questions</a><a href="#how"><span>02</span>How it works</a><a href="#track"><span>03</span>Tracking</a><a href="#fit"><span>04</span>What you already run</a><a href="#privacy"><span>05</span>Consent and your data</a><a href="#plan"><span>06</span>What it costs</a><a href="#road"><span>07</span>Your first 30 days</a><a href="#need"><span>08</span>What we need</a><a href="#terms"><span>09</span>The terms</a><a href="#trust"><span>10</span>Who we work with</a><a href="#faq"><span>11</span>Questions</a></div>
   </div>
 </header>
-<section class="sty" id="story" aria-label="How a Short becomes a booking, in six steps">
-  <div class="pin"><div class="stage"><div><div class="caps"><div class="cp" data-i="0"><p class="n"><b>01</b> / 06</p><h3>We take the lessons you <em>already film.</em></h3><p>Your long videos, talks and workshop footage.</p></div><div class="cp" data-i="1"><p class="n"><b>02</b> / 06</p><h3>We turn them into Shorts that <em>stop the scroll.</em></h3><p>30 a month, each with a proposal you OK first.</p></div><div class="cp" data-i="2"><p class="n"><b>03</b> / 06</p><h3>We post them for you, <em>every day.</em></h3><p>YouTube Shorts, plus Instagram and Facebook.</p></div><div class="cp" data-i="3"><p class="n"><b>04</b> / 06</p><h3>Viewers tap one link and get <em>your free course.</em></h3><p>A topic page on your site, straight into Mailchimp.</p></div><div class="cp" data-i="4"><p class="n"><b>05</b> / 06</p><h3>Five emails in your voice <em>do the selling.</em></h3><p>A lesson, a student story, then your next dates.</p></div><div class="cp" data-i="5"><p class="n"><b>06</b> / 06</p><h3>They book, and you see <em>which Short did it.</em></h3><p>Traced to the Short, in your weekly report.</p></div></div><div class="dots" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+<section class="sty" id="story" aria-label="How a Short becomes a booking, in five steps">
+  <div class="pin"><div class="stage"><div><div class="caps"><div class="cp" data-i="0"><p class="n"><b>01</b> / 05</p><h3>Someone watches <em>your Short.</em></h3><p>The end card shows alanranger.com/woodland. On Instagram and Facebook: comment WOODLAND.</p></div><div class="cp" data-i="1"><p class="n"><b>02</b> / 05</p><h3>They comment. <em>A message arrives.</em></h3><p>A private message with the link, within a minute.</p></div><div class="cp" data-i="2"><p class="n"><b>03</b> / 05</p><h3>The link opens <em>a page on your site.</em></h3><p>Their email, a consent tick, and the course arrives at once.</p></div><div class="cp" data-i="3"><p class="n"><b>04</b> / 05</p><h3>Three emails <em>in your voice.</em></h3><p>Day 0, Day 4 and Day 9. We write them, you approve them once.</p></div><div class="cp" data-i="4"><p class="n"><b>05</b> / 05</p><h3>They book. <em>The Short gets the credit.</em></h3><p>It shows in your weekly report.</p></div></div><div class="dots" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div></div>
     <div class="dev" aria-hidden="true"><i class="aura"></i>
-  <div class="flo" data-s="2" data-at=".4" style="--fx1:-230px;--fy1:-170px"><span class="ic" style="background:#FF0033">YT</span><span>Posted<small>YouTube Shorts</small></span></div>
-  <div class="flo" data-s="2" data-at=".55" style="--fx1:230px;--fy1:-60px"><span class="ic" style="background:#C13584">IG</span><span>Posted<small>Instagram Reels</small></span></div>
-  <div class="flo" data-s="2" data-at=".7" style="--fx1:-240px;--fy1:120px"><span class="ic" style="background:#1877F2">FB</span><span>Posted<small>Facebook Reels</small></span></div>
-  <div class="flo" data-s="1" data-at=".75" style="--fx1:230px;--fy1:170px">❤ 2,340<small>likes this week</small></div>
-  <div class="flo" data-s="3" data-at=".82" style="--fx1:-240px;--fy1:-40px">+1 sign-up<small>tagged "Getting off Auto"</small></div>
-  <div class="flo" data-s="5" data-at=".2" style="--fx1:-245px;--fy1:-140px">New booking<small>£150 · Beginners course</small></div>
-  <div class="flo" data-s="5" data-at=".5" style="--fx1:235px;--fy1:150px">Traced to its Short<small>"Getting off Auto"</small></div>
+  <div class="flo" data-s="1" data-at=".6" style="--fx1:-330px;--fy1:-150px">Private message sent<small>within a minute</small></div>
+  <div class="flo" data-s="2" data-at=".8" style="--fx1:-330px;--fy1:-60px">+1 sign-up<small>Woodland page</small></div>
+  <div class="flo" data-s="4" data-at=".5" style="--fx1:-340px;--fy1:-170px">New booking<small>credited to "How much negative space?"</small></div>
       <div class="ph"><div class="scrn"><div class="sbar"><span>9:41</span><span class="r"><span class="sig"><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></span><span class="bat"></span></span></div>
-        <div class="isl"><span><i></i>Posting…</span></div>
-<div class="scr s1" data-i="0"><p class="lbl">Your long video</p>
-  <div class="vid"><i class="sky"></i><i class="hill"></i><span class="tc" data-clock="2472,3520">41:12 / 58:40</span><span class="play"></span><b>Getting off Auto: exposure, made simple</b><i class="pb"></i></div>
-  <div class="tl"><div class="w"><i style="--h:30%;--dl:-0.0s"></i><i style="--h:55%;--dl:-0.7s"></i><i style="--h:80%;--dl:-0.4s"></i><i style="--h:45%;--dl:-0.1s"></i><i style="--h:90%;--dl:-0.8s"></i><i style="--h:60%;--dl:-0.5s"></i><i style="--h:35%;--dl:-0.2s"></i><i style="--h:70%;--dl:-0.9s"></i><i style="--h:95%;--dl:-0.6s"></i><i style="--h:50%;--dl:-0.3s"></i><i style="--h:40%;--dl:-0.0s"></i><i style="--h:85%;--dl:-0.7s"></i><i style="--h:65%;--dl:-0.4s"></i><i style="--h:30%;--dl:-0.1s"></i><i style="--h:75%;--dl:-0.8s"></i><i style="--h:55%;--dl:-0.5s"></i><i style="--h:90%;--dl:-0.2s"></i><i style="--h:45%;--dl:-0.9s"></i><i style="--h:60%;--dl:-0.6s"></i><i style="--h:35%;--dl:-0.3s"></i><i style="--h:80%;--dl:-0.0s"></i><i style="--h:50%;--dl:-0.7s"></i><i style="--h:70%;--dl:-0.4s"></i><i style="--h:40%;--dl:-0.1s"></i><i style="--h:88%;--dl:-0.8s"></i><i style="--h:52%;--dl:-0.5s"></i><i style="--h:66%;--dl:-0.2s"></i><i style="--h:38%;--dl:-0.9s"></i></div><i class="mk" data-at=".22" data-t="Hook" style="--x:12%;--w:12%"></i><i class="mk" data-at=".48" data-t="Story" style="--x:43%;--w:12%"></i><i class="mk" data-at=".74" data-t="Payoff" style="--x:72%;--w:13%"></i><i class="head"></i></div>
-  <p class="note"><i></i>Marking the strongest teaching parts</p></div>
-<div class="scr s2" data-i="1"><p class="lbl">Shorts</p><div class="row">
-  <div class="sh"><span class="vw" data-cnt="12400" data-a=".3" data-b=".95">0</span><p>Get off <b>Auto.</b></p><i class="hr" data-at=".55"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.5-9.3C1.2 8.5 3.3 5 6.8 5c2 0 3.4 1.1 4.2 2.4C11.8 6.1 13.2 5 15.2 5c3.5 0 5.6 3.5 4.3 6.7C19.5 16.4 12 21 12 21z"/></svg></i><i class="pr"></i></div>
-  <div class="sh"><span class="vw" data-cnt="8100" data-a=".35" data-b=".95">0</span><p>Light <b>meter.</b></p><i class="hr" data-at=".65"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.5-9.3C1.2 8.5 3.3 5 6.8 5c2 0 3.4 1.1 4.2 2.4C11.8 6.1 13.2 5 15.2 5c3.5 0 5.6 3.5 4.3 6.7C19.5 16.4 12 21 12 21z"/></svg></i><i class="pr"></i></div>
-  <div class="sh"><span class="vw" data-cnt="21700" data-a=".3" data-b=".95">0</span><p>Golden <b>hour.</b></p><i class="hr" data-at=".6"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.5-9.3C1.2 8.5 3.3 5 6.8 5c2 0 3.4 1.1 4.2 2.4C11.8 6.1 13.2 5 15.2 5c3.5 0 5.6 3.5 4.3 6.7C19.5 16.4 12 21 12 21z"/></svg></i><i class="pr"></i></div></div>
-  <p class="ok" data-at=".7">Proposal OK'd · end card held 5 s</p></div>
-<div class="scr s3" data-i="2"><p class="lbl">Posting for you</p><div class="plf">
-  <div data-up=".05,.35"><i class="up"></i><span class="ic" style="background:#FF0033">YT</span><span><b>YouTube Shorts</b><small>Today, 17:30</small></span><i class="tk" data-at=".36"></i></div>
-  <div data-up=".2,.5"><i class="up"></i><span class="ic" style="background:#C13584">IG</span><span><b>Instagram Reels</b><small>Today, 17:30</small></span><i class="tk" data-at=".51"></i></div>
-  <div data-up=".35,.65"><i class="up"></i><span class="ic" style="background:#1877F2">FB</span><span><b>Facebook Reels</b><small>Today, 17:30</small></span><i class="tk" data-at=".66"></i></div>
-  <div data-up=".5,.8"><i class="up"></i><span class="ic" style="background:#11150E">↗</span><span><b>Link in description</b><small>and a pinned comment</small></span><i class="tk" data-at=".81"></i></div></div></div>
-<div class="scr s4" data-i="3"><p class="lbl">Getting off Auto · YouTube</p>
-  <div class="desc">The full free course, 60 modules at your own pace: <u>alanranger.com/off-auto</u><br>#photography #beginners</div><i class="tap" data-at=".07"></i>
-  <div class="page"><div class="mh"><span>ALAN RANGER</span><span>ACADEMY</span></div><div class="pic"></div>
-    <h4>Get off Auto for good</h4><p class="t">Free: the Academy 101 course, at your own pace.</p>
-    <div class="fld" data-at=".34"><span data-type="sam@email.com" data-a=".34" data-b=".56"></span><i class="cur"></i></div>
-    <div class="tick" data-at=".62"><i></i>Yes, send me the course and emails</div><div class="cta" data-at=".72">Start my free course</div>
-    <div class="toast" data-at=".8"><i></i>Added to Mailchimp · tagged "Getting off Auto"</div></div></div>
-<div class="scr s5" data-i="4">
-  <div class="bn" data-at=".05" data-out=".3"><i class="ap"></i><div><b>Alan Ranger</b><span>Your free course is here</span></div></div>
-  <div class="bn" data-at=".32" data-out=".55"><i class="ap"></i><div><b>Alan Ranger</b><span>One setting that changes everything</span></div></div>
-  <div class="bn" data-at=".57" data-out=".8"><i class="ap"></i><div><b>Alan Ranger</b><span>How Jo got off Auto in a week</span></div></div>
-  <div class="bn" data-at=".82"><i class="ap"></i><div><b>Alan Ranger</b><span>Your next beginners course</span></div></div>
+        <div class="isl"></div>
+<div class="scr s1" data-i="0"><p class="lbl">YouTube Short</p>
+  <div class="vid"><i class="sky"></i><i class="hill"></i><span class="ttl"><b>How much negative space?</b><small>Lesson 30</small></span><span class="trio"><i></i><i></i><i></i></span><span class="end" data-at=".6"><small>End card</small><b>alanranger.com/woodland</b></span><i class="pb"></i></div>
+  <div class="cap" data-at=".8"><b>Instagram and Facebook caption</b>Comment WOODLAND and we'll send you the link.</div></div>
+<div class="scr s2" data-i="1"><p class="lbl">Instagram · comments</p>
+  <div class="crow" data-at=".04"><i class="av2"></i><div><b>sam_w</b><span><span data-type="WOODLAND" data-a=".08" data-b=".3"></span><i class="cur"></i></span></div></div>
+  <p class="lbl dmh">Private message</p>
+  <div class="bub" data-at=".45"><b>Alan Ranger</b>Here is your link:<u>alanranger.com/woodland</u></div>
+  <span class="chip" data-at=".62">Sent within a minute</span></div>
+<div class="scr s3" data-i="2"><p class="lbl">Opened from the message</p>
+  <div class="mh"><span>ALAN RANGER</span><span>ACADEMY</span></div><div class="pics"><i></i><i></i></div>
+  <h4>Photographing woodland in winter</h4><div class="sk"></div><div class="sk s"></div><p class="t">Free: the Academy 101 course, at your own pace.</p>
+  <div class="fld" data-at=".3"><span data-type="sam@email.com" data-a=".3" data-b=".52"></span><i class="cur"></i></div>
+  <div class="tick" data-at=".6"><i></i>Yes, send me the course and emails</div><div class="cta" data-at=".7">Send me the course</div>
+  <div class="toast" data-at=".8"><i></i>The course is on its way</div></div>
+<div class="scr s4" data-i="3">
+  <div class="bn" data-at=".05" data-out=".3"><i class="ap"></i><div><b>Alan Ranger</b><span>Your course is here</span></div></div>
+  <div class="bn" data-at=".36" data-out=".6"><i class="ap"></i><div><b>Alan Ranger</b><span>Negative space, a short lesson</span></div></div>
+  <div class="bn" data-at=".66"><i class="ap"></i><div><b>Alan Ranger</b><span>Your next winter woodland dates</span></div></div>
   <p class="lbl" style="margin-top:44px">Sam's inbox</p><div class="ib">
-  <div class="em inv" data-at=".85"><i class="av">AR</i><div><b>Your next beginners course</b><span>Three evenings, four places…</span></div><small>Day 9</small></div>
-  <div class="em" data-at=".6"><i class="av">AR</i><div><b>How Jo got off Auto in a week</b><span>A student story from the…</span></div><small>Day 6</small></div>
-  <div class="em" data-at=".35"><i class="av">AR</i><div><b>One setting that changes everything</b><span>Most beginners leave ISO on…</span></div><small>Day 3</small></div>
-  <div class="em" data-at=".08"><i class="av">AR</i><div><b>Your free course is here</b><span>Start with module 2, it's the one…</span></div><small>Day 0</small></div></div></div>
-<div class="scr s6x" data-i="5"><p class="lbl">Booked</p><div class="cf" data-at=".14"><i style="--c:#11A85A;--x:60px;--y:-30px;--r:-270deg;--d:0.00s"></i><i style="--c:#E8702A;--x:84px;--y:26px;--r:-173deg;--d:0.03s"></i><i style="--c:#22D16F;--x:32px;--y:44px;--r:-76deg;--d:0.06s"></i><i style="--c:#11150E;--x:1px;--y:109px;--r:21deg;--d:0.09s"></i><i style="--c:#F3B57A;--x:-33px;--y:68px;--r:118deg;--d:0.12s"></i><i style="--c:#86DCAB;--x:-90px;--y:14px;--r:215deg;--d:0.00s"></i><i style="--c:#11A85A;--x:-72px;--y:-27px;--r:-228deg;--d:0.03s"></i><i style="--c:#E8702A;--x:-96px;--y:-83px;--r:-131deg;--d:0.06s"></i><i style="--c:#22D16F;--x:-40px;--y:-102px;--r:-34deg;--d:0.09s"></i><i style="--c:#11150E;--x:-4px;--y:-167px;--r:63deg;--d:0.12s"></i><i style="--c:#F3B57A;--x:37px;--y:-127px;--r:160deg;--d:0.00s"></i><i style="--c:#86DCAB;--x:99px;--y:-74px;--r:257deg;--d:0.03s"></i><i style="--c:#11A85A;--x:84px;--y:-36px;--r:-186deg;--d:0.06s"></i><i style="--c:#E8702A;--x:108px;--y:20px;--r:-89deg;--d:0.09s"></i><i style="--c:#22D16F;--x:48px;--y:39px;--r:8deg;--d:0.12s"></i><i style="--c:#11150E;--x:7px;--y:105px;--r:105deg;--d:0.00s"></i><i style="--c:#F3B57A;--x:-41px;--y:66px;--r:202deg;--d:0.03s"></i><i style="--c:#86DCAB;--x:-108px;--y:15px;--r:-241deg;--d:0.06s"></i><i style="--c:#11A85A;--x:-96px;--y:-21px;--r:-144deg;--d:0.09s"></i><i style="--c:#E8702A;--x:-57px;--y:-77px;--r:-47deg;--d:0.12s"></i><i style="--c:#22D16F;--x:-56px;--y:-96px;--r:50deg;--d:0.00s"></i><i style="--c:#11150E;--x:-5px;--y:-163px;--r:147deg;--d:0.03s"></i><i style="--c:#F3B57A;--x:45px;--y:-126px;--r:244deg;--d:0.06s"></i><i style="--c:#86DCAB;--x:58px;--y:-75px;--r:-199deg;--d:0.09s"></i></div>
-  <div class="bk" data-at=".08"><b>✓ Beginners course booked</b><span class="who">Sam · 3 evenings</span><div class="amt">£<span data-cnt="150" data-a=".1" data-b=".35">0</span></div></div>
-  <div class="trail"><span data-at=".3">Saw a Short</span><span data-at=".38">Got the free course</span><span data-at=".46">Read 4 emails</span><span data-at=".54">Booked</span></div>
-  <div class="rep"><b>Weekly report</b> · "Getting off Auto": <span data-cnt="31" data-a=".6" data-b=".9">0</span> sign-ups, <span data-cnt="3" data-a=".65" data-b=".9">0</span> bookings<div class="bar"><i></i></div></div></div><i class="glare"></i><i class="home"></i></div></div></div></div>
+  <div class="em inv" data-at=".7"><i class="av">AR</i><div><b>Your next winter woodland dates</b><span>Places left, and the booking link</span></div><small>Day 9</small></div>
+  <div class="em" data-at=".4"><i class="av">AR</i><div><b>Negative space, a short lesson</b><span>With one of my photographs</span></div><small>Day 4</small></div>
+  <div class="em" data-at=".08"><i class="av">AR</i><div><b>Your course is here</b><span>And one woodland tip to try</span></div><small>Day 0</small></div></div></div>
+<div class="scr s5" data-i="4"><p class="lbl">Booked</p><div class="cf" data-at=".14"><i style="--c:#11A85A;--x:60px;--y:-30px;--r:-270deg;--d:0.00s"></i><i style="--c:#E8702A;--x:84px;--y:26px;--r:-173deg;--d:0.03s"></i><i style="--c:#22D16F;--x:32px;--y:44px;--r:-76deg;--d:0.06s"></i><i style="--c:#11150E;--x:1px;--y:109px;--r:21deg;--d:0.09s"></i><i style="--c:#F3B57A;--x:-33px;--y:68px;--r:118deg;--d:0.12s"></i><i style="--c:#86DCAB;--x:-90px;--y:14px;--r:215deg;--d:0.00s"></i><i style="--c:#11A85A;--x:-72px;--y:-27px;--r:-228deg;--d:0.03s"></i><i style="--c:#E8702A;--x:-96px;--y:-83px;--r:-131deg;--d:0.06s"></i><i style="--c:#22D16F;--x:-40px;--y:-102px;--r:-34deg;--d:0.09s"></i><i style="--c:#11150E;--x:-4px;--y:-167px;--r:63deg;--d:0.12s"></i><i style="--c:#F3B57A;--x:37px;--y:-127px;--r:160deg;--d:0.00s"></i><i style="--c:#86DCAB;--x:99px;--y:-74px;--r:257deg;--d:0.03s"></i><i style="--c:#11A85A;--x:84px;--y:-36px;--r:-186deg;--d:0.06s"></i><i style="--c:#E8702A;--x:108px;--y:20px;--r:-89deg;--d:0.09s"></i><i style="--c:#22D16F;--x:48px;--y:39px;--r:8deg;--d:0.12s"></i><i style="--c:#11150E;--x:7px;--y:105px;--r:105deg;--d:0.00s"></i><i style="--c:#F3B57A;--x:-41px;--y:66px;--r:202deg;--d:0.03s"></i><i style="--c:#86DCAB;--x:-108px;--y:15px;--r:-241deg;--d:0.06s"></i><i style="--c:#11A85A;--x:-96px;--y:-21px;--r:-144deg;--d:0.09s"></i><i style="--c:#E8702A;--x:-57px;--y:-77px;--r:-47deg;--d:0.12s"></i><i style="--c:#22D16F;--x:-56px;--y:-96px;--r:50deg;--d:0.00s"></i><i style="--c:#11150E;--x:-5px;--y:-163px;--r:147deg;--d:0.03s"></i><i style="--c:#F3B57A;--x:45px;--y:-126px;--r:244deg;--d:0.06s"></i><i style="--c:#86DCAB;--x:58px;--y:-75px;--r:-199deg;--d:0.09s"></i></div>
+  <div class="bk" data-at=".08"><b>✓ Place booked</b><span class="who">Sam · winter woodland workshop</span></div>
+  <div class="trail"><span data-at=".3">Saw the Short</span><span data-at=".38">Commented WOODLAND</span><span data-at=".46">Got the course</span><span data-at=".54">Booked</span></div>
+  <div class="rpt"><b>Weekly report</b> · "How much negative space?": <span data-cnt="11" data-a=".6" data-b=".9">0</span> sign-ups, <span data-cnt="1" data-a=".65" data-b=".9">0</span> booking<div class="bar"><i></i></div><small>Example figures, to show the format only.</small></div></div><i class="glare"></i><i class="home"></i></div></div></div></div>
     <p class="hint" aria-hidden="true">Scroll<i></i></p></div>
 </section>
 
 <section style="padding-top:0" aria-label="The plan at a glance">
   <div class="wrap facts">
-    <div><b>A new funnel every month</b><span>for the offer you pick, and every one keeps running</span></div>
-    <div><b>Built into your tools</b><span>Squarespace, Mailchimp and your booking calendar</span></div>
-    <div><b>Month-to-month</b><span>You own your accounts, your list and every video.</span></div>
+    <div><b>$500 to set up</b><span>One-time. The first funnel built and live.</span></div>
+    <div><b>Then $500 a month</b><span>Run for you. Every tool is included.</span></div>
+    <div><b>Month to month</b><span>Cancel any time by email.</span></div>
   </div>
 </section>
 
 <section class="band" id="call" aria-labelledby="call-h">
   <div class="wrap">
-    <div class="head rv"><p class="eyebrow"><span class="secno">01</span>Your questions</p><h2 id="call-h">What you asked us <span class="gold">to put in writing</span></h2>
-      <p class="lede">You asked for a written outline before any call. This page is that outline, with the four parts you named.</p></div>
-    <p class="purpose"><b>The goal</b>Turn the people who watch your Shorts into people who book your courses, workshops and lessons, and show you which Short brought each booking.</p>
-    <h3 class="subh">Your four questions, in short</h3>
+    <div class="head rv"><p class="eyebrow"><span class="secno">01</span>Your questions</p><h2 id="call-h">Your four questions, <span class="gold">in short</span></h2></div>
     <div class="take">
-      <div class="rv sl"><b>How it works</b><span>Short → one link → a free gift for an email address → five emails in your voice → a booking. One new funnel like this every month. <a href="#how">See the path</a></span></div>
-      <div class="rv sr"><b>What it costs</b><span>$1,100 a month, no setup fee, no software to buy. One new funnel every month. A higher tier plan at $1,800 if you want more. <a href="#plan">See the plan</a></span></div>
-      <div class="rv sl"><b>How it fits what you run</b><span>Built inside your own Squarespace site, Mailchimp list and booking calendar. Nothing duplicated. <a href="#faq">See the questions</a></span></div>
-      <div class="rv sr"><b>Consent and measurement</b><span>A consent box and unsubscribe on every email, a tagged link for every Short, and bookings traced back to the Short. <a href="#privacy">See how</a></span></div>
-    </div>
-    <h3 class="subh">What we've learned working with you</h3>
-    <div class="take">
-      <div class="rv sl"><b>Your Shorts already point to the Academy</b><span>Since your first pack, every Short ends on "Start my free online photography course". The funnel is what catches the people who tap it.</span></div>
-      <div class="rv sr"><b>You asked the right question early</b><span>Before your first pack you asked whether Shorts would bring enough click-through to justify them. This plan answers it with numbers: every Short gets its own link, and every booking is traced back.</span></div>
-      <div class="rv sl"><b>You like it exact</b><span>Complete photographs, the topic as the title with the lesson number under it, your own narration, and the end card for five seconds. Every Short in the plan keeps all of it, and you still get a proposal first.</span></div>
-      <div class="rv sr"><b>You plan ahead</b><span>Your Shorts and marketing are already scheduled. The plan works with them: the Shorts you've lined up get the right funnel link, so nothing you've planned has to change.</span></div>
-    </div>
-    <h3 class="subh">Next steps</h3>
-    <div class="nexts">
-      <div><b>BEJÚ Creative</b><ul><li>Put the plan in writing. This page is that.</li><li>Answer any question you have about it, by email or on a call.</li><li>On day one, map your Squarespace pages, your Mailchimp list and your booking calendar with you.</li></ul></div>
-      <div><b>Alan</b><p class="nx">Small steps. Each one helps us start on day one.</p><ul><li>Read this page, and tell us if the plan fits.</li><li>Tell us which offer gets the first funnel.</li><li>Give us access to Squarespace and Mailchimp on the first call. We never ask for a password by email.</li></ul></div>
+      <div class="rv sl"><b>How it works</b><span>A Short points people to one place. There they get your free Academy 101 course for their email address, a few welcome emails follow, and they book. We build it and we run it for you. <a href="#how">See the example</a></span></div>
+      <div class="rv sr"><b>What it costs</b><span>$500 to set up, then $500 a month, month to month. Every tool is included. There is no software for you to buy or learn. <a href="#plan">See the plan</a></span></div>
+      <div class="rv sl"><b>How it fits what you have</b><span>Your Academy course is the gift, your Mailchimp list stays your main list, your booking calendar stays as it is. Nothing is duplicated (section <a href="#fit">04</a>).</span></div>
+      <div class="rv sr"><b>Consent and measurement</b><span>A clear opt-in, an unsubscribe in every email, and every sign-up and booking traced back to the Short that brought it (sections <a href="#track">03</a> and <a href="#privacy">05</a>).</span></div>
     </div>
   </div>
 </section>
 
-<section id="found" aria-labelledby="found-h">
+<section id="how" aria-labelledby="how-h">
   <div class="wrap">
-    <div class="head rv"><p class="eyebrow"><span class="secno">02</span>What you have</p><h2 id="found-h">You already have <span class="gold">the pieces</span></h2>
-      <p class="lede">We read your site as a visitor would. You've built a lot already: a free course, a list, a booking calendar and clear prices. We don't rebuild any of it. We connect your Shorts to it, and count what each one brings.</p></div>
-    <table class="tb three rv">
-      <thead><tr><th>What you have</th><th>What it does today</th><th>What we add</th></tr></thead>
-      <tbody>
-        <tr><th scope="row">Your Shorts</th><td data-l="What it does today">Already scheduled on YouTube.</td><td data-l="What we add">One link per Short, so every viewer has one next step.</td></tr>
-        <tr><th scope="row">Your free Academy 101 course</th><td data-l="What it does today">Free with an email address, and a 14-day trial of the full Academy with no card.</td><td data-l="What we add">It becomes the gift at the end of every Short's link.</td></tr>
-        <tr><th scope="row">Your Mailchimp list</th><td data-l="What it does today">Updates from your blog, once or twice a week.</td><td data-l="What we add">A welcome series for new contacts that leads to the course or workshop they watched about.</td></tr>
-        <tr><th scope="row">Your courses, workshops and lessons</th><td data-l="What it does today">Clear prices, from a £50 workshop session to a 12-month Pick n Mix plan of £600 to £1,200.</td><td data-l="What we add">Each one, in turn, gets its own funnel: a page, a gift, emails and Shorts.</td></tr>
-        <tr><th scope="row">Your free chat calendar</th><td data-l="What it does today">People pick a day and time for a free, no-obligation chat.</td><td data-l="What we add">The last email invites them to it, and each chat is traced to its Short.</td></tr>
-        <tr><th scope="row">The missing link</th><td data-l="What it does today">A count of which Short brought which sign-up and booking.</td><td data-l="What we add">Tagged links, tagged sign-ups and a weekly report, per Short and per funnel.</td></tr>
-      </tbody>
-    </table>
-  </div>
-</section>
-
-<section class="band" id="how" aria-labelledby="how-h">
-  <div class="wrap">
-    <div class="head rv"><p class="eyebrow"><span class="secno">03</span>The path</p><h2 id="how-h">From a Short <span class="gold">to a booking, step by step</span></h2>
-      <p class="lede">Your answer to "how would it work". This is one funnel. Once it's set up, it runs by itself, and each month we build one more for another offer. YouTube doesn't send private messages from comments, so the path runs through one link.</p></div>
+    <div class="head rv"><p class="eyebrow"><span class="secno">02</span>How it works</p><h2 id="how-h">How it works: <span class="gold">one worked example</span></h2>
+      <p class="lede">Here is one funnel end to end, for your winter woodland workshops, built on a Short you already have.</p></div>
     <div class="path vis"><div class="rail" aria-hidden="true"><i></i></div>
-      <div class="st"><span class="n">1</span><div><h3>Someone watches your Short</h3><p>A Short about getting off Auto, a sunrise at Chesterton Windmill, or reading the histogram. At the end you tell them where to go next.</p></div></div>
-      <div class="st"><span class="n">2</span><div><h3>They tap one link</h3><p>The link sits in the description and in a pinned comment. It opens a short page on your own site for that topic, with a free gift. For the first funnel, that's your free Academy 101 course.</p></div></div>
-      <div class="st"><span class="n">3</span><div><h3>They give their email for your free course</h3><p>They type their name and email address, tick the consent box and confirm. They land in your Mailchimp list, tagged with the Short they came from.</p></div></div>
-      <div class="st"><span class="n">4</span><div><h3>Five emails in your voice</h3><p>A lesson from the course, a real student story, then the course, workshop or 1-2-1 lessons that fit what they watched, with your next dates. We write them, you approve them once.</p></div></div>
-      <div class="st"><span class="n">5</span><div><h3>They book</h3><p>A beginners course, a workshop, 1-2-1 lessons, the Academy year, or a free chat in your calendar. Each booking is traced back to the Short that started it.</p></div></div>
+      <div class="st"><span class="n">1</span><div><p class="step-ln">Someone watches your Short "How much negative space?" (Lesson 30, the three Hay Wood photographs).</p></div></div>
+      <div class="st"><span class="n">2</span><div><p class="step-ln">The end card shows a short web address for this Short: alanranger.com/woodland. On Instagram and Facebook the caption says: comment WOODLAND and we'll send you the link.</p></div></div>
+      <div class="st"><span class="n">3</span><div><p class="step-ln">On Instagram or Facebook, they comment the word and get a private message from you within a minute, with the link.</p></div></div>
+      <div class="st"><span class="n">4</span><div><p class="step-ln">The link opens a page on your own site: "Photographing woodland in winter". It explains the idea from the Short in a few lines, shows two of your woodland photographs, and offers your free Academy 101 course.</p></div></div>
+      <div class="st"><span class="n">5</span><div><p class="step-ln">They give their email address and tick the consent box. The course arrives at once, as it does today.</p></div></div>
+      <div class="st"><span class="n">6</span><div><p class="step-ln">Over the next ten days they get three short emails in your voice (written by us, approved by you once):</p>
+        <ul class="mails"><li><b>Day 0:</b> your course is here, and one woodland tip to try this week.</li><li><b>Day 4:</b> a short lesson on negative space, with one of your photographs.</li><li><b>Day 9:</b> your next winter woodland dates, places left, and the booking link.</li></ul></div></div>
+      <div class="st"><span class="n">7</span><div><p class="step-ln">They book a place. The booking is credited to "How much negative space?" in your weekly report.</p></div></div>
+      <div class="st"><span class="n">8</span><div><p class="step-ln">After the welcome emails they join your main Mailchimp list, tagged "woodland", so your usual campaigns reach them from then on.</p></div></div>
     </div>
-    <div class="twice"><b>Your Shorts keep working after the views.</b><p>Today a view is the end of the story. With one link and one gift, every Short you've already scheduled can bring a name to your list and a booking to your calendar.</p></div>
-    <div class="why"><b>Why your free course works as the gift</b><p>People learn from you before they pay you, so trust starts early. And everyone who asks for the course has already shown they want to learn photography.</p></div>
+    <div class="twice"><b>Once it is set up, it runs by itself.</b><p>Each month we build one more like it for another offer you pick.</p></div>
+    <p class="safe"><b>Note:</b> YouTube doesn't allow clickable links in Shorts, so on YouTube the short web address on the end card does the job.</p>
   </div>
 </section>
 
-<section id="impact" aria-labelledby="impact-h">
+<section class="band" id="track" aria-labelledby="track-h">
   <div class="wrap">
-    <div class="head rv"><p class="eyebrow"><span class="secno">04</span>Your numbers</p><h2 id="impact-h">What one funnel a month <span class="gold">adds up to</span></h2>
-      <p class="lede">These are your own prices from your site, not a forecast. They show how few bookings it takes for the plan to pay for itself, and how it builds month after month.</p></div>
-    <table class="tb three rv">
-      <thead><tr><th>Your offer</th><th>Your price</th><th>Against a $1,100 month</th></tr></thead>
+    <div class="head rv"><p class="eyebrow"><span class="secno">03</span>Tracking</p><h2 id="track-h">How the tracking <span class="gold">works</span></h2></div>
+    <div class="incl rv" style="margin-top:26px"><ul>
+      <li>Every Short gets its own label: a short web address on YouTube, a keyword on Instagram and Facebook.</li>
+      <li>When someone signs up through it, we record which Short brought them.</li>
+      <li>When a booking comes in, we match the booker's email to that sign-up and credit the Short.</li>
+    </ul></div>
+    <p class="lead2">Every week you get one table, one row per Short:</p>
+    <div class="rep rv"><div class="rh"><b>Your weekly report</b><span>Example layout</span></div>
+      <table><thead><tr><th>Short</th><th class="n">Views</th><th class="n">Visits</th><th class="n">Sign-ups</th><th class="n">Bookings</th></tr></thead><tbody>
+        <tr><td class="sn">How much negative space?</td><td class="n">2,140</td><td class="n">38</td><td class="n">11</td><td class="n">1</td></tr>
+        <tr><td class="sn">How much contrast?</td><td class="n">1,610</td><td class="n">21</td><td class="n">6</td><td class="n">0</td></tr>
+        <tr><td class="sn">Check the whole frame</td><td class="n">980</td><td class="n">9</td><td class="n">2</td><td class="n">0</td></tr>
+      </tbody></table>
+      <p class="ft">Example figures, to show the format only.</p></div>
+    <div class="incl rv"><ul>
+      <li>A booking we can't match (a different email, or someone who came another way) is shown as "unmatched". We never guess.</li>
+      <li>Once a month we review it with you: what to keep, what to change, and which offer gets the next funnel.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section id="fit" aria-labelledby="fit-h">
+  <div class="wrap">
+    <div class="head rv"><p class="eyebrow"><span class="secno">04</span>What you already run</p><h2 id="fit-h">How it fits <span class="gold">what you already run</span></h2></div>
+    <table class="tb two rv">
+      <thead><tr><th>What you have</th><th>What happens to it</th></tr></thead>
       <tbody>
-        <tr><th scope="row">Pick n Mix, 12-month plan</th><td data-l="Your price">£600, £1,000 or £1,200 a year</td><td data-l="Against a $1,100 month">One £1,000 or £1,200 plan roughly covers a month.</td></tr>
-        <tr><th scope="row">Private lessons, 4 × 2 hours</th><td data-l="Your price">£360</td><td data-l="Against a $1,100 month">Two or three packages cover a month.</td></tr>
-        <tr><th scope="row">A Year at Chesterton</th><td data-l="Your price">£480</td><td data-l="Against a $1,100 month">About two cover a month.</td></tr>
-        <tr><th scope="row">Courses and workshops</th><td data-l="Your price">£99 to £195 a place</td><td data-l="Against a $1,100 month">Five to nine places, across all your dates.</td></tr>
-        <tr><th scope="row">Online Academy</th><td data-l="Your price">£79 a year</td><td data-l="Against a $1,100 month">The first paid step for people new to you.</td></tr>
+        <tr><th scope="row">Your free Academy 101 course</th><td data-l="What happens to it">It is the gift at the end of every funnel. We don't rebuild it.</td></tr>
+        <tr><th scope="row">Your Mailchimp list and campaigns</th><td data-l="What happens to it">Stays your main list. New people from Shorts get our short welcome series first, then join it with a tag. Your existing subscribers never get the welcome series, and your campaigns carry on as they are.</td></tr>
+        <tr><th scope="row">Your website</th><td data-l="What happens to it">We add one page per funnel, in your style. Nothing else on the site changes.</td></tr>
+        <tr><th scope="row">Your booking calendar</th><td data-l="What happens to it">Unchanged. The last welcome email links to it.</td></tr>
+        <tr><th scope="row">Your Shorts</th><td data-l="What happens to it">The ones you've already scheduled get their own short web addresses (we update the end cards on the ones we made). You don't need to post more. New Shorts stay as packs, at your current price, whenever you want them.</td></tr>
+        <tr><th scope="row">Instagram and Facebook</th><td data-l="What happens to it">If you post Reels there, we set up the keyword messages on your accounts. If you don't, the YouTube route works on its own.</td></tr>
       </tbody>
     </table>
-    <div class="stack6" role="img" aria-label="Funnels stack up, month after month: Academy, Private lessons, Pick n Mix, Workshops, Lightroom, RPS mentoring"><div class="sh">Funnels stack up, month after month</div><div class="ss">An example order. You pick the offer each month, and every funnel keeps running.</div>
-      <div class="s6"><div class="col"><span class="blk k1" data-m="0" data-k="0"></span></div><div class="col"><span class="blk k1" data-m="1" data-k="0"></span><span class="blk k2" data-m="1" data-k="1"></span></div><div class="col"><span class="blk k1" data-m="2" data-k="0"></span><span class="blk k2" data-m="2" data-k="1"></span><span class="blk k3" data-m="2" data-k="2"></span></div><div class="col"><span class="blk k1" data-m="3" data-k="0"></span><span class="blk k2" data-m="3" data-k="1"></span><span class="blk k3" data-m="3" data-k="2"></span><span class="blk k4" data-m="3" data-k="3"></span></div><div class="col"><span class="blk k1" data-m="4" data-k="0"></span><span class="blk k2" data-m="4" data-k="1"></span><span class="blk k3" data-m="4" data-k="2"></span><span class="blk k4" data-m="4" data-k="3"></span><span class="blk k5" data-m="4" data-k="4"></span></div><div class="col"><span class="blk k1" data-m="5" data-k="0"></span><span class="blk k2" data-m="5" data-k="1"></span><span class="blk k3" data-m="5" data-k="2"></span><span class="blk k4" data-m="5" data-k="3"></span><span class="blk k5" data-m="5" data-k="4"></span><span class="blk k6" data-m="5" data-k="5"></span></div></div><div class="s6lab"><div class="m"><span class="w">Month </span>1</div><div class="m"><span class="w">Month </span>2</div><div class="m"><span class="w">Month </span>3</div><div class="m"><span class="w">Month </span>4</div><div class="m"><span class="w">Month </span>5</div><div class="m"><span class="w">Month </span>6</div></div><div class="s6ax">Month</div><div class="s6key"><span><i class="blk k1" style="opacity:1;transform:none;height:12px"></i>Academy</span><span><i class="blk k2" style="opacity:1;transform:none;height:12px"></i>Private lessons</span><span><i class="blk k3" style="opacity:1;transform:none;height:12px"></i>Pick n Mix</span><span><i class="blk k4" style="opacity:1;transform:none;height:12px"></i>Workshops</span><span><i class="blk k5" style="opacity:1;transform:none;height:12px"></i>Lightroom</span><span><i class="blk k6" style="opacity:1;transform:none;height:12px"></i>RPS mentoring</span></div></div>
-    <div class="why"><b>Why it grows every month</b><p>Funnels don't switch off. By month six, six of your offers each have their own page, their own emails and their own Shorts, all feeding your list every day. Your list keeps growing with people who asked to learn from you, and every new date you announce lands on more of them.</p></div>
-    <div class="twice"><b>And you'll know exactly what worked.</b><p>Every booking is traced to the Short and the funnel it came from. You keep the funnels that sell and we change the rest, so each month's money goes where it already works.</p></div>
-  </div>
-</section>
-
-<section id="plan" aria-labelledby="plan-h">
-  <div class="wrap">
-    <div class="head rv"><p class="eyebrow"><span class="secno">05</span>Your plan</p><h2 id="plan-h">Your plan, <span class="gold">and room to grow</span></h2>
-      <p class="lede">Your answer to "what it costs". Month-to-month, cancel any time. No setup fee, and no software to buy. One new funnel every month, for the offer you pick.</p></div>
-    <div class="plan1 rv">
-      <div class="pl main">
-        <span class="pill">Recommended for you</span>
-        <h3>A new funnel every month</h3>
-        <p class="pr"><span data-count="1100" data-pre="$">$1,100</span> <small>a month</small></p>
-        <p class="sub">No setup fee. No software to buy. Any tool we add is paid by our team.</p>
-        <a class="btn primary noprint" href="mailto:benas@bejucreative.org?subject=First%20invoice%20for%20Alan%20Ranger%20Photography%20(BEJ-2026-0124)" target="_blank" rel="noopener">Start your plan · $1,100&nbsp;a&nbsp;month</a>
-        <p class="small">Month-to-month. Cancel any time by email.</p>
-        <div class="mypart"><h4>Your part each month</h4><ul><li>Pick the offer for next month's funnel.</li><li>OK the proposal for each Short, and the emails once.</li><li>Send us any new recordings.</li></ul><p>That's it. We do the rest.</p></div>
-      </div>
-      <div class="incl">
-        <div><h4>A new funnel every month</h4><ul><li>One complete funnel for one offer you pick: a topic page on your site, a free gift, tagged links</li><li>Five welcome emails in your voice, inside your Mailchimp</li><li>One email to your whole list when it goes live</li><li>Every funnel we build keeps running</li></ul></div>
-        <div><h4>Your videos</h4><ul><li>30 new Shorts a month, each one pointing to that month's funnel</li><li>A written proposal for each Short before we build it</li><li>Posted for you on YouTube Shorts, plus Instagram and Facebook if you want them</li><li>Your Shorts already scheduled get the right funnel link</li></ul></div>
-        <div><h4>Measuring it</h4><ul><li>A consent box, confirmation and unsubscribe, the way your list already works</li><li>A tagged link for every Short, and every sign-up tagged with its Short and funnel</li><li>A full report every week, per Short and per funnel</li></ul></div>
-        <div><h4>Working with us</h4><ul><li>Built into your Squarespace, Mailchimp and booking calendar</li><li>Strategy calls with Benas and Simas, whenever you want one</li><li>Any extra tool paid for and run by our team</li></ul></div>
-      </div>
-    </div>
-    <div class="tierhead"><h3>Everything in your plan, row by row</h3><p>The grey column shows the higher tier plan, for when you want more. You move up from your next billing date, and everything we built keeps running.</p></div>
-    <div class="cmpwrap rv"><table class="cmp">
-      <thead><tr><th>What you get</th><th class="main">Your plan · $1,100 a month</th><th class="quiet">Higher tier plan · $1,800 a month</th></tr></thead>
-      <tbody>
-        <tr class="grp"><th colspan="3">A new funnel every month</th></tr>
-        <tr><th scope="row"><b>One complete funnel for one of your offers</b><span>Each month we build one full path for one offer you pick: a topic page on your site, a free gift, the welcome emails, tagged links and the Shorts that point to it. Every funnel we build keeps running.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>1 new funnel a month</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>2 new funnels a month</span></span></td></tr>
-        <tr><th scope="row"><b>Welcome emails in your voice</b><span>New contacts get a short series inside your own Mailchimp: a lesson, a real student story, then the offer that fits what they watched. We write them, you approve them once.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>5 per funnel</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>5 per funnel</span></span></td></tr>
-        <tr><th scope="row"><b>Your list hears about it</b><span>An email to your whole list when a new funnel goes live, built around your next dates. You approve each one.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>1 a month</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>2 a month</span></span></td></tr>
-        <tr><th scope="row"><b>Launches for your dates</b><span>A short run of Shorts and emails before a course, a residential workshop or a Chesterton year fills up: dates, places left and the booking link.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="no" aria-label="Not included">-</span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>1 a month</span></span></td></tr>
-        <tr class="grp"><th colspan="3">Your videos</th></tr>
-        <tr><th scope="row"><b>New Shorts for each funnel</b><span>Shorts from your long videos, talks and workshop footage, each one pointing to that month's funnel. You get a written proposal for each one first: timecodes, opening and closing words, images and length.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>30 a month</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>60 a month</span></span></td></tr>
-        <tr><th scope="row"><b>Posted for you</b><span>We post every Short for you on a calendar you can see, each with its own title, description, hashtags and link.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>YouTube Shorts, plus Instagram and Facebook if you want them</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>YouTube Shorts, Instagram, Facebook and TikTok</span></span></td></tr>
-        <tr><th scope="row"><b>Your Shorts already scheduled</b><span>The Shorts you already have lined up get a link to the right funnel, so they count from the first day.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>Included</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>Included</span></span></td></tr>
-        <tr class="grp"><th colspan="3">Measuring it</th></tr>
-        <tr><th scope="row"><b>Consent done properly</b><span>Sign-ups tick a consent box, confirm their address the way your list already works, and can unsubscribe from every email.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>Included</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>Included</span></span></td></tr>
-        <tr><th scope="row"><b>Every booking traced to its Short</b><span>Each Short has its own tagged link, and each sign-up is tagged in Mailchimp with the Short and the funnel it came from. Bookings are matched back.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>Included</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>Included</span></span></td></tr>
-        <tr><th scope="row"><b>You see what is working</b><span>A report: views, clicks, sign-ups, enquiries and bookings, per Short and per funnel, and what we change next.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>Every week</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>Every week</span></span></td></tr>
-        <tr class="grp"><th colspan="3">Working with us</th></tr>
-        <tr><th scope="row"><b>Built into the tools you already run</b><span>We build inside your Squarespace site, your Mailchimp list and your booking calendar. Nothing is copied, nothing runs twice.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>Included</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>Included</span></span></td></tr>
-        <tr><th scope="row"><b>Any extra tool, paid by our team</b><span>If a step needs a tool you don't have, our team pays for it and runs it. You pay nothing extra.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>Included</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>Included</span></span></td></tr>
-        <tr><th scope="row"><b>Strategy call with Benas and Simas</b><span>Time with us to pick the next funnel and plan the dates. You pick the times.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="ok"><span>Whenever you want one</span></span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>Whenever you want one</span></span></td></tr>
-        <tr><th scope="row"><b>Our 30-day promise</b><span>No booking traced to the system in the first 30 days of the higher tier plan? You choose: one more month free, or that month back.</span></th><td class="yes" data-l="Your plan · $1,100"><span class="no" aria-label="Not included">-</span></td><td class="q2" data-l="Higher tier plan · $1,800"><span class="ok"><span>Included</span></span></td></tr>
-        <tr class="tot"><th scope="row"><b>Every month</b><span>No setup fee. No software to buy. Month-to-month.</span></th><td class="yes" data-l="Your plan">$1,100</td><td class="q2" data-l="Higher tier plan">$1,800</td></tr>
-      </tbody>
-    </table></div>
   </div>
 </section>
 
 <section class="band" id="privacy" aria-labelledby="privacy-h">
   <div class="wrap">
-    <div class="head rv"><p class="eyebrow"><span class="secno">06</span>Consent and tracking</p><h2 id="privacy-h">Consent, tracking <span class="gold">and attribution</span></h2>
-      <p class="lede">Your answer to "how would we measure it". You see enquiries and actual bookings, and which Short brought each one.</p></div>
-    <div class="priv">
-      <div class="rv sl"><b>Consent first</b><span>Every sign-up ticks a consent box and confirms their address, the same way your list already works. Every email has an unsubscribe link.</span></div>
-      <div class="rv sr"><b>A tagged link for every Short</b><span>Each Short gets its own link, so we can count the clicks it brings. Your Shorts already scheduled get one too.</span></div>
-      <div class="rv sl"><b>Every sign-up tagged</b><span>In your Mailchimp, each new contact carries the name of the Short they came from. You can see it yourself, any time.</span></div>
-      <div class="rv sr"><b>Bookings traced back</b><span>When a contact books a course, a workshop, lessons or a free chat, we match it to their Short. The weekly report shows enquiries and bookings per Short and per funnel.</span></div>
+    <div class="head rv"><p class="eyebrow"><span class="secno">05</span>Consent and your data</p><h2 id="privacy-h">Consent <span class="gold">and your data</span></h2></div>
+    <div class="incl rv" style="margin-top:26px"><ul>
+      <li>Every sign-up ticks a clear consent box and confirms their address.</li>
+      <li>Every email has an unsubscribe link.</li>
+      <li>The contacts, pages and emails are yours. If you stop, they stay with you, and the contacts are already in your Mailchimp list.</li>
+      <li>We never email your existing list without your OK.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section id="plan" aria-labelledby="plan-h">
+  <div class="wrap">
+    <div class="head rv"><p class="eyebrow"><span class="secno">06</span>What it costs</p><h2 id="plan-h">What it costs, <span class="gold">and what it replaces</span></h2></div>
+    <div class="tiers rv">
+      <div class="pl main">
+        <span class="pill">Tier 1 · Recommended</span>
+        <h3>Your plan</h3>
+        <p class="pr">$500 <small>one-time, to set up</small></p>
+        <p class="pr">$500 <small>a month, after that</small></p>
+        <p class="sub">Every tool is included. Month to month, cancel any time by email.</p>
+        <div><h4>Setup: $500 one-time</h4><p class="lead">The first funnel built and live:</p><ul><li>The page</li><li>The short web addresses</li><li>The keyword messages</li><li>The three welcome emails</li><li>The tracking</li><li>The first weekly report</li></ul></div>
+        <!-- PAY LINK PENDING: founders confirm price -->
+      </div>
+      <div class="pl tier2">
+        <span class="pill">Tier 2</span>
+        <h3>Tier 2 — content pending</h3>
+        <p class="sub">Placeholder. The bigger tier will be described here once it is confirmed.</p>
+      </div>
     </div>
-    <div class="rep"><div class="rh"><b>Your weekly report, per Short</b><span>Example layout</span></div>
-      <table><thead><tr><th>Short</th><th class="n hide">Clicks</th><th class="n">Sign-ups</th><th class="barc"></th><th class="n">Booked</th></tr></thead><tbody><tr><td>Getting off Auto</td><td class="n hide" data-count="212">212</td><td class="n" data-count="31">31</td><td class="barc"><div class="bar"><i style="--w:100%"></i></div></td><td class="n" data-count="3">3</td></tr><tr><td>How much negative space?</td><td class="n hide" data-count="148">148</td><td class="n" data-count="19">19</td><td class="barc"><div class="bar"><i style="--w:61%"></i></div></td><td class="n" data-count="2">2</td></tr><tr><td>Mystery or confusion?</td><td class="n hide" data-count="96">96</td><td class="n" data-count="11">11</td><td class="barc"><div class="bar"><i style="--w:35%"></i></div></td><td class="n" data-count="1">1</td></tr><tr><td>Check the whole frame</td><td class="n hide" data-count="74">74</td><td class="n" data-count="7">7</td><td class="barc"><div class="bar"><i style="--w:23%"></i></div></td><td class="n" data-count="0">0</td></tr></tbody></table>
-      <p class="ft">These numbers only show the format, not a forecast.</p></div>
+    <h3 class="subh">What your monthly fee pays for, every month</h3>
+    <div class="incl rv" style="margin-top:18px"><ul>
+      <li>We run the emails and the messages.</li>
+      <li>We keep every page and link working.</li>
+      <li>We build one new funnel each month, for the offer you pick.</li>
+      <li>We send the weekly report.</li>
+      <li>We hold a monthly review call.</li>
+    </ul></div>
+    <h3 class="subh">What it would cost to run this yourself</h3>
+    <table class="tb cost rv" style="margin-top:18px">
+      <tbody>
+        <tr><th scope="row">An email tool with automations</th><td>Typically £40–90 a month.</td></tr>
+        <tr><th scope="row">A tool for the keyword messages on Instagram and Facebook</th><td>Typically £15–40 a month.</td></tr>
+        <tr><th scope="row">Link tracking and reporting</th><td>Typically £0–25 a month.</td></tr>
+        <tr><th scope="row">Your time</th><td>About 10–15 hours a month to build pages, write emails, set up messages and pull the numbers together.</td></tr>
+        <tr class="us"><th scope="row">With us</th><td>One fee, and none of the hours.</td></tr>
+      </tbody>
+    </table>
+    <h3 class="subh">In your own prices</h3>
+    <p class="note2">These are your own prices from your site, not a forecast. Set against $500 a month:</p>
+    <table class="tb three rv">
+      <thead><tr><th>Your offer</th><th>Your price</th><th>Against $500 a month</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Pick n Mix, 12-month plan</th><td data-l="Your price">£600, £1,000 or £1,200 a year</td><td data-l="Against $500 a month">One covers more than a month.</td></tr>
+        <tr><th scope="row">Private lessons, 4 × 2 hours</th><td data-l="Your price">£360</td><td data-l="Against $500 a month">Two cover a month.</td></tr>
+        <tr><th scope="row">A Year at Chesterton</th><td data-l="Your price">£480</td><td data-l="Against $500 a month">One covers about a month.</td></tr>
+        <tr><th scope="row">Courses and workshops</th><td data-l="Your price">£99 to £195 a place</td><td data-l="Against $500 a month">Three or four places cover a month.</td></tr>
+      </tbody>
+    </table>
   </div>
 </section>
 
 <section class="band" id="road" aria-labelledby="road-h">
   <div class="wrap">
-    <div class="head rv"><p class="eyebrow"><span class="secno">07</span>Your first month</p><h2 id="road-h">Your first month: <span class="gold">we do the heavy lifting</span></h2>
-      <p class="lede">Our team works on your account every day of the first month. Your part fits on one hand. And nothing changes on your site or your list without your OK.</p>
-      <p class="safe"><b>These timings are on the safe side.</b> Most of it usually happens faster. We leave room so you never wait on a promise.</p></div>
-    <table class="tb road3">
-      <thead><tr><th>When</th><th>What our team does</th><th>Your part</th></tr></thead>
+    <div class="head rv"><p class="eyebrow"><span class="secno">07</span>Your first 30 days</p><h2 id="road-h">Your first <span class="gold">30 days</span></h2></div>
+    <table class="tb road2 rv">
       <tbody>
-        <tr><th scope="row">Day 1</th><td data-l="What our team does">A call with you. We map your Squarespace pages, your Mailchimp list, your Academy and your booking calendar, and agree the offer for the first funnel.</td><td data-l="Your part">One call with us. That's it.</td></tr>
-        <tr><th scope="row">Week 1</th><td data-l="What our team does">We build the first funnel's topic page, write its five welcome emails and set up the tagged links. We send you proposals for its first Shorts. Your first weekly report arrives.</td><td data-l="Your part">OK the page, the emails and the proposals.</td></tr>
-        <tr><th scope="row">Weeks 2–3</th><td data-l="What our team does">The funnel goes live, and your list hears about it. The Shorts you already have scheduled get its link. New Shorts go out on your calendar, posted by us.</td><td data-l="Your part">Send any new recordings when you have them.</td></tr>
-        <tr><th scope="row">Week 4</th><td data-l="What our team does">We go through every number: views, clicks, sign-ups, enquiries and bookings, per Short. A full report, and a strategy call to pick next month's offer. The second funnel starts.</td><td data-l="Your part">Join the call, at a time that suits you.</td></tr>
-      </tbody>
-    </table>
-    <p class="later">On the higher tier plan we build two funnels a month, run a launch for your dates each month, and post your Shorts for you. You decide when.</p>
-  </div>
-</section>
-
-<section id="terms" aria-labelledby="terms-h">
-  <div class="wrap">
-    <div class="head rv"><p class="eyebrow"><span class="secno">08</span>The terms</p><h2 id="terms-h">The terms, <span class="gold">in plain words</span></h2></div>
-    <table class="tb">
-      <tbody>
-        <tr><th scope="row">Billing</th><td>$1,100 a month, paid in advance, by card or invoice. There is no setup fee.</td></tr>
-        <tr><th scope="row">Software</th><td>None to buy. We build inside your own tools. Any extra tool is paid by our team while the plan runs.</td></tr>
-        <tr><th scope="row">Cancel</th><td>Any time before your next billing date, by email. You keep everything delivered. No refunds on delivered work, except the 30-day promise in the higher tier plan.</td></tr>
-        <tr><th scope="row">Moving up</th><td>Move up to the higher tier plan from your next billing date, by email. Everything we built keeps running. There is no setup fee.</td></tr>
-        <tr><th scope="row">If you stop</th><td>Your pages, your list, your emails and your videos stay with you. Any extra tool we paid for: we hand the account over to you, or close it.</td></tr>
-        <tr><th scope="row">What's yours</th><td>Your site, your Mailchimp list, your Academy, your social accounts and every video.</td></tr>
-        <tr><th scope="row">Your word is final</th><td>If you don't like something, we change it. If you're not sure about something, leave it to us.</td></tr>
-        <tr><th scope="row">Approvals</th><td>You OK the proposal for each Short, every email and every new page. Nothing goes live without your OK.</td></tr>
-        <tr><th scope="row">Replies</th><td>You get an answer the same day, every day of the week.</td></tr>
-        <tr><th scope="row">A failed payment</th><td>We tell you at once and keep working for 7 days. After that, new funnels and Shorts pause until it's fixed. Funnels already live keep running.</td></tr>
+        <tr><th scope="row">Week 1</th><td>A call to map your site, list and calendar, and you pick the first offer.</td></tr>
+        <tr><th scope="row">Week 2</th><td>We build the page, the short web addresses, the messages and the three emails. You approve the emails once.</td></tr>
+        <tr><th scope="row">Week 3</th><td>It goes live on your scheduled Shorts.</td></tr>
+        <tr><th scope="row">Week 4</th><td>Your first full weekly report and a review call: what's working, and what the second funnel should be.</td></tr>
       </tbody>
     </table>
   </div>
 </section>
 
-<section class="band" id="detail" aria-labelledby="detail-h">
+<section id="need" aria-labelledby="need-h">
   <div class="wrap">
-    <div class="head rv"><p class="eyebrow"><span class="secno">09</span>Every detail</p><h2 id="detail-h">How each part works, <span class="gold">step by step</span></h2>
-      <p class="lede">Each card says what we do, what your part is, and gives one example.</p></div>
-    <div class="dt">
-      <div class="dcard rv sl"><div><span class="k">01</span><h3>New Shorts for each funnel</h3><p class="lbl">What we do</p><p>We make 30 new Shorts a month from your long videos, talks and workshop footage, each one pointing to that month's funnel. Before we build each one, you get a written proposal: timecodes, opening and closing words, the images and the length. Each Short ends by telling viewers where to go next.</p><p class="lbl">Your part</p><p>OK each proposal, or change it.</p></div>
-        <div class="ex"><p class="lbl">Example</p><p>A Short on getting off Auto, cut from your beginners teaching, ends with "Get my free course, link below".</p></div></div>
-      <div class="dcard rv sr"><div><span class="k">02</span><h3>One link on every Short</h3><p class="lbl">What we do</p><p>Every Short, new or already scheduled, gets its own tagged link in the description and a pinned comment. The link opens the topic page on your site.</p><p class="lbl">Your part</p><p>Nothing. We add the links once you've given us access.</p></div>
-        <div class="ex"><p class="lbl">Example</p><p>Your Short on reading the histogram links to the exposure page, which offers your free Academy 101 course.</p></div></div>
-      <div class="dcard rv sl"><div><span class="k">03</span><h3>A new funnel every month</h3><p class="lbl">What we do</p><p>Each month, one offer you pick gets its own funnel: a short page in your Squarespace, in your look, with a free gift and the sign-up form that feeds your Mailchimp list, plus its emails and Shorts. Every funnel keeps running after its month.</p><p class="lbl">Your part</p><p>Pick the offer, and OK the page before it goes live.</p></div>
-        <div class="ex"><p class="lbl">Example</p><p>Month 1, the Academy: your free course as the gift. Month 2, your private lessons. Month 3, your Pick n Mix plan. You choose the order.</p></div></div>
-      <div class="dcard rv sr"><div><span class="k">04</span><h3>Welcome emails and emails to your list</h3><p class="lbl">What we do</p><p>Every new contact from a Short gets five short emails in their first two weeks: a lesson, a real student story, then the course, workshop or lessons that fit, then your free chat. Your whole list also gets two emails a month built around your next dates.</p><p class="lbl">Your part</p><p>Approve the welcome emails once, and each list email with one reply.</p></div>
-        <div class="ex"><p class="lbl">Example</p><p>Day 1: the course. Day 3: one lesson. Day 6: a student's story. Day 9: your next beginners course dates. Day 12: a free chat.</p></div></div>
-      <div class="dcard rv sl"><div><span class="k">05</span><h3>Bookings traced to their Short</h3><p class="lbl">What we do</p><p>Each sign-up carries the name of its Short in Mailchimp. When that person books a course, a workshop, lessons or a free chat, we match it back. You see enquiries and actual bookings per Short.</p><p class="lbl">Your part</p><p>Nothing. It runs in the background.</p></div>
-        <div class="ex"><p class="lbl">Example</p><p>The windmill sunrise Short: 9 sign-ups, 2 free chats, 1 workshop booking. These numbers only show the format.</p></div></div>
-      <div class="dcard rv sr"><div><span class="k">06</span><h3>Weekly reports and strategy calls</h3><p class="lbl">What we do</p><p>Every week you get a full report: what we posted, which Shorts and funnels brought sign-ups, enquiries and bookings, and what we change next. Whenever you want a strategy call, we plan the coming weeks together.</p><p class="lbl">Your part</p><p>Pick the call times that suit you.</p></div>
-        <div class="ex"><p class="lbl">Example</p><p>"This week: 7 Shorts posted, 12 new sign-ups, 2 free chats, 1 private package, best Short: getting off Auto." These numbers only show the format.</p></div></div>
-    </div>
+    <div class="head rv"><p class="eyebrow"><span class="secno">08</span>What we need</p><h2 id="need-h">What we need <span class="gold">from you</span></h2></div>
+    <div class="incl rv" style="margin-top:26px"><ul>
+      <li>Pick the offer for each month's funnel.</li>
+      <li>Approve the welcome emails once per funnel.</li>
+      <li>Access to add pages on your website, and to your Instagram and Facebook for the keyword messages, given on the first call (we never ask for a password by email).</li>
+      <li>One small setting on your web address so the welcome emails come from you and land in inboxes. We'll walk you through it on the call.</li>
+    </ul></div>
   </div>
 </section>
+
+<section class="band" id="terms" aria-labelledby="terms-h">
+  <div class="wrap">
+    <div class="head rv"><p class="eyebrow"><span class="secno">09</span>The terms</p><h2 id="terms-h">The terms, <span class="gold">in plain words</span></h2></div>
+    <table class="tb single rv">
+      <tbody>
+        <tr><td>Month to month. Cancel any time before your next billing date, by email.</td></tr>
+        <tr><td>You keep everything built: pages, emails, contacts.</td></tr>
+        <tr><td>No refunds on months already run.</td></tr>
+        <tr><td>Paying the setup accepts this scope.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
 <section class="proof" id="trust" aria-labelledby="trust-h">
   <div class="wrap">
     <div class="head rv"><p class="eyebrow"><span class="secno">10</span>Trusted by</p><h2 id="trust-h">Who we already <span class="gold">work with</span></h2></div>
@@ -1139,50 +1139,25 @@ details>summary{min-height:44px;align-items:center;padding-top:10px;padding-bott
   </div>
 </section>
 
-<section id="after" aria-labelledby="after-h">
-  <div class="wrap">
-    <div class="head rv"><p class="eyebrow">After you pay</p><h2 id="after-h">We start <span class="gold">the same day</span></h2></div>
-    <div class="steps4">
-      <div class="card rv"><span class="num">1</span><h3>A call with you</h3><p class="small">We agree which course or workshop comes first, and anything you want done your way.</p></div>
-      <div class="card rv"><span class="num">2</span><h3>Access, set up together</h3><p class="small">On the call we connect Squarespace and Mailchimp with you. We never ask for a password by email.</p></div>
-      <div class="card rv"><span class="num">3</span><h3>Your first proposals</h3><p class="small">Written proposals for the first Shorts: timecodes, opening and closing words, images and length.</p></div>
-      <div class="card rv"><span class="num">4</span><h3>Your first path, for approval</h3><p class="small">The first topic page and the five welcome emails come to you first. Once you like them, they go live.</p></div>
-    </div>
-  </div>
-</section>
-
 <section class="band" id="faq" aria-labelledby="faq-h">
   <div class="wrap cols">
     <div class="head rv"><p class="eyebrow"><span class="secno">11</span>Good to know</p><h2 id="faq-h">Questions</h2></div>
     <div>
-      <details open><summary>Do I pay for any software?</summary><p>No. We build inside your Squarespace site, your Mailchimp list and your booking calendar. If a step needs a tool you don't have, our team pays for it and runs it.</p></details>
-      <details><summary>Will this duplicate my Academy, my emails or my list?</summary><p>No. New contacts join your existing Mailchimp list, tagged with their Short. Your blog updates keep going as they do today. The welcome series only runs for new contacts from Shorts, and it points to your own Academy, courses and workshops.</p></details>
-      <details><summary>How do you handle consent?</summary><p>Every sign-up ticks a consent box and confirms their address, the same way your list already works. Every email has an unsubscribe link. We only use what people share on purpose: a name and an email address.</p></details>
-      <details><summary>How will I know what's working?</summary><p>Every Short has its own tagged link, and every sign-up carries the name of its Short. When someone books, we match it back. The weekly report shows clicks, sign-ups, enquiries and bookings, per Short and per funnel.</p></details>
-      <details><summary>I already have Shorts scheduled. What happens to them?</summary><p>They keep going out as planned. We add a link to each one, so they bring sign-ups from the first day. Our new Shorts follow on your calendar.</p></details>
-      <details><summary>Which offer gets the first funnel?</summary><p>You choose. We'd suggest the Academy, since your Shorts already end on your free course. Then the offers you most want to fill, one a month.</p></details>
-      <details><summary>Do I still get a proposal before each Short?</summary><p>Yes. Timecodes, opening and closing words, the images and the length, before we build it.</p></details>
-      <details><summary>Who owns my site, my list and my videos?</summary><p>You do. Your site, your Mailchimp list, your Academy, your social accounts and every video stay yours.</p></details>
-      <details><summary>Can I move to the higher tier plan later?</summary><p>Yes. Email us, and it starts from your next billing date. Everything we built keeps running. The 30-day promise starts the day you pay for the higher tier plan: if no booking is traced to the system in those 30 days, you choose one more month free or that month back.</p></details>
-      <details><summary>What if I don't like a Short or an email?</summary><p>Tell us, and we change it until it's right. Revisions are unlimited.</p></details>
-      <details><summary>Can I cancel?</summary><p>Yes. It's month-to-month. Email us before your next billing date. You keep everything delivered. No refunds on delivered work, except the 30-day promise in the higher tier plan.</p></details>
+      <details open><summary>Will my current subscribers get extra emails?</summary><p>No. The welcome series only goes to new people who come from your Shorts.</p></details>
+      <details><summary>Do I need to post more Shorts?</summary><p>No. It works on the Shorts you already have scheduled.</p></details>
+      <details><summary>Do I need to learn any new software?</summary><p>No. We run it. You get the report.</p></details>
+      <details><summary>What if a booking can't be traced?</summary><p>It shows as "unmatched" in the report. We don't guess.</p></details>
+      <details><summary>Can I stop?</summary><p>Yes, any month, by email. Everything built stays yours.</p></details>
     </div>
   </div>
 </section>
 
-<section id="comm" aria-labelledby="comm-h">
+<section id="after" aria-labelledby="after-h">
   <div class="wrap">
-    <div class="head rv"><p class="eyebrow">Working together</p><h2 id="comm-h">Communication and approvals</h2></div>
-    <div class="comm">
-      <div class="card rv"><h3>Your account leads</h3><p class="small">Benas and Simas run your account together, with our editing and client success teams behind every piece.</p></div>
-      <div class="card rv"><h3>Replies the same day</h3><p class="small">Questions get an answer the same day, every day of the week.</p></div>
-      <div class="card rv"><h3>Approvals</h3><p class="small">You OK the proposal for each Short, every email and every new page before it goes out.</p></div>
-      <div class="card rv"><h3>Revisions</h3><p class="small">Unlimited. Send your notes, and we send a new version.</p></div>
-      <div class="card rv"><h3>Your files</h3><p class="small">Every Short lands in your own Drive folder, with its title, description and hashtags.</p></div>
-      <div class="card rv"><h3>Tools paid by our team</h3><p class="small">Any extra tool we use for you is covered by us. You pay nothing extra.</p></div>
-      <div class="card rv"><h3>Your word is final</h3><p class="small">Whatever you don't like, we change, the way you want it. You never have to argue for it.</p></div>
-      <div class="card rv"><h3>Easy for you</h3><p class="small">If you're not sure about something, leave it to us. Our experienced team makes the call and does the work, so you don't have to.</p></div>
-      <div class="card rv"><h3>One team for everything</h3><p class="small">Shorts, pages, emails and reports sit with one team. You never have to pass a message between people.</p></div>
+    <div class="head rv"><p class="eyebrow">Next steps</p><h2 id="after-h">What happens <span class="gold">next</span></h2></div>
+    <div class="nexts">
+      <div><b>BEJÚ Creative</b><ul><li>Answer any question you have, by email or on a call.</li><li>On day one, map your site, list and calendar with you.</li></ul></div>
+      <div><b>Alan</b><ul><li>Read this, and tell us if it fits.</li><li>Pick the first offer.</li></ul></div>
     </div>
   </div>
 </section>
@@ -1192,21 +1167,14 @@ details>summary{min-height:44px;align-items:center;padding-top:10px;padding-bott
     <div class="card">
       <p class="eyebrow">Next step</p>
       <h2 id="ready" style="margin-top:12px">Ready when you are</h2>
-      <p class="lede">Pay the first month, and we start the same day.</p>
-      <p class="urge">Your Shorts are already going out. With the path in place, every one of them can bring a booking.</p>
+      <p class="lede">Reply to the email this came with, or book a call.</p>
       <div class="btns noprint">
-        <a class="btn primary" href="mailto:benas@bejucreative.org?subject=First%20invoice%20for%20Alan%20Ranger%20Photography%20(BEJ-2026-0124)" target="_blank" rel="noopener">Start your plan · $1,100&nbsp;a&nbsp;month</a>
-      </div>
-      <div class="btns noprint" style="margin-top:12px">
-        <a class="btn ghost" href="mailto:benas@bejucreative.org?subject=Invoice%20for%20Alan%20Ranger%20Photography%20(BEJ-2026-0124)">Request an invoice</a>
+        <!-- PAY LINK PENDING: founders confirm price -->
+        <a class="btn primary" href="mailto:benas@bejucreative.org?subject=Scope%20BEJ-2026-0124%20for%20Alan%20Ranger%20Photography" target="_blank" rel="noopener">Reply by email</a>
+        <a class="btn ghost" href="https://cal.com/beju-creative/15min-call" target="_blank" rel="noopener">Book a 15-minute call</a>
         <a class="btn ghost" href="Alan-Ranger-Plan-BEJU-Creative.pdf" download>Download PDF</a>
       </div>
-      <div class="call">
-        <p>Rather talk it through first?</p>
-        <a class="btn ghost" href="https://cal.com/beju-creative/15min-call" target="_blank" rel="noopener">Book a 15-minute call</a>
-      </div>
-      <p class="accept">Paying the first month, by card or invoice, accepts this scope and our <a href="https://bejucreative.digital/terms.html">terms</a>.</p>
-      <p class="terms">Month-to-month. Cancel any time before your next billing date by email. You keep everything delivered. No refunds on delivered work, except the 30-day promise in the higher tier plan. Payments are processed by Stripe. <a href="https://bejucreative.digital/terms.html">Full terms</a></p>
+      <p class="accept">Paying the setup accepts this scope and our <a href="https://bejucreative.digital/terms.html">terms</a>.</p>
     </div>
   </div>
 </section>
@@ -1258,7 +1226,7 @@ addEventListener("beforeprint", openAll);
 (() => {
   const st = document.querySelector('.sty'); if (!st) return;
   const caps = [...st.querySelectorAll('.cp')], scr = [...st.querySelectorAll('.scr')], dots = [...st.querySelectorAll('.dots i')];
-  const flo = [...st.querySelectorAll('.flo')], isl = st.querySelector('.isl'), hint = st.querySelector('.hint');
+  const flo = [...st.querySelectorAll('.flo')], hint = st.querySelector('.hint');
   const N = caps.length, calm = location.search.includes('print') || matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (calm) { st.classList.add('calm'); caps.forEach(c => c.classList.add('on')); return; }
   addEventListener('beforeprint', () => { st.classList.add('calm'); caps.forEach(c => c.classList.add('on')); });
@@ -1276,7 +1244,6 @@ addEventListener("beforeprint", openAll);
     caps.forEach((c, n) => c.classList.toggle('on', n === i));
     scr.forEach((s, n) => { s.classList.toggle('on', n === i); s.classList.toggle('gone', n < i); });
     dots.forEach((d, n) => d.style.setProperty('--d', n < i ? 1 : n === i ? lp : 0));
-    isl.classList.toggle('wide', i === 2 && lp > .05 && lp < .85);
     scr.forEach((s, n) => s.querySelectorAll('[data-at]').forEach(e => {
       const on = n < i ? !e.dataset.out : n === i && lp >= +e.dataset.at, out = n === i && e.dataset.out && lp >= +e.dataset.out;
       e.classList.toggle('hit', on && !out); e.classList.toggle('out', !!out); }));
