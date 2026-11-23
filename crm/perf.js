@@ -145,7 +145,7 @@ function heroHTML() {
       <small class="pf-ts">of current plans</small></div>`;
   const tPost = `<div class="pf-t" title="${esc(`${asof}. Delivered Shorts we found on the clients' channels.`)}">
       <span class="pf-tl">${ic("send")}Posted by clients</span><b class="pf-big">${cnt(O.posted)}<i>/ ${int(O.made)}</i></b>${bar(O.made ? O.posted / O.made : 0)}
-      <small class="pf-ts">${int(O.posting)} of ${int(D.clients.length)} clients post</small></div>`;
+      <small class="pf-ts">of all Shorts delivered, all time · ${int(O.posting)} of ${int(D.clients.length)} clients post</small></div>`;
   const g = gainOf(O.spark);
   const tViews = `<div class="pf-t pf-t-v" title="${esc(`${asof}. Views on the Shorts we made, per platform. A platform with old data is not added in.`)}">
       <span class="pf-tl">${ic("eye")}<span class="pf-lg">Views on our Shorts</span><span class="pf-sm">Our views</span></span><b class="pf-big">${cnt(O.views)}</b>${spark(O.spark, "pf-sp-h")}
