@@ -201,7 +201,7 @@ form.addEventListener('submit', async e => {
   e.preventDefault();
   if (val('website_url')) return;                                   // bot trap
   const a = { ...known, goal: val('goal'), captions: val('captions'), graphics: val('graphics'), brand: val('brand'),
-    reference: val('reference'), sells: val('sells'), cadence: val('cadence'), need: val('need'), phone: val('phone'),
+    reference: val('reference'), sells: val('sells'), cadence: val('cadence'), need: val('need'), phone: val('phone') || 'not given',   /* founder request 11-23: the Google Form requires a phone and rejected every answer without one, while this page showed "thank you"; blank = "not given" so no answer is lost */
     source: 'Email from BEJÚ' };
   if (!known.email) { a.name = val('name'); a.email = val('email'); }
   if (!a.email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(a.email)) { say('Please add the email we wrote to you on.'); document.getElementById('email').focus(); return; }
