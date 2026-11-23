@@ -744,7 +744,7 @@ async function loadClients() {
     const unN = pb.filter(q => q.problem === "file_unnumbered").length;   // files the count can't use: one small line on the client, never a card
     const prob = [unN ? `${unN} file${unN === 1 ? "" : "s"} not counted (no Short number in the name)` : "", ...pb.filter(q => q.problem === "folder_unmatched").map(q => `“${q.ref}”: ${q.detail}`),
       ...pb.filter(q => q.problem === "over_delivered").map(q => `${byOrd[q.order_id] ? ordName(byOrd[q.order_id]) : q.ref}: ${q.detail}`)].filter(Boolean).join(" · ");
-    /* 11-23 (BENAS, clean-up): one activity dot per row, the pack now running (or the last one) for the size, the newest payment for the money,
+    /* 11-23 (BENAS, clean-up): one status mark per row, the pack now running (or the last one) for the size, the newest payment for the money,
        and the client's last / next cal.com call; all from the rows read above */
     const failed = !!(r && /past_due/i.test(r.status || "")), wait = packs.some(o => o.st === "waiting") || !!(r && waiting);
     const mark = cat === "past" ? "past" : att.length || failed ? "attn" : wait ? "wait" : "ok";
