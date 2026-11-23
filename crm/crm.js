@@ -189,6 +189,10 @@ const AUTO_MORE = /\b(we('ve)?|i('ve)?|team has) received your (message|e-?mail|
 const SOFT_NO = /\b(?:(?:no|little|limited|tight|small) budget|budget (?:is )?(?:tight|limited)|(?:don'?t|do not) (?:really )?have (?:the|a|any) budget|unlikely i have the budget|out of (?:my|our) budget|can'?t afford|cannot afford|too expensive|commission|elsewhere|below expectations|zero chance|need to find funding|not need your help|maybe later|not (?:right )?now|not at (?:this|the) (?:time|moment)|(?:reach|circle|check) (?:out|back)\b[^.]{0,40}\b(?:later|next (?:week|month|year)|in (?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*|after)|next (?:year|quarter)|after the holidays|in the new year)\b/i;
 const ownWords = t => String(t || "").split(/\bFrom: |\bOn .{5,120}?wrote:|-----Original Message-----|\bSent from my\b/)[0];   // the lead's own words, not the quoted thread
 const autoText = w => /\bautomated (e-?mail |email )?(response|reply|message)\b/i.test(w) || ((AUTO_TX.test(w) || AUTO_MORE.test(w)) && !YES_TX.test(w) && !HUMAN_TX.test(w));
+/* 11-23: the rule that filters a reply out of "waiting" (the same two checks as the waiting list), by name: "hard pass" (HARD_PASS), "auto-reply" (AUTO_TX / AUTO_MORE), or "" */
+const passRule = t => { const w = ownWords(t); return HARD_PASS.test(w) ? "hard pass" : autoText(w) ? "auto-reply" : ""; };
+/* the reason chip (same markup on Do next and the Replies page): u 0 / 1 / 2 = chip b / o / r; no u = a plain chip */
+const whyChip = (t, u) => t ? `<span class="chip why${u === 0 ? " b" : u === 1 ? " o" : u === 2 ? " r" : ""}" title="${esc(t)}">${esc(t)}</span>` : "";
 
 function derive() {
   const R = RAW, t = today(), own = r => STATE.owner === "All" || (r.owner || "") === STATE.owner, ownLoose = r => STATE.owner === "All" || !r.owner || r.owner === STATE.owner;
@@ -554,6 +558,20 @@ function derive() {
      null = the view isn't there (yet): the card says so or hides. ---- */
   d.deals = R.deals ? R.deals.filter(ownLoose) : null;
   d.drafts = R.drafts ? R.drafts.filter(x => /^(pending|held|unknown|failed|stale)$/.test(x.status || "") && ownLoose({ owner: ownerOfInbox(x.inbox) })).sort((a, b) => +new Date(a.created_at) - +new Date(b.created_at)) : null;
+  /* 11-23 (founder request, "why is it waiting"): ONE short reason per waiting reply, shown as a chip on the Replies page and on the Do next rows.
+     First that applies wins: an open founder hold (desk_items or a HOLD status) > a draft waiting in public.drafts > a big deal / money-flagged Check card >
+     "No draft yet" with the age. Colour = how long the reply has waited (u 0 / 1 / 2 = blue / amber / red: the WOF_URG minutes, the chip b / o / r classes).
+     skip(): for a reply that is NOT waiting, the rule that took it out ("hard pass", "auto-reply", "lead lost", "snoozed", "dismissed", "marked gone"). */
+  const whyDraft = {}; (R.drafts || []).filter(x => /^(pending|held|stale|failed|unknown)$/.test(x.status || "")).forEach(x => { const k = lc(x.lead_email); if (!whyDraft[k] || ms(x.created_at) > ms(whyDraft[k].created_at)) whyDraft[k] = x; });
+  const whyBig = new Set([...(R.deals || []).flatMap(x => (x.emails || [x.email]).filter(Boolean).map(lc)), ...(R.checks || []).filter(x => x.big && x.lead_email).map(x => lc(x.lead_email))]);
+  d.why = (email, at) => { const k = lc(email), m = (Date.now() - at) / 6e4, u = m >= WOF_URG.client ? 2 : m >= WOF_URG.reply ? 1 : 0, hd = holdOfE(k), x = whyDraft[k];
+    if (hd) return { t: `On hold: ${lifts(hd, "decide")}`, u };
+    if (x) { const o = ownerOfInbox(x.inbox), who = o ? o + "'s" : "a founder's";
+      return { t: x.status === "stale" ? "Draft: they wrote again" : x.status === "failed" ? "Draft: not sent" : x.status === "unknown" ? "Draft: check Instantly" : `Draft ${x.status === "held" ? "held for" : "waiting for"} ${who} OK`, u }; }
+    if (whyBig.has(k)) return { t: "Big deal: founder lane", u };
+    return { t: `No draft yet · ${m < 1 ? "just now" : rel(at)}`, u }; };
+  d.skip = (email, at, words) => { const k = lc(email), f = (R.flags || []).find(z => lc(z.email) === k);
+    return passRule(words) || (f && f.lost_reason ? "lead lost" : f && f.snoozed_until && ms(f.snoozed_until) > Date.now() ? "snoozed" : "") || (dsm[k] >= at - 6e4 ? "dismissed" : gone.has(k) ? "marked gone" : ""); };
   /* ---- 11-21 (BENAS): "Do next" = ONE ranked list, one row per lead (its most urgent reason wins):
      1 approvals > 2 replies waiting (oldest first) > 3 calls today > 4 deliveries, promises and to-dos due > 5 follow-ups due > 6 hot leads with no next step.
      A founder to-do (founder_tasks) always keeps its own row and Done button; it still takes its lead's place for the lower rows. ---- */
@@ -563,7 +581,7 @@ function derive() {
   const c0 = (r, at, key, x) => { if (key && !/^t:/.test(key) && (gone.has(key) || flagged.has(key) || (r >= 4 && holdE.has(key)))) return; todoC.push({ ...x, r, at, key }); };
   (d.drafts || []).forEach(x => c0(1, ms(x.created_at), lc(x.lead_email), { icon: "check", c: "c-purple", title: `Approve the reply to ${nm(x.lead_email)}`, sub: `${DRAFT_L[x.category] || words(x.category)}${x.status === "pending" ? "" : " · " + x.status}`, end: age(x.created_at), k: "draft", a: String(x.id) }));
   const hotBy = Object.fromEntries(d.hot.map(h => [lc(h.p.email), h]));
-  d.replyWait.forEach(x => { const h = hotBy[lc(x.email)], hd = holdOfE(x.email); c0(2, ms(x.due), lc(x.email), { icon: "mail", c: h ? "c-red" : "c-blue", title: `Reply to ${nm(x.email)}`, sub: `${hd ? `On hold: ${lifts(hd, "decide")} · ` : ""}${h ? `Hot lead, ${h.tag[0]} · ` : ""}${x.detail || "A reply is waiting"}`, end: age(x.due), email: x.email }); });
+  d.replyWait.forEach(x => { const h = hotBy[lc(x.email)]; c0(2, ms(x.due), lc(x.email), { icon: "mail", c: h ? "c-red" : "c-blue", title: `Reply to ${nm(x.email)}`, sub: `${h ? `Hot lead, ${h.tag[0]} · ` : ""}${x.detail || "A reply is waiting"}`, end: age(x.due), email: x.email, why: d.why(x.email, ms(x.due)) }); });   // 11-23: the hold / draft / deal reason is the "why" chip now (it was a prefix of this line)
   d.callsUp.filter(x => dayOf(x.start_at) === t).forEach(x => c0(3, ms(x.start_at), x.email ? lc(x.email) : "cal:" + x.uid, { icon: "phone", c: "c-blue", title: `Call ${x.name || x.email}`, sub: `Today ${timeOf(x.start_at)} · booked on cal.com`, end: timeOf(x.start_at), email: x.email || "", k: "todaylist", a: "" }));
   (R.ftasks || []).filter(x => STATE.owner === "All" || !x.who || x.who === STATE.owner).forEach(x => c0(x.due_at && ms(x.due_at) > Date.now() + 7 * 864e5 ? 7 : 4, ms(x.due_at || x.created_at), "t:" + x.id, { icon: "flag", c: "c-red", title: x.title, sub: [x.who || "Either of you", dueT(x.due_at), x.detail || ""].filter(Boolean).join(" · "), task: x.id, lead: lc(x.lead_email || ""), email: x.lead_email || "" }));
   (att.paid_waiting || []).forEach(x => c0(4, ms(x.due), lc(x.email), { icon: "cash", c: "c-green", title: `Deliver to ${x.name}`, sub: x.detail || "Paid and still waiting for the videos", end: age(x.due), email: x.email }));
@@ -747,7 +765,7 @@ const paidTile = c => { const p = c.p, inner = `<span class="av">${esc(initials(
     <div class="pt-lines"><span><b>Bought</b> ${bought}${c.n > 1 ? ` · ${c.n} payments, ${usd(c.total)} in total` : ""}</span>${c.plan ? `<span><b>Plan</b> ${esc(cut(c.plan.note, 220))} · ${nDay(c.plan)}</span>` : ""}${c.toClose ? `<span><b>Emails to close</b> ${c.toClose} sent before the first payment</span>` : ""}<span><b>Videos</b> ${c.vids ? `${c.vids} delivered${c.lastVid ? ` · last ${dLabel(c.lastVid.slice(0, 10))}` : ""}` : "none indexed yet"}</span>${c.why ? `<span><b>Priority</b> ${esc(cut(c.why, 160))}</span>` : ""}${c.owed ? `<span><b>Owed</b> ${esc(cut(c.owed, 220))}</span>` : ""}${p.email ? nextLine(p) : `<span><b>Next</b> not in the samples pipeline</span>`}${c.prom.map(x => `<span><b>Promise</b> ${esc(cut(x.promise, 200))} ${dueChip(x.due_at)}</span>`).join("")}${c.notes.filter(n => n !== c.plan && n.kind !== "priority").slice(0, 5).map(n => `<span><b>${KIND[n.kind] || esc(n.kind)}</b> ${esc(cut(n.note, 220))} · ${nDay(n)}</span>`).join("")}<span><b>Last email</b> ${c.lastEmail ? fDT(c.lastEmail) : "none synced"}</span></div>`); };
 
 /* Do next rows: a founder task gets a Done button (founders tick it); other rows open the lead or the list behind them */
-const nextRow = (x, i, long) => { const inner = `<span class="it ${x.c}"><svg><use href="#i-${x.icon}"/></svg></span><span class="row-main"><b>${esc(cut(x.title, long ? 90 : 64))}</b>${long ? `<small>${esc(cut(x.sub, 160))}</small>` : ""}</span>`;
+const nextRow = (x, i, long) => { const inner = `<span class="it ${x.c}"><svg><use href="#i-${x.icon}"/></svg></span><span class="row-main"><b>${esc(cut(x.title, long ? 90 : 64))}</b>${x.why ? whyChip(x.why.t, x.why.u) : ""}${long ? `<small>${esc(cut(x.sub, 160))}</small>` : ""}</span>`;
   if (x.task) return `<div class="tile row">${inner}<span class="row-end"><button type="button" class="act go" data-act="ftdone" data-id="${esc(x.task)}" aria-label="Mark “${esc(cut(x.title, 60))}” done">Done</button></span></div>`;
   const end = long || x.end ? `<span class="row-end">${x.end ? `<small>${esc(x.end)}</small>` : ""}${long ? `<small>#${i + 1}</small>` : ""}</span>` : ""; return x.email ? leadBtn(x.email, inner + end) : dB(x.k, x.a, inner + end, "tile row"); };
 
@@ -767,7 +785,7 @@ const quiet = (k, a, txt, label = "") => dB(k, a, txt, "qt", label);
 const PAGE_L = { clients: "Clients", todos: "To-dos", email: "Email campaigns" };
 const nextLi = x => { const t = esc(cut(x.title, 70));
   if (x.task) return `<div class="li"><span class="li-n">${t}</span><button type="button" class="act go" data-act="ftdone" data-id="${esc(x.task)}" aria-label="Mark “${esc(cut(x.title, 60))}” done">Done</button></div>`;
-  return x.email ? liLead(x.email, t, x.end ? esc(x.end) : "", "mu") : liDr(x.k, x.a, t, x.end ? esc(x.end) : "", "mu"); };
+  return x.email ? liLead(x.email, x.why ? `<span class="li-nm"><span>${t}</span>${whyChip(x.why.t, x.why.u)}</span>` : t, x.end ? esc(x.end) : "", "mu") : liDr(x.k, x.a, t, x.end ? esc(x.end) : "", "mu"); };
 /* 11-21 (BENAS): hidden, code kept. moneypage: crm/money.html is 404 on the live site. Client portal zone: videos,
    sample_requests, purchases, video_notes, video_versions all have 0 rows. Take an id out of this set to show it again. */
 const HIDDEN = new Set(["moneypage", "portal", "psamples", "pvideos", "pnotes", "pclients"]);
@@ -1476,7 +1494,7 @@ function closeLead() {
 
 /* 11-22 (BENAS "I can't find the new replies"): read-only handle for the Replies page (replies.js). The same rows and the one replyWait
    list the dashboard counts, so the page's number matches it; no extra query. */
-window.BEJU_CRM_REPLIES = { get raw() { return RAW; }, get d() { return D; }, get at() { return LAST_OK; }, get owner() { return STATE.owner; }, nameOf, ownerOfInbox, auto: s => autoText(ownWords(s)), pass: s => HARD_PASS.test(ownWords(s)) };
+window.BEJU_CRM_REPLIES = { get raw() { return RAW; }, get d() { return D; }, get at() { return LAST_OK; }, get owner() { return STATE.owner; }, nameOf, ownerOfInbox, auto: s => autoText(ownWords(s)), pass: s => HARD_PASS.test(ownWords(s)), why: (e, at) => D.why(e, at), skip: (e, at, w) => D.skip(e, at, w), chip: whyChip };
 /* 11-22 (BENAS): read-only handle for the Samples page (samples.js): the same rows, the drawer's conversation helpers and the payment confetti. No extra query. */
 window.BEJU_CRM_SAMPLES = { get raw() { return RAW; }, get at() { return LAST_OK; }, get liveAt() { return LIVE_AT; }, ownerOfInbox, loadConv, convBlock, confetti: () => confetti() };
 

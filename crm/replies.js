@@ -30,15 +30,16 @@ function model() {
   const real = (R.replies || []).filter(r => r.kind === "REAL" && !r.blocklisted && !X.auto(r.snippet));
   const byKey = new Map(real.map(r => [keyOf(r.lead_email, ms(r.received_at)), r]));
   const waitK = new Set();
-  const wait = D.replyWait.map(x => { const t = ms(x.due), k = keyOf(x.email, t), r = byKey.get(k); waitK.add(k); return { email: x.email, at: t, inbox: r ? r.inbox : "", words: (r && r.snippet) || x.detail || "", st: "wait" }; });
+  const wait = D.replyWait.map(x => { const t = ms(x.due), k = keyOf(x.email, t), r = byKey.get(k); waitK.add(k); return { email: x.email, at: t, inbox: r ? r.inbox : "", words: (r && r.snippet) || x.detail || "", st: "wait", why: X.why(x.email, t) }; });
   const outAt = {}; (R.tlite || []).forEach(m => { if (m.direction === "out") { const k = lc(m.lead_email), t = ms(m.at); if (!(outAt[k] >= t)) outAt[k] = t; } });
   const since = Date.now() - DAYS * 864e5;
   const all = real.filter(r => ms(r.received_at) >= since && mine(r.inbox)).map(r => { const t = ms(r.received_at), k = keyOf(r.lead_email, t);
-    return { email: r.lead_email, at: t, inbox: r.inbox, words: r.snippet || "", st: waitK.has(k) ? "wait" : r.answered || outAt[lc(r.lead_email)] > t ? "answered" : "none" }; });
+    const st = waitK.has(k) ? "wait" : r.answered || outAt[lc(r.lead_email)] > t ? "answered" : "none";
+    return { email: r.lead_email, at: t, inbox: r.inbox, words: r.snippet || "", st, why: st === "wait" ? X.why(r.lead_email, t) : null, rule: st === "none" ? X.skip(r.lead_email, t, r.snippet) : "" }; });
   /* live rows: shown until the stored copy arrives; one that would join the dashboard's list counts as waiting already */
   LIVE = LIVE.filter(l => !byKey.has(keyOf(l.email, l.at)));
   const flagged = e => (R.flags || []).some(f => lc(f.email) === e && (f.lost_reason || (f.snoozed_until && ms(f.snoozed_until) > Date.now())));
-  const live = LIVE.filter(l => mine(l.inbox)).map(l => ({ ...l, st: !l.answered && !X.pass(l.words) && !flagged(lc(l.email)) && !(D.gone && D.gone.has(lc(l.email))) ? "wait" : "none" }));
+  const live = LIVE.filter(l => mine(l.inbox)).map(l => ({ ...l, st: !l.answered && !X.pass(l.words) && !flagged(lc(l.email)) && !(D.gone && D.gone.has(lc(l.email))) ? "wait" : "none" })).map(l => ({ ...l, why: l.st === "wait" ? X.why(l.email, l.at) : null, rule: l.st === "none" ? X.skip(l.email, l.at, l.words) : "" }));
   const desc = (a, b) => b.at - a.at;
   return { wait: [...live.filter(l => l.st === "wait"), ...wait].sort(desc), all: [...live, ...all].sort(desc), at: X.at, owner, nameOf: X.nameOf, ownerOfInbox: X.ownerOfInbox };
 }
@@ -51,7 +52,7 @@ function badge(M) {
 
 function row(M, x, flash) {
   const o = M.ownerOfInbox(x.inbox), nm = M.nameOf(x.email), k = keyOf(x.email, x.at), isNew = NEW.has(k);
-  const st = x.st === "wait" ? `<span class="rp-pill wait">Waiting</span>` : x.st === "answered" ? `<span class="rp-pill">Answered</span>` : `<span class="rp-pill" title="Not waiting on us: a no, dismissed, or the lead is lost or snoozed">No reply needed</span>`;
+  const X = C(), st = x.st === "wait" ? (x.why ? X.chip(x.why.t, x.why.u) : `<span class="rp-pill wait">Waiting</span>`) : x.st === "answered" ? `<span class="rp-pill">Answered</span>` : X.chip(x.rule ? `No reply needed · ${x.rule}` : "No reply needed");   // 11-23: the reason, not a bare "Waiting" / a hover-only title
   return `<button type="button" class="tile rp-row${flash ? " rp-new" : ""}" data-act="lead" data-email="${esc(lc(x.email))}" data-key="${esc(k)}" title="Open the conversation">
     <span class="rp-top"><b class="rp-name">${esc(nm)}</b>${isNew ? `<span class="rp-pill new">New</span>` : ""}<span class="rp-when"><time datetime="${new Date(x.at).toISOString()}">${esc(when(x.at))}</time> · ${esc(ago(x.at))}</span></span>
     <span class="rp-words">${esc(x.words) || `<span class="rp-mute">No text synced</span>`}</span>
