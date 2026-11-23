@@ -1,182 +1,139 @@
-/* BEJÚ founder CRM: Performance page v2 (?p=perf). Founder-approved 11-23, spec docs/perf_1123/SPEC.md.
-   Reads (founders only): v_perf_clients, v_perf_our_videos, v_perf_channel, v_perf_share, perf_health, link_suggestions (open),
-   plus client_posts + deliveries for the suggestion cards. Writes: link_suggestions.status only ('accepted' | 'rejected');
-   the data lane turns accepted ones into our_posts. A view that is missing or fails shows a calm "not ready" note, never an error.
-   Rules: never "our Shorts brought N subscribers"; totals per platform, never summed across them; every number shows "as of";
-   a platform older than 26 h (or ok=false) is red. Registered through window.BEJU_SIDE_PAGES, loads before side.js. CSP: no inline styles. */
+/* BEJÚ founder CRM: Weekly reports (?p=perf), v3. SIMAS 11-23, spec docs/perf_1123/REPORTS_SPEC.md. Founder verdict on v2: "very hard to
+   navigate and doesn't do what we want" → one job: read each client's weekly report exactly as they will see it, fix the text, press Send.
+   Left: report_clients (active) + this week's client_reports, one status chip each (Due / Draft ready / Held / Sent this week).
+   Right: the report rendered by ../report/render.js, the SAME code the client's private page uses. Buttons: Edit (best.why, ideas[].idea,
+   next_week, summary_lines → data.edits {path: text}), Send (rpc report_send(report_id) → draft_id; then that draft's email shows with
+   "Send it" = the Samples approve: status approved + approved_sha256 of the body on screen; draft-sender sends it within a minute),
+   Hold (status held ↔ draft), Past reports. Nothing leaves before the founder presses "Send it" and confirms.
+   Health (collapsed): platform badges (perf_health), posting rate + rescue flags (v_perf_clients), "Is this our Short?" (link_suggestions):
+   the v2 logic, kept. Anything missing (backend lane still building) shows a calm "not ready", never an error. CSP: no inline styles. */
 (() => {
 "use strict";
-let A = null, D = null, SEL = null, MODE = "our";
+let A = null, D = null, SEL = null, VIEW = null, EDIT = false, MAIL = null, PAST = false;
+const R = () => window.BEJU_REPORT;
 const TZ = (window.BEJU_CRM || {}).timezone || "Europe/Vilnius";
 const PL = { youtube: "YouTube", instagram: "Instagram", tiktok: "TikTok" }, PORD = ["youtube", "instagram", "tiktok"];
 const plN = p => PL[p] || p || "—";
-const KIND = { monthly: "Monthly", pack: "Pack", recent: "Recent" };
 const FLAG = { rescue: ["Rescue", "r", "alert"], upsell: ["Upsell", "g", "cash"], proof: ["Proof", "pv-proof", "star"] };
 const STALE_H = 26;
-const int = v => new Intl.NumberFormat("en-US").format(Math.round(+v || 0));
-const kf = v => v == null || !isFinite(v) ? "—" : v >= 1e6 ? (v / 1e6).toFixed(1).replace(/\.0$/, "") + "M" : v >= 1e4 ? Math.round(v / 1e3) + "k" : v >= 1e3 ? (v / 1e3).toFixed(1).replace(/\.0$/, "") + "k" : String(Math.round(v));
 const fAt = new Intl.DateTimeFormat("en-US", { timeZone: TZ, month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
 const at = t => t ? fAt.format(new Date(t)) : "never";
 const hrs = t => t ? (Date.now() - new Date(t)) / 36e5 : Infinity;
-const daysSince = t => t ? Math.max(0, Math.floor((Date.now() - new Date(t)) / 864e5)) : null;
-const dur = s => s == null ? "" : `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
-const mine = (rows, c) => (rows || []).filter(r => A.lc(r.client_email) === c.key);
-const notReady = what => `<p class="pv-nr">${A.ic("clock")}<span><b>${A.esc(what)}: not ready yet.</b> The numbers show here as soon as the data sync is live.</span></p>`;
+const daysAgo = s => s ? (Date.now() - new Date(/^\d{4}-\d{2}-\d{2}$/.test(s) ? s + "T23:59:59Z" : s)) / 864e5 : Infinity;
+const notReady = (what, why) => `<p class="pv-nr">${A.ic("clock")}<span><b>${A.esc(what)}: not ready yet.</b> ${A.esc(why || "It shows here as soon as the backend step is live.")}</span></p>`;
 const health = p => (D.health || []).find(h => h.platform === p) || null;
 const stale = p => { const h = health(p); return !h || !h.ok || hrs(h.last_ok_at) > STALE_H; };
-/* data-v="k:v;k2:v2" → CSS custom properties through the CSSOM (CSP forbids style="") */
-const vars = root => root.querySelectorAll("[data-v]").forEach(el => el.dataset.v.split(";").forEach(p => { const i = p.indexOf(":"); if (i > 0) el.style.setProperty("--" + p.slice(0, i), p.slice(i + 1)); }));
+const missing = e => e && (e.code === "PGRST202" || e.code === "42883" || e.code === "42P01" || e.code === "PGRST205" || /could not find|does not exist/i.test(e.message || ""));
+const refused = e => e && (e.code === "42501" || /row-level security|permission denied/i.test(e.message || ""));
 
 /* ---------------- load ---------------- */
 async function load(api) {
   A = api;
-  const q = (t, mod) => api.all(t, "*", mod).catch(() => null);   // null = the view isn't there yet → "not ready"
-  const [cl, vids, ch, sh, hl, sug] = await Promise.all([q("v_perf_clients"), q("v_perf_our_videos"),
-    q("v_perf_channel", x => x.order("client_email").order("platform").order("day")), q("v_perf_share"), q("perf_health"),
-    q("link_suggestions", x => x.eq("status", "open").order("created_at"))]);
+  const q = (t, mod) => api.all(t, "*", mod).catch(() => null);   // null = not there yet → "not ready"
+  const [rc, cr, cl, hl, sug] = await Promise.all([q("report_clients", x => x.eq("active", true)),
+    q("client_reports", x => x.neq("status", "internal").order("week", { ascending: false })),
+    q("v_perf_clients"), q("perf_health"), q("link_suggestions", x => x.eq("status", "open").order("created_at"))]);
   let posts = [], dels = [];
   if (sug && sug.length) {
     const pids = [...new Set(sug.map(s => s.post_id).filter(Boolean))], dids = [...new Set(sug.map(s => s.delivery_id).filter(Boolean))];
     const get = (t, cols, k, ids) => ids.length ? api.sb().from(t).select(cols).in(k, ids).then(r => r.data || [], () => []) : [];
     [posts, dels] = await Promise.all([get("client_posts", "platform,post_id,title,url,posted_at,duration_s", "post_id", pids), get("deliveries", "id,title,delivered_at", "id", dids)]);
   }
-  const clients = cl ? cl.map(c => ({ ...c, key: api.lc(c.client_email), mrr: +c.mrr_usd || 0, delivered: +c.delivered || 0, posted: +c.posted || 0 }))
-    .sort((a, b) => (b.flag === "rescue") - (a.flag === "rescue") || b.mrr - a.mrr || (+b.oldest_unposted_days || 0) - (+a.oldest_unposted_days || 0) || String(a.client_name || "").localeCompare(String(b.client_name || ""))) : null;
-  return { clients, vids, ch, sh, health: hl, sug, posts, dels };
+  return model({ rc, cr, cl, health: hl, sug, posts, dels });
 }
-
-/* ---------------- top bar: one health badge per platform ---------------- */
-function healthBar() {
-  const { esc, ic } = A;
-  if (!D.health || !D.health.length) return `<div class="pv-health">${notReady("Data health")}</div>`;
-  return `<div class="pv-health" role="list" aria-label="Data freshness per platform">${PORD.map(p => { const h = health(p); if (!h) return "";
-    const bad = stale(p), why = !h.ok ? "error" : bad ? "over 26 h old" : "fresh";
-    return `<span role="listitem" class="pv-hb ${bad ? "r" : "g"}"${h.detail ? ` title="${esc(h.detail)}"` : ""}>${ic(bad ? "alert" : "check")}<b>${esc(plN(p))}</b>${p === "tiktok" ? `<small class="pv-be">best effort</small>` : ""}<span>${why} · as of ${esc(at(h.last_ok_at))}</span></span>`; }).join("")}</div>`;
+const weekEnd = r => (r.data && r.data.week_end) || r.week;
+function model(x) {
+  const lc = A.lc, reps = (x.cr || []).map(r => ({ ...r, key: lc(r.email) }));
+  const base = x.rc ? x.rc.map(c => ({ key: lc(c.email), email: c.email, name: c.name, reason: c.reason, tier: c.tier, inbox: c.inbox }))
+    : [...new Set(reps.map(r => r.key))].map(k => ({ key: k, email: k, name: (reps.find(r => r.key === k).data || {}).client?.name || "", reason: "", tier: "", inbox: "" }));
+  const clients = base.map(c => {
+    const all = reps.filter(r => r.key === c.key), cur = all.find(r => R().isV1(r.data) && daysAgo(weekEnd(r)) <= 8) || null;
+    const st = !cur ? "due" : cur.status === "sent" ? "sent" : cur.status === "held" ? "held" : cur.status === "sending" ? "sending" : "draft";
+    return { ...c, name: c.name || (cur && cur.data.client && cur.data.client.name) || c.email, all, cur, st };
+  }).sort((a, b) => ORD[a.st] - ORD[b.st] || String(a.name).localeCompare(String(b.name)));
+  return { ...x, clients, listOk: !!x.rc, reportsOk: !!x.cr };
 }
+const ORD = { draft: 0, held: 1, sending: 2, due: 3, sent: 4 };
+const CHIP = { due: ["Due", "r"], draft: ["Draft ready", "b"], held: ["Held", "o"], sending: ["Sending", "b"], sent: ["Sent this week", "g"] };
+const chip = s => `<span class="chip ${CHIP[s][1]}">${CHIP[s][0]}</span>`;
 
-/* ---------------- client list ---------------- */
-const cover = c => `${c.delivered} delivered · ${c.posted} posted (${c.delivered ? Math.round(100 * c.posted / c.delivered) : 0}%)`;
+/* ---------------- list ---------------- */
 function row(c) {
-  const { esc, ic, usd, initials } = A, F = FLAG[c.flag], old = +c.oldest_unposted_days || 0;
-  return `<a class="cl-item pv-item" href="?p=perf&amp;k=${encodeURIComponent(c.key)}" data-pv="${esc(c.key)}"${SEL === c.key ? ' aria-current="true"' : ""}>
-    <span class="av">${esc(initials(c.client_name || c.client_email))}</span>
-    <span class="grow"><span class="t">${esc(c.client_name || c.client_email)}</span>
-      <span class="s">${esc(KIND[c.kind] || c.kind || "—")} · ${c.mrr ? `${usd(c.mrr)}/mo` : "no MRR"}</span>
-      <span class="s">${esc(cover(c))}${old ? ` · oldest unposted <b class="${old > 7 ? "pv-late" : ""}">${old} d</b>` : ""}</span></span>
-    ${F ? `<span class="pv-fl"><span class="chip ${F[1]}">${ic(F[2])}${F[0]}</span>${c.flag_reason ? `<small>${esc(c.flag_reason)}</small>` : ""}</span>` : ""}</a>`;
+  const { esc, initials } = A;
+  return `<a class="cl-item wr-item" href="?p=perf&amp;k=${encodeURIComponent(c.key)}" data-wr-c="${esc(c.key)}"${SEL === c.key ? ' aria-current="true"' : ""}>
+    <span class="av">${esc(initials(c.name || c.email))}</span>
+    <span class="grow"><span class="t">${esc(c.name)}</span><span class="s">${esc(c.reason || (c.tier === "high_ticket" ? "High ticket" : c.tier === "promised" ? "Promised in our emails" : c.email))}</span></span>${chip(c.st)}</a>`;
 }
 
 /* ---------------- detail ---------------- */
-function head(c) {
-  const { esc, ic, usd, dLabel, dayOf } = A, V = mine(D.vids, c), asOf = V.reduce((m, v) => (v.as_of && v.as_of > m ? v.as_of : m), "");
-  const chips = [`<span class="chip">${esc(KIND[c.kind] || c.kind || "—")}</span>`, c.mrr ? `<span class="chip acc">${usd(c.mrr)} / month</span>` : "",
-    c.plan_label ? `<span class="chip">${esc(c.plan_label)}</span>` : "", c.renewal_at ? `<span class="chip">renews ${esc(dLabel(dayOf(c.renewal_at)))}</span>` : "",
-    c.started_at ? `<span class="chip">BEJÚ since ${esc(dLabel(dayOf(c.started_at)))}</span>` : ""].join("");
-  const F = FLAG[c.flag];
-  return `<div class="cl-head"><div><h2>${esc(c.client_name || c.client_email)}</h2><p>${esc(c.client_email)}${(c.platforms || []).length ? ` · ${esc(c.platforms.map(plN).join(", "))}` : ""}</p></div><div class="cl-chips">${chips}</div></div>
-    <div class="pv-cov"><b class="mono">${esc(cover(c))}</b><small>live from the CRM${+c.oldest_unposted_days ? ` · oldest unposted ${+c.oldest_unposted_days} d` : ""}</small></div>
-    ${F ? `<p class="pv-flag"><span class="chip ${F[1]}">${ic(F[2])}${F[0]}</span><span>${esc(c.flag_reason || "")}</span></p>` : ""}
-    ${c.our_avg_views_d7 != null || c.baseline_median != null ? `<p class="pv-base">Our Shorts at day 7: avg <b class="mono">${kf(c.our_avg_views_d7 == null ? null : +c.our_avg_views_d7)}</b> views · their usual before us: <b class="mono">${kf(c.baseline_median == null ? null : +c.baseline_median)}</b>${asOf ? ` <small>as of ${esc(dLabel(asOf))}</small>` : ""}</p>` : ""}
-    ${c.proof_line ? `<div class="pv-proofl"><p>${ic("star")}<span>${esc(c.proof_line)}</span></p><button type="button" class="act" data-copy>${ic("copy")}Copy</button></div>` : ""}`;
+const curOf = c => VIEW ? c.all.find(r => String(r.id) === String(VIEW)) || c.cur : c.cur;
+function detail(c) {
+  const { esc, ic } = A;
+  if (!c) return D.clients.length ? `<p class="empty">Pick a client on the left.</p>` : `<div class="wr-empty">${A.ic("clock")}<b>No reports to show yet.</b><span>They show here once the report client list is live and the Sunday job has built them.</span></div>`;
+  const r = curOf(c), past = !!VIEW && r && r !== c.cur, wk = r && R().isV1(r.data) ? R().weekLabel(r.data.week_start, r.data.week_end) : r ? A.dLabel(r.week) : "";
+  const canEdit = r && !past && (r.status === "draft" || r.status === "held") && !r.draft_id, canSend = r && !past && R().isV1(r.data) && (r.status === "draft" || (r.status === "sending" && r.draft_id != null));
+  const olds = c.all.filter(x => x !== c.cur);
+  const head = `<div class="wr-head"><div class="wr-ht"><h2>${esc(c.name)}</h2><p>${esc([c.reason, c.inbox ? "from " + c.inbox : ""].filter(Boolean).join(" · ") || c.email)}</p></div>
+    <div class="wr-hs">${past ? `<span class="chip">Past report</span>` : chip(c.st)}${wk ? `<span class="chip">${esc(wk)}</span>` : ""}</div></div>`;
+  let acts;
+  if (EDIT) acts = `<button type="button" class="act go wr-a" data-wr="save">${ic("check")}Save</button><button type="button" class="act wr-a" data-wr="cancel">Cancel</button>`;
+  else if (past) acts = `<button type="button" class="act wr-a" data-wr="back">${ic("back")}Back to this week</button>${r.page_url ? `<a class="act wr-a" href="${esc(r.page_url)}" target="_blank" rel="noopener noreferrer">${ic("link")}Client's page</a>` : ""}`;
+  else acts = `${r ? `<button type="button" class="act wr-a" data-wr="edit"${canEdit ? "" : ` disabled title="${esc(r.draft_id ? "The email is already made from this text" : "Only a draft or held report can be edited")}"`}>${ic("edit")}Edit</button>
+      <button type="button" class="act go wr-a" data-wr="send"${canSend ? "" : " disabled"}>${ic("send")}${r.draft_id ? "Open email" : "Send"}</button>
+      ${r.status === "draft" || r.status === "held" ? `<button type="button" class="act wr-a" data-wr="hold">${ic(r.status === "held" ? "refresh" : "clock")}${r.status === "held" ? "Unhold" : "Hold"}</button>` : ""}` : ""}
+      <button type="button" class="act wr-a" data-wr="past" aria-expanded="${PAST}"${olds.length ? "" : " disabled"}>${ic("clock")}Past reports${olds.length ? ` (${olds.length})` : ""}</button>
+      ${r && r.page_url ? `<a class="act wr-a" href="${esc(r.page_url)}" target="_blank" rel="noopener noreferrer">${ic("link")}Client's page</a>` : ""}`;
+  const pastList = PAST && !past && olds.length ? `<div class="wr-past">${olds.map(x => `<button type="button" class="wr-pi" data-wr="view" data-id="${esc(x.id)}"><span>${esc(R().isV1(x.data) ? R().weekLabel(x.data.week_start, x.data.week_end) : A.dLabel(x.week))}</span><span class="chip ${x.status === "sent" ? "g" : ""}">${esc(x.status === "sent" ? "sent " + (x.sent_at ? A.dLabel(A.dayOf(x.sent_at)) : "") : x.status)}</span></button>`).join("")}</div>` : "";
+  const note = r && r.status === "held" && !past ? `<p class="sp-note wr-note">Held: it won't go out. Unhold it to send.</p>` : r && r.status === "sending" && !past ? `<p class="sp-note wr-note">The email is made and waits for your "Send it" below, or it's on its way.</p>` : "";
+  const body = !D.reportsOk ? notReady("Weekly reports", "The report table can't be read yet.")
+    : !r ? `<div class="wr-empty">${A.ic("clock")}<b>No report for this week yet.</b><span>It's built every Sunday at 10:00.${olds.length ? " Older ones are under Past reports." : ""}</span></div>`
+    : `<div class="wr-frame">${R() ? R().render(r.data, { edit: EDIT, name: c.name }) : notReady("Report preview", "render.js didn't load.")}</div>`;
+  return `${head}<div class="wr-acts">${acts}</div><p class="pv-err wr-err" id="wr-err" role="alert" hidden></p>${note}${pastList}<div id="wr-mail">${MAIL && !past ? mailHTML(c) : ""}</div>${body}`;
 }
+
+/* the email report_send made: the Samples approve flow (status approved + approved_sha256 of the body on screen) */
+const MST = { pending: "", held: "Sent back with changes. It comes back here when fixed.", approved: "Approved. It goes out within a minute.", sending: "Sending now.", sent: "Sent.",
+  failed: "Not sent: the sender refused it. Read the reason first.", stale: "Not sent: the client wrote again after this was made.", unknown: "Unclear if it went out. Check the inbox before anything else." };
+function mailHTML(c) {
+  const { esc, ic } = A, d = MAIL; if (!d) return "";
+  if (d.missing) return `<div class="wr-mail">${notReady("The email", "The draft can't be read yet. Nothing was sent.")}</div>`;
+  const to = [d.to_email, ...(d.cc_list || [])].filter(Boolean).join(", "), can = /^(pending|failed|stale)$/.test(d.status);
+  return `<div class="wr-mail"><h3>${ic("mail")}The email that goes out</h3>
+    <p class="wr-emh"><span>From <b>${esc(d.inbox || "—")}</b></span><span>To <b>${esc(to || "—")}</b></span></p>
+    ${MST[d.status] ? `<p class="wr-ems ${esc(d.status)}">${esc(MST[d.status])}${d.error && /^(failed|unknown|stale)$/.test(d.status) ? ` <small>${esc(String(d.error).slice(0, 200))}</small>` : ""}</p>` : ""}
+    <pre class="wr-emb" id="wr-emb">${esc(d.body)}</pre>
+    <div class="wr-acts">${can ? `<button type="button" class="act go wr-a" data-wr="sendit">${ic("send")}Send it</button>` : ""}<button type="button" class="act wr-a" data-wr="mailx">Close</button></div>
+    <p class="sp-note">Nothing goes out until you press Send it and confirm. ${c.name ? esc(R().first(c.name)) + " gets" : "They get"} this email with the link to the page below.</p></div>`;
+}
+async function getDraft(id) {
+  const sb = A.sb(), one = t => sb.from(t).select("*").eq("id", id).maybeSingle().then(r => (r.error ? null : r.data), () => null);
+  return (await one("drafts_waiting")) || (await one("drafts"));
+}
+
+/* ---------------- health (collapsed; the v2 logic) ---------------- */
+function healthHTML() {
+  const { esc, ic } = A, C = D.cl ? D.cl.slice().sort((a, b) => (b.flag === "rescue") - (a.flag === "rescue") || (+b.mrr_usd || 0) - (+a.mrr_usd || 0)) : null, S = (D.sug || []).filter(s => s.status === "open");
+  const nStale = D.health ? PORD.filter(p => health(p) && stale(p)).length : 0, nRes = C ? C.filter(c => c.flag === "rescue").length : 0;
+  const sum = [nRes ? `${nRes} rescue` : "", S.length ? `${S.length} link check${S.length === 1 ? "" : "s"}` : "", nStale ? `${nStale} platform${nStale === 1 ? "" : "s"} stale` : ""].filter(Boolean);
+  const badges = !D.health || !D.health.length ? notReady("Data health", "The platform sync status can't be read yet.") : `<div class="pv-health" role="list" aria-label="Data freshness per platform">${PORD.map(p => { const h = health(p); if (!h) return "";
+    const bad = stale(p); return `<span role="listitem" class="pv-hb ${bad ? "r" : "g"}"${h.detail ? ` title="${esc(h.detail)}"` : ""}>${ic(bad ? "alert" : "check")}<b>${esc(plN(p))}</b>${p === "tiktok" ? `<small class="pv-be">best effort</small>` : ""}<span>${!h.ok ? "error" : bad ? "over 26 h old" : "fresh"} · as of ${esc(at(h.last_ok_at))}</span></span>`; }).join("")}</div>`;
+  const rows = !C ? notReady("Posting rate") : C.map(c => { const del = +c.delivered || 0, pos = +c.posted || 0, old = +c.oldest_unposted_days || 0, F = FLAG[c.flag];
+    return `<div class="wr-hr"><b>${esc(c.client_name || c.client_email)}</b><span class="mono">${pos} of ${del} posted (${del ? Math.round(100 * pos / del) : 0}%)${old ? ` · oldest unposted <i class="${old > 7 ? "pv-late" : ""}">${old} d</i>` : ""}</span>${F ? `<span class="wr-hf"><span class="chip ${F[1]}">${ic(F[2])}${F[0]}</span>${c.flag_reason ? `<small>${esc(c.flag_reason)}</small>` : ""}</span>` : ""}</div>`; }).join("");
+  const sugs = S.length ? `<div class="pv-sug"><b class="cl-ph">Is this our Short?</b><p class="sp-note">A post that may be one of ours. Yes links it (it counts after the next sync). No hides it.</p>${S.map(sugCard).join("")}</div>` : "";
+  return `<details class="card sp-card wr-health" id="wr-health"${HOPEN ? " open" : ""}><summary><span>${ic("bolt")}<b>Health</b></span><small>${esc(sum.join(" · ") || "all fine")}</small></summary>
+    <div class="wr-hb">${badges}<div class="wr-hrs">${rows}</div>${sugs}</div></details>`;
+}
+let HOPEN = false;
 function sugCard(s) {
-  const { esc, ic, dLabel, dayOf } = A, p = D.posts.find(x => x.platform === s.platform && x.post_id === s.post_id) || {};
-  const o = (D.vids || []).find(v => String(v.delivery_id) === String(s.delivery_id)) || {}, dl = D.dels.find(x => String(x.id) === String(s.delivery_id)) || {};
-  const label = o.short_label || dl.title || "One of our Shorts", delAt = o.delivered_at || dl.delivered_at;
+  const { esc, ic, dLabel, dayOf } = A, p = D.posts.find(x => x.platform === s.platform && x.post_id === s.post_id) || {}, dl = D.dels.find(x => String(x.id) === String(s.delivery_id)) || {};
+  const who = (D.cl || []).find(c => A.lc(c.client_email) === A.lc(s.client_email));
   const th = s.platform === "youtube" && /^[\w-]{6,20}$/.test(s.post_id || "") ? `<img class="pv-th" src="https://i.ytimg.com/vi/${encodeURIComponent(s.post_id)}/mqdefault.jpg" alt="" loading="lazy" width="160" height="90">` : `<span class="pv-th">${ic("play")}</span>`;
   return `<div class="pv-sc" data-sid="${esc(s.id)}">
-    <div class="pv-sp"><small>Ours</small><b>${esc(label)}</b><span>${delAt ? `delivered ${esc(dLabel(dayOf(delAt)))}` : ""}</span></div>
-    <a class="pv-sp pv-their" href="${esc(p.url || "#")}" target="_blank" rel="noopener noreferrer">${th}<span><small>Their ${esc(plN(s.platform))} post</small><b>${esc(p.title || s.post_id || "Post")}</b><span>${[p.duration_s != null ? dur(+p.duration_s) : "", p.posted_at ? `posted ${dLabel(dayOf(p.posted_at))}` : ""].filter(Boolean).map(esc).join(" · ")}</span></span></a>
+    <div class="pv-sp"><small>Ours${who ? " · " + esc(who.client_name || "") : ""}</small><b>${esc(dl.title || "One of our Shorts")}</b><span>${dl.delivered_at ? `delivered ${esc(dLabel(dayOf(dl.delivered_at)))}` : ""}</span></div>
+    <a class="pv-sp pv-their" href="${esc(p.url || "#")}" target="_blank" rel="noopener noreferrer">${th}<span><small>Their ${esc(plN(s.platform))} post</small><b>${esc(p.title || s.post_id || "Post")}</b><span>${p.posted_at ? `posted ${esc(dLabel(dayOf(p.posted_at)))}` : ""}</span></span></a>
     ${s.reason ? `<p class="sp-note pv-why">${esc(s.reason)}${s.score != null ? ` · match ${Math.round(+s.score * (+s.score <= 1 ? 100 : 1))}%` : ""}</p>` : ""}
     <div class="pv-sb"><button type="button" class="act go" data-sug="${esc(s.id)}" data-st="accepted">${ic("check")}Yes, ours</button><button type="button" class="act" data-sug="${esc(s.id)}" data-st="rejected">${ic("x")}No</button></div>
     <p class="pv-err" role="alert" hidden></p></div>`;
-}
-function sugs(c) {
-  const S = mine(D.sug, c).filter(s => s.status === "open"); if (!S.length) return "";
-  return `<div class="cl-plan pv-sug"><b class="cl-ph">Is this our Short?</b><p class="sp-note">A post that may be one of ours. Yes links it (it shows under Our videos after the next sync). No hides it.</p>${S.map(sugCard).join("")}</div>`;
-}
-function ourVideos(c) {
-  const { esc, ic, dLabel, dayOf } = A;
-  if (!D.vids) return notReady("Per-Short numbers");
-  const V = mine(D.vids, c), posted = V.filter(v => v.post_id).sort((a, b) => String(b.posted_at || "").localeCompare(String(a.posted_at || "")));
-  const byDel = {}; V.forEach(v => { const k = v.delivery_id || v.short_label; (byDel[k] = byDel[k] || []).push(v); });
-  const waiting = Object.values(byDel).filter(a => !a.some(v => v.post_id)).map(a => a[0]).sort((a, b) => String(a.delivered_at || "").localeCompare(String(b.delivered_at || "")) || String(a.short_label || "").localeCompare(String(b.short_label || ""), "en", { numeric: true }));
-  const tot = PORD.concat([...new Set(posted.map(v => v.platform))].filter(p => !PORD.includes(p))).map(p => { const r = posted.filter(v => v.platform === p); if (!r.length) return "";
-    const s = k => r.reduce((a, v) => a + (+v[k] || 0), 0), asOf = r.reduce((m, v) => (v.as_of && v.as_of > m ? v.as_of : m), ""), bad = stale(p);
-    return `<div class="pv-tot${bad ? " r" : ""}"><b>${esc(plN(p))}${p === "tiktok" ? ` <small class="pv-be">best effort</small>` : ""}</b><span class="mono pv-big">${kf(s("views"))}</span><small>views on our ${r.length} Short${r.length === 1 ? "" : "s"} · ${kf(s("likes"))} likes · ${kf(s("comments"))} comments</small><small>as of ${esc(asOf ? dLabel(asOf) : "—")}${bad ? " · data over 26 h old" : ""}</small></div>`; }).join("");
-  const card = v => `<a class="pv-v${v.removed ? " gone" : ""}" href="${esc(v.url || "#")}" target="_blank" rel="noopener noreferrer" title="Open on ${esc(plN(v.platform))}">
-    <span class="pv-vh"><b>${esc(v.short_label || "Short")}</b>${ic("link")}</span>
-    <span class="pv-vc"><span class="chip">${esc(plN(v.platform))}</span>${v.removed ? `<span class="chip o">removed · last stats</span>` : ""}${v.linked_by && v.linked_by !== "auto" ? `<span class="chip">linked by ${esc(v.linked_by)}</span>` : ""}</span>
-    <span class="pv-vn"><b class="mono">${kf(v.views == null ? null : +v.views)}</b><small>views</small></span>
-    <small class="mono">${int(v.likes)} likes · ${int(v.comments)} comments · day 7: ${v.views_d7 == null ? "—" : kf(+v.views_d7)}</small>
-    <small>posted ${esc(v.posted_at ? dLabel(dayOf(v.posted_at)) : "—")} · as of ${esc(v.as_of ? dLabel(v.as_of) : "—")}</small></a>`;
-  return `<p class="pv-covl">${esc(cover(c))}</p>
-    ${tot ? `<div class="pv-tots">${tot}</div><p class="sp-note">Totals are per platform and never added together.</p>` : ""}
-    ${posted.length ? `<div class="pv-vg">${posted.map(card).join("")}</div>` : `<p class="empty">None of our Shorts is linked to a post yet.</p>`}
-    ${waiting.length ? `<div class="cl-plan pv-wait"><b class="cl-ph">Delivered, not posted yet · ${waiting.length}</b>${waiting.map(v => { const n = daysSince(v.delivered_at); return `<div class="cl-pr"><span class="grow">${esc(v.short_label || "Short")}</span><span class="mono">delivered ${esc(v.delivered_at ? dLabel(dayOf(v.delivered_at)) : "—")}</span><span class="chip ${n > 7 ? "r" : ""}">waiting ${n == null ? "—" : n} d</span></div>`; }).join("")}</div>` : ""}`;
-}
-
-/* total channel: one small line chart per measure (never two y-scales on one chart) */
-const CH = {};
-function chart(id, title, pts, start) {
-  const { esc, dLabel } = A;
-  if (pts.length < 2) return `<figure class="pv-ch"><figcaption><b>${esc(title)}</b></figcaption><p class="empty">${pts.length ? "Not enough days yet (1 day so far)." : "No numbers for this yet."}</p></figure>`;
-  const t = d => new Date(d + "T12:00:00Z").getTime(), t0 = t(pts[0].d), t1 = t(pts[pts.length - 1].d), vs = pts.map(p => p.v);
-  let lo = Math.min(...vs), hi = Math.max(...vs); if (hi === lo) { hi += 1; lo = Math.max(0, lo - 1); }
-  const X = d => (t(d) - t0) / (t1 - t0) * 100, Y = v => 100 - (v - lo) / (hi - lo) * 92 - 4;
-  CH[id] = { pts, X, Y };
-  const path = pts.map((p, i) => `${i ? "L" : "M"}${(X(p.d) * 10).toFixed(1)} ${Y(p.v).toFixed(2)}`).join(" ");
-  const sd = start ? A.dayOf(start) : "", sx = sd ? Math.max(0, Math.min(100, X(sd))) : null, before = sd && sd < pts[0].d, last = pts[pts.length - 1];
-  return `<figure class="pv-ch"><figcaption><b>${esc(title)}</b><span class="mono">${kf(last.v)}</span><small>as of ${esc(dLabel(last.d))}</small></figcaption>
-    <div class="pv-plot" data-ch="${esc(id)}" role="img" aria-label="${esc(`${title}: ${kf(pts[0].v)} on ${dLabel(pts[0].d)}, ${kf(last.v)} on ${dLabel(last.d)}`)}">
-      <span class="pv-y hi mono">${kf(hi)}</span><span class="pv-y lo mono">${kf(lo)}</span>
-      <svg viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true">${[25, 50, 75].map(y => `<line class="pv-grid" x1="0" x2="1000" y1="${y}" y2="${y}" vector-effect="non-scaling-stroke"/>`).join("")}${sx != null ? `<line class="pv-mk" x1="${sx * 10}" x2="${sx * 10}" y1="0" y2="100" vector-effect="non-scaling-stroke"/>` : ""}<path class="pv-line" d="${path}" vector-effect="non-scaling-stroke"/></svg>
-      ${sx != null ? `<span class="pv-mkl${sx > 70 ? " end" : ""}" data-v="x:${sx.toFixed(2)}%">BEJÚ started${before ? " (before this data)" : ""}</span>` : ""}
-      <i class="pv-dot" hidden></i><span class="pv-tip mono" hidden></span></div>
-    <div class="pv-x mono"><span>${esc(dLabel(pts[0].d))}</span><span>${esc(dLabel(last.d))}</span></div></figure>`;
-}
-function channel(c) {
-  const { esc } = A;
-  const share = !D.sh ? notReady("Share of channel views") : mine(D.sh, c).map(s => `<div class="pv-share${stale(s.platform) ? " r" : ""}"><small>${esc(plN(s.platform))} · last 30 days</small>
-      <p>Our Shorts = <b class="mono">${s.share_pct == null ? "—" : (Math.round(+s.share_pct * 10) / 10) + "%"}</b> of the channel's views, last 30 days (our ${+s.our_posts_n || 0} post${+s.our_posts_n === 1 ? "" : "s"})</p>
-      <small class="mono">${kf(+s.our_views)} of ${kf(+s.channel_views)} views · ${+s.delivered_n || 0} delivered · as of ${esc(health(s.platform) ? at(health(s.platform).last_ok_at) : "—")}${stale(s.platform) ? " · data over 26 h old" : ""}</small></div>`).join("") || `<p class="empty">No share numbers for this client yet.</p>`;
-  if (!D.ch) return share + notReady("Channel history");
-  const S = mine(D.ch, c), pls = PORD.filter(p => S.some(r => r.platform === p));
-  const body = pls.map(p => { const r = S.filter(x => x.platform === p).sort((a, b) => String(a.day).localeCompare(String(b.day))), ser = k => r.filter(x => x[k] != null).map(x => ({ d: String(x.day).slice(0, 10), v: +x[k] }));
-    return `<div class="pv-pl"><b class="cl-ph">${esc(plN(p))}${p === "tiktok" ? " · best effort" : ""}${stale(p) ? ` <span class="chip r">data over 26 h old</span>` : ""}</b><div class="pv-chs">${chart(c.key + "|" + p + "|f", "Followers", ser("followers"), c.started_at)}${chart(c.key + "|" + p + "|v", "Total views", ser("total_views"), c.started_at)}</div></div>`; }).join("");
-  return `<div class="pv-shares">${share}</div>${body || `<p class="empty">No channel history for this client yet.</p>`}`;
-}
-function detail(c) {
-  if (!c) return `<p class="empty">Pick a client on the left.</p>`;
-  return `${head(c)}${sugs(c)}<div class="seg pv-seg" role="group" aria-label="Show"><button type="button" data-pvm="our" class="${MODE === "our" ? "on" : ""}" aria-pressed="${MODE === "our"}">Our videos</button><button type="button" data-pvm="channel" class="${MODE === "channel" ? "on" : ""}" aria-pressed="${MODE === "channel"}">Total channel</button></div>
-    <div class="pv-body">${MODE === "our" ? ourVideos(c) : channel(c)}</div>`;
-}
-
-/* ---------------- view + wire ---------------- */
-function view(d, api) {
-  A = api; D = d;
-  if (!d.clients) return `${healthBar()}<section class="card sp-card">${notReady("Client performance")}</section>`;
-  if (!d.clients.length) return `${healthBar()}<section class="card sp-card"><p class="empty">No clients yet.</p></section>`;
-  const k = api.lc(new URLSearchParams(location.search).get("k") || "");
-  SEL = (d.clients.find(c => c.key === k) || d.clients[0]).key;
-  return `${healthBar()}<div class="cl-wrap pv-wrap"><section class="card sp-card"><p class="sp-note pv-lh">Rescue first, then by MRR. Delivered and posted counts are live; views are as of the badges above.</p><div class="cl-list" id="pv-list">${d.clients.map(row).join("")}</div></section>
-    <section class="card sp-card" id="pv-detail">${detail(d.clients.find(c => c.key === SEL))}</section></div>`;
-}
-function bindCharts(root) {
-  vars(root);
-  root.querySelectorAll(".pv-plot[data-ch]").forEach(el => {
-    const C = CH[el.dataset.ch], dot = el.querySelector(".pv-dot"), tip = el.querySelector(".pv-tip"); if (!C) return;
-    const move = ev => { const b = el.getBoundingClientRect(), f = Math.max(0, Math.min(100, (ev.clientX - b.left) / b.width * 100));
-      const p = C.pts.reduce((m, q) => Math.abs(C.X(q.d) - f) < Math.abs(C.X(m.d) - f) ? q : m, C.pts[0]), x = C.X(p.d);
-      dot.hidden = tip.hidden = false; [dot, tip].forEach(n => { n.style.setProperty("--x", x + "%"); n.style.setProperty("--y", C.Y(p.v) + "%"); });
-      tip.classList.toggle("end", x > 60); tip.textContent = `${A.dLabel(p.d)} · ${new Intl.NumberFormat("en-US").format(p.v)}`; };
-    el.addEventListener("pointermove", move); el.addEventListener("pointerdown", move);
-    el.addEventListener("pointerleave", () => { dot.hidden = tip.hidden = true; });
-  });
-}
-function paintDetail() {
-  const box = A.el.querySelector("#pv-detail"); if (!box) return;
-  box.innerHTML = detail(D.clients.find(c => c.key === SEL)); bindCharts(box);
 }
 async function setSug(btn) {
   const id = btn.dataset.sug, st = btn.dataset.st, card = btn.closest(".pv-sc"), err = card.querySelector(".pv-err");
@@ -184,34 +141,111 @@ async function setSug(btn) {
   try {
     const { data, error } = await A.sb().from("link_suggestions").update({ status: st }).eq("id", id).select("id");
     if (error) throw error;
-    if (!data || !data.length) throw { code: "42501" };   // nothing came back: row-level security refused it
+    if (!data || !data.length) throw { code: "42501" };
     const s = D.sug.find(x => String(x.id) === String(id)); if (s) s.status = st;
-    paintDetail(); A.toast(st === "accepted" ? "Linked. It shows under Our videos after the next sync." : "Hidden: not ours.");
+    paintHealth(); A.toast(st === "accepted" ? "Linked. It counts after the next sync." : "Hidden: not ours.");
   } catch (e) {
     card.querySelectorAll("button").forEach(b => { b.disabled = false; }); err.hidden = false;
-    err.textContent = e && (e.code === "42501" || /row-level security|permission denied/i.test(e.message || "")) ? "Not saved: the database refused it (founders only). Sign in again, then retry." : `Couldn't save: ${String((e && e.message) || e).slice(0, 140)}`;
+    err.textContent = refused(e) ? "Not saved: the database refused it (founders only). Sign in again, then retry." : `Couldn't save: ${String((e && e.message) || e).slice(0, 140)}`;
   }
 }
+
+/* ---------------- view + wire ---------------- */
+function view(d, api) {
+  A = api; D = d;
+  const k = api.lc(new URLSearchParams(location.search).get("k") || "");
+  SEL = d.clients.length ? (d.clients.find(c => c.key === k) || d.clients[0]).key : null; VIEW = null; EDIT = false; MAIL = null; PAST = false;
+  const counts = Object.keys(CHIP).map(s => [s, d.clients.filter(c => c.st === s).length]).filter(x => x[1]);
+  const list = !d.listOk && !d.clients.length ? notReady("Report clients", "The list of clients who get a weekly report can't be read yet.")
+    : !d.clients.length ? `<p class="empty">No report clients yet.</p>`
+    : `${!d.listOk ? `<p class="sp-note wr-lh">The report client list isn't ready yet, so these come from the reports themselves.</p>` : ""}<div class="cl-list" id="wr-list">${d.clients.map(row).join("")}</div>`;
+  return `<div class="cl-wrap wr-wrap"><section class="card sp-card wr-left"><p class="sp-note wr-lh">${counts.length ? counts.map(([s, n]) => `${n} ${CHIP[s][0].toLowerCase()}`).join(" · ") : "Built every Sunday at 10:00."}</p>${list}</section>
+    <section class="card sp-card wr-right" id="wr-detail">${detail(d.clients.find(c => c.key === SEL))}</section></div>${healthHTML()}`;
+}
+const say = m => { const e = A.el.querySelector("#wr-err"); if (e) { e.hidden = !m; e.textContent = m || ""; } };
+function paintDetail() { const box = A.el.querySelector("#wr-detail"); if (box) box.innerHTML = detail(D.clients.find(c => c.key === SEL)); }
+function paintHealth() { const h = A.el.querySelector("#wr-health"); if (!h) return; const t = document.createElement("div"); t.innerHTML = healthHTML(); h.replaceWith(t.firstElementChild); }
+function paintMail() { const c = D.clients.find(x => x.key === SEL), m = A.el.querySelector("#wr-mail"); if (m && c) m.innerHTML = MAIL ? mailHTML(c) : ""; }
+const X = () => window.BEJU_CRM_SAMPLES || {};
+
+async function act(op, btn) {
+  const c = D.clients.find(x => x.key === SEL); if (!c) return; const r = curOf(c); say("");
+  if (op === "edit") { EDIT = true; MAIL = null; paintDetail(); A.el.querySelector("#wr-detail .bjr-ed")?.focus(); return; }
+  if (op === "cancel") { EDIT = false; paintDetail(); return; }
+  if (op === "past") { PAST = !PAST; paintDetail(); return; }
+  if (op === "view") { VIEW = btn.dataset.id; PAST = false; MAIL = null; EDIT = false; paintDetail(); A.el.querySelector("#wr-detail")?.scrollIntoView({ block: "start", behavior: "auto" }); return; }
+  if (op === "back") { VIEW = null; paintDetail(); return; }
+  if (op === "mailx") { MAIL = null; paintMail(); return; }
+  if (!r) return;
+  const lock = on => A.el.querySelectorAll("#wr-detail [data-wr]").forEach(b => { if (on) { b.dataset.was = b.disabled ? "1" : ""; b.disabled = true; } else b.disabled = b.dataset.was === "1"; });
+  lock(true);
+  try {
+    if (op === "save") {
+      const box = A.el.querySelector("#wr-detail"), sb = A.sb();
+      const { data: fresh, error } = await sb.from("client_reports").select("data,status").eq("id", r.id).maybeSingle(); if (error) throw error;
+      if (!fresh) throw new Error("This report is gone. Reload the page.");
+      if (!/^(draft|held)$/.test(fresh.status)) throw new Error("This report is no longer a draft, so it can't be edited.");
+      const base = fresh.data || {}, E = { ...R().edits(base) };
+      box.querySelectorAll("[data-ed]").forEach(t => { const p = t.dataset.ed, orig = p.split(".").reduce((o, k) => (o == null ? undefined : o[k]), base), v = t.value.replace(/\r\n?/g, "\n").trim();
+        if (!v || v === String(orig ?? "").trim()) delete E[p]; else E[p] = v; });
+      const nd = { ...base, edits: E };
+      await X().upd("client_reports", r.id, { data: nd });
+      r.data = nd; EDIT = false; paintDetail(); A.toast("Saved. The page and the email use your text.");
+      return;
+    }
+    if (op === "hold") {
+      const to = r.status === "held" ? "draft" : "held";
+      await X().upd("client_reports", r.id, { status: to }); r.status = to; c.st = to;
+      A.toast(to === "held" ? "Held. It won't go out." : "Back to draft."); repaintRow(c); paintDetail(); return;
+    }
+    if (op === "send") {
+      let id = r.draft_id;
+      if (!id) {
+        const { data, error } = await A.sb().rpc("report_send", { report_id: r.id });
+        if (error) { if (missing(error)) throw new Error("Send isn't switched on yet: the report_send step is still being built. Nothing was sent."); throw error; }
+        id = data && typeof data === "object" ? (Array.isArray(data) ? data[0] && (data[0].draft_id ?? data[0].report_send) : data.draft_id) : data;
+        if (id == null) throw new Error("The email wasn't made (no draft came back). Nothing was sent.");
+        r.draft_id = id;
+      }
+      const d = await getDraft(id); MAIL = d || { missing: true, id };
+      paintDetail(); A.el.querySelector("#wr-mail")?.scrollIntoView({ block: "nearest", behavior: "auto" }); return;
+    }
+    if (op === "sendit") {
+      const d = MAIL; if (!d || d.missing) return;
+      const now = await getDraft(d.id);   // read it fresh: if it changed since it painted, show the new text and ask to read it again
+      if (!now || now.body !== d.body || now.status !== d.status) { MAIL = now || { missing: true, id: d.id }; paintMail(); say("This email just changed. Read the new version, then press Send it."); return; }
+      const shown = A.el.querySelector("#wr-emb").textContent, to = [d.to_email, ...(d.cc_list || [])].filter(Boolean).join(", ");
+      if (shown !== String(d.body).replace(/\r\n?/g, "\n")) { say("The email on screen is not the saved one any more. Reload and open it again."); return; }
+      const ok = await X().ask({ title: `Send this to ${c.name}?`, warn: `It goes out within a minute from ${d.inbox} to ${to}, word for word, with the link to the report page.`, sees: shown, cta: "Send it" });
+      if (!ok) return;
+      await X().upd("drafts", +d.id, { status: "approved", approved_sha256: await X().sha256hex(d.body) });
+      A.toast("Sending. It goes out within a minute."); MAIL = (await getDraft(d.id)) || { ...d, status: "approved" }; paintMail(); return;
+    }
+  } catch (e) {
+    say(refused(e) ? "Not saved: the database refused it (founders only, or the backend step isn't live yet). Nothing was sent." : String((e && e.message) || e).slice(0, 220));
+  } finally { lock(false); }
+}
+function repaintRow(c) { const a = A.el.querySelector(`[data-wr-c="${CSS.escape(c.key)}"]`); if (!a) return; const t = document.createElement("div"); t.innerHTML = row(c); a.replaceWith(t.firstElementChild); }
+const WIRED = new WeakSet();
 function wire(api) {
-  A = api; const el = api.el, list = el.querySelector("#pv-list"), box = el.querySelector("#pv-detail");
-  bindCharts(el);
-  list?.addEventListener("click", ev => {
-    const a = ev.target.closest("[data-pv]"); if (!a || ev.metaKey || ev.ctrlKey || ev.shiftKey) return; ev.preventDefault();
-    SEL = a.dataset.pv; list.querySelectorAll("[data-pv]").forEach(x => x.dataset.pv === SEL ? x.setAttribute("aria-current", "true") : x.removeAttribute("aria-current"));
+  A = api; const el = api.el;
+  el.querySelector("#wr-list")?.addEventListener("click", ev => {
+    const a = ev.target.closest("[data-wr-c]"); if (!a || ev.metaKey || ev.ctrlKey || ev.shiftKey) return; ev.preventDefault();
+    if (EDIT && !confirm("Leave without saving your edits?")) return;
+    SEL = a.dataset.wrC; VIEW = null; EDIT = false; MAIL = null; PAST = false;
+    el.querySelectorAll("#wr-list [data-wr-c]").forEach(x => x.dataset.wrC === SEL ? x.setAttribute("aria-current", "true") : x.removeAttribute("aria-current"));
     paintDetail(); history.replaceState({ p: "perf" }, "", `?p=perf&k=${encodeURIComponent(SEL)}`);
-    if (innerWidth <= 900) box.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+    if (innerWidth <= 900) el.querySelector("#wr-detail")?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
   });
-  box?.addEventListener("click", ev => {
-    const m = ev.target.closest("[data-pvm]"); if (m) { MODE = m.dataset.pvm; paintDetail(); box.querySelector(`[data-pvm="${MODE}"]`)?.focus(); return; }
-    const s = ev.target.closest("[data-sug]"); if (s) { setSug(s); return; }
-    if (ev.target.closest("[data-copy]")) { const c = D.clients.find(x => x.key === SEL); if (c && c.proof_line) navigator.clipboard.writeText(c.proof_line).then(() => A.toast("Proof line copied"), () => A.toast("Couldn't copy. Select the text instead.")); }
-  });
+  el.querySelector("#wr-detail")?.addEventListener("click", ev => { const b = ev.target.closest("[data-wr]"); if (b && !b.disabled) act(b.dataset.wr, b); });
+  if (WIRED.has(el)) return; WIRED.add(el);   // the page element outlives each render: bind these two once
+  el.addEventListener("click", ev => { const s = ev.target.closest("#wr-health [data-sug]"); if (s) setSug(s); });
+  el.addEventListener("toggle", ev => { if (ev.target.id === "wr-health") HOPEN = ev.target.open; }, true);
 }
 (window.BEJU_SIDE_PAGES = window.BEJU_SIDE_PAGES || {}).perf = {
-  title: "Client performance",
-  head: ["Client <em class=\"sf\">performance</em>", "Every client: did they post our Shorts, how those did, and the whole channel. Every number shows its date."],
-  src: d => { const H = d && d.health; if (!H || !H.length) return null; const o = H.map(h => h.last_ok_at).filter(Boolean).sort()[0] || null;
-    return ["YouTube API, Instagram, TikTok (best effort)", o, H.some(h => !h.ok || hrs(h.last_ok_at) > STALE_H), "A platform is more than 26 hours old or failed: see the red badge"]; },
+  title: "Weekly reports",
+  head: ["Weekly <em class=\"sf\">reports</em>", "Pick a client, read the report as they'll see it, then press Send."],
+  src: d => { const t = d && (d.cr || []).map(r => r.created_at).filter(Boolean).sort().pop(); return d ? ["Built Sundays 10:00", t || null, false] : null; },
   load, view, wire,
 };
 })();

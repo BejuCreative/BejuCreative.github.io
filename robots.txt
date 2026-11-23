@@ -9,5 +9,6 @@ Disallow: /hero/README.txt
 Disallow: /work/README.txt
 Disallow: /scope/
 Disallow: /plans/
+Disallow: /report/
 
 Sitemap: https://bejucreative.digital/sitemap.xml
