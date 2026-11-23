@@ -879,6 +879,26 @@ details>summary{min-height:44px;align-items:center;padding-top:10px;padding-bott
 button.btn{border:0;cursor:pointer;-webkit-appearance:none;appearance:none}
 .tiers .pl .pr{font-size:44px}
 .both+.why{margin-top:22px}
+.pl .pill.ghost{visibility:hidden}
+.pl .fine{font-size:15.5px;color:var(--muted);margin:-6px 0 0}
+.pl .then{font-size:21px;font-weight:600;color:var(--ink);line-height:1.3;letter-spacing:-.01em}
+.cmp.four tbody th{width:36%}.cmp.four td{width:21.3%}
+.cmp.four thead th{text-transform:none;letter-spacing:0;font-size:15px;line-height:1.3}
+.cmp.four thead th.main{background:var(--gold-soft)}
+.cmp .no{font-size:20px;color:var(--muted)}
+.cmp td.val{font-size:16px;color:var(--body);font-weight:400}
+.tierhead+.cmpwrap{margin-top:18px}
+.cmpwrap+.twice{margin-top:22px}
+.twice+.src{margin-top:12px}
+.first6{margin-top:30px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.first6 .card{display:grid;gap:8px;align-content:start;padding:26px 24px}
+.first6 .card h3{font-size:21px}
+.first6 .card p{font-size:16.5px}
+@media (max-width:900px){.first6{grid-template-columns:minmax(0,1fr)}}
+@media screen and (max-width:760px){.cmp.four tbody th,.cmp.four td{width:auto}}
+@media print{.first6{grid-template-columns:repeat(3,minmax(0,1fr))!important}.first6 .card{break-inside:avoid;padding:12px 14px}.first6 .card h3{font-size:11.5pt}.first6 .card p{font-size:9.5pt}
+  .cmp.four th,.cmp.four td{padding:5px 9px}.cmp.four tbody th span{margin-top:2px}.cmp.four .ok::before{flex-basis:18px;height:18px;background-size:18px}.cmp.four thead th{padding:8px 9px}.cmp tr{break-inside:avoid}.tierhead{margin-top:20px}.cmpwrap{break-inside:avoid}
+  .pl .then{font-size:12pt}.pl .fine{font-size:9pt}.cmp.four thead th{font-size:8.5pt}.cmp td.val{font-size:8.5pt}.cmp tbody th b{font-size:9.5pt}.cmp tbody th span{font-size:8pt}}
 .priv span{font-size:16.5px}
 .priv b{font-size:19px}
 .why+.subh{margin-top:44px}
@@ -919,7 +939,7 @@ button.btn{border:0;cursor:pointer;-webkit-appearance:none;appearance:none}
       <span>Valid until <b>7 Dec 2026</b></span>
       <span>Your contact <b>Benas, Co-founder</b></span>
     </div>
-    <div class="toc noprint"><a href="#questions"><span>01</span>Your questions</a><a href="#found"><span>02</span>What we found</a><a href="#how"><span>03</span>What we do</a><a href="#steps"><span>04</span>How it works</a><a href="#example"><span>05</span>One example</a><a href="#track"><span>06</span>Tracking</a><a href="#fit"><span>07</span>What you already run</a><a href="#privacy"><span>08</span>Consent and your data</a><a href="#plan"><span>09</span>What it costs</a><a href="#parts"><span>10</span>Every detail</a><a href="#road"><span>11</span>Your first 30 days</a><a href="#need"><span>12</span>What we need</a><a href="#terms"><span>13</span>The terms</a><a href="#trust"><span>14</span>Who we work with</a><a href="#faq"><span>15</span>Questions</a></div>
+    <div class="toc noprint"><a href="#questions"><span>01</span>Your questions</a><a href="#found"><span>02</span>What we found</a><a href="#how"><span>03</span>What we do</a><a href="#steps"><span>04</span>How it works</a><a href="#example"><span>05</span>One example</a><a href="#track"><span>06</span>Tracking</a><a href="#fit"><span>07</span>What you already run</a><a href="#privacy"><span>08</span>Consent and your data</a><a href="#plan"><span>09</span>What it costs</a><a href="#parts"><span>10</span>Every detail</a><a href="#road"><span>11</span>Your first month</a><a href="#need"><span>12</span>What we need</a><a href="#terms"><span>13</span>The terms</a><a href="#trust"><span>14</span>Who we work with</a><a href="#faq"><span>15</span>Questions</a></div>
   </div>
 </header>
 <section style="padding-top:0" aria-label="The plans at a glance">
@@ -1110,46 +1130,29 @@ button.btn{border:0;cursor:pointer;-webkit-appearance:none;appearance:none}
 
 <section id="plan" aria-labelledby="plan-h">
   <div class="wrap">
-    <div class="head rv"><p class="eyebrow"><span class="secno">09</span>Your two options</p><h2 id="plan-h">Your two options, <span class="gold">and what they replace</span></h2></div>
+    <div class="head rv"><p class="eyebrow"><span class="secno">09</span>Your two options</p><h2 id="plan-h">Your two plans, <span class="gold">and room to grow</span></h2>
+      <p class="lede">Both are month to month, with every tool included. Plan 2 is the one we recommend for you.</p></div>
     <div class="tiers rv">
-      <div class="pl main">
-        <span class="pill">Start here</span>
+      <div class="pl">
+        <span class="pill ghost" aria-hidden="true">Plan</span>
         <h3>Plan 1 · Fill your dates</h3>
-        <p class="pr">$500 <small>setup, one time</small></p>
-        <p class="pr">$500 <small>a month, after that</small></p>
-        <p class="sub">Goes after the £11,000 of open places on your dated workshops between now and May.</p>
+        <p class="pr">$500 <small>to start</small></p>
+        <p class="fine">Your setup, the first month.</p>
+        <p class="then">Then $500 a month, from month two.</p>
         <div><h4>Setup: $500, one time</h4><ul><li>Your top 10 workshop pages rebuilt (price, places, Book button)</li><li>The past-student series written and sent</li><li>Your first topic page, with keyword messages and tracking</li><li>Your first lead magnet</li><li>The first weekly report</li></ul></div>
         <div><h4>Then $500 a month</h4><p class="lead">We keep it all running:</p><ul><li>A past-student email each month for the next dates</li><li>One new topic page and lead magnet a month</li><li>The weekly report</li><li>A monthly review call</li></ul></div>
       </div>
-      <div class="pl">
-        <span class="pill">Most complete</span>
+      <div class="pl main">
+        <span class="pill">Recommended for you</span>
         <h3>Plan 2 · Fill everything</h3>
-        <p class="pr">$1,000 <small>setup, one time</small></p>
-        <p class="pr">$1,200 <small>a month, after that</small></p>
-        <p class="sub">Plan 1 goes after the £11,000 of open places on your dated workshops. Plan 2 goes after all of it, including the £24,690 on your residentials.</p>
+        <p class="pr">$1,000 <small>to start</small></p>
+        <p class="fine">Your setup, the first month.</p>
+        <p class="then">Then $1,200 a month, from month two.</p>
         <div><h4>Setup: $1,000, one time</h4><ul><li>Everything in Plan 1</li><li>Every booking page: workshops, courses, private lessons, Pick n Mix</li><li>A full follow-up series of 10 to 12 emails for people who signed up but haven't booked</li><li>A lead magnet for each main offer (workshops, courses, private lessons, Pick n Mix)</li></ul></div>
         <div><h4>Then $1,200 a month</h4><ul><li>Everything in Plan 1</li><li>A campaign for every residential and main course: the emails and posts to fill it, planned with you around your own campaigns (you approve each one)</li><li>A topic page for each main offer</li><li>A fresh-reviews request after every workshop</li></ul></div>
       </div>
     </div>
     <p class="both">Both: every tool included, month to month, no minimum term.</p>
-    <div class="why rv"><b>How you start, safely</b><p>You pay the setup. The monthly only starts in month two, after your first weekly reports. If by then it isn't worth it to you, you stop and keep everything we built.</p></div>
-    <h3 class="subh">What your monthly fee pays for</h3>
-    <div class="incl rv" style="margin-top:18px"><ul>
-      <li>Your dates stay in front of the people most likely to book them.</li>
-      <li>Every page, link and message keeps working, and gets fixed the same week if it doesn't.</li>
-      <li>A new way in for new people every month.</li>
-      <li>A free gift for every topic that's worth swapping an email for.</li>
-      <li>One clear report a week: which Short, email or page brought each booking.</li>
-      <li>A monthly call where we decide together what to push next.</li>
-    </ul></div>
-    <h3 class="subh">What it would cost to run this yourself</h3>
-    <table class="tb cost rv" style="margin-top:18px">
-      <tbody>
-        <tr><th scope="row">The tools: email with automations, keyword messages, link tracking and reporting</th><td>Typically £60 to £150 a month.</td></tr>
-        <tr><th scope="row">Your time</th><td>About 10 to 15 hours a month to build pages, write emails, set up messages and pull the numbers together.</td></tr>
-        <tr class="us"><th scope="row">With us</th><td>One fee, and none of the hours.</td></tr>
-      </tbody>
-    </table>
     <h3 class="subh">In your own prices</h3>
     <p class="note2">These are your own prices from your site, not a forecast. Set against Plan 1, $500 a month:</p>
     <table class="tb three rv">
@@ -1160,6 +1163,35 @@ button.btn{border:0;cursor:pointer;-webkit-appearance:none;appearance:none}
         <tr><th scope="row">Day workshop places</th><td data-l="Your price">£99 to £195 a place</td><td data-l="Against Plan 1">Four to eight places cover a month.</td></tr>
       </tbody>
     </table>
+    <div class="tierhead"><h3>Everything in your plan, row by row</h3><p>Each row says what you get, what each plan includes, and what the same part typically costs when bought from an agency.</p></div>
+    <div class="cmpwrap"><table class="cmp four">
+      <thead><tr><th>What you get</th><th class="quiet">Plan 1 · $500 to start</th><th class="main">Plan 2 · $1,000 to start</th><th>Typical agency price</th></tr></thead>
+      <tbody>
+        <tr><th scope="row"><b>Booking pages that sell</b><span>Price, dates, places left, Book button.</span></th><td class="q2" data-l="Plan 1"><span class="ok"><span>Top 10 workshops</span></span></td><td class="yes" data-l="Plan 2"><span class="ok"><span>Every page</span></span></td><td class="val" data-l="Typical agency price">from $600 per page</td></tr>
+        <tr><th scope="row"><b>Your free-course sign-up, fixed</b><span>Saving every name.</span></th><td class="q2" data-l="Plan 1"><span class="ok"><span>Included</span></span></td><td class="yes" data-l="Plan 2"><span class="ok"><span>Included</span></span></td><td class="val" data-l="Typical agency price">Included</td></tr>
+        <tr><th scope="row"><b>Past students brought back</b><span>Emails about your next dates.</span></th><td class="q2" data-l="Plan 1"><span class="ok"><span>Series + 1 a month</span></span></td><td class="yes" data-l="Plan 2"><span class="ok"><span>Series + 1 a month</span></span></td><td class="val" data-l="Typical agency price">from $350 a month</td></tr>
+        <tr><th scope="row"><b>A free lead magnet and topic page</b><span>Turns viewers into sign-ups.</span></th><td class="q2" data-l="Plan 1"><span class="ok"><span>1 new each month</span></span></td><td class="yes" data-l="Plan 2"><span class="ok"><span>One per main offer, then 1 a month</span></span></td><td class="val" data-l="Typical agency price">from $1,900 per funnel</td></tr>
+        <tr><th scope="row"><b>The automatic reply assistant</b><span>On Instagram and Facebook, set up and run.</span></th><td class="q2" data-l="Plan 1"><span class="ok"><span>Included</span></span></td><td class="yes" data-l="Plan 2"><span class="ok"><span>Included</span></span></td><td class="val" data-l="Typical agency price">Included</td></tr>
+        <tr><th scope="row"><b>Welcome emails</b><span>Turn sign-ups into bookings.</span></th><td class="q2" data-l="Plan 1"><span class="ok"><span>Included</span></span></td><td class="yes" data-l="Plan 2"><span class="ok"><span>Included</span></span></td><td class="val" data-l="Typical agency price">Included</td></tr>
+        <tr><th scope="row"><b>A longer follow-up series</b><span>For people who haven't booked yet.</span></th><td class="q2" data-l="Plan 1"><span class="no" aria-label="Not included">-</span></td><td class="yes" data-l="Plan 2"><span class="ok"><span>10 to 12 emails</span></span></td><td class="val" data-l="Typical agency price">from $1,000 one time</td></tr>
+        <tr><th scope="row"><b>A campaign for every residential and main course</b><span>Planned around yours.</span></th><td class="q2" data-l="Plan 1"><span class="no" aria-label="Not included">-</span></td><td class="yes" data-l="Plan 2"><span class="ok"><span>Included</span></span></td><td class="val" data-l="Typical agency price">from $1,000 a month</td></tr>
+        <tr><th scope="row"><b>Fresh reviews</b><span>Requested after every workshop.</span></th><td class="q2" data-l="Plan 1"><span class="no" aria-label="Not included">-</span></td><td class="yes" data-l="Plan 2"><span class="ok"><span>Included</span></span></td><td class="val" data-l="Typical agency price">Included</td></tr>
+        <tr><th scope="row"><b>Tracking and a weekly report</b><span>Which Short, email or page brought each booking.</span></th><td class="q2" data-l="Plan 1"><span class="ok"><span>Included</span></span></td><td class="yes" data-l="Plan 2"><span class="ok"><span>Included</span></span></td><td class="val" data-l="Typical agency price">Included</td></tr>
+        <tr><th scope="row"><b>A monthly review call</b><span>To plan what to push next.</span></th><td class="q2" data-l="Plan 1"><span class="ok"><span>Included</span></span></td><td class="yes" data-l="Plan 2"><span class="ok"><span>Included</span></span></td><td class="val" data-l="Typical agency price">Included</td></tr>
+      </tbody>
+    </table></div>
+    <div class="twice"><b>Bought separately from agencies, these parts typically come to well over $3,000 a month.</b></div>
+    <p class="src">Typical published agency rates in the UK and US, 2026. Prices vary by agency.</p>
+    <div class="why rv"><b>How you start, safely</b><p>You pay the setup. The monthly only starts in month two, after your first weekly reports. If by then it isn't worth it to you, you stop and keep everything we built.</p></div>
+    <h3 class="subh">What your monthly fee pays for</h3>
+    <div class="incl rv" style="margin-top:18px"><ul>
+      <li>Your dates stay in front of the people most likely to book them.</li>
+      <li>Every page, link and message keeps working, and gets fixed the same week if it doesn't.</li>
+      <li>A new way in for new people every month.</li>
+      <li>A free gift for every topic that's worth swapping an email for.</li>
+      <li>One clear report a week: which Short, email or page brought each booking.</li>
+      <li>A monthly call where we decide together what to push next.</li>
+    </ul></div>
   </div>
 </section>
 
@@ -1188,15 +1220,17 @@ button.btn{border:0;cursor:pointer;-webkit-appearance:none;appearance:none}
 
 <section class="band" id="road" aria-labelledby="road-h">
   <div class="wrap">
-    <div class="head rv"><p class="eyebrow"><span class="secno">11</span>Your first 30 days</p><h2 id="road-h">Your first <span class="gold">30 days</span></h2></div>
-    <table class="tb road2 rv">
-      <tbody>
-        <tr><th scope="row">Week 1</th><td>A call to map your site, list and calendar, and you pick the first offer. You tell us roughly how many people are on your list and how many bookings you had in the last 12 months, so we aim the first emails right.</td></tr>
-        <tr><th scope="row">Week 2</th><td>We build the page, the short web addresses, the messages and the three emails. You approve the emails once.</td></tr>
-        <tr><th scope="row">Week 3</th><td>It goes live on your scheduled Shorts.</td></tr>
-        <tr><th scope="row">Week 4</th><td>Your first full weekly report and a review call: what's working, and what the second funnel should be.</td></tr>
-      </tbody>
-    </table>
+    <div class="head rv"><p class="eyebrow"><span class="secno">11</span>Your first month</p><h2 id="road-h">Your first month: <span class="gold">we do the heavy lifting</span></h2>
+      <p class="lede">Our team works on your account from the day you sign up. Your part fits on one hand, and nothing changes on your site or your accounts without your OK.</p></div>
+    <div class="first6">
+      <div class="card rv"><span class="tag">Day 1</span><h3>We start the same day</h3><p>A kick-off call the day you sign up. You give us access to your site, Instagram, Facebook and your email list, and we take it from there.</p></div>
+      <div class="card rv d1"><span class="tag">Within 48 hours</span><h3>Your booking pages sell</h3><p>Your top workshop pages show the price, the dates, the places left and a Book button. (Plan 2: every booking page follows the same week.)</p></div>
+      <div class="card rv d2"><span class="tag">Week 1</span><h3>Your past students hear from you</h3><p>The first past-student email goes out, aimed at your winter and spring dates, after your OK.</p></div>
+      <div class="card rv"><span class="tag">Week 1</span><h3>Your lead magnet goes live</h3><p>The free guide, its page, the automatic reply assistant and the welcome emails are live. (Plan 2: your other lead magnets follow within the month.)</p></div>
+      <div class="card rv d1"><span class="tag">Week 2</span><h3>Your first weekly report</h3><p>Every sign-up and booking, and the Short or email that brought it.</p></div>
+      <div class="card rv d2"><span class="tag">Week 4</span><h3>Your monthly review call</h3><p>What's working, and what we push next.</p></div>
+    </div>
+    <p class="safe"><b>Note:</b> These are our safe timings. Most of it is usually done sooner.</p>
   </div>
 </section>
 
