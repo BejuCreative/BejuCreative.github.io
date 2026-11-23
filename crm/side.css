@@ -319,7 +319,6 @@ html.fx-lite .sd-lane{-webkit-backdrop-filter:none;backdrop-filter:none;backgrou
 .sd-col.sd-zone.drop{box-shadow:inset 0 0 0 2px var(--focus)}
 .sd-done summary{cursor:pointer;font-size:12.5px;color:var(--mute);font-weight:600;padding:8px 4px;list-style:none} .sd-done summary::-webkit-details-marker{display:none}
 .sd-done summary::before{content:"+ ";font-family:var(--mono)} .sd-done[open] summary::before{content:"− "}
-.wk-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:13px}
 .wk-n{font-style:normal;font-family:var(--mono);font-size:12px;color:var(--key);margin-right:8px}
 .wk-n:empty{display:none}
 .wk-heads{display:grid;gap:8px}
@@ -495,29 +494,12 @@ button.sd-pw{font:inherit;font-size:14px;padding:0;background:none;border:0;curs
 /* weekly business review (SIMAS 11-20: "a real weekly analysis ... big, large-company scale"; Roast Room 2026-11-20) */
 .wbr-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--line-2);flex:none;font-style:normal}
 .wbr-dot.g{background:var(--green)} .wbr-dot.a{background:var(--orange)} .wbr-dot.r{background:var(--red)} .wbr-dot.x{background:var(--line-2)}
-.wbr-hero{padding:18px 20px}
-.wbr-hl{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:16px;line-height:1.35}
-.wbr-hl b{font-size:24px;font-weight:600;letter-spacing:-.02em} .wbr-hl .wbr-dot{width:13px;height:13px}
-.wbr-hero.st-g .wbr-hl b{color:var(--green)} .wbr-hero.st-a .wbr-hl b{color:var(--orange)} .wbr-hero.st-r .wbr-hl b{color:var(--red)}
-.wbr-legend{display:flex;gap:14px;flex-wrap:wrap;margin:10px 0 16px;font-size:12px;color:var(--mute)} .wbr-legend span{display:inline-flex;align-items:center;gap:6px}
-.wbr-tiles{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
-.wbr-tile{position:relative;padding:14px 14px 10px;border-radius:var(--r-tile);background:var(--tile);border:1px solid var(--line);min-width:0;overflow:hidden;cursor:default}
-.wbr-tile::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--line-2)}
-.wbr-tile.st-g::before{background:var(--green)} .wbr-tile.st-a::before{background:var(--orange)} .wbr-tile.st-r::before{background:var(--red)}
-.wbr-tile .l{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-2)}
-.wbr-tile b{display:block;font-family:var(--mono);font-size:26px;font-weight:500;letter-spacing:-.04em;margin-top:7px;line-height:1.1;overflow-wrap:anywhere}
-.wbr-tile small{display:block;font-size:11.5px;color:var(--mute);margin-top:5px;line-height:1.35;overflow-wrap:anywhere}
 .wbr-spark{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:3px;align-items:end;height:32px;margin-top:12px}
 .wbr-spark i{display:block;height:var(--h,0%);min-height:2px;border-radius:3px;background:var(--ink-2);opacity:.3;transition:height .9s var(--ease);transition-delay:calc(var(--k,0)*40ms)}
-.wbr-tile.st-g .wbr-spark i{background:var(--green);opacity:.55} .wbr-tile.st-a .wbr-spark i{background:var(--orange);opacity:.55} .wbr-tile.st-r .wbr-spark i{background:var(--red);opacity:.5}
+.st-g>.wbr-spark i{background:var(--green);opacity:.55} .st-a>.wbr-spark i{background:var(--orange);opacity:.55} .st-r>.wbr-spark i{background:var(--red);opacity:.5}
 .wbr-spark i.now{opacity:.22!important}
-.wbr-tl{display:block;font-size:10.5px;color:var(--faint);margin-top:5px}
 .wbr-sec>h2{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .wbr-sec>h2 .wbr-dot{width:11px;height:11px}
-.wbr-say{font-size:15px;font-weight:500;line-height:1.5;margin:0 0 14px;color:var(--ink)}
-.wbr-say b{font-weight:650}
-.wbr-next{display:flex;gap:12px;align-items:baseline;margin:14px 0 0;padding:11px 13px;border-radius:12px;background:var(--blue-soft);font-size:13.5px;line-height:1.45}
-.wbr-next b{flex:none;color:var(--blue);font-size:11px;text-transform:uppercase;letter-spacing:.08em}
 .wbr-fun{display:grid;gap:4px}
 .wbr-fs{display:grid;grid-template-columns:minmax(150px,1.4fr) minmax(60px,2fr) 72px 70px 76px;gap:12px;align-items:center;padding:7px 10px;border-radius:10px}
 .wbr-fs.hd{padding-top:0;padding-bottom:2px;font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.06em} .wbr-fs .r{text-align:right}
@@ -529,7 +511,7 @@ button.sd-pw{font:inherit;font-size:14px;padding:0;background:none;border:0;curs
 .wbr-lg td .sub{display:block;font-size:11px;color:var(--mute)}
 .wbr-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px;margin-bottom:12px}
 .wbr-card{padding:12px 13px;border-radius:var(--r-tile);background:var(--tile);border:1px solid var(--line);min-width:0}
-.wbr-card .top{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12px}
+.wbr-card .wk-ct{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12px}   /* was .top: crm.css styles .top as the sticky top bar */
 .wbr-card p{margin:8px 0 0;font-size:13.5px;line-height:1.45}
 .wbr-card .ba{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px;padding-top:9px;border-top:1px solid var(--line);font-size:12px;color:var(--ink-2)}
 .wbr-card .ba b{font-family:var(--mono);font-weight:500} .wbr-card .ba small{color:var(--mute)}
@@ -540,8 +522,7 @@ button.sd-pw{font:inherit;font-size:14px;padding:0;background:none;border:0;curs
 .wbr-subj{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:12px;font-size:13px} .wbr-subj b{margin-right:4px;font-weight:600} .wbr-subj small{flex-basis:100%}
 .wbr-out{display:grid;gap:6px;margin-top:12px;font-size:13px} .wbr-out>div{display:flex;gap:10px;flex-wrap:wrap;align-items:baseline} .wbr-out .mono{overflow-wrap:anywhere}
 .wbr-notes{padding:14px 18px}
-@media (max-width:1250px){.wbr-tiles{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media (max-width:600px){.wbr-tiles{grid-template-columns:repeat(2,minmax(0,1fr))} .wbr-tile b{font-size:21px} .wbr-hl b{font-size:20px}
+@media (max-width:600px){
   .wbr-fs{grid-template-columns:minmax(0,1fr) 52px 56px;gap:8px} .wbr-fs .b,.wbr-fs .avg4,.wbr-fs.hd span:nth-child(2),.wbr-fs.hd span:nth-child(5){display:none}
   .wbr-cards{grid-template-columns:minmax(0,1fr)} .pf-ln{font-size:12.5px}}
 .wbr-lg td:first-child{min-width:150px}
@@ -685,15 +666,10 @@ button.clc-m{cursor:pointer} button.clc-m:hover{background:var(--tile)}
   .pf-wl small{font-size:13px}
   .pf-ln i{font-size:13px}
   .pf-ln small{font-size:13px}
-  .wbr-legend{font-size:13px}
-  .wbr-tile .l{font-size:13px}
-  .wbr-tile small{font-size:13px}
-  .wbr-tl{font-size:13px}
-  .wbr-next b{font-size:13px}
   .wbr-fs.hd{font-size:13px}
   .wbr-fs .avg4{font-size:13px}
   .wbr-lg td .sub{font-size:13px}
-  .wbr-card .top{font-size:13px}
+  .wbr-card .wk-ct{font-size:13px}
   .wbr-card .ba{font-size:13px}
   .wbr-acts small{font-size:13px}
   .pf-ln{font-size:13px}
@@ -706,7 +682,7 @@ button.clc-m{cursor:pointer} button.clc-m:hover{background:var(--tile)}
   .clc-x{font-size:13px}
   .sp-h p,.sd-card .tt,.sd-pc .tt,.cl-pr{font-size:15px}
   .sn-brand small,.sn-cap,.sn-badge{font-size:13px}
-  .wbr-tl,.sn-cap{color:var(--mute)}   /* faint grey was 2.5:1 on the cards / menu */
+  .sn-cap{color:var(--mute)}   /* faint grey was 2.5:1 on the menu */
   .fe-m b,.cl-item .t,.cl-item .s,.ex-tile small,.sd-pt b{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}   /* wrap to 2 lines, not "…" */
   .sp-tbl,.sp-alert,.cl-head p{font-size:14px}
   .sd-chips .chip,.cl-tools .chip,.sd-add{min-height:44px;height:auto}
@@ -1051,3 +1027,94 @@ html.paged:has(#snav a[data-nav="clients"][aria-current="page"]) #app>#grid{orde
 /* the call list / call card crm.js paints under More and under a past call row: the same 13 px floor */
 #cl-detail .act{font-size:13px}
 :is(#cl-detail .cl-calls,#clc .clc-card) :is(.cc-h small,.cc-l,.ct-m,.ct-m span,.cc-miss,.fld span){font-size:13px}
+
+/* 11-23 Weekly analysis clean-up (BENAS: "run a full clean up on the weekly analysis page the same like we did with all of the other";
+   "no mini texts everywhere", a strong header of big numbers at the top). Same sections and order: a hero of 3 big numbers + the verdict
+   and the week picker (Email campaigns / Clients hero classes), one short label per number, 13 px floor on every width, the explaining
+   sentences behind "How this is counted", top rows + "Show all N", reference tables under "More". Scoped to the Weekly page. */
+.spage:has(.wk-hero) .sp-src{font-size:13px}
+[data-wkx][hidden],.wk-pan[hidden]{display:none!important}
+.wk-hero>.wk-ft,.wk-hero>.wk-pan,.wk-hero>.wk-ta{grid-column:1/-1}
+.wk-hero>.wk-ft{margin-top:-8px}
+.wk-hero .ec-hh{row-gap:6px}
+.wk-verd{display:inline-block;font-size:14px;font-weight:600;line-height:1.3;padding:3px 11px 3px 9px;border-radius:999px;background:var(--panel)}
+.wk-verd .wbr-dot{vertical-align:middle;margin:-2px 7px 0 0}
+.wk-verd.st-g{color:var(--green);background:var(--green-soft)} .wk-verd.st-a{color:var(--orange);background:var(--orange-soft)} .wk-verd.st-r{color:var(--red);background:var(--red-soft)}
+.wk-why{font-size:14px;color:var(--mute);min-width:0}
+.wk-hero .wk-pick select{height:36px;font-size:13px}
+.wk-hero .wk-pick .act{height:36px}
+.wk-board{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-areas:none}
+.wk-board>.ec-t{grid-area:auto;cursor:default}
+.wk-t .ec-l .wbr-dot{vertical-align:middle;margin:-2px 8px 0 0}
+.wk-t .wbr-spark{height:26px;margin-top:4px}
+/* card footer: Show all · More · How this is counted */
+.wk-ft{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:14px}
+.wk-b{height:34px;font-size:13px;display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--ink)}
+.wk-b .ic{width:14px;height:14px;transition:transform .25s var(--ease)} .wk-b[aria-expanded="true"] .ic{transform:rotate(90deg)}
+.wk-how{margin-left:auto;font:inherit;font-size:13px;color:var(--mute);background:none;border:0;padding:6px 2px;cursor:pointer;text-decoration:underline;text-decoration-color:var(--line-2);text-underline-offset:3px}
+.wk-how:hover,.wk-how[aria-expanded="true"]{color:var(--ink-2)}
+.wk-how:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:6px}
+.wk-pan{margin-top:12px;min-width:0}
+.wk-howp{padding:12px 14px;border-radius:12px;background:var(--panel)}
+.wk-hl{margin:0;padding-left:18px;display:grid;gap:6px;font-size:13px;line-height:1.5;color:var(--ink-2)}
+.wk-hl .wbr-dot{vertical-align:middle;margin:-2px 2px 0}
+/* section cards */
+.wk-sec>h2 .n,.wk-h3 .n,.wbr-notes summary .n{font-family:var(--mono);font-weight:500;color:var(--faint);font-size:13px;margin-left:4px}
+.wk-h3{display:flex;align-items:baseline;gap:4px;font-size:13px;font-weight:600;color:var(--mute);margin:16px 0 6px}
+.wk-sec .wk-stats{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:0}
+.wk-sec .wk-stat{padding:12px 14px}
+.wk-sec .wk-stat>span{display:flex;align-items:center;gap:6px;font-size:13px}
+.wk-sec .wk-stat b{font-size:22px}
+.wk-sec .wk-stat small{font-size:13px}
+.wk-sec .wk-stat small span{display:inline;font-size:inherit}
+.wk-stat b .wk-of{display:inline;font-size:.6em;color:var(--mute);letter-spacing:0}
+.wk-stat .wbr-spark{height:20px;margin-top:8px}
+.wk-stat .wk-pb{margin-top:10px}
+.wk-en2{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:8px 32px;align-items:start;margin-top:14px}
+.wk-en2>.wbr-out:only-child,.wk-en2>.sp-bars:only-child{grid-column:1/-1}
+.wk-lanes{margin-top:0} .wk-lanes>.wk-h3{margin:0}
+.wk-sec .wbr-out{margin-top:0}
+.wk-sec .wbr-out>.wk-h3{margin-top:0}
+.wk-sec .wbr-out>.wk-h3{margin-bottom:0}
+.wbr-fs.hd{font-size:13px;text-transform:none;letter-spacing:0} .wbr-fs.hd span{white-space:nowrap}
+.wk-sec .wbr-fs .avg4,.wk-sec .wbr-lg td .sub,.wk-sec .sp-tbl th,.wk-sec .sp-tbl .sub,.wk-sec .chip,.wk-sec small,.wk-sec .sp-bar,.wk-sec .wbr-card .wk-ct,.wk-sec .wbr-card .ba{font-size:13px}
+.wk-add .act{font-size:13px}
+.wk-ab td:nth-child(7){white-space:nowrap} .wk-ab td:first-child{min-width:190px}
+.wk-abw p{display:flex;gap:10px;margin:0 0 6px;font-size:13.5px;line-height:1.45} .wk-abw b{flex:none;font-family:var(--mono);color:var(--key)}
+.wk-rn{display:grid}
+.wk-rr{display:grid;grid-template-columns:minmax(0,1fr) auto 72px;gap:12px;align-items:baseline;padding:8px 2px;border-top:1px solid var(--line);font-size:14px}
+.wk-rr:first-child{border-top:0}
+.wk-rr>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .wk-rr .mono{font-size:13px;color:var(--mute)} .wk-rr b{font-family:var(--mono);font-weight:500;text-align:right}
+.wk-sec .wbr-cards{grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;margin-bottom:12px}
+.wk-sec .wbr-card{padding:11px 12px}
+.wk-sec .wbr-card p{font-size:13.5px;margin-top:6px}
+.wk-sec .wbr-card .ba{margin-top:8px;padding-top:7px}
+.wk-dos{display:grid}
+.wk-dos p{display:grid;grid-template-columns:190px minmax(0,1fr);gap:12px;margin:0;padding:9px 0;border-top:1px solid var(--line);font-size:13.5px;line-height:1.45}
+.wk-dos p:first-child{border-top:0} .wk-dos b{font-weight:600;color:var(--mute)}
+.wk-sec .wbr-acts li{padding:11px 14px}
+.wk-sec .wbr-acts small{font-size:13px}
+.wbr-notes summary{font-size:13px}
+.wbr-notes .wk-miss{margin-top:8px}
+/* winner of the week: smaller, the runner-up rows beside the number */
+.wk-win{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:8px 32px;align-items:center;padding:20px 24px}
+.wk-win>.wk-ft,.wk-win>.wk-pan{grid-column:1/-1}
+.wk-win>.wk-ft{margin-top:4px}
+.sp-card.wk-win h2.win-n{font-size:22px;margin-top:10px}
+.wk-win .win-big{margin-top:8px} .wk-win .win-big b{font-size:44px} .wk-win .win-big span{font-size:15px} .wk-win .win-big small{font-size:13px}
+.wk-win .win-rows{margin-top:0;gap:6px}
+.wk-win .win-rows p{font-size:14px;margin:0;padding:8px 0;border-top:1px solid var(--line)} .wk-win .win-rows p:first-child{border-top:0}
+.wk-win .win-rows b{flex-basis:92px} .wk-win .win-rows span{min-width:0;overflow-wrap:anywhere}
+@media (prefers-reduced-motion:reduce){.wk-b .ic{transition:none}}
+@media (max-width:900px){.wk-win,.wk-en2{grid-template-columns:minmax(0,1fr)} .wk-dos p{grid-template-columns:minmax(0,1fr);gap:2px}}
+@media (max-width:600px){
+  .wk-board{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px} .wk-board>.ec-t:first-child{grid-column:1/-1}
+  .wk-hero .ec-t{padding:14px}
+  .wk-why{display:none}   /* second pass: the reason is the first line of the hero's "How this is counted"; on the phone it wrapped into a grey paragraph */
+  .wk-hero .ec-btns,.wk-hero .wk-pick{width:100%} .wk-hero .wk-pick select{flex:1 1 0;width:auto;min-width:0;height:44px;font-size:16px} .wk-hero .wk-pick .act{flex:1 1 0;justify-content:center;height:44px}
+  .wk-sec .wk-stats>.wk-stat:last-child:nth-child(odd){grid-column:1/-1}
+  .wk-b,.wk-how{min-height:44px}
+  .wk-win{padding:18px}
+  .sp-card.wk-win h2.win-n{font-size:20px} .wk-win .win-big b{font-size:38px}
+  .wk-rr{grid-template-columns:minmax(0,1fr) auto 64px}
+}
