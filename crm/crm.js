@@ -267,8 +267,9 @@ function derive() {
   const ms = x => x ? +new Date(x) : 0;
   const outAt = {}; R.tlite.forEach(m => { if (m.direction === "out") { const k = lc(m.lead_email), x = ms(m.at); if (!(outAt[k] >= x)) outAt[k] = x; } });
   const dsm = {}; (R.dismiss || []).forEach(x => { const k = lc(x.lead_email), v = ms(x.received_at); if (!(dsm[k] >= v)) dsm[k] = v; });   // a mark covers its reply even when stamped to the minute
-  d.replyWait = R.attention.filter(a => a.kind === "reply" && ownLoose(a)).map(a => ({ email: a.lead_email, name: a.name || a.lead_email, detail: a.detail, due: a.due_at }))
+  const replyWaitAll = R.attention.filter(a => a.kind === "reply").map(a => ({ email: a.lead_email, name: a.name || a.lead_email, detail: a.detail, due: a.due_at, owner: a.owner }))
     .filter(x => { const w = ownWords(x.detail), at = ms(x.due), k = lc(x.email); return !(outAt[k] > at) && !(dsm[k] >= at - 6e4) && !flagged.has(k) && !gone.has(k) && !HARD_PASS.test(w) && !autoText(w); });
+  d.replyWait = replyWaitAll.filter(ownLoose);   // 11-23: "Waiting on a founder" reads replyWaitAll (both founders see it; the owner switch does not filter that card)
   const waitUs = new Set(d.replyWait.map(x => lc(x.email)));
   /* 11-22 (truth pass: Hot leads 76 vs ~45-50 real): hot = they wrote to us in the last 14 days (threads or the reply queue, auto-replies
      skipped), their newest words are not a no / later / no budget, not a client, not lost, not on hold. */
@@ -610,7 +611,7 @@ function derive() {
   d.forms = R.forms ? R.forms.filter(ownLoose).map(x => ({ ...x, open: !/^(paid|lost)$/.test(x.stage) })) : null;
   if (d.forms) { const sr = { form: 0, sample: 1, scope: 2, paid: 3, lost: 4 }; d.forms.sort((a, b) => (b.open - a.open) || (!!b.thirty - !!a.thirty) || (!!b.value_usd - !!a.value_usd) || (a.open && b.open ? (sr[b.stage] - sr[a.stage]) : 0) || String(b.submitted_at).localeCompare(String(a.submitted_at)));
     d.formsOpen = sum(d.forms.filter(x => x.open), x => +x.value_usd || 0); d.formsThirty = d.forms.filter(x => x.open && x.thirty).length; }
-  d.wof = wofOf(R, paidSet);   // 11-23 (BENAS): the "Waiting on a founder" rows (shared by both founders: the owner switch does not filter them)
+  d.wof = wofOf(R, paidSet, replyWaitAll, d.why);   // 11-23 (BENAS): the "Waiting on a founder" rows (shared by both founders: the owner switch does not filter them)
   return d;
 }
 
@@ -822,6 +823,7 @@ const wofUrg = r => { const m = (Date.now() - r.at) / 6e4, U = [0];
   if (r.due && +new Date(r.due) < Date.now()) U.push(2);
   if ((r.paying && /^(hold|prod|reply)$/.test(r.kind)) || (r.draft && r.draft.category === "client_problem")) U.push(m > WOF_URG.client ? 2 : 1);
   if (r.draft && /^(pending|held)$/.test(r.draft.status || "")) U.push(m > WOF_URG.reply ? 2 : 1);
+  if (r.nodraft) U.push(m >= WOF_URG.client ? 2 : m >= WOF_URG.reply ? 1 : 0);   // a reply with no draft: the same colour as its "why" chip (amber from 30 min, red from 4 h)
   if (r.kind === "check" && m > WOF_URG.check) U.push(1);
   if (r.kind === "check" && r.big) U.push(2);   // BENAS 11-23: a founder decision with money at stake is a red alert from the first minute
   if (r.kind === "deal" && r.nonext && m > WOF_URG.deal) U.push(1);
@@ -830,7 +832,7 @@ const WOF_K = { reply: ["Reply", "mail", "c-purple"], check: ["To approve", "che
 const WOF_ST = { failed: "Not sent", stale: "They wrote again", unknown: "Check Instantly" };
 const founderOf = o => ({ benas: "Benas", simas: "Simas" })[lc(o)] || "";
 const WOF = { el: null, html: "", prev: null, told: new Set(), open: new Set(), all: false, rows: [] };
-function wofOf(R, paid) {
+function wofOf(R, paid, waiting, why) {
   const rows = [], seen = new Set(), at = (...v) => { const x = v.find(Boolean); return x ? +new Date(x) : Date.now(); };
   const payN = new Set(R.clients.filter(c => (c.emails || []).some(e => paid.has(lc(e)))).map(c => lc(c.name)));
   const pays = (es, name) => es.some(e => paid.has(lc(e))) || (!!name && payN.has(lc(name)));
@@ -845,13 +847,20 @@ function wofOf(R, paid) {
     if (!es.length || es.some(e => seen.has(e)) || !(x.on_hold || !es.some(e => next.has(e))) || !wofFresh("deal", t)) return; es.forEach(e => seen.add(e));   // a stale deal stays in the Big deals card
     rows.push({ key: "b:" + es[0], kind: "deal", who: x.name || x.email, what: x.on_hold ? `On hold, ${lifts({ set_by: x.hold_by }, "decide")}` : "No next step set", at: t,
       value: +x.value_usd || 0, mo: !!x.monthly, paying: pays(es) || !!x.current_mrr, owner: "", nonext: !es.some(e => next.has(e)), go: { t: "lead", e: es[0] } }); });
+  const holdCov = new Set();
   (R.desk || []).forEach(x => { const es = (x.emails || []).map(lc);
-    if (x.kind === "hold") { if (es.some(e => seen.has(e)) || !wofFresh("hold", at(x.created_at))) return;   // age from when the hold was SET (created_at), never updated_at   // a draft or a deal row already covers this lead; two holds on one client stay two rows
+    if (x.kind === "hold") { if (es.some(e => seen.has(e)) || !wofFresh("hold", at(x.created_at))) return; es.forEach(e => holdCov.add(e));   // age from when the hold was SET (created_at), never updated_at   // a draft or a deal row already covers this lead; two holds on one client stay two rows
       rows.push({ key: "h:" + x.id, kind: "hold", who: x.client, what: x.title, at: at(x.created_at), value: 0, paying: pays(es, x.client), owner: founderOf(x.set_by), go: { t: "page", p: "clients", c: "holds" } }); }
     else if (x.kind === "production" && x.stage === "founder_check" && wofFresh("prod", at(x.updated_at, x.created_at)))   // updated_at = when the stage was last logged (no stage-change column)
       rows.push({ key: "p:" + x.id, kind: "prod", who: x.client, what: x.title, at: at(x.updated_at, x.created_at), value: 0, paying: pays(es, x.client), owner: founderOf(x.set_by), go: { t: "page", p: "clients", c: "prod" } }); });
   (R.checks || []).filter(x => x.status === "todo" && /^check:/i.test(String(x.title || "").trim())).forEach(x => rows.push({ key: "t:" + x.id, kind: "check", who: String(x.title).trim().replace(/^check:\s*/i, "") || "Check",
     what: `Claude's work${x.lead_email ? " · " + nameOf(x.lead_email) : ""}`, at: at(x.created_at), due: x.due_at || null, value: 0, paying: !!x.lead_email && pays([lc(x.lead_email)]), owner: founderOf(x.owner), go: { t: "todo", id: x.id }, big: !!x.big }));
+  /* 11-23: one row for each lead in the shared replyWait list (the Replies page's "Waiting on us")
+     that no row above already covers: a draft, a deal, a hold, or a Check card about that lead. The reason is the same "why" chip text. */
+  const cov = new Set([...seen, ...holdCov]);
+  (R.checks || []).filter(x => x.status === "todo" && /^check:/i.test(String(x.title || "").trim()) && x.lead_email).forEach(x => cov.add(lc(x.lead_email)));
+  [...waiting].sort((a, b) => +new Date(b.due) - +new Date(a.due)).forEach(x => { const e = lc(x.email), t = at(x.due), dl = deals[e]; if (cov.has(e)) return; cov.add(e);   // the newest reply of a lead is its row
+    rows.push({ key: "r:" + e, kind: "reply", who: nameOf(x.email), what: why(x.email, t).t, at: t, value: dl ? +dl.value_usd || 0 : 0, mo: !!(dl && dl.monthly), paying: pays([e]) || !!(dl && dl.current_mrr), owner: "", go: { t: "lead", e }, nodraft: true }); });
   rows.forEach(r => { r.urg = wofUrg(r); });   // colour only: the order below never reads it
   return rows.sort((a, b) => (b.paying - a.paying) || (!!b.big - !!a.big) || (b.value - a.value) || (a.at - b.at));
 }
