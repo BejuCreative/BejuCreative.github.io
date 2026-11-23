@@ -744,7 +744,7 @@ async function loadClients() {
     const unN = pb.filter(q => q.problem === "file_unnumbered").length;   // files the count can't use: one small line on the client, never a card
     const prob = [unN ? `${unN} file${unN === 1 ? "" : "s"} not counted (no Short number in the name)` : "", ...pb.filter(q => q.problem === "folder_unmatched").map(q => `“${q.ref}”: ${q.detail}`),
       ...pb.filter(q => q.problem === "over_delivered").map(q => `${byOrd[q.order_id] ? ordName(byOrd[q.order_id]) : q.ref}: ${q.detail}`)].filter(Boolean).join(" · ");
-    /* 11-23 (BENAS, clean-up): one status mark per row, the pack now running (or the last one) for the size, the newest payment for the money,
+    /* 11-23 (BENAS, clean-up): one activity dot per row, the pack now running (or the last one) for the size, the newest payment for the money,
        and the client's last / next cal.com call; all from the rows read above */
     const failed = !!(r && /past_due/i.test(r.status || "")), wait = packs.some(o => o.st === "waiting") || !!(r && waiting);
     const mark = cat === "past" ? "past" : att.length || failed ? "attn" : wait ? "wait" : "ok";
@@ -888,7 +888,6 @@ const ordForm = o => `<form class="cl-oe" data-oid="${o.id}" novalidate><label><
   <label><span>Kind</span>${oSel("kind", OKIND, o.kind)}</label><label><span>Status</span>${oSel("status", OSTAT, o.status)}</label>
   <div class="cl-oe-b"><button type="button" class="act" data-ocancel>Cancel</button><button type="submit" class="act go">Save</button></div><p class="cl-oe-err" hidden></p></form>`;
 /* 11-23 (BENAS: "name + plan size + money + one status mark, nothing else"): data-st / data-today / data-q keep the filter and search */
-const MARK = { attn: "Needs attention", wait: "Waiting on client", ok: "On track", past: "Past client" };
 /* 11-23: one activity dot per client = days since the newest of: we are building for them (an open production item in desk_items),
    we delivered (deliveries), they wrote (threads in, REAL replies) or they paid (payments). green 0-5 days, amber 6-14, red 15+; none = red.
    The dot says why in plain words: a native title, an aria-label, and on a phone a tap opens a one-line note under the name. */
@@ -925,7 +924,7 @@ function clientRow(c, sel, X) {
   const ad = adOf(c, X || adCtx());
   const size = c.plan ? (c.plan.shorts ? `${int(c.plan.shorts)} Shorts / mo` : "Monthly") : c.cur ? `${int(c.cur.bought)} Shorts` : "—";
   const money = c.ret ? `${usd(c.ret.amount)} / ${PER(c.ret)}` : c.lastAmt ? usd(c.lastAmt) : "";
-  return `<a class="cl-item" href="?p=clients&amp;c=${esc(c.id)}" data-cl="${esc(c.id)}" data-st="${esc([c.ret ? "retainer" : "", ...new Set(c.packs.map(o => o.st)), c.mark === "attn" ? "attn" : ""].join(" ").trim())}" data-today="${c.today}" data-q="${esc(lc([c.name, c.show, ...(c.emails || [])].join(" ")))}"${c.cat === "past" ? " data-past" : ""}${sel && c.id === sel.id ? ' aria-current="true"' : ""}><span class="cl-ad ${ad.cls}" role="img" ${adAttrs(ad)}><i></i></span><span class="grow"><span class="t">${esc(c.name || "Client")}</span><span class="s">${esc(size)}</span><span class="cl-an" hidden>${esc(ad.why)}</span></span>${money ? `<span class="cl-mn">${esc(money)}</span>` : ""}<i class="cl-dot k-${c.mark}" role="img" aria-label="${MARK[c.mark]}" title="${MARK[c.mark]}"></i></a>`;
+  return `<a class="cl-item" href="?p=clients&amp;c=${esc(c.id)}" data-cl="${esc(c.id)}" data-st="${esc([c.ret ? "retainer" : "", ...new Set(c.packs.map(o => o.st)), c.mark === "attn" ? "attn" : ""].join(" ").trim())}" data-today="${c.today}" data-q="${esc(lc([c.name, c.show, ...(c.emails || [])].join(" ")))}"${c.cat === "past" ? " data-past" : ""}${sel && c.id === sel.id ? ' aria-current="true"' : ""}><span class="cl-ad ${ad.cls}" role="img" ${adAttrs(ad)}><i></i></span><span class="grow"><span class="t">${esc(c.name || "Client")}</span><span class="s">${esc(size)}</span><span class="cl-an" hidden>${esc(ad.why)}</span>${c.mark === "attn" ? `<span class="chip r cl-need">Needs attention</span>` : ""}</span>${money ? `<span class="cl-mn">${esc(money)}</span>` : ""}</a>`;
 }
 function viewClients(d) {
   if (!d.list.length) return `<section class="card sp-card cl-none">${empty("No clients with videos or payments yet.")}</section>`;
