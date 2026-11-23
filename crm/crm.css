@@ -1371,3 +1371,43 @@ html[data-motion="full"] .card.inview .it svg{animation:none}
 
 /* 11-22 (SIMAS): the phone number on the Forms card face */
 .li-nm{display:flex;flex-direction:column;min-width:0} .li-tel{font-family:var(--mono);font-size:11.5px;color:var(--mute);letter-spacing:-.01em;white-space:nowrap}
+
+/* ---------- 11-23 (BENAS): "Waiting on a founder", full width under the money hero (crm.js renderWof). Hidden at 0 items; then a quiet
+   "0 waiting" sits by the "as of" time. Design pass (BENAS "just like the other cards"): built from the Dashboard's own parts (.ch/.ct, the
+   hero's .odo number and .hero-sub line, the bento .lst/.li rows, .chip, the drawer's .cv-m bubbles); only layout and size here. ---------- */
+.wof{display:grid;grid-template-columns:minmax(0,1fr);row-gap:6px;padding:20px 20px 18px}   /* the bento cards' padding (#grid .card) */
+@media (min-width:840px){.wof{grid-template-columns:minmax(190px,.7fr) minmax(0,2.3fr);column-gap:40px}}   /* the anchor left, the list right */
+.wof>*{position:relative}   /* content above the card's hover glow (.card::before), so text keeps its contrast under the pointer */
+.wof .ch{margin-bottom:6px}
+.wof .odo{font-size:clamp(44px,4.4vw,64px);margin:4px 0 8px}   /* the hero's number, one step smaller: the hero stays the top thing */
+.wof .hero-sub{font-size:12.5px;row-gap:2px;column-gap:8px}
+.wof .hero-sub>span::before{content:none} .wof .hero-sub>span:not(:last-child)::after{content:"·";margin-left:8px;color:var(--faint)}   /* the dot trails, so a wrapped line never starts with one */
+.wof-r{position:relative}   /* .wof-b stretches over the whole row */
+.wof-r>.ic{width:16px;height:16px;color:var(--mute)}   /* the kind mark: a sprite line icon, no colour */
+.wof-b{position:absolute;inset:0;border-radius:8px}
+.wof-r:hover .wof-who,.wof-r:has(.wof-b:focus-visible) .wof-who{color:var(--blue)} :root[data-mode="dark"] .wof-r:hover .wof-who{color:var(--key)}
+.wof-who{display:flex;align-items:center;gap:6px;min-width:0;transition:color .2s} .wof-who>span:first-of-type{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.wof-who .chip{font-size:10.5px;padding:1px 6px}
+.wof-ask{display:flex;gap:8px;min-width:0;font-size:12.5px;font-weight:400;color:var(--mute);letter-spacing:0}
+.wof-ask>span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.wof .wof-rd{position:relative;z-index:1;flex:none;font-size:12.5px;color:var(--ink-2);text-decoration:none}   /* a quiet text control, above the row's button */
+.wof .wof-rd:hover,.wof .wof-rd[aria-expanded="true"]{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+.wof-d{padding:0 0 12px 30px}
+.wof-d .acts{margin:0}
+.wof .more{margin-top:6px}
+/* urgency: one level per row, shown only on a 6 px dot before the name and on the age; the count takes the worst row's level. The colours
+   are the chip r / chip o ones (light and dark); the count drops the hero's glow when it carries a level */
+.wof .u2,.wof .odo.u2{color:var(--red)} .wof .u1,.wof .odo.u1{color:#8f4a05}
+:root[data-mode="dark"] .wof .u2{color:color-mix(in srgb,var(--red) 70%,#fff)} :root[data-mode="dark"] .wof .u1{color:var(--orange)}
+.wof .odo.u1,.wof .odo.u2{filter:none}
+.wof-dot{width:6px;height:6px;border-radius:50%;flex:none;background:currentColor}
+#snav .sn-badge.wof-bad{background:var(--red);color:#fff}   /* any row to act on now: the Dashboard badge turns red */
+.wof-zero{margin-right:auto;font-family:var(--mono)} .wof-zero::before{content:"·";margin-right:12px;color:var(--faint)}
+.wof.wof-in{animation:a-fade .35s ease-out backwards,a-up .55s var(--out) backwards}
+html.pg-in .wof{animation:a-fade .3s ease-out backwards,a-up .5s var(--out) backwards}
+@media (max-width:600px){
+  .wof{padding:18px 16px 16px}   /* #grid .card on phones */
+  .wof-who .chip,.wof .hero-sub{font-size:13px} .wof-ask{font-size:13px;flex-wrap:wrap} .wof-ask>span{flex-basis:100%}   /* "Read the draft" drops under the ask instead of squeezing it */
+  .wof .wof-rd{font-size:13px;padding:14px 6px;margin:-14px -6px}   /* 44 px to tap, the line keeps its height */
+  .wof-d{padding-left:0}
+}
