@@ -1128,6 +1128,13 @@ html.paged:has(#snav a[data-nav="clients"][aria-current="page"]) #app>#grid{orde
   .wk-add input,.wk-add select,.cl-q,.ex-filters select,.ex-form select,.wk-pick select{height:44px}   /* WebKit ignores min-height on a select, so set the height */
   .wk-stat small a.lk{position:relative} .wk-stat small a.lk::after{content:"";position:absolute;inset:-14px -4px}
   .pf-tbl td{padding-top:0;padding-bottom:0} .pf-tbl td .chip{margin:10px 0} .pf-tbl a.chip::after{inset:-10px -4px}   /* each post link owns a 44 px band (24 + 10 + 10), so stacked links never overlap */
+  /* founder request 11-23: each post row is a stacked block on a phone: line 1 = number + title at full width, line 2 = the post chips (wrap only if they don't fit). Nothing is clipped, no sideways scroll. */
+  .pf-tbl thead{display:none} .pf-tbl,.pf-tbl tbody{display:block;width:100%}
+  .pf-tbl tr{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:10px;align-items:baseline;padding:10px 8px 0;border-top:1px solid var(--line)} .pf-tbl tr:first-child{border-top:0}
+  .pf-tbl td{border-top:0;padding:0;text-align:left}
+  .pf-tbl td:first-child{grid-column:1;grid-row:1;width:auto;text-align:right;min-width:1.5em}
+  .pf-tbl td:nth-child(2){grid-column:2;grid-row:1;min-width:0;overflow-wrap:anywhere}
+  .pf-tbl td:nth-child(4){grid-column:1/-1;grid-row:2;display:flex;flex-wrap:wrap;column-gap:8px;align-items:center}
   .cl-pr .grow>a{position:relative} .cl-pr .grow>a::after{content:"";position:absolute;inset:-2px -4px}
   .pf-wl small span{display:block;white-space:nowrap} .pf-wl small i{display:none}   /* "-5 wk" over "2": two deliberate lines, never a break inside a label */
   .sd-col-h .sd-av{font-size:13px}

@@ -1081,7 +1081,7 @@ html[data-motion="calm"] .ticker-t{animation:none;white-space:normal;flex-wrap:w
   .dr-st{font-size:15px;padding:9px 12px}
   .dr-st-s{display:none}   /* the stage chip is in the fixed top on a phone */
   .dr-st-n{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-  .cv-more{min-height:44px}
+  .act.cv-more{min-height:44.5px}   /* 44 px tap height with a half-pixel margin: the button measured 43.999 px on some runs, so the tap-size check flaked (founder request 11-23) */
 }
 /* 11-21 "Add call notes" form on a call card (crm.js callNotesForm) */
 .cc-add{margin-top:8px}

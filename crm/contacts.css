@@ -57,6 +57,7 @@
 @media (max-width:600px){
   .ct-tools .ct-q{height:44px;font-size:16px;flex-basis:100%}
   .ct-chips .chip{min-height:44px;height:auto;font-size:13px}
+  .ct-chips button.chip::after{inset:0 -2px}   /* the chip box is already 44 px tall: tap area = the box, so neighbours never overlap (founder request 11-23) */
   .ct-cnt{font-size:13px}
   .ct-row{align-items:flex-start;padding-right:4px}
   .ct-main{grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;padding:11px 2px 11px 12px}
