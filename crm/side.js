@@ -160,6 +160,8 @@ const HEAD = {
   todos: ["To-<em class=\"sf\">dos</em>", "Founder to-dos only. Drag a card to move it, click it to open it. You both see changes live."],
   slack: ["Slack <em class=\"sf\">channels</em>", "#claude-sync and #red-alert, newest first. Messages that mention you are marked."],
 };
+/* the To-dos line says "Tap" on touch screens and "Drag/click" elsewhere (CSS picks the span; founder request 11-23) */
+const SUB_HTML = { todos: "Founder to-dos only. <span class=\"sd-dr\">Drag a card to move it, click it to open it.</span><span class=\"sd-tp\">Tap a card to open it.</span> You both see changes live." };
 /* 11-21: a page can live in its own file (contacts.js). It sets window.BEJU_SIDE_PAGES[id] = { title, head: [h1 html, subline], src(d),
    load(api), view(d, api), wire(api) } and loads before this file; side.js gives it the shared client and helpers (API). */
 const EXT = window.BEJU_SIDE_PAGES || {};
@@ -177,7 +179,7 @@ function srcOf(p, d) {
 }
 function header(p, d) {
   const [h, sub] = HEAD[p], s = srcOf(p, d), old = s && (/expired/.test(s[0]) || (s[2] != null ? s[2] : s[1] && Date.now() - new Date(s[1]) > 3 * 36e5));
-  return `<header class="sp-h"><div><h1>${h}</h1>${sub ? `<p>${esc(sub)}</p>` : ""}</div>${s ? `<span class="sp-src${old ? " old" : ""}"${old ? ` title="${esc(s[3] || "Older than 3 hours: the numbers may be out of date")}"` : ""}><i></i>${esc(s[0])}${s[1] ? ` · synced ${esc(ago(s[1]))}${old ? " · may be out of date" : ""}` : " · live"}</span>` : ""}</header>`;
+  return `<header class="sp-h"><div><h1>${h}</h1>${sub ? `<p>${SUB_HTML[p] || esc(sub)}</p>` : ""}</div>${s ? `<span class="sp-src${old ? " old" : ""}"${old ? ` title="${esc(s[3] || "Older than 3 hours: the numbers may be out of date")}"` : ""}><i></i>${esc(s[0])}${s[1] ? ` · synced ${esc(ago(s[1]))}${old ? " · may be out of date" : ""}` : " · live"}</span>` : ""}</header>`;
 }
 async function renderPage(quiet) {
   const p = PAGE; if (p === "dashboard" || !sb()) return;
@@ -299,7 +301,7 @@ function boardModel(x, E, MO) {
   items.sort((a, b) => a.due.localeCompare(b.due) || b.eur - a.eur);
   const usdIn = (x.pays || []).filter(p => !p.refunded && dayOf(p.paid_at).startsWith(MO)).reduce((a, p) => a + (+p.amount || 0), 0);
   const inEur = fm ? fm.income : usdIn * (E.fx || 1), paid = items.filter(i => i.paid).reduce((a, i) => a + i.eur, 0), total = items.reduce((a, i) => a + i.eur, 0);
-  return { MO, items, usdIn, inEur, inHow: fm ? "as it landed in EUR (Stripe payouts)" : `at ${E.fx} USD→EUR`, paid, toPay: total - paid, total, profit: inEur - paid, after: inEur - total };
+  return { MO, items, usdIn, inEur, inHow: fm ? "as it landed in EUR (Stripe payouts)" : E.fx ? `at ${E.fx} USD→EUR` : "", paid, toPay: total - paid, total, profit: inEur - paid, after: inEur - total };
 }
 function tile(i) {
   return `<button type="button" class="ex-tile ${i.grp}${i.fixed ? " fixed" : ""}" data-tick="${esc(i.key)}" aria-pressed="${i.paid}" ${i.fixed ? "disabled" : ""} title="${i.fixed ? "Taken by Stripe automatically" : i.paid ? "Paid. Click to mark as not paid" : "Click when it's paid"}">
@@ -329,7 +331,7 @@ function viewExpenses(x) {
   return `<section class="card sp-card ex-hero">
     <div class="ex-hh"><div class="ex-sw" role="group" aria-label="Month"><button type="button" class="icon-btn" data-mo="-1" aria-label="Previous month"><svg aria-hidden="true"><use href="#i-back"/></svg></button><b>${esc(ymLabel(EXM))}</b><button type="button" class="icon-btn" data-mo="1" aria-label="Next month"><svg aria-hidden="true"><use href="#i-chev"/></svg></button>${EXM !== E.ym ? `<button type="button" class="chip" data-mo="0">Back to ${esc(MON[+E.ym.slice(5, 7) - 1])}</button>` : ""}</div>
       <div class="ex-acts">${E.S ? `<span class="chip" title="Stripe balance right now">Stripe balance ${Object.entries(E.S.available || {}).map(([c, v]) => money(v, c)).join(" + ") || "$0.00"}</span>` : ""}<button type="button" class="act go" id="ex-add">${ic("plus")}Add an expense</button></div></div>
-    <div class="ex-nums"><div><span>Money in</span><b>${cu(B.inEur, "eur0", "ex-in")}</b><small>${usd(B.usdIn)} from Stripe, ${esc(B.inHow)}</small></div><i class="op">−</i>
+    <div class="ex-nums"><div><span>Money in</span><b>${cu(B.inEur, "eur0", "ex-in")}</b><small>${usd(B.usdIn)} from Stripe${B.inHow ? ", " + esc(B.inHow) : ""}</small></div><i class="op">−</i>
       <div><span>Paid so far</span><b>${cu(B.paid, "eur0", "ex-paid")}</b><small>${B.items.filter(i => i.paid).length} of ${B.items.length} ticked</small></div><i class="op">=</i>
       <div class="pf ${B.profit >= 0 ? "up" : "dn"}"><span>Profit so far</span><b>${cu(B.profit, "eur0", "ex-profit")}</b><small>after the remaining bills: <strong>${cu(B.after, "eur0", "ex-after")}</strong> (${eur(B.toPay)} still to pay)</small></div></div>
     <div class="ex-bar" role="img" aria-label="Paid ${eur(B.paid)}, still to pay ${eur(B.toPay)}, profit after all bills ${eur(B.after)}"><i class="a" data-v="w:${w(B.paid)}%"></i><i class="b" data-v="w:${w(B.toPay)}%"></i><i class="c" data-v="w:${w(Math.max(0, B.after))}%"></i></div>
@@ -1032,7 +1034,7 @@ function pfTrend(p) {
   const max = Math.max(1, ...p.weeks.map(w => w.med || 0));
   return `<div class="pf-pl"><div class="pf-h"><b>${PL[p.pl][0]}</b><small>${p.acct ? `${kf(p.acct.followers)} followers` : ""}</small><span class="pf-d">last 7 days <b class="mono">${kf(p.last)}</b> ${pfDelta(p.last, p.prev)} <span class="mut">vs ${kf(p.prev)} the 3 weeks before</span></span></div>
     <div class="wk mini pf-wk">${p.weeks.map((w, i) => `<i class="${w.w === 0 ? "on" : ""}" data-v="h:${((w.med || 0) / max * 100).toFixed(1)}%;k:${i}" title="${w.w === 0 ? "Last 7 days (still growing)" : `${w.w}–${w.w + 1} weeks ago`}: ${w.n} Short${w.n === 1 ? "" : "s"}, median ${w.med == null ? "—" : int(w.med)} views"></i>`).join("")}</div>
-    <div class="pf-wl">${p.weeks.map(w => `<span><b class="mono">${w.med == null ? "—" : kf(w.med)}</b><small>${w.w === 0 ? "now" : `−${w.w} wk`} · ${w.n}</small></span>`).join("")}</div></div>`;
+    <div class="pf-wl">${p.weeks.map(w => `<span><b class="mono">${w.med == null ? "—" : kf(w.med)}</b><small><span>${w.w === 0 ? "now" : `−${w.w} wk`}</span><i> · </i><span>${w.n}</span></small></span>`).join("")}</div></div>`;
 }
 function perfDetail(c) {
   if (!c) return empty("Pick a client on the left.");

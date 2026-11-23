@@ -1412,3 +1412,13 @@ html.pg-in .wof{animation:a-fade .3s ease-out backwards,a-up .5s var(--out) back
   .wof .wof-rd{font-size:13px;padding:14px 6px;margin:-14px -6px}   /* 44 px to tap, the line keeps its height */
   .wof-d{padding-left:0}
 }
+
+/* ---------- 11-23 phone pass (founder request 11-23): 44 px taps without changing the look, 13 px minimum text. Phone only. ---------- */
+@media (max-width:600px){
+  .ch>button.ct{position:relative} .ch>button.ct::after{content:"";position:absolute;inset:-12px 0}   /* card titles: 20 px to read, 44 px to tap */
+  button.qt{min-height:44px;min-width:44px}
+  .feed.lite button.fe{min-height:44px;align-items:center}
+  .fun button.fr{min-height:44px;align-content:center}
+  .mt.sum .big small,.mt .big small,#grid .big small{font-size:13px}   /* "/mo", "potential", "to do", ... */
+  .sum-l,#asof>span{font-size:13px}
+}
