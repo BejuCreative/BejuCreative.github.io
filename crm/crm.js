@@ -250,7 +250,7 @@ function derive() {
      Follow-ups, Needs attention and Hot leads. They show once, under "On hold", with who lifts it. A row with no email (partner items)
      is held when it names the held person (first + last word of the hold's name). */
   const deskHolds = (R.desk || []).filter(x => x.kind === "hold"), deskE = new Set(deskHolds.flatMap(x => (x.emails || []).map(lc)));
-  const holdsOpen = deskHolds.concat(R.pipeline.filter(p => /^HOLD$/i.test(p.status || "") && !deskE.has(lc(p.email))).map(p => ({ kind: "hold", sheet: true, client: p.name || p.email, emails: [p.email], title: `Status HOLD in the samples sheet${p.next_action ? ": " + cut(p.next_action, 160) : ""}`, set_by: "" })));   // a HOLD status in the samples sheet holds too (Patrick)
+  const holdsOpen = deskHolds.concat(R.pipeline.filter(p => /^HOLD$/i.test(p.status || "") && !deskE.has(lc(p.email))).map(p => ({ kind: "hold", sheet: true, client: p.name || p.email, emails: [p.email], title: `Status HOLD in the samples sheet${p.next_action ? ": " + cut(p.next_action, 160) : ""}`, set_by: "", created_at: p.stage_changed_at || p.yes_at || null })));   // a HOLD status in the samples sheet holds too (Patrick); its age = when the status changed
   const holdE = new Set(holdsOpen.flatMap(x => (x.emails || []).map(lc))), holdOfE = e => holdsOpen.find(x => (x.emails || []).some(m => lc(m) === lc(e))) || null;
   const rxW = w => new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i"), holdNames = holdsOpen.map(x => String(x.client || "").replace(/\(.*?\)/g, " ").trim().split(/\s+/).filter(Boolean)).filter(w => w.length).map(w => [rxW(w[0]), rxW(w[w.length - 1])]);
   const held = d.held = (email, text) => email ? holdE.has(lc(email)) : !!text && holdNames.some(([a, b]) => a.test(text) && b.test(text));
@@ -903,7 +903,7 @@ const CARDS = [
     ${A.length > 4 ? dB("approvals", "", "Show all", "more") : ""}`; } },
 { id: "next", title: "Do next", page: "todos", focus: ["next", ""], render: d => `${head(`Do <em class="sf">next</em>`, "", true)}${big("next", "", `${N(d.todoN)}<small>to do</small>`, "Open the whole list, most urgent first")}
     <div class="lst">${d.todo.slice(0, 5).map(nextLi).join("")}</div>
-    ${(h => h.length ? quiet("holds", "", `On hold: ${esc(h.map(x => cut(String(x.client || "").replace(/\s*\(.*?\)/g, ""), 24)).join(", "))}`, "Open the holds: who, the rule, who lifts it") : "")(d.holds.filter(x => wofFresh("hold", x.created_at ? +new Date(x.created_at) : Date.now())))}
+    ${(h => h.length ? quiet("holds", "", `On hold: ${esc(h.map(x => cut(String(x.client || "").replace(/\s*\(.*?\)/g, ""), 24)).join(", "))}`, "Open the holds: who, the rule, who lifts it") : "")(d.holds.filter(x => wofFresh("hold", x.created_at ? +new Date(x.created_at) : 0)))}
     ${d.todoN > 5 || d.todoMore.length || d.todoLater.length ? dB("next", "", "Show all", "more") : ""}` },
 /* 11-21 (SIMAS: "a square that says action"; BENAS: lower on the main page, under Do next) */
 { id: "activity", title: "Activity", focus: ["feed", ""], render: d => { const all0 = d.feed.filter(e => !e.quiet), html = `${head("Activity", "", true)}<div class="feed lite">${all0.slice(0, 5).map(e => feedRow(e, feedSeen.size > 0 && !feedSeen.has(e.t + e.title), true)).join("") || empty("Nothing has happened yet.")}</div>${all0.length > 5 ? dB("feed", "", "Show all", "more") : ""}`;
