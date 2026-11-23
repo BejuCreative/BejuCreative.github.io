@@ -667,6 +667,111 @@ details>summary{min-height:44px;align-items:center;padding-top:10px;padding-bott
 @media (prefers-reduced-motion:reduce){.sprog{display:none}.hero *{animation:none!important}.path.vis .st>div{opacity:1;transform:none}.path.vis .n{background:var(--ink)}}
 @media print{.sprog{display:none}.hero *{animation:none!important}.path.vis .rail i{transform:scaleY(1)!important}.path.vis .st>div{opacity:1!important;transform:none!important}.path.vis .st .n{background:var(--green-head)!important}}
 </style>
+<style id="story-1123">
+.sty{position:relative;background:linear-gradient(180deg,#fff 0%,var(--soft) 100%);border-top:1px solid var(--hair);border-bottom:1px solid var(--hair)}
+.sty:not(.calm){height:calc(100vh + 6 * 62vh)}
+.sty .pin{position:relative}
+.sty:not(.calm) .pin{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden}
+.sty .stage{height:100%;max-width:1120px;margin:0 auto;padding:0 24px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,380px);gap:56px;align-items:center}
+.sty .caps{position:relative;min-height:260px}
+.sty .cp{position:absolute;inset:auto 0 auto 0;top:50%;transform:translateY(calc(-50% + 26px));opacity:0;transition:opacity .45s,transform .55s cubic-bezier(.2,.7,.2,1)}
+.sty .cp.on{opacity:1;transform:translateY(-50%)}
+.sty .cp .n{font:600 13px/1 var(--sans);letter-spacing:.14em;color:var(--gold-text);text-transform:uppercase}
+.sty .cp .n b{color:var(--ink)}
+.sty .cp h3{margin:14px 0 0;font-size:clamp(30px,3.6vw,48px);line-height:1.06;letter-spacing:-.025em;color:var(--ink);font-weight:600;max-width:12em}
+.sty .cp h3 em{font-style:normal;color:var(--green-head)}
+.sty .cp p{margin:14px 0 0;font-size:18px;color:var(--body);max-width:26em}
+.sty .dots{display:flex;gap:8px;margin-top:22px}
+.sty .dots i{width:28px;height:4px;border-radius:9px;background:var(--hair);overflow:hidden;position:relative}
+.sty .dots i::after{content:"";position:absolute;inset:0;background:var(--green-head);transform:scaleX(var(--d,0));transform-origin:left}
+.sty .ph{position:relative;justify-self:center;width:min(330px,100%);aspect-ratio:9/18.5;border:11px solid var(--ink);border-radius:46px;background:#fff;box-shadow:0 40px 90px -40px rgba(17,21,14,.55),0 0 0 1px rgba(17,21,14,.06);overflow:hidden}
+.sty .ph::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:38%;height:22px;background:var(--ink);border-radius:0 0 14px 14px;z-index:5}
+.sty .aura{position:absolute;inset:-18%;background:radial-gradient(closest-side,rgba(34,209,111,.22),transparent 70%);z-index:-1;justify-self:center;align-self:center}
+.sty .scr{position:absolute;inset:0;padding:36px 16px 18px;opacity:0;transform:scale(.97) translateY(14px);transition:opacity .45s,transform .55s cubic-bezier(.2,.7,.2,1);font-family:var(--sans)}
+.sty .scr.on{opacity:1;transform:none}
+.sty .lbl{font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+/* 1 long video */
+.s1 .vid{margin-top:10px;border-radius:14px;height:46%;background:linear-gradient(160deg,#2b302a 0%,#1a1d19 60%,#0f110e 100%);position:relative;overflow:hidden}
+.s1 .vid::before{content:"";position:absolute;left:0;right:0;bottom:0;height:45%;background:linear-gradient(180deg,transparent,rgba(232,112,42,.55));clip-path:polygon(0 70%,20% 40%,38% 62%,58% 30%,78% 55%,100% 38%,100% 100%,0 100%)}
+.s1 .vid b{position:absolute;left:12px;bottom:12px;color:#fff;font-size:15px;line-height:1.25;max-width:80%}
+.s1 .vid small{position:absolute;right:10px;top:10px;color:#fff;font-size:13px;background:rgba(0,0,0,.45);padding:3px 7px;border-radius:6px;font-variant-numeric:tabular-nums}
+.s1 .tl{margin-top:14px;height:42px;border-radius:10px;background:var(--soft);position:relative;overflow:hidden}
+.s1 .tl .w{position:absolute;inset:10px 8px;background:repeating-linear-gradient(90deg,#C9CEC2 0 2px,transparent 2px 5px);mask:linear-gradient(180deg,transparent 0,#000 30%,#000 70%,transparent 100%)}
+.s1 .tl .mk{position:absolute;top:6px;bottom:6px;left:var(--x);width:var(--w);border-radius:6px;background:rgba(17,168,90,.25);border:2px solid var(--green-head);transform:scaleY(0);transition:transform .4s}
+.s1.on .tl .mk{transform:scaleY(1)}.s1.on .tl .mk:nth-child(3){transition-delay:.15s}.s1.on .tl .mk:nth-child(4){transition-delay:.3s}
+.s1 .tl .ph2{position:absolute;top:0;bottom:0;width:2px;background:var(--ink);left:var(--pp,10%)}
+.s1 .note{margin-top:12px;font-size:14px;color:var(--body)}
+/* 2 shorts */
+.s2 .row{margin-top:10px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;height:70%}
+.s2 .sh{border-radius:12px;position:relative;overflow:hidden;background:linear-gradient(180deg,#3a2a22,#121411);opacity:0;transform:translateY(24px);transition:opacity .4s,transform .5s}
+.s2 .sh:nth-child(2){background:linear-gradient(180deg,#26302a,#101310)}.s2 .sh:nth-child(3){background:linear-gradient(180deg,#F3B57A,#E8702A 40%,#2a1f19)}
+.s2.on .sh{opacity:1;transform:none}.s2.on .sh:nth-child(2){transition-delay:.12s}.s2.on .sh:nth-child(3){transition-delay:.24s}
+.s2 .sh p{position:absolute;left:6px;right:6px;bottom:28%;margin:0;color:#fff;font-weight:700;font-size:13px;line-height:1.15;text-align:center}
+.s2 .sh p b{color:#FFB37E}
+.s2 .sh i{position:absolute;left:8px;right:8px;bottom:10px;height:3px;border-radius:9px;background:rgba(255,255,255,.3)}
+.s2 .sh i::after{content:"";position:absolute;left:0;top:0;bottom:0;width:var(--w);background:#fff;border-radius:9px}
+.s2 .ok{margin-top:10px;font-size:13.5px;color:var(--gold-text);font-weight:600}
+/* 3 platforms */
+.s3 .plf{margin-top:14px;display:grid;gap:10px}
+.s3 .plf div{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--hair);border-radius:14px;opacity:0;transform:translateX(26px);transition:opacity .4s,transform .5s}
+.s3.on .plf div{opacity:1;transform:none}.s3.on .plf div:nth-child(2){transition-delay:.12s}.s3.on .plf div:nth-child(3){transition-delay:.24s}.s3.on .plf div:nth-child(4){transition-delay:.36s}
+.s3 .plf .ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px}
+.s3 .plf b{font-size:15px;color:var(--ink);display:block}.s3 .plf small{font-size:13px;color:var(--muted)}
+.s3 .plf .tk{margin-left:auto;width:22px;height:22px;border-radius:50%;background:var(--green-head);display:grid;place-items:center}
+.s3 .plf .tk::after{content:"";width:9px;height:5px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+/* 4 topic page */
+.s4 .mh{display:flex;justify-content:space-between;font-size:13px;letter-spacing:.1em;font-weight:700;color:#111}.s4 .mh span:last-child{color:#E8702A}
+.s4 .pic{margin:10px -16px 0;height:30%;background:linear-gradient(180deg,#F3B57A 0%,#E8702A 40%,#5B3A2E 72%,#1F2420 100%)}
+.s4 h4{margin:12px 0 4px;font-size:19px;line-height:1.15;color:#111;text-transform:none;letter-spacing:-.01em}
+.s4 .t{font-size:13.5px;color:#444;line-height:1.4;margin:0}
+.s4 .fld{margin-top:10px;height:36px;border:1.5px solid #ccc;border-radius:9px;display:flex;align-items:center;padding:0 10px;font-size:14px;color:#111;overflow:hidden;white-space:nowrap}
+.s4 .fld span{display:inline-block;overflow:hidden;width:0;transition:width 1.2s steps(16) .3s;border-right:2px solid #111}
+.s4.on .fld span{width:9.6em}
+.s4 .tick{margin-top:8px;font-size:13px;color:#444;display:flex;gap:7px;align-items:center}.s4 .tick i{width:15px;height:15px;border-radius:3px;border:1.5px solid #E8702A;transition:background .3s 1.4s}
+.s4.on .tick i{background:#E8702A}
+.s4 .cta{margin-top:10px;height:42px;border-radius:999px;background:#E8702A;color:#fff;font-weight:700;font-size:14.5px;display:grid;place-items:center}
+.s4 .added{margin-top:10px;font-size:13.5px;color:var(--gold-text);font-weight:600;opacity:0;transition:opacity .4s 1.7s}.s4.on .added{opacity:1}
+/* 5 inbox */
+.s5 .ib{margin-top:12px;display:grid;gap:8px}
+.s5 .em{display:grid;grid-template-columns:32px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px;border:1px solid var(--hair);border-radius:12px;opacity:0;transform:translateY(16px);transition:opacity .4s,transform .5s}
+.s5.on .em{opacity:1;transform:none}.s5.on .em:nth-child(2){transition-delay:.12s}.s5.on .em:nth-child(3){transition-delay:.24s}.s5.on .em:nth-child(4){transition-delay:.36s}.s5.on .em:nth-child(5){transition-delay:.48s}
+.s5 .av{width:32px;height:32px;border-radius:50%;background:#111;color:#fff;font-size:13px;font-weight:700;display:grid;place-items:center}
+.s5 b{display:block;font-size:14px;color:var(--ink);line-height:1.2}.s5 .em span{display:block;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s5 small{font-size:13px;color:var(--muted);white-space:nowrap}
+.s5 b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.s5 .em>div{min-width:0}
+.s5 .em.inv{border-color:var(--green-head);background:var(--gold-soft)}
+/* 6 booked */
+.s6x .bk{margin-top:16px;padding:16px;border-radius:16px;background:var(--gold-soft);border:1px solid var(--green-head);opacity:0;transform:scale(.94);transition:opacity .45s,transform .55s cubic-bezier(.2,.7,.2,1.3)}
+.s6x.on .bk{opacity:1;transform:none}
+.s6x .bk b{display:block;font-size:17px;color:var(--ink)}.s6x .bk span{display:block;font-size:14px;color:var(--body);margin-top:4px}
+.s6x .trail{margin-top:14px;display:flex;flex-wrap:wrap;gap:6px}
+.s6x .trail span{font-size:13px;padding:5px 9px;border-radius:99px;background:#fff;border:1px solid var(--hair);color:var(--body);opacity:0;transition:opacity .3s}
+.s6x.on .trail span{opacity:1}.s6x.on .trail span:nth-child(2){transition-delay:.15s}.s6x.on .trail span:nth-child(3){transition-delay:.3s}.s6x.on .trail span:nth-child(4){transition-delay:.45s}
+.s6x .rep{margin-top:14px;padding:12px;border:1px solid var(--hair);border-radius:12px;font-size:13.5px;color:var(--body)}
+.s6x .rep b{color:var(--ink)}
+.sty .hint{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);font:600 13px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);transition:opacity .3s}
+/* calm: reduced motion, print, ?print */
+.sty.calm{padding:48px 0}
+.sty.calm .stage{display:block}
+.sty.calm .caps{min-height:0;display:grid;gap:16px}
+.sty.calm .cp{position:static;opacity:1;transform:none}
+.sty.calm .cp h3{font-size:24px}
+.sty.calm .ph,.sty.calm .dots,.sty.calm .hint,.sty.calm .aura{display:none}
+@media (max-width:760px){
+  .sty .stage{grid-template-columns:1fr;grid-template-rows:auto 1fr;gap:14px;padding:70px 16px 16px;align-items:start}
+  .sty .caps{min-height:150px}
+  .sty .cp{top:0;transform:translateY(18px)}.sty .cp.on{transform:none}
+  .sty .cp h3{font-size:26px}.sty .cp p{font-size:15.5px;margin-top:8px}
+  .sty .dots{margin-top:12px}
+  .sty .ph{width:min(250px,64vw);border-width:9px;border-radius:38px}
+  .sty .scr{padding:30px 12px 14px}
+  .s1 .vid b{font-size:13px}.s2 .sh p{font-size:13px}.s3 .plf div{padding:9px}.s3 .plf .ic{width:30px;height:30px}
+  .s3 .plf small{display:none}.s3 .plf{gap:8px;margin-top:10px}
+  .s5 .em{padding:8px;gap:8px}.s5 .em:nth-child(5){display:none}
+  .sty .hint{display:none}
+}
+@media print{.sty{height:auto!important}.sty .pin{position:static!important;height:auto!important}}
+</style>
 </head>
 <body>
 <nav class="nav" aria-label="Scope">
@@ -693,10 +798,38 @@ details>summary{min-height:44px;align-items:center;padding-top:10px;padding-bott
       <span>Valid until <b>7 Dec 2026</b></span>
       <span>Your contact <b>Benas, Co-founder</b></span>
     </div>
-    <ol class="hflow" aria-label="How it works, in five steps"><li><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 9.5l4 2.5-4 2.5z"/></svg></span><b>A Short</b><small>on YouTube</small></li><li><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></span><b>One link</b><small>description + pinned comment</small></li><li><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3.5" y="8.5" width="17" height="12" rx="1.5"/><path d="M3.5 12.5h17M12 8.5v12"/><path d="M12 8.5C10.5 5 7 4.5 7 6.8 7 8.5 12 8.5 12 8.5zM12 8.5c1.5-3.5 5-4 5-1.7 0 1.7-5 1.7-5 1.7z"/></svg></span><b>A free gift</b><small>for an email address</small></li><li><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M3.5 7l8.5 6 8.5-6"/></svg></span><b>5 emails</b><small>in your voice</small></li><li><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M9 15l2 2 4-4"/></svg></span><b>A booking</b><small>traced to its Short</small></li></ol>
-    <div class="toc noprint"><a href="#call"><span>01</span>Your questions</a><a href="#found"><span>02</span>What you have</a><a href="#how"><span>03</span>The path</a><a href="#impact"><span>04</span>Your numbers</a><a href="#plan"><span>05</span>Your plan</a><a href="#privacy"><span>06</span>Consent and tracking</a><a href="#sites"><span>07</span>Your tools</a><a href="#road"><span>08</span>Your first month</a><a href="#terms"><span>09</span>The terms</a><a href="#detail"><span>10</span>Every detail</a><a href="#trust"><span>11</span>Who we work with</a><a href="#faq"><span>12</span>Questions</a></div>
+    <div class="toc noprint"><a href="#call"><span>01</span>Your questions</a><a href="#found"><span>02</span>What you have</a><a href="#how"><span>03</span>The path</a><a href="#impact"><span>04</span>Your numbers</a><a href="#plan"><span>05</span>Your plan</a><a href="#privacy"><span>06</span>Consent and tracking</a><a href="#road"><span>07</span>Your first month</a><a href="#terms"><span>08</span>The terms</a><a href="#detail"><span>09</span>Every detail</a><a href="#trust"><span>10</span>Who we work with</a><a href="#faq"><span>11</span>Questions</a></div>
   </div>
 </header>
+<section class="sty" id="story" aria-label="How a Short becomes a booking, in six steps">
+  <div class="pin"><div class="stage"><div><div class="caps"><div class="cp" data-i="0"><p class="n"><b>01</b> / 06</p><h3>We take the lessons you <em>already film.</em></h3><p>Your long videos, talks and workshop footage.</p></div><div class="cp" data-i="1"><p class="n"><b>02</b> / 06</p><h3>We turn them into Shorts that <em>stop the scroll.</em></h3><p>30 a month, each with a proposal you OK first.</p></div><div class="cp" data-i="2"><p class="n"><b>03</b> / 06</p><h3>We post them for you, <em>every day.</em></h3><p>YouTube Shorts, plus Instagram and Facebook.</p></div><div class="cp" data-i="3"><p class="n"><b>04</b> / 06</p><h3>Viewers tap one link and get <em>your free course.</em></h3><p>A topic page on your site, straight into Mailchimp.</p></div><div class="cp" data-i="4"><p class="n"><b>05</b> / 06</p><h3>Five emails in your voice <em>do the selling.</em></h3><p>A lesson, a student story, then your next dates.</p></div><div class="cp" data-i="5"><p class="n"><b>06</b> / 06</p><h3>They book, and you see <em>which Short did it.</em></h3><p>Traced to the Short, in your weekly report.</p></div></div><div class="dots" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+    <div style="position:relative;display:grid;place-items:center"><i class="aura" aria-hidden="true"></i><div class="ph" aria-hidden="true">
+<div class="scr s1" data-i="0"><p class="lbl">Your long video</p><div class="vid"><small>41:12 / 58:40</small><b>Getting off Auto: exposure, made simple</b></div>
+  <div class="tl"><i class="w"></i><i class="mk" style="--x:16%;--w:10%"></i><i class="mk" style="--x:47%;--w:9%"></i><i class="mk" style="--x:72%;--w:11%"></i><i class="ph2"></i></div>
+  <p class="note">We mark the strongest teaching parts.</p></div>
+<div class="scr s2" data-i="1"><p class="lbl">Shorts</p><div class="row">
+  <div class="sh"><p>Get off <b>Auto.</b></p><i style="--w:40%"></i></div><div class="sh"><p>Light <b>meter.</b></p><i style="--w:65%"></i></div><div class="sh"><p>Golden <b>hour.</b></p><i style="--w:25%"></i></div></div>
+  <p class="ok">Proposal OK'd · end card held 5 s</p></div>
+<div class="scr s3" data-i="2"><p class="lbl">Posted for you</p><div class="plf">
+  <div><span class="ic" style="background:#FF0033">YT</span><span><b>YouTube Shorts</b><small>Today, 17:30</small></span><i class="tk"></i></div>
+  <div><span class="ic" style="background:#C13584">IG</span><span><b>Instagram Reels</b><small>Today, 17:30</small></span><i class="tk"></i></div>
+  <div><span class="ic" style="background:#1877F2">FB</span><span><b>Facebook Reels</b><small>Today, 17:30</small></span><i class="tk"></i></div>
+  <div><span class="ic" style="background:#11150E">🔗</span><span><b>Link in description</b><small>and a pinned comment</small></span><i class="tk"></i></div></div></div>
+<div class="scr s4" data-i="3"><div class="mh"><span>ALAN RANGER</span><span>ACADEMY</span></div><div class="pic"></div>
+  <h4>Get off Auto for good</h4><p class="t">Free: the Academy 101 course, at your own pace.</p>
+  <div class="fld"><span>sam@email.com</span></div><div class="tick"><i></i>Yes, send me the course and emails</div><div class="cta">Start my free course</div>
+  <p class="added">✓ Added to your Mailchimp · tagged "Getting off Auto"</p></div>
+<div class="scr s5" data-i="4"><p class="lbl">Sam's inbox · from Alan</p><div class="ib">
+  <div class="em"><i class="av">AR</i><div><b>Your free course is here</b><span>Start with module 2, it's the one…</span></div><small>Day 0</small></div>
+  <div class="em"><i class="av">AR</i><div><b>One setting that changes everything</b><span>Most beginners leave ISO on…</span></div><small>Day 3</small></div>
+  <div class="em"><i class="av">AR</i><div><b>How Jo got off Auto in a week</b><span>A student story from the…</span></div><small>Day 6</small></div>
+  <div class="em inv"><i class="av">AR</i><div><b>Your next beginners course</b><span>Three evenings, four places…</span></div><small>Day 9</small></div>
+  <div class="em"><i class="av">AR</i><div><b>Fancy a free chat?</b><span>Pick a time in my calendar…</span></div><small>Day 12</small></div></div></div>
+<div class="scr s6x" data-i="5"><p class="lbl">Booked</p><div class="bk"><b>✓ Beginners course booked</b><span>Sam · 3 evenings · £150</span></div>
+  <div class="trail"><span>Saw a Short</span><span>Got the free course</span><span>Read 4 emails</span><span>Booked</span></div>
+  <div class="rep"><b>Weekly report</b> · "Getting off Auto": 31 sign-ups, 3 bookings</div></div></div></div></div>
+    <p class="hint" aria-hidden="true">Scroll</p></div>
+</section>
 
 <section style="padding-top:0" aria-label="The plan at a glance">
   <div class="wrap facts">
@@ -715,7 +848,7 @@ details>summary{min-height:44px;align-items:center;padding-top:10px;padding-bott
     <div class="take">
       <div class="rv sl"><b>How it works</b><span>Short → one link → a free gift for an email address → five emails in your voice → a booking. One new funnel like this every month. <a href="#how">See the path</a></span></div>
       <div class="rv sr"><b>What it costs</b><span>$1,100 a month, no setup fee, no software to buy. One new funnel every month. A higher tier plan at $1,800 if you want more. <a href="#plan">See the plan</a></span></div>
-      <div class="rv sl"><b>How it fits what you run</b><span>Built inside your own Squarespace site, Mailchimp list and booking calendar. Nothing duplicated. <a href="#sites">See your tools</a></span></div>
+      <div class="rv sl"><b>How it fits what you run</b><span>Built inside your own Squarespace site, Mailchimp list and booking calendar. Nothing duplicated. <a href="#faq">See the questions</a></span></div>
       <div class="rv sr"><b>Consent and measurement</b><span>A consent box and unsubscribe on every email, a tagged link for every Short, and bookings traced back to the Short. <a href="#privacy">See how</a></span></div>
     </div>
     <h3 class="subh">What we've learned working with you</h3>
@@ -853,29 +986,9 @@ details>summary{min-height:44px;align-items:center;padding-top:10px;padding-bott
   </div>
 </section>
 
-<section id="sites" aria-labelledby="sites-h">
-  <div class="wrap">
-    <div class="head rv"><p class="eyebrow"><span class="secno">07</span>Your tools</p><h2 id="sites-h">Built into what you <span class="gold">already run</span></h2>
-      <p class="lede">Your answer to "how it fits". We work inside your own accounts, so your list, your Academy and your campaigns stay in one place. Nothing goes live without your OK.</p></div>
-    <div class="sites">
-      <div class="site rv"><h3>Your Squarespace site</h3><p class="what">Your site stays as it is. We add a few short topic pages.</p><ul><li>One page per Short topic, in your look, with your free Academy 101 course as the gift.</li><li>The sign-up form feeds your existing Mailchimp list.</li><li>Every link on the page goes to your own course, workshop and booking pages.</li></ul></div>
-      <div class="site rv"><h3>Your Mailchimp list and campaigns</h3><p class="what">No second list, no second sender.</p><ul><li>New contacts join your existing list, tagged with their Short.</li><li>The welcome series runs only for new contacts from Shorts.</li><li>Your blog updates keep going as they do today. Our list emails sit alongside them, built around your next dates.</li></ul></div>
-      <div class="site rv"><h3>Your Academy and your calendar</h3><p class="what">We send people to them, and count what comes back.</p><ul><li>The free course and the 14-day trial stay exactly as you set them up.</li><li>Your free chat calendar takes the bookings, as it does today.</li><li>Bookings are matched to their Short for the weekly report.</li></ul></div>
-    </div>
-    <div class="mockrow"><div class="rv"><div class="phonef" role="img" aria-label="Example of a topic page on a phone: Get off Auto for good"><div class="bar"><i></i></div>
-      <div class="mk"><div class="mh"><span>ALAN RANGER</span><span>ACADEMY</span></div><div class="ph"></div>
-        <h4>Get off Auto for good</h4><p>Free: the Academy 101 course. Exposure, aperture, ISO and composition, at your own pace.</p><div class="fld">Your email address</div><div class="tick"><i></i>Yes, send me the free course and emails</div>
-        <div class="cta">Start my free course</div><div class="tag">60 modules · 30 exams · 5 levels</div></div></div></div>
-      <div class="mocktext rv d1"><h3>What a topic page looks like</h3><ul><li>One sentence on what they'll learn</li><li>Your free course as the gift</li><li>Name, email and a consent tick, straight into your Mailchimp</li><li>Built in your Squarespace, in your look</li></ul><p class="note">An example. Yours uses your own photographs, words and colours.</p></div></div>
-    <div class="seo"><b>Software, in short</b>
-      <p>You already have the main tools: your site, your list, your Academy and your calendar. If a step needs something extra, like a link tracker, our team pays for it and runs it.</p>
-      <p>You pay nothing extra for software while the plan runs.</p></div>
-  </div>
-</section>
-
 <section class="band" id="road" aria-labelledby="road-h">
   <div class="wrap">
-    <div class="head rv"><p class="eyebrow"><span class="secno">08</span>Your first month</p><h2 id="road-h">Your first month: <span class="gold">we do the heavy lifting</span></h2>
+    <div class="head rv"><p class="eyebrow"><span class="secno">07</span>Your first month</p><h2 id="road-h">Your first month: <span class="gold">we do the heavy lifting</span></h2>
       <p class="lede">Our team works on your account every day of the first month. Your part fits on one hand. And nothing changes on your site or your list without your OK.</p>
       <p class="safe"><b>These timings are on the safe side.</b> Most of it usually happens faster. We leave room so you never wait on a promise.</p></div>
     <table class="tb road3">
@@ -893,7 +1006,7 @@ details>summary{min-height:44px;align-items:center;padding-top:10px;padding-bott
 
 <section id="terms" aria-labelledby="terms-h">
   <div class="wrap">
-    <div class="head rv"><p class="eyebrow"><span class="secno">09</span>The terms</p><h2 id="terms-h">The terms, <span class="gold">in plain words</span></h2></div>
+    <div class="head rv"><p class="eyebrow"><span class="secno">08</span>The terms</p><h2 id="terms-h">The terms, <span class="gold">in plain words</span></h2></div>
     <table class="tb">
       <tbody>
         <tr><th scope="row">Billing</th><td>$1,100 a month, paid in advance, by card or invoice. There is no setup fee.</td></tr>
@@ -913,7 +1026,7 @@ details>summary{min-height:44px;align-items:center;padding-top:10px;padding-bott
 
 <section class="band" id="detail" aria-labelledby="detail-h">
   <div class="wrap">
-    <div class="head rv"><p class="eyebrow"><span class="secno">10</span>Every detail</p><h2 id="detail-h">How each part works, <span class="gold">step by step</span></h2>
+    <div class="head rv"><p class="eyebrow"><span class="secno">09</span>Every detail</p><h2 id="detail-h">How each part works, <span class="gold">step by step</span></h2>
       <p class="lede">Each card says what we do, what your part is, and gives one example.</p></div>
     <div class="dt">
       <div class="dcard rv sl"><div><span class="k">01</span><h3>New Shorts for each funnel</h3><p class="lbl">What we do</p><p>We make 30 new Shorts a month from your long videos, talks and workshop footage, each one pointing to that month's funnel. Before we build each one, you get a written proposal: timecodes, opening and closing words, the images and the length. Each Short ends by telling viewers where to go next.</p><p class="lbl">Your part</p><p>OK each proposal, or change it.</p></div>
@@ -968,7 +1081,7 @@ details>summary{min-height:44px;align-items:center;padding-top:10px;padding-bott
 
 <section class="band" id="faq" aria-labelledby="faq-h">
   <div class="wrap cols">
-    <div class="head rv"><p class="eyebrow"><span class="secno">12</span>Good to know</p><h2 id="faq-h">Questions</h2></div>
+    <div class="head rv"><p class="eyebrow"><span class="secno">11</span>Good to know</p><h2 id="faq-h">Questions</h2></div>
     <div>
       <details open><summary>Do I pay for any software?</summary><p>No. We build inside your Squarespace site, your Mailchimp list and your booking calendar. If a step needs a tool you don't have, our team pays for it and runs it.</p></details>
       <details><summary>Will this duplicate my Academy, my emails or my list?</summary><p>No. New contacts join your existing Mailchimp list, tagged with their Short. Your blog updates keep going as they do today. The welcome series only runs for new contacts from Shorts, and it points to your own Academy, courses and workshops.</p></details>
@@ -1067,6 +1180,24 @@ addEventListener("beforeprint", openAll);
   addEventListener('resize', frame); frame();
   addEventListener('beforeprint', () => { all.forEach(el => el.classList.add('in')); sts.forEach(s => s.classList.add('on')); rail && rail.style.setProperty('--f', 1);
     order.forEach(b => { b.style.opacity = 1; b.style.transform = 'none'; }); counts.forEach(el => el.textContent = fmt(+el.dataset.count, el)); });
+})();
+</script>
+<script>
+(() => {
+  const st = document.querySelector('.sty'); if (!st) return;
+  const caps = [...st.querySelectorAll('.cp')], scr = [...st.querySelectorAll('.scr')], dots = [...st.querySelectorAll('.dots i')], hint = st.querySelector('.hint');
+  const N = caps.length, calm = location.search.includes('print') || matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (calm) { st.classList.add('calm'); caps.forEach(c => c.classList.add('on')); return; }
+  addEventListener('beforeprint', () => { st.classList.add('calm'); caps.forEach(c => c.classList.add('on')); });
+  let cur = -1, tick = false;
+  const set = i => { if (i === cur) return; cur = i; caps.forEach((c, k) => c.classList.toggle('on', k === i)); scr.forEach((s, k) => s.classList.toggle('on', k === i)); };
+  const frame = () => { tick = false; const r = st.getBoundingClientRect(), span = st.offsetHeight - innerHeight;
+    const p = Math.max(0, Math.min(1, -r.top / Math.max(1, span))), x = p * N, i = Math.min(N - 1, Math.floor(x));
+    set(i); dots.forEach((d, k) => d.style.setProperty('--d', k < i ? 1 : k === i ? Math.min(1, x - i) : 0));
+    const v = st.querySelector('.s1 .ph2'); if (v) v.style.setProperty('--pp', (10 + Math.min(1, x) * 75).toFixed(1) + '%');
+    if (hint) hint.style.opacity = p > 0.04 ? 0 : 1; };
+  addEventListener('scroll', () => { if (!tick) { tick = true; requestAnimationFrame(frame); } }, { passive: true });
+  addEventListener('resize', frame); frame();
 })();
 </script>
 </body>
