@@ -1,0 +1,152 @@
+/* BEJÚ founder CRM: client delivery board (Clients page, clientboard.js). Same look as the Samples board: its glass columns (.sm-col,
+   .sm-ch, .sm-cnt, .sm-list, .sm-empty) and its delivery-email panel classes (.sm-em*, .sm-ems, .sm-pacts) are reused as they are;
+   the stacked batch card, the status chips, the stats and the List | Board switch are new. Type: 13 (chips, meta) · 14-15 (names, body)
+   · 30 (panel title). Colour = meaning: orange = being built, blue = ready / live, green = approved, red = overdue / changes asked.
+   Motion: transform + opacity only; off under reduced motion and the "Calm" look. No inline styles. Phone: the five columns stack
+   as sections, one under the other. */
+
+/* ---------- List | Board ---------- */
+.cb-bar{display:flex;align-items:center;gap:12px;margin:0 0 14px}
+.cb-seg{display:inline-flex;padding:3px;gap:2px;border-radius:999px;background:var(--panel);border:1px solid var(--line)}
+.cb-sg{min-width:72px;height:34px;padding:0 16px;border-radius:999px;border:0;background:transparent;font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer;transition:background-color .2s,color .2s}
+.cb-sg[aria-pressed="true"]{background:var(--blue);color:var(--on-accent)}
+:root[data-mode="dark"] .cb-sg[aria-pressed="true"]{background:var(--key);color:var(--cta-ink)}
+.cb-sg:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.cb-bar[data-cbm="list"]~.cb-all{display:none}
+.cb-bar[data-cbm="board"]~:not(.cb-all){display:none}
+.cb-all{min-width:0}
+
+/* ---------- the board: five glass columns ---------- */
+.cb-board{display:grid;grid-template-columns:repeat(5,minmax(176px,1fr));gap:12px;align-items:start;min-width:0;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;padding:4px 2px 10px;margin:-4px -2px -10px}
+.cb-col{min-height:200px}
+.cb-col[data-col="building"]::before{background:var(--orange);opacity:.7}
+.cb-col[data-col="ready"]::before{opacity:.5}.cb-col[data-col="sent"]::before{opacity:.66}
+.cb-col[data-col="changes"]::before{background:var(--red);opacity:.7}
+.cb-col[data-col="approved"]::before{background:var(--green);opacity:1}
+.cb-col[data-col="approved"] .sm-cnt{background:var(--green-soft);color:var(--green)}
+.cb-col[data-col="changes"] .sm-cnt:not(:empty){background:var(--red-soft);color:var(--red)}
+.cb-col .sm-list{gap:12px}
+
+/* ---------- a stack: one batch, collapsed; a click opens its items ---------- */
+.cb-stack{position:relative;isolation:isolate;min-width:0;border-radius:16px;background:var(--tile);border:1px solid var(--line);box-shadow:var(--shadow);transition:border-color .2s}
+.cb-stack.multi:not(.open){margin-bottom:10px}
+/* a stack of more than one reads as a pile: two thin layers peek out underneath until it is open */
+.cb-stack.multi:not(.open)::before,.cb-stack.multi:not(.open)::after{content:"";position:absolute;z-index:-1;left:9px;right:9px;bottom:-6px;height:14px;border-radius:0 0 14px 14px;background:var(--tile);border:1px solid var(--line);border-top:0}
+.cb-stack.multi:not(.open)::after{left:18px;right:18px;bottom:-11px;opacity:.7}
+@media (hover:hover) and (pointer:fine){ .cb-stack:hover{border-color:var(--line-2)} }
+.cb-sh{display:grid;gap:6px;width:100%;min-height:44px;padding:11px 12px 12px;border:0;border-radius:16px;background:none;text-align:left;font:inherit;color:var(--ink);cursor:pointer}
+.cb-sh:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.cb-r1{display:flex;align-items:center;gap:8px;min-width:0}
+.cb-nm{flex:1;min-width:0;font-size:14px;font-weight:600;letter-spacing:-.01em;line-height:1.3;overflow-wrap:anywhere}
+.cb-cnt{flex:none;display:inline-grid;place-items:center;min-width:26px;height:22px;padding:0 7px;border-radius:999px;font-family:var(--mono);font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;background:var(--panel);color:var(--ink-2)}
+.cb-stack:not(.multi) .cb-cnt{display:none}
+.cb-cl{min-width:0;font-size:13px;line-height:1.3;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cb-cl::before{content:"";display:inline-block;width:8px;height:8px;margin-right:7px;border-radius:50%;background:var(--blue);opacity:.7;vertical-align:baseline}
+:root[data-mode="dark"] .cb-cl::before{background:var(--key)}
+.cb-sts,.cb-ft{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;min-width:0}
+.cb-ft{justify-content:space-between;font-size:13px;color:var(--mute)}
+.cb-due{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink-2);white-space:nowrap}
+.cb-due.late{color:var(--red)}
+/* status chips: the same 13 px chip on a stack (counts) and on an item (name) */
+.cb-chip{display:inline-flex;align-items:center;max-width:100%;padding:3px 9px;border-radius:999px;font-size:13px;font-weight:600;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:var(--panel);color:var(--ink-2)}
+.cb-chip.s-building{background:var(--orange-soft);color:#8f4a05}
+.cb-chip.s-ready{background:var(--blue-soft);color:var(--blue)}
+.cb-chip.s-sent{background:var(--panel);color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--line-2)}
+.cb-chip.s-changes{background:var(--red-soft);color:var(--red)}
+.cb-chip.s-approved{background:var(--green-soft);color:var(--green)}
+.cb-chip.s-go{background:var(--blue);color:#fff;font-variant-numeric:tabular-nums;font-family:var(--mono)}
+.cb-chip.s-go .sm-cdb.soon{color:#fff;text-decoration:underline}
+.cb-chip.s-hold{background:rgba(183,121,31,.14);color:#8a5a12}
+:root[data-mode="dark"] .cb-chip.s-building{color:var(--orange)} :root[data-mode="dark"] .cb-chip.s-ready{color:var(--blue-2)}
+:root[data-mode="dark"] .cb-chip.s-hold{color:#e0b35a} :root[data-mode="dark"] .cb-chip.s-go{background:var(--key);color:var(--cta-ink)}
+
+/* ---------- the open stack: its items, then the email ---------- */
+.cb-items{display:grid;gap:12px;padding:0 12px 12px}
+.cb-items[hidden]{display:none}
+.cb-ul{list-style:none;margin:0;padding:0;display:grid}
+.cb-it{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;min-width:0;padding:8px 0;border-top:1px solid var(--line)}
+.cb-it:first-child{border-top:0}
+.cb-tt{flex:1 1 120px;min-width:0;font-size:14px;line-height:1.35;overflow-wrap:anywhere}
+.cb-lk,.cb-qb{display:inline-flex;align-items:center;gap:5px;min-height:32px;padding:0 8px;border:0;border-radius:10px;background:none;font:inherit;font-size:13px;font-weight:600;color:var(--blue);text-decoration:none;cursor:pointer}
+:root[data-mode="dark"] .cb-lk,:root[data-mode="dark"] .cb-qb{color:var(--blue-2)}
+.cb-lk:hover,.cb-qb:hover{background:var(--blue-soft)}
+.cb-lk:focus-visible,.cb-qb:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.cb-lk .ic,.cb-qb .ic{width:15px;height:15px}
+.cb-note{flex-basis:100%;font-size:13px;line-height:1.4;color:var(--ink-2)}
+/* the client's written OK: shown on hover, on keyboard focus, or after a tap on "Quote" */
+.cb-q{display:none;flex-basis:100%;margin:2px 0 0;padding:8px 11px;border-radius:10px;font-size:13px;line-height:1.45;font-style:italic;background:var(--green-soft);color:var(--ink);quotes:"“" "”"}
+.cb-q::before{content:open-quote} .cb-q::after{content:close-quote}
+.cb-it:hover .cb-q,.cb-it:focus-within .cb-q,.cb-it.q-open .cb-q{display:block}
+.cb-em{display:grid;gap:10px;min-width:0;padding-top:12px;border-top:1px solid var(--line)}
+.cb-em h4{margin:0;font-size:15px;font-weight:600;letter-spacing:-.01em}
+.cb-emb{max-height:260px}
+.cb-em .sm-emh{display:grid;gap:2px}
+.cb-em .sm-emh b{word-break:normal;overflow-wrap:break-word}
+.cb-hold{background:rgba(183,121,31,.12);color:#8a5a12}
+:root[data-mode="dark"] .cb-hold{color:#e0b35a}
+
+/* ---------- the client's board: a panel from the right, like the sample panel ---------- */
+html.cb-locked{overflow:hidden}
+.cb-pan{position:fixed;z-index:41;top:12px;right:12px;bottom:12px;width:min(1240px,calc(100vw - 24px));display:grid;grid-template-rows:auto minmax(0,1fr);border-radius:26px;overflow:hidden;background:var(--solid);color:var(--ink);box-shadow:0 30px 80px -10px rgba(0,0,0,.42),var(--edge);transform:translateX(calc(100% + 24px));transition:transform .5s var(--out)}
+.cb-pan.on{transform:none}
+.cb-pan.out{transition-duration:.34s;transition-timing-function:cubic-bezier(.4,0,1,1)}
+.cb-ph{display:flex;align-items:center;gap:12px;min-width:0;padding:20px 24px 14px}
+.cb-phh{flex:1;min-width:0}
+.cb-ph h2{margin:0;font-size:30px;font-weight:600;letter-spacing:-.03em;line-height:1.15;overflow-wrap:anywhere}
+.cb-ph p{margin-top:4px;font-size:13px;overflow-wrap:anywhere}
+.cb-hs{flex:none;display:inline-flex}
+.cb-det{flex:none;height:36px;font-size:13px}
+.cb-x{flex:none}
+.cb-pb{display:grid;align-content:start;gap:16px;min-width:0;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:4px 24px 26px}
+.cb-sw{display:inline-flex;align-items:center;gap:10px;min-height:36px;padding:0 14px 0 6px;border-radius:999px;border:1px solid var(--line-2);background:var(--tile);font:inherit;font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer;transition:background-color .2s,border-color .2s}
+.cb-sw i{position:relative;flex:none;width:34px;height:22px;border-radius:999px;background:var(--line-2);transition:background-color .2s}
+.cb-sw i::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(10,16,40,.3);transition:transform .25s var(--out)}
+.cb-sw[aria-checked="true"]{border-color:transparent;background:rgba(183,121,31,.14);color:#8a5a12}
+:root[data-mode="dark"] .cb-sw[aria-checked="true"]{color:#e0b35a}
+.cb-sw[aria-checked="true"] i{background:#b7791f} .cb-sw[aria-checked="true"] i::after{transform:translateX(12px)}
+.cb-sw:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.cb-sw:disabled{opacity:.6;cursor:wait}
+
+/* ---------- this month, on top of a client's board ---------- */
+.cb-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.cb-tl{display:grid;align-content:start;gap:4px;padding:14px 16px;min-width:0}
+.cb-tl .ec-l{font-size:13px;color:var(--mute);font-weight:500}
+.cb-tl small{font-size:13px;line-height:1.35;color:var(--mute);overflow-wrap:anywhere}
+.cb-big{font-family:var(--mono);font-size:34px;font-weight:500;letter-spacing:-.05em;line-height:1.05;font-variant-numeric:tabular-nums;margin-top:2px}
+.cb-big.cb-date{font-size:28px;letter-spacing:-.03em}
+.cb-tl.bad{background:var(--red-soft);border-color:transparent}
+.cb-tl.bad .cb-big,.cb-tl.bad .ec-l,.cb-tl.bad small{color:var(--red)}
+
+/* ---------- nothing tracked yet ---------- */
+.cb-none{display:grid;justify-items:center;gap:8px;padding:40px 24px;text-align:center}
+.cb-none-i{display:grid;place-items:center;width:52px;height:52px;border-radius:17px;background:var(--blue-soft);color:var(--blue);margin-bottom:4px}
+.cb-none-i .ic{width:24px;height:24px}
+.cb-none b{font-size:20px;font-weight:600;letter-spacing:-.02em}
+.cb-none p{max-width:440px;font-size:15px;line-height:1.5;color:var(--mute)}
+
+@media (max-width:1100px){ .cb-board{grid-template-columns:repeat(5,minmax(200px,1fr))} .cb-stats{grid-template-columns:repeat(2,minmax(0,1fr))} }
+
+/* ---------- phone: the five columns stack as sections; the panel is full screen ---------- */
+@media (max-width:600px){
+  .cb-bar{margin:0 4px 12px}
+  .cb-sg{min-height:44px;min-width:84px}
+  .cb-all{margin:0 4px}
+  .cb-board{grid-template-columns:minmax(0,1fr);gap:14px;overflow:visible;margin:0;padding:0}
+  .cb-col{min-height:0;padding:12px 10px 10px}
+  .cb-col .sm-empty{min-height:56px}
+  .cb-sh{min-height:56px;padding:12px}
+  .cb-lk,.cb-qb{min-height:44px;padding:0 12px}
+  .cb-pan{inset:0;width:100%;border-radius:0;display:block;overflow-y:auto;overscroll-behavior:contain;transform:translateY(100%);padding-bottom:env(safe-area-inset-bottom)}
+  .cb-pan.on{transform:none}
+  .cb-ph{flex-wrap:wrap;gap:10px;padding:calc(16px + env(safe-area-inset-top)) 16px 10px;padding-right:72px}
+  .cb-ph h2{font-size:26px}
+  .cb-phh{flex-basis:100%}
+  .cb-x{position:fixed;top:calc(12px + env(safe-area-inset-top));right:12px;z-index:3;width:44px;height:44px;border-radius:50%;background:var(--solid)}
+  .cb-det,.cb-sw{min-height:44px}
+  .cb-pb{overflow:visible;padding:4px 16px 28px}
+  .cb-stats{gap:10px} .cb-tl{padding:12px 14px} .cb-big{font-size:30px}
+  .cb-emb{font-size:15px;max-height:none}
+}
+
+html[data-motion="calm"] .cb-pan,html[data-motion="calm"] .cb-sw i::after,html[data-motion="calm"] .cb-stack{transition:none}
+@media (prefers-reduced-motion:reduce){ .cb-pan,.cb-sw i::after,.cb-stack{transition:none!important} }
