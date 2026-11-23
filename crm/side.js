@@ -154,7 +154,7 @@ const VIEW = { expenses: viewExpenses, email: viewEmail, clients: viewClients, p
 const HEAD = {
   expenses: ["Expenses <em class=\"sf\">&amp; profit</em>", "Tick what's paid this month and see the profit that's left."],
   email: ["Email <em class=\"sf\">campaigns</em>", "What to change, which campaign works best, and how each one is sending."],
-  clients: ["Clients <em class=\"sf\">&amp; videos</em>", "Everyone who paid or got videos from us, and every video we delivered."],
+  clients: ["Clients <em class=\"sf\">&amp; videos</em>", ""],   // BENAS 11-23: no explanation line under the title
   perf: ["Client <em class=\"sf\">performance</em>", "Monthly clients' YouTube, TikTok and Instagram: views and trend, which of our Shorts they posted, what works."],
   weekly: ["Weekly <em class=\"sf\">business review</em>", "Health line, money, funnel, campaigns, A/B tests, engine, sales, clients and what we changed: this week against last week and the 4 weeks before."],
   todos: ["To-<em class=\"sf\">dos</em>", "Founder to-dos only. Drag a card to move it, click it to open it. You both see changes live."],
@@ -177,7 +177,7 @@ function srcOf(p, d) {
 }
 function header(p, d) {
   const [h, sub] = HEAD[p], s = srcOf(p, d), old = s && (/expired/.test(s[0]) || (s[2] != null ? s[2] : s[1] && Date.now() - new Date(s[1]) > 3 * 36e5));
-  return `<header class="sp-h"><div><h1>${h}</h1><p>${esc(sub)}</p></div>${s ? `<span class="sp-src${old ? " old" : ""}"${old ? ` title="${esc(s[3] || "Older than 3 hours: the numbers may be out of date")}"` : ""}><i></i>${esc(s[0])}${s[1] ? ` · synced ${esc(ago(s[1]))}${old ? " · may be out of date" : ""}` : " · live"}</span>` : ""}</header>`;
+  return `<header class="sp-h"><div><h1>${h}</h1>${sub ? `<p>${esc(sub)}</p>` : ""}</div>${s ? `<span class="sp-src${old ? " old" : ""}"${old ? ` title="${esc(s[3] || "Older than 3 hours: the numbers may be out of date")}"` : ""}><i></i>${esc(s[0])}${s[1] ? ` · synced ${esc(ago(s[1]))}${old ? " · may be out of date" : ""}` : " · live"}</span>` : ""}</header>`;
 }
 async function renderPage(quiet) {
   const p = PAGE; if (p === "dashboard" || !sb()) return;
@@ -698,24 +698,25 @@ async function loadClients() {
     all("call_tasks", "id,touch_id,text,owner,due_at,done_at", q => q.order("id")).catch(() => []),
   ]);
   const t = dayOf(Date.now()), plans = (m && m.data && m.data.retainer_plans) || {};
-  const vids = {}, paid = {}, nPay = {}, lastPay = {};
+  const vids = {}, paid = {}, nPay = {}, lastPay = {}, lastAmt = {}, lastAt = {};
   /* 11-21 (BENAS: "pack status should be in the client's page"): packs come from public.order_progress (one row per paid order,
      Shorts counted once per number in the order folder, revisions per Short). Founders fix size / kind / status on the page. */
   const byOrd = {}, cOrd = {}, cProb = {};
   ordRows.forEach(o => { byOrd[o.id] = o; (cOrd[o.client_id] = cOrd[o.client_id] || []).push(o); });
   probs.forEach(q => { const o = byOrd[q.order_id], k = o ? o.client_id : "n:" + lc(q.client); (cProb[k] = cProb[k] || []).push(q); });
   deliveries.forEach(v => (vids[v.client_id] = vids[v.client_id] || []).push(v));
-  payments.forEach(p => { if (p.refunded) return; paid[p.client_id] = (paid[p.client_id] || 0) + (+p.amount || 0); nPay[p.client_id] = (nPay[p.client_id] || 0) + 1; const d = dayOf(p.paid_at); if (!lastPay[p.client_id] || d > lastPay[p.client_id]) lastPay[p.client_id] = d; });
+  payments.forEach(p => { if (p.refunded) return; paid[p.client_id] = (paid[p.client_id] || 0) + (+p.amount || 0); nPay[p.client_id] = (nPay[p.client_id] || 0) + 1; const d = dayOf(p.paid_at); if (!lastPay[p.client_id] || d > lastPay[p.client_id]) lastPay[p.client_id] = d;
+    if (!lastAt[p.client_id] || +new Date(p.paid_at) > +new Date(lastAt[p.client_id])) { lastAt[p.client_id] = p.paid_at; lastAmt[p.client_id] = +p.amount || 0; } });   // the newest payment = the price of the last pack (row money)
+  const liveCalls = calls.filter(k => !/cancel/i.test(k.status || "")), nowMs = Date.now();
   const ret = {}; retainers.forEach(r => { if (/active|trialing|past_due/i.test(r.status || "")) ret[lc(r.email)] = r; });
   const prio = {}; notes.slice().sort((a, b) => ((a.noted_at || "") + (a.created_at || "")).localeCompare((b.noted_at || "") + (b.created_at || ""))).forEach(n => { prio[lc(n.lead_email)] = n.note; });
-  const cadence = n => n >= 60 ? `${Math.round(n / 30)} a day` : n >= 28 ? "1 a day" : n >= 14 ? "every other day" : n ? `${n} a month` : "";
   const uniq = vs => { const k = new Set(); vs.forEach(v => { const mm = /Short\s*(\d+)/i.exec(v.title || ""); k.add(mm ? (v.order_name || "") + "#" + mm[1] : v.id); }); return k.size; };
   const list = clients.map(c => {
     const es = (c.emails || []).map(lc), r = es.map(e => ret[e]).find(Boolean) || null, vs = vids[c.id] || [], last = vs.reduce((x, v) => v.delivered_at > x ? v.delivered_at : x, "");
     const gone = es.some(e => /^gone\b/i.test(prio[e] || "")), lastAct = [last, lastPay[c.id] || ""].sort().pop();
     let plan = null;
     if (r) { const pl = plans[r.id] || {}, start = dayOf(new Date(Math.max(+new Date(r.started_at), +new Date(r.current_period_end) - 31 * 864e5)).toISOString());
-      plan = { shorts: pl.shorts || null, text: [pl.shorts ? `${pl.shorts} Shorts/mo` : (pl.product || "Monthly plan"), cadence(pl.shorts), `${usd(r.amount)}/${(r.interval || "month").slice(0, 2)}`].filter(Boolean).join(" · "), done: uniq(vs.filter(v => v.delivered_at >= start)), start, renews: dayOf(r.current_period_end) }; }
+      plan = { shorts: pl.shorts || null, done: uniq(vs.filter(v => v.delivered_at >= start)), start, renews: dayOf(r.current_period_end) }; }
     const cat = gone ? "past" : r ? "retainer" : (lastAct && lastAct < addDays(t, -45)) ? "past" : "pack";
     const doms = es.map(e => e.split("@")[1]).filter(x => x && !/^(gmail|yahoo|hotmail|outlook|icloud|aol|proton)\./.test(x)), mine = q => es.includes(lc(q.email)) || doms.includes(lc(q.email).split("@")[1]);
     const waitRow = pipe.find(q => mine(q) && /wait|their ok|on ok\b|approv|footage|awaiting|\bsends\b|next episode|check-?in sent|only if .{0,20}write|until (he|she|they)/i.test(q.next_action || "")), waiting = waitRow ? String(waitRow.next_action).slice(0, 120) : "";
@@ -742,7 +743,15 @@ async function loadClients() {
     const unN = pb.filter(q => q.problem === "file_unnumbered").length;   // files the count can't use: one small line on the client, never a card
     const prob = [unN ? `${unN} file${unN === 1 ? "" : "s"} not counted (no Short number in the name)` : "", ...pb.filter(q => q.problem === "folder_unmatched").map(q => `“${q.ref}”: ${q.detail}`),
       ...pb.filter(q => q.problem === "over_delivered").map(q => `${byOrd[q.order_id] ? ordName(byOrd[q.order_id]) : q.ref}: ${q.detail}`)].filter(Boolean).join(" · ");
-    return { ...c, vids: vs, paid: paid[c.id] || 0, nPay: nPay[c.id] || 0, last, ret: r, plan, gone, cat, today: vs.filter(v => v.delivered_at === t).length, proms: pr, scope: sc, att, packs, legacy, prob, state, worst, waiting };
+    /* 11-23 (BENAS, clean-up): one status mark per row, the pack now running (or the last one) for the size, the newest payment for the money,
+       and the client's last / next cal.com call; all from the rows read above */
+    const failed = !!(r && /past_due/i.test(r.status || "")), wait = packs.some(o => o.st === "waiting") || !!(r && waiting);
+    const mark = cat === "past" ? "past" : att.length || failed ? "attn" : wait ? "wait" : "ok";
+    const pk = packs.filter(o => o.kind !== "monthly" && o.bought != null), open = pk.filter(o => o.status === "open"), lastPk = pk[pk.length - 1];
+    const cur = open.length ? { done: open.reduce((a, o) => a + o.done, 0), bought: open.reduce((a, o) => a + o.bought, 0), open: true } : lastPk ? { done: lastPk.done, bought: lastPk.bought, open: false } : null;
+    const myC = liveCalls.filter(k => es.includes(lc(k.email))).map(k => +new Date(k.start_at)), lastCall = Math.max(0, ...myC.filter(x => x <= nowMs)), nextCall = Math.min(Infinity, ...myC.filter(x => x > nowMs));
+    return { ...c, vids: vs, paid: paid[c.id] || 0, nPay: nPay[c.id] || 0, lastAmt: lastAmt[c.id] || 0, last, ret: r, plan, gone, cat, today: vs.filter(v => v.delivered_at === t).length, proms: pr, scope: sc, att, packs, legacy, prob, state, worst, waiting,
+      failed, mark, cur, lastCall: lastCall || null, nextCall: isFinite(nextCall) ? nextCall : null };
   }).filter(c => c.vids.length || c.paid || c.ret);
   const by = k => list.filter(c => c.cat === k);
   const groups = [["retainer", "Monthly retainer", by("retainer").sort((a, b) => b.ret.amount - a.ret.amount)],
@@ -750,28 +759,71 @@ async function loadClients() {
     ["past", "Past / parted ways", by("past").sort((a, b) => (b.last || "").localeCompare(a.last || ""))]];
   const ds = st.find(x => x.name === "deliveries");
   const allP = list.flatMap(c => c.packs.map(o => ({ ...o, client: c.name }))), nSt = k => allP.filter(o => o.st === k).length;
-  return { list, groups, t, calls: callModel(calls, cNotes, cTasks), counts: { retainer: by("retainer").length, progress: nSt("progress"), finished: nSt("finished"), notstarted: nSt("notstarted"), waiting: nSt("waiting"), paused: nSt("paused"), unknown: nSt("unknown") }, unknownL: allP.filter(o => o.st === "unknown").map(o => `${o.client}: ${o.name}`), synced: ds ? ds.ran_at : null, dsOk: ds ? ds.ok !== false : true, lastDelivery: deliveries.reduce((x, v) => v.delivered_at > x ? v.delivered_at : x, ""), todayN: list.reduce((s, c) => s + c.today, 0), todayC: list.filter(c => c.today).length };
+  /* hero (BENAS 11-23): monthly recurring = the plans in the Monthly group (same sum as the old KPI, failed payments included and marked);
+     Shorts owed = open orders of current clients (bought − delivered; a size-unknown order is not guessed) + a monthly plan with no order yet */
+  const owedO = list.filter(c => c.cat !== "past").flatMap(c => c.packs.filter(o => o.status === "open" && o.bought != null).map(o => [o.bought, Math.min(o.done, o.bought)]))
+    .concat(by("retainer").filter(c => c.plan && !c.plan.order && c.plan.shorts).map(c => [c.plan.shorts, Math.min(c.plan.done, c.plan.shorts)]));
+  const hero = { mrr: by("retainer").reduce((s, c) => s + (+c.ret.amount || 0), 0), nRet: by("retainer").length, failed: by("retainer").filter(c => c.failed).length,
+    bought: owedO.reduce((s, x) => s + x[0], 0), done: owedO.reduce((s, x) => s + x[1], 0), attn: list.filter(c => c.mark === "attn").length, wait: list.filter(c => c.mark === "wait").length, vids: list.reduce((s, c) => s + c.vids.length, 0) };
+  hero.owed = hero.bought - hero.done;
+  return { list, groups, t, hero, calls: callModel(calls, cNotes, cTasks), counts: { retainer: by("retainer").length, progress: nSt("progress"), finished: nSt("finished"), notstarted: nSt("notstarted"), waiting: nSt("waiting"), paused: nSt("paused"), unknown: nSt("unknown") }, synced: ds ? ds.ran_at : null, dsOk: ds ? ds.ok !== false : true, todayN: list.reduce((s, c) => s + c.today, 0), todayC: list.filter(c => c.today).length };
 }
 const fdur = s => s ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : "";
+/* 11-23 (BENAS, clean-up: "removing unnecessary text"): the chosen client opens on three tiles (delivered vs owed, money, last contact),
+   then what is open, the orders (with Fix) and the newest videos (a count + "Show all"). Calls and the order notes fold under "More". */
+const CLV = 3;   // videos shown before "Show all"
+const PER = r => ({ month: "mo", year: "yr", week: "wk", day: "day" })[lc(r && r.interval) || "month"] || "mo";
+const clKv = (k, v) => `<div class="cl-kv"><span>${k}</span><b>${v}</b></div>`;
+const clDay = d => d === dayOf(Date.now()) ? "Today" : dLabel(d);
+function clVids(c, t) {
+  if (!c.vids.length) return empty("No videos yet.");
+  const vid = v => `<a class="vid${v.delivered_at === t ? " today" : ""}" href="${esc(v.link)}" target="_blank" rel="noopener noreferrer" title="Open in Drive"><span class="pl">${ic("play")}${v.delivered_at === t ? `<em class="vt">Today</em>` : ""}</span><b>${esc(v.title || "Video")}</b><small>${esc(fdur(v.duration_s))}${v.duration_s ? " · " : ""}<span class="vo">${esc(v.order_name || "")}</span></small></a>`;
+  const more = c.vids.length > CLV ? `<button type="button" class="act cl-vall" data-clvall aria-expanded="${CL_VALL}">${CL_VALL ? "Show fewer" : `Show all ${int(c.vids.length)}`}</button>` : "";
+  if (!CL_VALL) return `<div class="vid-grid">${c.vids.slice(0, CLV).map(vid).join("")}</div>${more}`;
+  const days = {}; c.vids.forEach(v => (days[v.delivered_at || ""] = days[v.delivered_at || ""] || []).push(v));
+  return Object.keys(days).sort().reverse().map(k => `<div class="cl-ord${k === t ? " today" : ""}">${k === t ? "Today · " : ""}${esc(dLabel(k))} · ${days[k].length}</div><div class="vid-grid">${days[k].map(vid).join("")}</div>`).join("") + more;
+}
 function clientDetail(c, t) {
   if (!c) return empty("Pick a client on the left.");
-  const days = {}; c.vids.forEach(v => (days[v.delivered_at || ""] = days[v.delivered_at || ""] || []).push(v));
-  const keys = Object.keys(days).sort().reverse();
-  return `<div class="cl-head"><div><h2>${esc(c.name || "Client")}</h2><p>${esc([c.show, (c.emails || [])[0], c.last ? `last video ${dLabel(c.last)}` : "no videos yet"].filter(Boolean).join(" · "))}</p></div>
-    <div class="cl-chips">${stChip(c, true)}${c.plan ? `<span class="chip">renews in ${c.plan.daysLeft} d</span>` : ""}${c.today ? `<span class="chip g">${c.today} today</span>` : ""}${c.plan ? `<span class="chip g">${esc(c.plan.text)}</span>` : ""}<span class="chip">${int(c.vids.length)} video${c.vids.length === 1 ? "" : "s"}</span>${c.paid ? `<span class="chip b">${usd(c.paid)} paid${c.nPay > 1 ? ` · ${c.nPay} payments` : ""}</span>` : ""}${c.gone ? `<span class="chip">parted ways</span>` : ""}${c.scope && c.scope.url ? `<a class="chip lkc" href="${esc(c.scope.url)}" target="_blank" rel="noopener noreferrer">Scope ↗</a>` : ""}</div></div>
-    ${ordLines(c)}
-    ${c.att.length ? `<div class="sp-alerts cl-al">${c.att.map(a => `<div class="sp-alert ${a[0] === "r" ? "red" : "amber"}"><i></i><span>${esc(a[1])}</span></div>`).join("")}</div>` : ""}
-    ${c.proms.length ? `<div class="cl-plan"><b class="cl-ph">Promised to this client</b>${c.proms.map(q => `<div class="cl-pr"><span class="grow">${esc(q.promise)}</span><span class="chip${q.due_at && new Date(q.due_at) < new Date() ? " r" : ""}">${q.due_at ? "due " + esc(dLabel(dayOf(q.due_at))) : "no date"}</span></div>`).join("")}</div>` : ""}
-    ${c.plan && !c.plan.order ? `<div class="cl-plan"><div class="sp-bar"><span>Delivered this billing month <small class="mut">since ${esc(dLabel(c.plan.start))} · renews ${esc(dLabel(c.plan.renews))}${c.plan.expected != null ? ` · about ${c.plan.expected} expected by now` : ""}</small></span><span class="v">${c.plan.done}${c.plan.shorts ? ` / ${c.plan.shorts}` : ""}</span><div class="bar c-green"><i data-v="w:${c.plan.shorts ? Math.min(100, Math.max(2, Math.round(100 * c.plan.done / c.plan.shorts))) : 100}%"></i></div></div><p class="sp-note">No monthly order yet: counted from the files in Drive.</p></div>` : ""}
-    ${keys.map(k => `<div class="cl-ord${k === t ? " today" : ""}">${k === t ? "Today · " : ""}${esc(dLabel(k))} · ${days[k].length}</div><div class="vid-grid">${days[k].map(v => `<a class="vid${k === t ? " today" : ""}" href="${esc(v.link)}" target="_blank" rel="noopener noreferrer" title="Open in Drive"><span class="pl">${ic("play")}${k === t ? `<em class="vt">Today</em>` : ""}</span><b>${esc(v.title || "Video")}</b><small>${esc(fdur(v.duration_s))}${v.duration_s ? " · " : ""}<span class="vo">${esc(v.order_name || "")}</span></small></a>`).join("")}</div>`).join("") || empty("No videos for this client in the delivery index yet.")}
-    <div class="cl-calls" data-emails="${esc((c.emails || []).join(","))}"></div>`;
+  const P = c.plan, D = P ? { done: P.done, bought: P.shorts, exp: P.expected, lab: "Delivered this month" } : c.cur ? { done: c.cur.done, bought: c.cur.bought, lab: c.cur.open ? "Delivered" : "Last pack" } : null;
+  const fr = D && D.bought ? Math.min(100, Math.round(100 * D.done / D.bought)) : 0, ex = D && D.bought && D.exp != null ? Math.min(100, Math.round(100 * D.exp / D.bought)) : null;
+  const deliv = `<div class="tile cl-tl"><span class="ec-l">${D ? D.lab : "Delivered"}</span><b class="cl-big">${D ? `${int(D.done)}<small> / ${D.bought == null ? "?" : int(D.bought)}</small>` : "—"}</b>
+    ${D && D.bought ? `<div class="cl-pb${fr >= 100 ? " full" : ""}" role="img" aria-label="${int(D.done)} of ${int(D.bought)} delivered${ex != null ? `, about ${int(D.exp)} expected by now` : ""}"><i data-v="w:${Math.max(2, fr)}%"></i>${ex != null ? `<em data-v="x:${ex}%" title="About ${int(D.exp)} expected by now"></em>` : ""}</div>` : ""}
+    ${c.today ? `<span class="chip g cl-td">${c.today} today</span>` : D ? "" : `<span class="cl-no">No order yet</span>`}</div>`;
+  const r = c.ret, money = `<div class="tile cl-tl"><span class="ec-l">${r ? "Plan" : "Last pack"}</span><b class="cl-big">${r ? `${usd(r.amount)}<small> / ${PER(r)}</small>` : c.lastAmt ? usd(c.lastAmt) : "—"}</b>
+    ${c.failed ? `<span class="chip r cl-fail">Payment failed</span>` : ""}${clKv("Paid", `${usd(c.paid)}${c.nPay > 1 ? `<small> · ${c.nPay} payments</small>` : ""}`)}${P ? clKv("Renews", `${esc(dLabel(P.renews))}<small> · ${P.daysLeft} d</small>`) : ""}</div>`;
+  const lastD = [c.last || "", c.lastCall ? dayOf(c.lastCall) : ""].sort().pop();
+  const contact = `<div class="tile cl-tl"><span class="ec-l">Last contact</span><b class="cl-big cl-date">${lastD ? esc(clDay(lastD)) : "—"}</b>
+    ${clKv("Video", c.last ? esc(clDay(c.last)) : "—")}${clKv("Call", c.lastCall ? esc(clDay(dayOf(c.lastCall))) : "—")}${c.nextCall ? clKv("Next call", `<span class="cl-next">${esc(callWhen(c.nextCall))}</span>`) : ""}</div>`;
+  const li = (k, html, end = "") => `<li class="k-${k}"><i></i><span>${html}</span>${end}</li>`;
+  const open = [...c.att.filter(a => !/^promise overdue: /.test(a[1])).map(a => li(a[0] === "r" ? "r" : "o", esc(a[1]))),   // an overdue promise is the promise row below (red due chip)
+    ...c.proms.map(q => li(q.due_at && new Date(q.due_at) < new Date() ? "r" : "p", esc(q.promise), `<span class="chip${q.due_at && new Date(q.due_at) < new Date() ? " r" : ""}">${q.due_at ? "due " + esc(dLabel(dayOf(q.due_at))) : "no date"}</span>`)),
+    ...(c.waiting && c.cat !== "past" ? [li("b", `Waiting: ${esc(c.waiting)}`)] : [])].join("");
+  const nOrd = c.packs.length + c.legacy.length;
+  return `<div class="cl-head"><div class="grow"><h2>${esc(c.name || "Client")}</h2>${c.show || (c.emails || [])[0] ? `<p>${esc([c.show, (c.emails || [])[0]].filter(Boolean).join(" · "))}</p>` : ""}</div>
+    <div class="cl-chips">${c.gone ? `<span class="chip">Parted ways</span>` : ""}${c.scope && c.scope.url ? `<a class="act cl-scope" href="${esc(c.scope.url)}" target="_blank" rel="noopener noreferrer">${ic("link")}Scope</a>` : ""}</div></div>
+    <div class="cl-tiles">${deliv}${money}${contact}</div>
+    <section class="cl-sec cl-open"${open ? "" : " hidden"}><h3 class="cl-h">Open</h3><ul>${open}<li class="k-r" data-clhold="${esc((c.emails || []).map(lc).join(","))}" hidden></li></ul></section>
+    ${nOrd ? `<section class="cl-sec"><h3 class="cl-h">Orders <span class="n">${nOrd}</span></h3>${ordLines(c)}</section>` : ""}
+    <section class="cl-sec"><h3 class="cl-h">Videos <span class="n">${int(c.vids.length)}</span></h3><div id="cl-vids">${clVids(c, t)}</div></section>
+    <div class="cl-sec cl-mw"><button type="button" class="act cl-morebtn" data-clmore aria-expanded="${CL_MORE}" aria-controls="cl-more">${ic("chev")}More</button>
+    <div class="cl-more" id="cl-more"${CL_MORE ? "" : " hidden"}>${c.prob ? `<p class="cl-prob">${esc(c.prob)}</p>` : ""}<div class="cl-calls" data-emails="${esc((c.emails || []).join(","))}">${empty("No calls with this client yet.")}</div></div></div>`;
 }
+/* the open hold for this client comes from the Dashboard's data (desk_items, read by crm.js); painted again when that data lands */
+function paintHold() {
+  const slot = $("#cl-detail [data-clhold]"); if (!slot) return;
+  const es = slot.dataset.clhold.split(",").filter(Boolean), D = window.BEJU_CRM_REPLIES && window.BEJU_CRM_REPLIES.d, h = D && (D.holds || []).find(x => (x.emails || []).some(e => es.includes(lc(e))));
+  const w = ({ simas: "Simas", benas: "Benas", both: "both founders" })[lc(h && h.set_by)] || "a founder";   // crm.js liftBy
+  slot.hidden = !h; slot.innerHTML = h ? `<i></i><span>On hold: ${esc(h.title || "")}</span><button type="button" class="chip r" data-act="drill" data-k="holds" data-a="">${esc(w)} ${w === "both founders" ? "lift" : "lifts"} it</button>` : "";
+  const sec = slot.closest(".cl-open"); if (sec) sec.hidden = !$("li:not([hidden])", sec);
+}
+addEventListener("beju-crm:data", () => { if (ON && PAGE === "clients") paintHold(); });
 /* 11-21 (SIMAS): call notes at the bottom of the client (summary, key takeaways, next tasks). crm.js renders and ticks them. */
 function fillCalls() {
   const el = $("#cl-detail .cl-calls"); if (!el || !window.BEJU_CRM_CALLS) return;
-  window.BEJU_CRM_CALLS(el.dataset.emails.split(",").filter(Boolean)).then(html => { if (el.isConnected && html) el.innerHTML = `<div class="cl-plan"><b class="cl-ph">Calls</b>${html}</div>`; }, () => {});
+  window.BEJU_CRM_CALLS(el.dataset.emails.split(",").filter(Boolean)).then(html => { if (el.isConnected && html) el.innerHTML = `<h3 class="cl-h">Calls</h3>${html}`; }, () => {});
 }
-let CL_TODAY = false, CLF = "", CALLS_ALL = false;
+let CLF = "", CALLS_ALL = false, CL_PAST = false, CL_VALL = false, CL_MORE = false, CL_SEL = null;   // 11-23: one filter (status or "today"), past clients folded, all videos, the More fold, the chosen client
 /* 11-21 (SIMAS: "in the clients tab, we need a new section about the calls that would be clear"): Upcoming (cal.com bookings still to
    come: when in Vilnius, who, what about, the Meet link) and Past calls (newest first, one row each: when, who, the summary's first
    line, takeaways, open next tasks). No notes = a red "Notes missing" + Add call notes. A tap opens crm.js's full call card. */
@@ -789,19 +841,19 @@ function callUp({ c }) {
   return `<div class="clc-row clc-up"><span class="clc-m"><b class="clc-d">${esc(callWhen(c.start_at))}</b><span class="clc-w">${esc(c.name || c.email || "Lead")}</span><span class="clc-s">${esc(callAbout(c))}</span></span>${meet ? `<a class="act go clc-meet" href="${esc(meet)}" target="_blank" rel="noopener noreferrer">${ic("link")}Join Meet</a>` : ""}</div>`;
 }
 function callPast({ c, n, tasks }) {
-  const ended = +new Date(c.end_at || c.start_at), missing = !n && ended < Date.now() - 2 * 36e5, open = tasks.filter(x => !x.done_at), tk = n && n.takeaways ? n.takeaways.length : 0;
+  const ended = +new Date(c.end_at || c.start_at), missing = !n && ended < Date.now() - 2 * 36e5, open = tasks.filter(x => !x.done_at);
   const line = n ? String(n.summary || "").split("\n")[0] : "";
-  const extra = [tk ? `${tk} takeaway${tk === 1 ? "" : "s"}` : "", open.length ? `next: ${open[0].owner}, ${open[0].text}${open.length > 1 ? ` (+${open.length - 1} more)` : ""}` : tasks.length ? "tasks done" : ""].filter(Boolean).join(" · ");
+  const extra = open.length ? `Next: ${open[0].owner}, ${open[0].text}${open.length > 1 ? ` (+${open.length - 1} more)` : ""}` : "";   // 11-23: takeaways + done tasks are in the call card a click opens
   return `<div class="clc-row" data-uid="${esc(c.uid)}"><button type="button" class="clc-m" data-callopen="${esc(c.uid)}" aria-expanded="false"><b class="clc-d">${esc(callWhen(c.start_at))}</b><span class="clc-w">${esc(c.name || c.email || "Lead")}</span>
     ${n ? `<span class="clc-s">${esc(line)}</span>` : `<span class="clc-s ${missing ? "clc-miss" : "mut"}">${missing ? "Notes missing" : "No notes yet"}</span>`}${extra ? `<span class="clc-x">${esc(extra)}</span>` : ""}</button>
     ${n ? "" : `<button type="button" class="act clc-add" data-calladd="${esc(c.uid)}">${ic("edit")}Add call notes</button>`}</div><div class="clc-card" data-card-uid="${esc(c.uid)}" hidden></div>`;
 }
 const callsSec = m => m ? `<section class="card sp-card clc" id="clc">${callsInner(m)}</section>` : "";
 function callsInner(m) {
-  const past = CALLS_ALL ? m.past : m.past.slice(0, 5);
-  return `<h2>Calls</h2>
-    <h3 class="clc-h">Upcoming</h3>${m.up.length ? `<div class="clc-list">${m.up.map(callUp).join("")}</div>` : `<p class="mut clc-none">No calls booked.</p>`}
-    <h3 class="clc-h">Past calls</h3>${past.length ? `<div class="clc-list">${past.map(callPast).join("")}</div>${m.past.length > 5 ? `<button type="button" class="more clc-more" data-callmore>${CALLS_ALL ? "Show fewer" : `Show all ${m.past.length}`}</button>` : ""}` : `<p class="mut clc-none">No calls yet.</p>`}`;
+  const past = CALLS_ALL ? m.past : m.past.slice(0, 3);   // 11-23 (BENAS: "cleaner and a bit smaller"): upcoming | past side by side, 3 past rows
+  return `<h2>Calls</h2><div class="clc-cols"><div class="clc-col">
+    <h3 class="clc-h">Upcoming <span class="n">${m.up.length}</span></h3>${m.up.length ? `<div class="clc-list">${m.up.map(callUp).join("")}</div>` : `<p class="mut clc-none">No calls booked.</p>`}</div><div class="clc-col">
+    <h3 class="clc-h">Past <span class="n">${m.past.length}</span></h3>${past.length ? `<div class="clc-list">${past.map(callPast).join("")}</div>${m.past.length > 3 ? `<button type="button" class="more clc-more" data-callmore>${CALLS_ALL ? "Show fewer" : `Show all ${m.past.length}`}</button>` : ""}` : `<p class="mut clc-none">No calls yet.</p>`}</div></div>`;
 }
 function callToggle(uid, add) {   // open / close the full call card under its row; add = open the notes form right away
   const sec = $("#clc"), btn = sec && $(`[data-callopen="${CSS.escape(uid)}"]`, sec), box = sec && $(`[data-card-uid="${CSS.escape(uid)}"]`, sec); if (!btn || !box) return;
@@ -820,52 +872,68 @@ function ordName(o) {
   const f = String(o.folder || ""), m = /^\d+\s+\S+\s+·\s+(.+?)\s+·\s+(\d{4}-\d{2}-\d{2})$/.exec(f);
   return m ? `${m[1]} · ${dLabel(m[2])}` : f || `${(OKIND.find(k => k[0] === o.kind) || [0, o.kind])[1]} · ${dLabel(dayOf(o.opened_at || o.opened))}`;
 }
-function stChip(c, bare) {
-  if (c.ret) return `<span class="chip acc">Ongoing</span>`;
-  const o = c.packs.find(x => x.st === c.worst); if (!o) return "";
-  const n = !bare && o.bought != null && !/finished|waiting|paused/.test(o.st) ? ` · ${o.done} / ${o.bought}` : "";
-  return `<span class="chip ${PCH[o.st][1]}">${o.st === "finished" ? "✓ " : ""}${PCH[o.st][0]}${n}</span>`;
-}
-/* one row per order: big delivered / bought, plain words for revisions, the status, and a founder Fix (writes public.orders) */
+/* one row per order: big delivered / bought, plain words for revisions, the status when the ring doesn't say it, and a founder Fix (writes public.orders) */
 const ordRow = o => `<div class="cl-or" data-oid="${o.id}"><span class="ring ${PCH[o.st][1]}" data-v="p:${o.bought ? Math.min(100, Math.round(100 * o.done / o.bought)) : 0}"></span>
   <span class="grow"><span class="cl-or-n">${esc(o.name)}</span>${o.revised || o.inrev ? `<span class="cl-or-t">${[o.revised ? `${o.revised} revised` : "", o.inrev ? `<b class="dn">${o.inrev} in revision</b>` : ""].filter(Boolean).join(" · ")}</span>` : ""}</span>
-  <b class="cl-or-v">${o.done}<small> / ${o.bought == null ? "?" : o.bought}</small></b><span class="chip ${PCH[o.st][1]}">${o.st === "finished" ? "✓ " : ""}${PCH[o.st][0]}</span><button type="button" class="act cl-or-fix" data-ofix="${o.id}" aria-expanded="false">Fix</button></div>`;
+  <b class="cl-or-v">${o.done}<small> / ${o.bought == null ? "?" : o.bought}</small></b>${/^(progress|finished)$/.test(o.st) ? "" : `<span class="chip ${PCH[o.st][1]}">${PCH[o.st][0]}</span>`}<button type="button" class="act cl-or-fix" data-ofix="${o.id}" aria-expanded="false">Fix</button></div>`;
 function ordLines(c) {
   if (!c.packs.length && !c.legacy.length) return "";
-  return `<div class="cl-plan cl-ords">${c.packs.map(ordRow).join("")}${c.legacy.length ? `<details class="cl-leg"><summary>${c.legacy.length} older order${c.legacy.length === 1 ? "" : "s"} (before the order system)</summary>${c.legacy.map(ordRow).join("")}</details>` : ""}${c.prob ? `<p class="sp-note cl-prob">${esc(c.prob)}</p>` : ""}</div>`;
+  return `<div class="cl-plan cl-ords">${c.packs.map(ordRow).join("")}${c.legacy.length ? `<details class="cl-leg"><summary>${c.legacy.length} older order${c.legacy.length === 1 ? "" : "s"} (before the order system)</summary>${c.legacy.map(ordRow).join("")}</details>` : ""}</div>`;   // c.prob (files the count can't use) sits under More
 }
 const oSel = (name, opts, v) => `<select name="${name}">${opts.map(([k, l]) => `<option value="${k}"${k === v ? " selected" : ""}>${l}</option>`).join("")}</select>`;
 const ordForm = o => `<form class="cl-oe" data-oid="${o.id}" novalidate><label><span>Shorts bought</span><input name="bought" type="number" min="0" max="1000" inputmode="numeric" value="${o.bought == null ? "" : o.bought}"></label>
   <label><span>Kind</span>${oSel("kind", OKIND, o.kind)}</label><label><span>Status</span>${oSel("status", OSTAT, o.status)}</label>
   <div class="cl-oe-b"><button type="button" class="act" data-ocancel>Cancel</button><button type="submit" class="act go">Save</button></div><p class="cl-oe-err" hidden></p></form>`;
+/* 11-23 (BENAS: "name + plan size + money + one status mark, nothing else"): data-st / data-today / data-q keep the filter and search */
+const MARK = { attn: "Needs attention", wait: "Waiting on client", ok: "On track", past: "Past client" };
 function clientRow(c, sel) {
-  const sub = c.plan ? c.plan.text : c.last ? `last video ${dLabel(c.last)}${c.nPay > 1 ? ` · ${c.nPay} payments` : ""}` : c.paid ? `${usd(c.paid)} paid` : "";
-  return `<a class="cl-item" href="?p=clients&amp;c=${esc(c.id)}" data-cl="${esc(c.id)}" data-st="${esc([c.ret ? "retainer" : "", ...new Set(c.packs.map(o => o.st))].join(" "))}" data-today="${c.today}" data-q="${esc(lc([c.name, c.show, ...(c.emails || [])].join(" ")))}"${sel && c.id === sel.id ? ' aria-current="true"' : ""}><span class="av">${esc(initials(c.name))}</span><span class="grow"><span class="t">${esc(c.name || "Client")}</span><span class="s">${esc(sub)}</span></span><span class="n">${int(c.vids.length)}</span><span class="cl-ch">${stChip(c)}${c.plan && c.plan.shorts ? `<span class="chip">${c.plan.done} / ${c.plan.shorts} this month</span>` : ""}${c.today ? `<span class="chip g">${c.today} today</span>` : ""}</span></a>`;
+  const size = c.plan ? (c.plan.shorts ? `${int(c.plan.shorts)} Shorts / mo` : "Monthly") : c.cur ? `${int(c.cur.bought)} Shorts` : "—";
+  const money = c.ret ? `${usd(c.ret.amount)} / ${PER(c.ret)}` : c.lastAmt ? usd(c.lastAmt) : "";
+  return `<a class="cl-item" href="?p=clients&amp;c=${esc(c.id)}" data-cl="${esc(c.id)}" data-st="${esc([c.ret ? "retainer" : "", ...new Set(c.packs.map(o => o.st)), c.mark === "attn" ? "attn" : ""].join(" ").trim())}" data-today="${c.today}" data-q="${esc(lc([c.name, c.show, ...(c.emails || [])].join(" ")))}"${c.cat === "past" ? " data-past" : ""}${sel && c.id === sel.id ? ' aria-current="true"' : ""}><span class="grow"><span class="t">${esc(c.name || "Client")}</span><span class="s">${esc(size)}</span></span>${money ? `<span class="cl-mn">${esc(money)}</span>` : ""}<i class="cl-dot k-${c.mark}" role="img" aria-label="${MARK[c.mark]}" title="${MARK[c.mark]}"></i></a>`;
 }
 function viewClients(d) {
-  if (!d.list.length) return empty("No clients with videos or payments yet.");
-  const sel = d.list.find(c => c.id === param("c")) || (d.groups.find(g => g[2].length) || [0, 0, []])[2][0], n = d.list.reduce((s, c) => s + c.vids.length, 0);
-  return `<div class="sp-kpis">${kpi("Delivered today", int(d.todayN), d.todayN ? `${d.todayC} client${d.todayC === 1 ? "" : "s"} · ${esc(dLabel(d.t))}` : "nothing yet today")}${kpi("On a monthly retainer", int(d.groups[0][2].length), usd(d.groups[0][2].reduce((s, c) => s + (+c.ret.amount || 0), 0)) + " a month")}${kpi("Clients", int(d.list.length), "paid or got videos")}${kpi("Videos delivered", int(n), `newest ${esc(dLabel(d.lastDelivery))}`)}</div>
-  <div class="cl-filt${d.counts.paused ? " n6" : ""}" role="group" aria-label="Filter by status">${[["retainer", "Retainers ongoing", "acc"], ["progress", "Packs in progress", "o"], ["finished", "Packs complete", "g"], ["notstarted", "Not started", ""], ["waiting", "Waiting on client", "b"], ...(d.counts.paused ? [["paused", "Paused", "b"]] : [])].map(([k, l, cl]) => `<button type="button" class="cl-fb ${cl}${CLF === k ? " on" : ""}" data-clf="${k}" aria-pressed="${CLF === k}"><b>${d.counts[k]}</b><span>${l}</span></button>`).join("")}</div>
-  ${d.counts.unknown ? `<p class="sp-note">Size unknown for ${d.counts.unknown} order${d.counts.unknown === 1 ? "" : "s"} (not guessed, set it with Fix): ${esc(d.unknownL.join("; "))}.</p>` : ""}
-  ${d.list.some(c => c.att.length) ? `<section class="card sp-card"><h2>Needs attention <small>${d.list.filter(c => c.att.length).length} client${d.list.filter(c => c.att.length).length === 1 ? "" : "s"}</small></h2><div class="sp-alerts">${d.list.filter(c => c.att.length).flatMap(c => c.att.map(a => `<a class="sp-alert ${a[0] === "r" ? "red" : "amber"} cl-go" href="?p=clients&amp;c=${esc(c.id)}" data-cl-go="${esc(c.id)}"><i></i><span><b>${esc(c.name)}</b> · ${esc(a[1])}</span></a>`)).join("")}</div></section>` : ""}
-  ${callsSec(d.calls)}
-  <div class="cl-wrap"><section class="card sp-card"><div class="cl-tools"><input class="cl-q" id="cl-q" type="search" placeholder="Find a client" aria-label="Find a client" autocomplete="off" spellcheck="false"><button type="button" class="chip${CL_TODAY ? " g" : ""}" id="cl-today" aria-pressed="${CL_TODAY}" title="Show only clients who got videos today">Delivered today · ${d.todayC}</button></div>
-    <div class="cl-list" id="cl-list">${d.groups.map(([k, label, cs]) => cs.length ? `<div class="cl-grp" data-grp="${k}"><span>${label}</span><span class="chip">${cs.length}</span></div>${cs.map(c => clientRow(c, sel)).join("")}` : "").join("")}</div></section>
-    <section class="card sp-card" id="cl-detail">${clientDetail(sel, d.t)}</section></div>`;
+  if (!d.list.length) return `<section class="card sp-card cl-none">${empty("No clients with videos or payments yet.")}</section>`;
+  const sel = d.list.find(c => c.id === (CL_SEL || param("c"))) || (d.groups.find(g => g[2].length) || [0, 0, []])[2][0], H = d.hero, fr = H.bought ? Math.round(100 * H.done / H.bought) : 0;
+  CL_SEL = sel ? sel.id : null;
+  /* hero (BENAS: "a proper main dashboard like with all pages at the top"): the Email campaigns overview tiles, three numbers */
+  const hero = `<section class="card sp-card ec-hero cl-hero" aria-label="Clients overview"><div class="ec-board cl-board">
+    <div class="tile ec-t" data-v="n:0"><span class="ec-l">Monthly recurring</span><b class="ec-n">${cu(H.mrr, "usd", "cl-mrr")}</b><small>${H.nRet} plan${H.nRet === 1 ? "" : "s"}${H.failed ? ` · <span class="dn">${H.failed} payment${H.failed === 1 ? "" : "s"} failed</span>` : ""}</small></div>
+    <div class="tile ec-t" data-v="n:1"><span class="ec-l">Shorts owed</span><b class="ec-n">${cu(H.owed, "int", "cl-owed")}</b><div class="cl-pb" role="img" aria-label="${int(H.done)} of ${int(H.bought)} delivered on open orders"><i data-v="w:${Math.max(2, fr)}%"></i></div><small>${int(d.todayN)} delivered today · ${int(H.vids)} all time</small></div>
+    <button type="button" class="tile ec-t cl-t-attn${H.attn ? " hot" : ""}${CLF === "attn" ? " on" : ""}" data-v="n:2" data-clattn aria-pressed="${CLF === "attn"}" title="Show only the clients who need attention"><span class="ec-l">Need attention</span><b class="ec-n">${cu(H.attn, "int", "cl-attn")}</b><small>${H.wait} waiting on the client</small></button></div></section>`;
+  const F = [["", `All clients · ${d.list.length}`], ["attn", `Needs attention · ${H.attn}`], ["retainer", `Retainers ongoing · ${d.counts.retainer}`], ["progress", `Packs in progress · ${d.counts.progress}`], ["finished", `Packs complete · ${d.counts.finished}`],
+    ["notstarted", `Not started · ${d.counts.notstarted}`], ["waiting", `Waiting on client · ${d.counts.waiting}`], ...(d.counts.paused ? [["paused", `Paused · ${d.counts.paused}`]] : []), ...(d.counts.unknown ? [["unknown", `Size unknown · ${d.counts.unknown}`]] : []), ["today", `Delivered today · ${d.todayC}`]];
+  const past = d.groups[2][2].length;
+  return `${hero}
+  <div class="cl-wrap"><section class="card sp-card cl-lc"><div class="cl-tools"><input class="cl-q" id="cl-q" type="search" placeholder="Find a client" aria-label="Find a client" autocomplete="off" spellcheck="false"><select class="cl-f" id="cl-f" aria-label="Filter by status">${F.map(([k, l]) => `<option value="${k}"${CLF === k ? " selected" : ""}>${esc(l)}</option>`).join("")}</select></div>
+    <div class="cl-list" id="cl-list">${d.groups.map(([k, label, cs]) => cs.length ? `<div class="cl-grp" data-grp="${k}"><span>${label}</span><span class="n">${cs.length}</span></div>${cs.map(c => clientRow(c, sel)).join("")}` : "").join("")}</div>
+    ${past ? `<button type="button" class="more cl-past" id="cl-past" aria-expanded="${CL_PAST}">${CL_PAST ? "Hide past" : `Show past · ${past}`}</button>` : ""}<p class="empty cl-nomatch" hidden>No client matches.</p></section>
+    <section class="card sp-card" id="cl-detail">${clientDetail(sel, d.t)}</section></div>
+  ${callsSec(d.calls)}`;
 }
 function filterClients() {
-  const q = lc($("#cl-q")?.value || "");
-  $$("#cl-list [data-q]").forEach(el => { el.hidden = (!!q && !el.dataset.q.includes(q)) || (CL_TODAY && el.dataset.today === "0") || (!!CLF && !el.dataset.st.split(" ").includes(CLF)); });
+  const q = lc($("#cl-q")?.value || ""), f = CLF;
+  $$("#cl-list [data-q]").forEach(el => { el.hidden = (!!q && !el.dataset.q.includes(q)) || (f === "today" ? el.dataset.today === "0" : !!f && !el.dataset.st.split(" ").includes(f)) || ("past" in el.dataset && !CL_PAST && !q && !f); });
   $$("#cl-list .cl-grp").forEach(g => { let n = g.nextElementSibling, any = false; while (n && !n.classList.contains("cl-grp")) { if (!n.hidden) any = true; n = n.nextElementSibling; } g.hidden = !any; });
+  const pb = $("#cl-past"); if (pb) { pb.hidden = !!(q || f); pb.textContent = CL_PAST ? "Hide past" : `Show past · ${$$("#cl-list [data-past]").length}`; pb.setAttribute("aria-expanded", CL_PAST); }
+  const nm = $(".cl-nomatch", PAGE_EL); if (nm) nm.hidden = $$("#cl-list [data-q]").some(el => !el.hidden) || !(q || f);
+  const sl = $("#cl-f"); if (sl && sl.value !== f) sl.value = f;
+  $$("[data-clattn]", PAGE_EL).forEach(b => { b.classList.toggle("on", f === "attn"); b.setAttribute("aria-pressed", f === "attn"); });
+}
+function showClient(c) {   // paint the chosen client (rings, bars, the hold line, the calls under More when it is open)
+  const el = $("#cl-detail"); if (!el) return;
+  el.innerHTML = clientDetail(c, CACHE.clients.t); applyVars(el); $$(".ring[data-v]", el).forEach(r => r.style.setProperty("--p", r.dataset.v.split(":")[1])); paintHold(); if (CL_MORE) fillCalls();
 }
 function wireClients() {
-  $$("[data-cl-go]", PAGE_EL).forEach(a => a.addEventListener("click", ev => { if (ev.metaKey || ev.ctrlKey) return; ev.preventDefault(); $(`#cl-list [data-cl="${CSS.escape(a.dataset.clGo)}"]`)?.click(); $("#cl-detail").scrollIntoView({ behavior: RM ? "auto" : "smooth", block: "start" }); }));
   $("#cl-q")?.addEventListener("input", filterClients);
-  $("#cl-today")?.addEventListener("click", ev => { CL_TODAY = !CL_TODAY; ev.currentTarget.classList.toggle("g", CL_TODAY); ev.currentTarget.setAttribute("aria-pressed", CL_TODAY); filterClients(); });
+  $("#cl-f")?.addEventListener("change", ev => { CLF = ev.target.value; filterClients(); });
+  $("[data-clattn]", PAGE_EL)?.addEventListener("click", () => { CLF = CLF === "attn" ? "" : "attn"; filterClients(); });
+  $("#cl-past")?.addEventListener("click", ev => { CL_PAST = !CL_PAST; filterClients(); ev.currentTarget.focus(); });
   const ordOf = id => { for (const c of CACHE.clients.list) { const o = c.packs.concat(c.legacy).find(x => String(x.id) === String(id)); if (o) return o; } return null; };
   const closeForms = () => { $$("#cl-detail .cl-oe").forEach(f => f.remove()); $$("#cl-detail [data-ofix]").forEach(b => b.setAttribute("aria-expanded", "false")); };
   $("#cl-detail")?.addEventListener("click", ev => {
+    const va = ev.target.closest("[data-clvall]"), mo = ev.target.closest("[data-clmore]"), c = CACHE.clients.list.find(x => x.id === CL_SEL);
+    if (va && c) { CL_VALL = !CL_VALL; const box = $("#cl-vids"); box.innerHTML = clVids(c, CACHE.clients.t); $("[data-clvall]", box)?.focus(); return; }
+    if (mo) { CL_MORE = !CL_MORE; mo.setAttribute("aria-expanded", CL_MORE); $("#cl-more").hidden = !CL_MORE; if (CL_MORE) fillCalls(); return; }
     const fx = ev.target.closest("[data-ofix]"), cx = ev.target.closest("[data-ocancel]");
     if (cx) { const b = $(`#cl-detail [data-ofix="${cx.closest("form").dataset.oid}"]`); closeForms(); if (b) b.focus(); return; }
     if (!fx) return;
@@ -894,19 +962,18 @@ function wireClients() {
       CACHE.clients = null; await renderPage(true); toast(`Saved: ${o.name}`);
     } catch (e) { go.disabled = false; err.hidden = false; err.textContent = `Couldn't save: ${String(e && e.message || e).slice(0, 140)}`; }
   });
-  $$("[data-clf]", PAGE_EL).forEach(b => b.addEventListener("click", () => { CLF = CLF === b.dataset.clf ? "" : b.dataset.clf; $$("[data-clf]", PAGE_EL).forEach(x => { const on = x.dataset.clf === CLF; x.classList.toggle("on", on); x.setAttribute("aria-pressed", on); }); filterClients(); }));
   $$(".ring[data-v]", PAGE_EL).forEach(el => el.style.setProperty("--p", el.dataset.v.split(":")[1]));
   $("#clc")?.addEventListener("click", ev => {
     const o = ev.target.closest("[data-callopen]"), a = ev.target.closest("[data-calladd]"), more = ev.target.closest("[data-callmore]");
     if (o) callToggle(o.dataset.callopen, false); else if (a) callToggle(a.dataset.calladd, true);
     else if (more) { CALLS_ALL = !CALLS_ALL; $("#clc").innerHTML = callsInner(CACHE.clients.calls); $("#clc [data-callmore]")?.focus(); }
   });
-  filterClients(); fillCalls();
+  filterClients(); paintHold(); if (CL_MORE) fillCalls();
   $("#cl-list")?.addEventListener("click", ev => {
     const a = ev.target.closest("[data-cl]"); if (!a || ev.metaKey || ev.ctrlKey || ev.shiftKey) return; ev.preventDefault();
     const c = CACHE.clients.list.find(x => x.id === a.dataset.cl); if (!c) return;
     $$("#cl-list [data-cl]").forEach(x => x.dataset.cl === c.id ? x.setAttribute("aria-current", "true") : x.removeAttribute("aria-current"));
-    $("#cl-detail").innerHTML = clientDetail(c, CACHE.clients.t); applyVars($("#cl-detail")); $$("#cl-detail .ring[data-v]").forEach(el => el.style.setProperty("--p", el.dataset.v.split(":")[1])); history.replaceState({ p: "clients" }, "", `?p=clients&c=${encodeURIComponent(c.id)}`); fillCalls();
+    CL_SEL = c.id; CL_VALL = false; showClient(c); history.replaceState({ p: "clients" }, "", `?p=clients&c=${encodeURIComponent(c.id)}`);
     if (innerWidth <= 900) $("#cl-detail").scrollIntoView({ behavior: RM ? "auto" : "smooth", block: "start" });
   });
 }
