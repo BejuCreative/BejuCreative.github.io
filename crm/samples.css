@@ -249,3 +249,22 @@ html.sm-locked{overflow:hidden}
 html[data-motion="calm"] .sm .sm-card,html[data-motion="calm"] .sm .sm-tile,html[data-motion="calm"] .sm .sm-col,html[data-motion="calm"] .sm-card::before,html[data-motion="calm"] .sm-card::after,html[data-motion="calm"] .sm-meter i,html[data-motion="calm"] .sm-spark i{animation:none!important;transition:none!important}
 html[data-motion="calm"] .sm-pan,html[data-motion="calm"] .sm-scrim{transition:none}
 @media (prefers-reduced-motion:reduce){ .sm-card,.sm-pan,.sm-scrim,.sm-meter i,.sm-spark i{transition:none!important} .sm-card:hover{transform:none} }
+
+/* 11-23 (SIMAS): the delivery email on a Ready sample: read it, Send (the founder's go), Edit, or "What to change" back to Claude */
+.sm-bd.em.ok{background:var(--green,#16794a);color:#fff} .sm-bd.em.wait{background:#b7791f;color:#fff} .sm-bd.em.go{background:var(--blue,#2f5bea);color:#fff} .sm-bd.em.bad{background:var(--red);color:#fff}
+.sm-chips .sm-bd.em.ok{background:var(--green-soft,rgba(22,121,74,.12));color:var(--green,#16794a)} .sm-chips .sm-bd.em.wait{background:rgba(183,121,31,.14);color:#8a5a12}
+.sm-chips .sm-bd.em.go{background:var(--blue-soft,rgba(47,91,234,.12));color:var(--blue,#2f5bea)} .sm-chips .sm-bd.em.bad{background:var(--red-soft);color:var(--red)}
+.sm-em{gap:10px}
+.sm-emh{display:flex;flex-wrap:wrap;gap:4px 14px;margin:0;font-size:13px;color:var(--mute)} .sm-emh b{color:var(--ink);font-weight:600;word-break:break-all}
+.sm-emb{margin:0;padding:14px 16px;border-radius:14px;background:var(--panel);border:1px solid var(--line);font:inherit;font-size:14px;line-height:1.55;white-space:pre-wrap;word-break:break-word;color:var(--ink);max-height:360px;overflow:auto}
+.sm-emta{width:100%;box-sizing:border-box;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;font-size:14px;line-height:1.5;resize:vertical}
+.sm-emta:focus{outline:2px solid var(--blue,#2f5bea);outline-offset:1px}
+.sm-emed,.sm-emch{display:grid;gap:8px} .sm-emed[hidden],.sm-emch[hidden],.sm-emb[hidden],.sm-emacts[hidden]{display:none}
+.sm-eml{font-size:13px;font-weight:600}
+.sm-ems{margin:0;padding:8px 12px;border-radius:10px;font-size:13px;background:var(--panel);color:var(--ink-2)} .sm-ems small{display:block;margin-top:4px;color:var(--mute)}
+.sm-ems.held{background:rgba(183,121,31,.12);color:#8a5a12} .sm-ems.failed,.sm-ems.stale,.sm-ems.unknown{background:var(--red-soft);color:var(--red)} .sm-ems.approved,.sm-ems.sending{background:var(--blue-soft,rgba(47,91,234,.1));color:var(--blue,#2f5bea)}
+:root[data-mode="dark"] .sm-ems.held{color:#e0b35a}
+.sm-emn{margin:0;font-size:13px;color:var(--ink-2)} .sm-emn b{margin-right:6px}
+.sm-emerr{margin:0;font-size:13px;color:var(--red)}
+@media (max-width:600px){.sm-emb{font-size:15px;max-height:none} .sm-emta{font-size:16px}}
+.sm-ems.timer{background:var(--blue-soft,rgba(47,91,234,.1));color:var(--ink-2)} .sm-ems.timer b{color:var(--blue,#2f5bea)}

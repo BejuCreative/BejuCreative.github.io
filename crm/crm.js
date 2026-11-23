@@ -646,7 +646,7 @@ const stageOf = e => ((RAW && RAW.stages) || []).find(x => lc(x.email) === e) ||
 const nextOf = e => ((RAW && RAW.nextSteps) || []).find(x => lc(x.email) === e) || null;
 const stDays = x => `${Math.max(0, Math.round(+x.days_in_stage || 0))} d`;
 /* 11-21 (BENAS, main page): Big deals rows (public.big_deals) and the drafts that wait for a founder (public.drafts_waiting, PR #9) */
-const DRAFT_L = { big_deal: "Big deal", client_problem: "Client problem", new_terms: "New terms", big_name: "Big name", other: "Other" };
+const DRAFT_L = { big_deal: "Big deal", client_problem: "Client problem", new_terms: "New terms", big_name: "Big name", other: "Other", sample: "Sample delivery" };
 /* 11-22 (truth pass, SIMAS: "the big deals section is showing nonsense"): rows from public.big_deals_v2 = real quotes only. "Quiet" = days since
    THEIR last message (any of their addresses), not days in a stage. An open founder hold shows as a chip with who lifts it. */
 const liftBy = x => ({ simas: "Simas", benas: "Benas", both: "both founders" })[lc(x && x.set_by)] || "a founder";
@@ -1496,7 +1496,8 @@ function closeLead() {
    list the dashboard counts, so the page's number matches it; no extra query. */
 window.BEJU_CRM_REPLIES = { get raw() { return RAW; }, get d() { return D; }, get at() { return LAST_OK; }, get owner() { return STATE.owner; }, nameOf, ownerOfInbox, auto: s => autoText(ownWords(s)), pass: s => HARD_PASS.test(ownWords(s)), why: (e, at) => D.why(e, at), skip: (e, at, w) => D.skip(e, at, w), chip: whyChip };
 /* 11-22 (BENAS): read-only handle for the Samples page (samples.js): the same rows, the drawer's conversation helpers and the payment confetti. No extra query. */
-window.BEJU_CRM_SAMPLES = { get raw() { return RAW; }, get at() { return LAST_OK; }, get liveAt() { return LIVE_AT; }, ownerOfInbox, loadConv, convBlock, confetti: () => confetti() };
+window.BEJU_CRM_SAMPLES = { get raw() { return RAW; }, get at() { return LAST_OK; }, get liveAt() { return LIVE_AT; }, ownerOfInbox, loadConv, convBlock, confetti: () => confetti(),
+  upd: (...a) => upd(...a), ask: o => ask(o), toast: (...a) => toast(...a), sha256hex: t => sha256hex(t), refresh: () => refresh(), drafts: async () => { LIVE.drafts.busy = false; await liveRead("drafts"); } };   // wrappers: upd / sha256hex are consts defined further down   // 11-23 (SIMAS): the Samples panel sends / edits / sends back a sample delivery draft (public.drafts, category sample)
 
 /* ---------------- toasts + confetti ---------------- */
 function toast(title, icon = "check", c = "c-green", sub = "", key = "", go = null) {
@@ -1963,7 +1964,7 @@ function onChange(tb, p) {
    the newest loaded (pipeline updated_at, briefs submitted_at); skipped for a table that had a realtime event in the last 5 min,
    and right after a full refresh. deliveries has no change time (delivered_at is a day), so it has no poll: realtime or the
    5-minute full refresh. Targeted reads never move LAST_OK, so the 5-minute safety loop runs exactly as before. */
-const POLL_MS = +CFG.livePollMs || 60000, LIVE_TB = ["pipeline", "deliveries", "briefs"];
+const POLL_MS = +CFG.livePollMs || 60000, LIVE_TB = ["pipeline", "deliveries", "briefs", "drafts"];   // 11-23: drafts = the Samples tab's delivery emails (send / timer / sent back)
 const PIPE_COLS = "email,name,show,owner,inbox,status,fu_stage,yes_at,delivered_at,public_at,last_reply_at,stage_changed_at,updated_at,next_action,next_action_at,paid,drive_link,campaign,builder";   // what the Samples board + the dashboard's sample counts use
 const LIVE = Object.fromEntries(LIVE_TB.map(t => [t, { ch: null, ev: 0, read: 0, t: null, busy: false, retry: null, err: 0 }]));
 let LIVE_AT = 0, LIVE_POLL = null, LIVE_LAST = 0;   // LIVE_AT = when a poll or a realtime event last brought rows (the Samples board's "as of")
@@ -1974,6 +1975,7 @@ async function liveRead(tb) {   // the targeted read after realtime events
   try {
     if (tb === "pipeline") { const rows = await PIPE_READ(); if (RAW) RAW.pipeline = rows; }
     else if (tb === "deliveries") { const rows = await DLV_READ(); if (RAW) RAW.deliveries = rows; }
+    else if (tb === "drafts") { const rows = await all("drafts_waiting", "*"); if (RAW) RAW.drafts = rows; }
     else { const [b, f] = await Promise.all([all("briefs", BRIEF_COLS), FORMS_READ().catch(() => null)]); if (RAW) { RAW.briefs = b; if (f) RAW.forms = f; } }
     if (RAW) liveDone();
   } catch {} finally { L.busy = false; }
@@ -1999,7 +2001,11 @@ async function livePoll() {
   const [pr, br] = await Promise.all([
     P ? all("pipeline", PIPE_COLS, q => pc ? q.gt("updated_at", pc) : q).catch(() => { LIVE.pipeline.err = Date.now() + 6e5; return []; }) : [],
     B ? all("briefs", BRIEF_COLS, q => q.gt("submitted_at", B)).catch(() => { LIVE.briefs.err = Date.now() + 6e5; return []; }) : []]);
-  if (!RAW || (!pr.length && !br.length)) return;
+  /* 11-23: the open drafts are a handful of rows: re-read them whole and repaint only when something changed */
+  let dch = false; if (go("drafts") && RAW.drafts) { const dr = await all("drafts_waiting", "*").catch(() => { LIVE.drafts.err = Date.now() + 6e5; return null; });
+    const sig = x => JSON.stringify((x || []).map(d => [d.id, d.status, d.body_sha256, d.founder_note, d.auto_send_at]));
+    if (dr && RAW && sig(dr) !== sig(RAW.drafts)) { RAW.drafts = dr; dch = true; } }
+  if (!RAW || (!pr.length && !br.length && !dch)) return;
   if (pr.length) { const by = new Map(RAW.pipeline.map(r => [lc(r.email), r])); pr.forEach(r => { const o = by.get(lc(r.email)); if (o) Object.assign(o, r); else RAW.pipeline.push(r); }); }
   if (br.length) { const seen = new Set(RAW.briefs.map(b => lc(b.email) + "|" + b.submitted_at)); br.forEach(b => { if (!seen.has(lc(b.email) + "|" + b.submitted_at)) RAW.briefs.push(b); });
     const f = await FORMS_READ().catch(() => null); if (f && RAW) RAW.forms = f; }   // a new form: the Forms card's view, read once
