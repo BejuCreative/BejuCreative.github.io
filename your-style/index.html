@@ -212,6 +212,10 @@ form.addEventListener('submit', async e => {
   if (form.elements.updates.checked) body.append(ENTRY.updates, 'Yes');
   send.disabled = true; send.textContent = 'Sending…';
   try {
+    /* SIMAS 11-23: the answers also go straight into the CRM (brief-intake), so the founders see them within seconds even when
+       the sheet sync is off; the sheet copy merges into that row later. Never blocks the thank-you. */
+    fetch('https://zfnpvcrnujxlycmqukqs.supabase.co/functions/v1/brief-intake', { method: 'POST', keepalive: true, headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ ...a, updates: form.elements.updates.checked ? 'Yes' : '' }) }).catch(() => {});
     await fetch(FORM, { method: 'POST', mode: 'no-cors', body });
     form.hidden = true; document.getElementById('done').hidden = false; window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (err) {
