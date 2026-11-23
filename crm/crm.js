@@ -138,7 +138,7 @@ async function fetchAll() {
     all("threads", "lead_email,at,snippet", q => q.neq("direction", "out").gte("at", since14).order("at", { ascending: false })).catch(() => []),   // 11-22: their words, last 14 days (Hot leads)
     all("scopes", "email,offer,amount,currency,monthly,sent_at,paid_at,status,url", q => q.order("sent_at", { ascending: false })).catch(() => null),   // 11-22 (SIMAS "we should see the scope that u have sent them"): the Forms person sheet
     all("briefs", "email,busyness,captions,cta,brand,dream_short,part_ts,submitted_at").catch(() => null),   // 11-22 (BENAS, Samples page): the sample brief per lead (graphics level + answers); one small soft read, null = no brief marks
-    all("tasks", "id,title,owner,status,lead_email,due_at,created_at", q => q.in("source", ["founder_tasks", "board", "deferred", "manual"]).eq("status", "todo").ilike("title", "check:%")).catch(() => []),   // 11-23 (BENAS, Waiting on a founder): "Check:" cards in To do on the To-dos board (its own sources) = Claude's work to approve
+    all("tasks", "id,title,owner,status,lead_email,due_at,created_at,big", q => q.in("source", ["founder_tasks", "board", "deferred", "manual"]).eq("status", "todo").ilike("title", "check:%")).catch(() => []),   // 11-23 (BENAS, Waiting on a founder): "Check:" cards in To do on the To-dos board (its own sources) = Claude's work to approve
   ]);
   /* 11-21 (tracking check, from v7): Instantly's daily "unique opportunities" counts a lead again on each day it is active, so sums over days
      ran up to 1.9x too high. Positives per day come from interested_leads: one row per lead, on the day it was marked interested. */
@@ -801,6 +801,7 @@ const wofUrg = r => { const m = (Date.now() - r.at) / 6e4, U = [0];
   if ((r.paying && /^(hold|prod|reply)$/.test(r.kind)) || (r.draft && r.draft.category === "client_problem")) U.push(m > WOF_URG.client ? 2 : 1);
   if (r.draft && /^(pending|held)$/.test(r.draft.status || "")) U.push(m > WOF_URG.reply ? 2 : 1);
   if (r.kind === "check" && m > WOF_URG.check) U.push(1);
+  if (r.kind === "check" && r.big) U.push(2);   // BENAS 11-23: a founder decision with money at stake is a red alert from the first minute
   if (r.kind === "deal" && r.nonext && m > WOF_URG.deal) U.push(1);
   return Math.max(...U); };
 const WOF_K = { reply: ["Reply", "mail", "c-purple"], check: ["To approve", "check", "c-blue"], deal: ["Deal", "cash", "c-green"], hold: ["Hold", "flag", "c-red"], prod: ["Client work", "film", "c-orange"] };
@@ -828,9 +829,9 @@ function wofOf(R, paid) {
     else if (x.kind === "production" && x.stage === "founder_check" && wofFresh("prod", at(x.updated_at, x.created_at)))   // updated_at = when the stage was last logged (no stage-change column)
       rows.push({ key: "p:" + x.id, kind: "prod", who: x.client, what: x.title, at: at(x.updated_at, x.created_at), value: 0, paying: pays(es, x.client), owner: founderOf(x.set_by), go: { t: "page", p: "clients", c: "prod" } }); });
   (R.checks || []).filter(x => x.status === "todo" && /^check:/i.test(String(x.title || "").trim())).forEach(x => rows.push({ key: "t:" + x.id, kind: "check", who: String(x.title).trim().replace(/^check:\s*/i, "") || "Check",
-    what: `Claude's work${x.lead_email ? " · " + nameOf(x.lead_email) : ""}`, at: at(x.created_at), due: x.due_at || null, value: 0, paying: !!x.lead_email && pays([lc(x.lead_email)]), owner: founderOf(x.owner), go: { t: "todo", id: x.id } }));
+    what: `Claude's work${x.lead_email ? " · " + nameOf(x.lead_email) : ""}`, at: at(x.created_at), due: x.due_at || null, value: 0, paying: !!x.lead_email && pays([lc(x.lead_email)]), owner: founderOf(x.owner), go: { t: "todo", id: x.id }, big: !!x.big }));
   rows.forEach(r => { r.urg = wofUrg(r); });   // colour only: the order below never reads it
-  return rows.sort((a, b) => (b.paying - a.paying) || (b.value - a.value) || (a.at - b.at));
+  return rows.sort((a, b) => (b.paying - a.paying) || (!!b.big - !!a.big) || (b.value - a.value) || (a.at - b.at));
 }
 /* design pass (BENAS 11-23 "more professional, just like the other cards"): the bento list row (.li / .li-n / .li-nm / .li-v) with a sprite line
    icon; the whole row is one button stretched over it (.wof-b), so "Read the draft" can sit in the row's own meta line. The draft opens in the
