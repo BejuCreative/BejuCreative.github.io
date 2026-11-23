@@ -794,7 +794,7 @@ const WOF_URG = { client: 240, reply: 30, check: 240, deal: 1440 };
    waiting. Past that a hold lives on the Clients page's holds list only, a deal in the Big deals card, client work on the Clients page; it is
    out of the count, the split line, the colours, the badge and the toasts. Replies and "Check:" cards have no limit (they stay until answered). Tune here. */
 const WOF_MAX = { hold: 48 * 60, deal: 7 * 1440, prod: 7 * 1440 };
-const wofFresh = (kind, t) => !WOF_MAX[kind] || Date.now() - t <= WOF_MAX[kind] * 6e4;
+const wofFresh = (kind, t) => !WOF_MAX[kind] || Date.now() - t <= WOF_MAX[kind] * 6e4;   // also caps Do next's "On hold: …" line (BENAS 11-23: recent holds only; the full list stays on the On hold card)
 const WOF_UL = ["", "Today", "Act now"];
 const wofUrg = r => { const m = (Date.now() - r.at) / 6e4, U = [0];
   if (r.due && +new Date(r.due) < Date.now()) U.push(2);
@@ -903,7 +903,7 @@ const CARDS = [
     ${A.length > 4 ? dB("approvals", "", "Show all", "more") : ""}`; } },
 { id: "next", title: "Do next", page: "todos", focus: ["next", ""], render: d => `${head(`Do <em class="sf">next</em>`, "", true)}${big("next", "", `${N(d.todoN)}<small>to do</small>`, "Open the whole list, most urgent first")}
     <div class="lst">${d.todo.slice(0, 5).map(nextLi).join("")}</div>
-    ${d.holds.length ? quiet("holds", "", `On hold: ${esc(d.holds.map(x => cut(String(x.client || "").replace(/\s*\(.*?\)/g, ""), 24)).join(", "))}`, "Open the holds: who, the rule, who lifts it") : ""}
+    ${(h => h.length ? quiet("holds", "", `On hold: ${esc(h.map(x => cut(String(x.client || "").replace(/\s*\(.*?\)/g, ""), 24)).join(", "))}`, "Open the holds: who, the rule, who lifts it") : "")(d.holds.filter(x => wofFresh("hold", x.created_at ? +new Date(x.created_at) : Date.now())))}
     ${d.todoN > 5 || d.todoMore.length || d.todoLater.length ? dB("next", "", "Show all", "more") : ""}` },
 /* 11-21 (SIMAS: "a square that says action"; BENAS: lower on the main page, under Do next) */
 { id: "activity", title: "Activity", focus: ["feed", ""], render: d => { const all0 = d.feed.filter(e => !e.quiet), html = `${head("Activity", "", true)}<div class="feed lite">${all0.slice(0, 5).map(e => feedRow(e, feedSeen.size > 0 && !feedSeen.has(e.t + e.title), true)).join("") || empty("Nothing has happened yet.")}</div>${all0.length > 5 ? dB("feed", "", "Show all", "more") : ""}`;
