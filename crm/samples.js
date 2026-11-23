@@ -112,8 +112,12 @@ const DST = { pending: ["Email ready", "ok"], held: ["Changes asked", "wait"], a
 /* 11-23 (SIMAS): "a timer of 30 minutes; if we don't check it and add revisions, you send it without our request". auto_send_at is kept by the
    drafts_guard trigger (30 min from ready; an edit restarts it; "What to change" stops it); draft-sender approves and sends it when it's up */
 const autoLeft = d => { const t = d && d.status === "pending" ? ms(d.auto_send_at) : 0; return t ? t - Date.now() : null; };
-const autoTxt = d => { const l = autoLeft(d); return l == null ? "" : l > 6e4 ? `Sends in ${Math.ceil(l / 6e4)} min` : "Sending now"; };
-const emChip = d => { if (!d || !DST[d.status]) return ""; const a = autoTxt(d); return `<span class="sm-bd em ${a ? "go" : DST[d.status][1]}">${esc(a || DST[d.status][0])}</span>`; };
+/* SIMAS 11-23 "add a timer of the 30 mins on the ready sample so we know how much time we got": a live mm:ss countdown, ticking each
+   second on the card chip and in the panel (text nodes only: [data-cd] holds the send time; no repaint, no layout work) */
+const clock = l => { const s = Math.max(0, Math.ceil(l / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
+const autoTxt = d => { const l = autoLeft(d); return l == null ? "" : l > 0 ? `Sends in ${clock(l)}` : "Sending now"; };
+const cdSpan = d => { const l = autoLeft(d); return l == null ? "" : `<span data-cd="${ms(d.auto_send_at)}">${esc(autoTxt(d))}</span>`; };
+const emChip = d => { if (!d || !DST[d.status]) return ""; const a = cdSpan(d); return `<span class="sm-bd em ${a ? "go cd" : DST[d.status][1]}">${a || esc(DST[d.status][0])}</span>`; };
 const marks = c => ({ top: `${emChip(c.draft)}${c.late ? `<span class="sm-bd late">Late · ${esc(span(c.lateBy + LATE_H * H))}</span>` : ""}${c.hot ? `<span class="sm-bd hot">Hot</span>` : ""}`,
   bot: `${c.brief ? `<span class="sm-bd brief" title="Brief form filled${c.brief.busyness ? `: graphics ${esc(c.brief.busyness)}` : ""}">Brief${c.brief.busyness ? ` · ${esc(String(c.brief.busyness).slice(0, 14))}` : ""}</span>` : ""}` });
 function thumbHTML(c) {
@@ -297,14 +301,14 @@ function briefHTML(c) {
    approval of the exact text on screen (sha256, same rule as the approvals card); draft-sender sends it within a minute with its thread
    checks. "What to change" holds the draft with the note, and the Claude that drafted it is woken to fix the video or the email. */
 const EM_ST = { pending: "", held: "Sent back with changes. Claude is on it; it comes back here when fixed.", approved: "Approved. It goes out within a minute.", sending: "Sending now.",
-  failed: "Not sent: Instantly refused it. Read the reason, then send again or close it.", stale: "Not sent: the lead wrote again after this was drafted. Claude redrafts it.", unknown: "Unclear if it went out. Check Instantly before anything else." };
+  failed: "Not sent: Instantly refused it. Read the reason, then send again or close it.", stale: "Not sent: the thread moved after this was drafted. Claude is writing a fresh one; it comes back here with a new 30 minutes.", unknown: "Unclear if it went out. Check Instantly before anything else." };
 function emailHTML(c) {
   const d = c.draft;
   if (!d) return `<h3>Delivery email</h3><p class="sm-pe">${c.col === "ready" ? "No email drafted yet. Claude adds it here when the Short is ready." : "No delivery email waiting."}</p>`;
-  const st = d.status, can = /^(pending|held|failed|stale)$/.test(st), edit = /^(pending|held)$/.test(st);
+  const st = d.status, can = /^(pending|held|failed)$/.test(st), edit = /^(pending|held)$/.test(st);   // stale = a new draft is needed (its thread anchor is fixed): no Send
   return `<h3>Delivery email</h3>
     <p class="sm-emh"><span>From <b>${esc(d.inbox)}</b></span><span>To <b>${esc([d.to_email, ...(d.cc_list || [])].join(", "))}</b></span></p>
-    ${autoTxt(d) ? `<p class="sm-ems timer"><b>${esc(autoTxt(d))}</b> unless you send it, edit it or send it back. An edit restarts the 30 minutes.</p>` : ""}
+    ${autoTxt(d) ? `<p class="sm-ems timer"><b class="sm-cdb">${cdSpan(d)}</b> unless you send it, edit it or send it back. An edit restarts the 30 minutes.</p>` : ""}
     ${EM_ST[st] ? `<p class="sm-ems ${st}">${esc(EM_ST[st])}${d.error && /^(failed|unknown|stale)$/.test(st) ? ` <small>${esc(String(d.error).slice(0, 200))}</small>` : ""}</p>` : ""}
     ${d.founder_note ? `<p class="sm-emn"><b>Your note</b> ${esc(d.founder_note)}</p>` : ""}
     <pre class="sm-emb" id="sm-emb">${esc(d.body)}</pre>
@@ -415,7 +419,7 @@ function wire(api) {
   new ResizeObserver(edges).observe(b); edges();
 }
 addEventListener("beju-crm:data", () => { if (root()) paint(); });
-setInterval(() => { if (root() && M && M.cards.some(c => autoLeft(c.draft) != null)) paint(); }, 30e3);   // 11-23: the "Sends in N min" countdown
+setInterval(() => { document.querySelectorAll("[data-cd]").forEach(el => { const l = +el.dataset.cd - Date.now(), t = l > 0 ? `Sends in ${clock(l)}` : "Sending now"; if (el.textContent !== t) el.textContent = t; el.closest(".sm-bd,.sm-cdb")?.classList.toggle("soon", l < 5 * 6e4); }); }, 1000);   // the live countdown
 /* the side page rerenders on its 5-minute timer only without [data-keep]; this page keeps its nodes and repaints from crm.js's refresh */
 addEventListener("popstate", () => { if (PAN && !root()) closePanel(true); });
 new MutationObserver(() => { if (PAN && !root()) closePanel(true); }).observe(document.getElementById("spage") || document.body, { childList: true });
