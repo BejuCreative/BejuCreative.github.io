@@ -361,8 +361,11 @@ button.row{width:100%;text-align:left;border-radius:var(--r-tile)}
 /* ======================================================================
    v2 (2026-11-12): website brand skin, top bar, hero, live, portal zone
    ====================================================================== */
-/* BENAS 11-23 (second look, on his iPhone): the 1.14em bump made the serif word bigger than its neighbour and lifted it off the line. His rule: "exact same size as the text next to it and maybe a bit bolder". Same font-size as the parent, weight 500 (the heaviest this italic has), sitting on the same baseline */
-em.sf{font-family:var(--serif);font-style:italic;font-weight:500;letter-spacing:-.01em;color:var(--key);vertical-align:baseline}
+/* BENAS 11-23 (third look, measured in WebKit at iPhone size): the serif word must be "THE SAME SIZE… the same line as the text before it".
+   Two separate faults: (1) its lowercase letters are ~14% shorter than the sans at the same font-size (x-height 6.9 vs 8.0 at 15px);
+   font-size-adjust scales only the glyphs so the x-heights match while the font-size stays the parent's. (2) inside flex titles
+   (.ct.go, align-items:center) it sat 2.3px above the sans baseline; those titles now align on the baseline (rule below). */
+em.sf{font-family:var(--serif);font-style:italic;font-weight:500;letter-spacing:-.01em;color:var(--key);font-size-adjust:.52;vertical-align:baseline}
 /* atmosphere: a slow colour drift behind everything (each look has its own --bd), plus grain on the dark looks */
 body::before,body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1}
 body::before{inset:-20%;background:var(--bd);animation:aurora 38s ease-in-out infinite alternate;will-change:transform}
@@ -772,7 +775,7 @@ html.paused *,html.paused *::before,html.paused *::after{animation-play-state:pa
   .top{top:calc(6px + env(safe-area-inset-top));gap:6px;padding:5px 6px;margin-bottom:12px;border-radius:18px;background:var(--over)}
   .top-brand span:last-child,.top-nav,.hide-ph,.stat b,.stat small,.pal-btn span,.pal-btn .kbd{display:none}
   .top-brand .logo{width:38px;height:38px}
-  .ownr{display:grid;margin-right:auto;padding:3px;border-radius:12px} .ownr button{padding:0 9px;min-height:38px;font-size:12.5px}
+  .ownr{display:none} #top .top-tools{margin-left:auto}   /* BENAS 11-23: no All / Simas / Benas switch on the phone ("remove that, not needed"); the filter stays on All, and is still in Search (⌘K) on desktop */
   .stat{padding:0 10px;height:44px;background:transparent} .top .icon-btn,.pal-btn{width:44px;height:44px;padding:0;justify-content:center;border:0}
   .top-tools{gap:0;margin-left:0}
   /* hero */
@@ -1309,8 +1312,8 @@ html:not([data-tab="home"]) .asof{display:none}
 #grid .card{padding:20px 20px 18px}
 #grid .ch{margin-bottom:14px}
 #grid .card:not(.feat) .ct{color:var(--ink);font-weight:600;font-size:15px;letter-spacing:-.01em}
-.ct.go{display:inline-flex;align-items:center;gap:3px;min-width:0;border-radius:8px;text-align:left}
-.ct.go .ic{width:15px;height:15px;opacity:.4;transition:transform .2s var(--ease),opacity .2s}
+.ct.go{display:inline-flex;align-items:baseline;gap:3px;min-width:0;border-radius:8px;text-align:left}   /* baseline, not center: the serif word and the sans words share one line (BENAS 11-23) */
+.ct.go .ic{width:15px;height:15px;opacity:.4;transition:transform .2s var(--ease),opacity .2s;align-self:center}
 .ct.go:hover .ic,.ct.go:focus-visible .ic{opacity:1;transform:translateX(2px)}
 #grid .big{font-size:30px;letter-spacing:-.035em}
 #grid .big small{font-size:12.5px}
