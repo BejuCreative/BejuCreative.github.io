@@ -769,6 +769,7 @@ async function loadClients() {
   const hero = { mrr: by("retainer").reduce((s, c) => s + (+c.ret.amount || 0), 0), nRet: by("retainer").length, failed: by("retainer").filter(c => c.failed).length,
     bought: owedO.reduce((s, x) => s + x[0], 0), done: owedO.reduce((s, x) => s + x[1], 0), attn: list.filter(c => c.mark === "attn").length, wait: list.filter(c => c.mark === "wait").length, vids: list.reduce((s, c) => s + c.vids.length, 0) };
   hero.owed = hero.bought - hero.done;
+  if (window.BEJU_CLIENT_BOARD) await window.BEJU_CLIENT_BOARD.load(API);   // the delivery board's rows (client_items) and hold_sends; a missing table = a calm empty board
   return { list, groups, t, hero, calls: callModel(calls, cNotes, cTasks), counts: { retainer: by("retainer").length, progress: nSt("progress"), finished: nSt("finished"), notstarted: nSt("notstarted"), waiting: nSt("waiting"), paused: nSt("paused"), unknown: nSt("unknown") }, synced: ds ? ds.ran_at : null, dsOk: ds ? ds.ok !== false : true, todayN: list.reduce((s, c) => s + c.today, 0), todayC: list.filter(c => c.today).length };
 }
 const fdur = s => s ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : "";
@@ -939,7 +940,7 @@ function viewClients(d) {
   const F = [["", `All clients · ${d.list.length}`], ["attn", `Needs attention · ${H.attn}`], ["retainer", `Retainers ongoing · ${d.counts.retainer}`], ["progress", `Packs in progress · ${d.counts.progress}`], ["finished", `Packs complete · ${d.counts.finished}`],
     ["notstarted", `Not started · ${d.counts.notstarted}`], ["waiting", `Waiting on client · ${d.counts.waiting}`], ...(d.counts.paused ? [["paused", `Paused · ${d.counts.paused}`]] : []), ...(d.counts.unknown ? [["unknown", `Size unknown · ${d.counts.unknown}`]] : []), ["today", `Delivered today · ${d.todayC}`]];
   const past = d.groups[2][2].length;
-  return `${hero}
+  return `${hero}${window.BEJU_CLIENT_BOARD ? window.BEJU_CLIENT_BOARD.bar(d) : ""}
   <div class="cl-wrap"><section class="card sp-card cl-lc"><div class="cl-tools"><input class="cl-q" id="cl-q" type="search" placeholder="Find a client" aria-label="Find a client" autocomplete="off" spellcheck="false"><select class="cl-f" id="cl-f" aria-label="Filter by status">${F.map(([k, l]) => `<option value="${k}"${CLF === k ? " selected" : ""}>${esc(l)}</option>`).join("")}</select></div>
     <div class="cl-list" id="cl-list">${d.groups.map(([k, label, cs]) => cs.length ? `<div class="cl-grp" data-grp="${k}"><span>${label}</span><span class="n">${cs.length}</span></div>${cs.map(c => clientRow(c, sel, AX)).join("")}` : "").join("")}</div>
     ${past ? `<button type="button" class="more cl-past" id="cl-past" aria-expanded="${CL_PAST}">${CL_PAST ? "Hide past" : `Show past · ${past}`}</button>` : ""}<p class="empty cl-nomatch" hidden>No client matches.</p></section>

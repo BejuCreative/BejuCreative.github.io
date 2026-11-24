@@ -647,7 +647,7 @@ const stageOf = e => ((RAW && RAW.stages) || []).find(x => lc(x.email) === e) ||
 const nextOf = e => ((RAW && RAW.nextSteps) || []).find(x => lc(x.email) === e) || null;
 const stDays = x => `${Math.max(0, Math.round(+x.days_in_stage || 0))} d`;
 /* 11-21 (BENAS, main page): Big deals rows (public.big_deals) and the drafts that wait for a founder (public.drafts_waiting, PR #9) */
-const DRAFT_L = { big_deal: "Big deal", client_problem: "Client problem", new_terms: "New terms", big_name: "Big name", other: "Other", sample: "Sample delivery" };
+const DRAFT_L = { big_deal: "Big deal", client_problem: "Client problem", new_terms: "New terms", big_name: "Big name", other: "Other", sample: "Sample delivery", client_delivery: "Client delivery" };
 /* 11-22 (truth pass, SIMAS: "the big deals section is showing nonsense"): rows from public.big_deals_v2 = real quotes only. "Quiet" = days since
    THEIR last message (any of their addresses), not days in a stage. An open founder hold shows as a chip with who lifts it. */
 const liftBy = x => ({ simas: "Simas", benas: "Benas", both: "both founders" })[lc(x && x.set_by)] || "a founder";
