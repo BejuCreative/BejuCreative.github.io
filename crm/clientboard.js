@@ -8,7 +8,11 @@
    Data: public.client_items (read here, once per Clients page load, plus a targeted re-read after realtime events on its OWN channel)
    and clients.hold_sends. A database without the table yet (or the column) shows a calm "No deliveries tracked yet". No thumbnails.
    Registered with side.js through window.BEJU_CLIENT_BOARD (load / bar) and one delegated click handler: side.js wires nothing.
-   CSP: no inline styles (CSSOM only). Look: clientboard.css reuses the Samples board's columns, chips and email panel classes. */
+   CSP: no inline styles (CSSOM only). Look: clientboard.css reuses the Samples board's columns, chips and email panel classes.
+   Phone (≤ 600 px, BENAS 11-24 "like an expensive app"): the board is tabs (Building · Ready N · Sent · Changes N, one column at a time,
+   tap or swipe sideways; opens on Changes asked if it has cards, else Ready, else Building; a picked tab is kept for the session), and a
+   Ready stack opens a full-screen sheet with the email and a fixed Send · Edit · What to change bar. Send there is one tap with a
+   5-second "Sent · Undo" bar: the draft write happens only when the 5 seconds are up. Desktop is unchanged. */
 (() => {
 "use strict";
 const X = () => window.BEJU_CRM_SAMPLES;
@@ -19,6 +23,8 @@ const ic = n => `<svg class="ic" aria-hidden="true"><use href="#i-${n}"/></svg>`
 const lc = s => String(s || "").toLowerCase().trim();
 const ms = t => { const v = t ? +new Date(t) : 0; return isFinite(v) ? v : 0; };
 const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
+const sess = { get(k) { try { return sessionStorage.getItem(k); } catch { return null; } }, set(k, v) { try { sessionStorage.setItem(k, v); } catch {} } };
+const PHONE = matchMedia("(max-width: 600px)"), VV = window.visualViewport;
 const webUrl = v => { try { const u = new URL(String(v || "").trim()); return u.protocol === "https:" ? u.href : ""; } catch { return ""; } };
 const span = d => { const m = Math.max(0, Math.round(d / 6e4)); return m < 60 ? `${Math.max(1, m)} min` : m < 2880 ? `${Math.round(m / 60)} h` : `${Math.round(m / 1440)} d`; };
 
@@ -39,6 +45,10 @@ let MODE = store.get("beju-cb-mode") === "board" ? "board" : "list";
 const OPEN = new Set();      // expanded stack keys
 let DRW = null;              // the open client board { id, pan, scrim, opener }
 let CH = null, CHT = null, CHR = null, DIRTY = false, READ_AT = 0;
+let SHEET = null;            // phone: the open Ready sheet { key, el, opener }
+let UNDO = null;             // phone: a Send waiting out its 5 seconds { id, bar, t }
+const CUR = {};              // phone: the tab each board shows now (board key: "all" or "c:<client id>")
+const PICK = (() => { try { return JSON.parse(sess.get("beju-cb-tab") || "{}") || {}; } catch { return {}; } })();   // tabs picked by hand this session
 
 const dayOf = t => API ? API.dayOf(t) : "";
 const dLabel = d => API ? API.dLabel(d) : d;
@@ -157,14 +167,22 @@ function stackHTML(s, chips) {
     </button>
     <div class="cb-items" id="${esc("cbi-" + s.key.replace(/[^\w-]/g, "_"))}"${open ? "" : " hidden"}><ul class="cb-ul">${s.items.map(itemHTML).join("")}</ul>${s.col === "ready" ? emailHTML(s) : ""}</div></article>`;
 }
-function boardHTML(items, chips) {
-  const st = stacksOf(items);
-  return `<div class="cb-board">${COLS.filter(([id]) => id !== "changes" || st.some(s => s.col === "changes")).map(([id, name, none], ci) => { const ss = st.filter(s => s.col === id);
-    return `<section class="sm-col cb-col" data-col="${id}" aria-labelledby="cbh-${id}"><header class="sm-ch"><span class="sm-step" aria-hidden="true">${String(ci + 1).padStart(2, "0")}</span><h2 id="cbh-${id}">${name}</h2><b class="sm-cnt cb-cn" data-cnt="${id}" aria-label="${ss.length} card${ss.length === 1 ? "" : "s"}">${ss.length}</b></header>
+/* phone tabs: the same columns, one at a time (the tab strip is hidden on desktop) */
+const TAB_NM = { building: "Building", ready: "Ready", sent: "Sent", changes: "Changes" };
+function tabOf(bkey, ids, st) {
+  const p = CUR[bkey] || PICK[bkey]; if (p && ids.includes(p)) return p;
+  const has = c => st.some(s => s.col === c); return has("changes") ? "changes" : has("ready") ? "ready" : "building";
+}
+function boardHTML(items, chips, bkey) {
+  const st = stacksOf(items), cols = COLS.filter(([id]) => id !== "changes" || st.some(s => s.col === "changes")), tab = CUR[bkey] = tabOf(bkey, cols.map(c => c[0]), st);
+  const tabs = `<div class="cb-tabs" role="tablist" aria-label="Board columns" data-b="${esc(bkey)}">${cols.map(([id]) => { const n = st.filter(s => s.col === id).length;
+    return `<button type="button" class="cb-tab" role="tab" data-cbtab="${id}" aria-selected="${id === tab}">${TAB_NM[id]}${id === "ready" || id === "changes" ? `<b class="cb-tn" aria-label="${n} card${n === 1 ? "" : "s"}">${n}</b>` : ""}</button>`; }).join("")}</div>`;
+  return `${tabs}<div class="cb-board" data-b="${esc(bkey)}" data-tab="${tab}">${cols.map(([id, name, none], ci) => { const ss = st.filter(s => s.col === id);
+    return `<section class="sm-col cb-col${id === tab ? " on" : ""}" data-col="${id}" aria-labelledby="cbh-${id}"><header class="sm-ch"><span class="sm-step" aria-hidden="true">${String(ci + 1).padStart(2, "0")}</span><h2 id="cbh-${id}">${name}</h2><b class="sm-cnt cb-cn" data-cnt="${id}" aria-label="${ss.length} card${ss.length === 1 ? "" : "s"}">${ss.length}</b></header>
       <div class="sm-list cb-list">${ss.length ? ss.map(s => stackHTML(s, chips)).join("") : `<p class="sm-empty">${esc(none)}</p>`}</div></section>`; }).join("")}</div>`;
 }
 const none = () => `<div class="card sp-card cb-none"><span class="cb-none-i">${ic("board")}</span><b>${EMPTY}</b><p>When we start work for a client, every batch shows up here and moves across as it is built and sent.</p></div>`;
-function allHTML() { return !ITEMS || !ITEMS.length ? none() : boardHTML(ITEMS, true); }
+function allHTML() { return !ITEMS || !ITEMS.length ? none() : boardHTML(ITEMS, true, "all"); }
 function tilesHTML(c, its) {
   const t = statsOf(c, its);
   return `<div class="cb-stats" aria-label="This month">
@@ -180,7 +198,7 @@ function holdHTML(c) {
 }
 function clientBoardHTML(c) {
   const its = (ITEMS || []).filter(i => String(i.client_id) === String(c.id));
-  return `${tilesHTML(c, its)}${its.length ? boardHTML(its, false) : none()}`;
+  return `${tilesHTML(c, its)}${its.length ? boardHTML(its, false, "c:" + c.id) : none()}`;
 }
 /* side.js puts this between the Clients overview tiles and the list: the List | Board switch, then the all-clients board */
 function bar(d) {
@@ -198,8 +216,9 @@ function paintInto(el, html) {
 function repaint() {
   if (!D) return;
   const all = document.getElementById("cb-all"), body = DRW && DRW.pan.querySelector(".cb-pb");
-  if ((all && editing(all)) || (body && editing(body))) { DIRTY = true; return; }   // never wipe an email someone is typing
+  if ((all && editing(all)) || (body && editing(body)) || (SHEET && editing(SHEET.el))) { DIRTY = true; return; }   // never wipe an email someone is typing
   DIRTY = false;
+  if (SHEET) { const s = (ITEMS ? stacksOf(ITEMS) : []).find(x => x.key === SHEET.key); if (s) SHEET.el.innerHTML = sheetInner(s); else closeSheet(true); }
   if (all) paintInto(all, allHTML());
   if (DRW && body) { const c = clientOf(DRW.id); if (c) { paintInto(body, clientBoardHTML(c)); const hs = DRW.pan.querySelector(".cb-hs"); if (hs) hs.innerHTML = holdHTML(c); } }
 }
@@ -229,18 +248,95 @@ function closeClient(quick) {
   if (DIRTY) repaint();
 }
 document.addEventListener("keydown", ev => {
-  if (!DRW || otherLayer()) return;
-  if (ev.key === "Escape") { ev.preventDefault(); ev.stopImmediatePropagation(); closeClient(); return; }
+  const L = SHEET ? SHEET.el : DRW ? DRW.pan : null;
+  if (!L || otherLayer()) return;
+  if (ev.key === "Escape") { ev.preventDefault(); ev.stopImmediatePropagation(); SHEET ? closeSheet() : closeClient(); return; }
   if (ev.key === "Tab") {
-    const f = [...DRW.pan.querySelectorAll('button:not([disabled]),a[href],input,textarea,[tabindex="0"]')].filter(x => x.offsetParent !== null && !x.closest("[hidden]")); if (!f.length) return;
+    const f = [...L.querySelectorAll('button:not([disabled]),a[href],input,textarea,[tabindex="0"]')].filter(x => x.offsetParent !== null && !x.closest("[hidden]")); if (!f.length) return;
     const a = document.activeElement, first = f[0], last = f[f.length - 1];
-    if (!DRW.pan.contains(a)) { ev.preventDefault(); first.focus(); } else if (ev.shiftKey && a === first) { ev.preventDefault(); last.focus(); } else if (!ev.shiftKey && a === last) { ev.preventDefault(); first.focus(); }
+    if (!L.contains(a)) { ev.preventDefault(); first.focus(); } else if (ev.shiftKey && a === first) { ev.preventDefault(); last.focus(); } else if (!ev.shiftKey && a === last) { ev.preventDefault(); first.focus(); }
   }
 }, true);
-new MutationObserver(() => { if (DRW && !document.getElementById("cb-bar")) closeClient(true); }).observe(document.getElementById("spage") || document.body, { childList: true });   // the page changed under the panel
+new MutationObserver(() => { if (!document.getElementById("cb-bar")) { closeSheet(true); if (DRW) closeClient(true); } }).observe(document.getElementById("spage") || document.body, { childList: true });   // the page changed under the panel
+
+/* ---------------- phone: tabs, the Ready sheet, Send with Undo ---------------- */
+function setTab(tabs, id, dir) {
+  const bkey = tabs.dataset.b, board = tabs.nextElementSibling; if (!board || !board.classList.contains("cb-board")) return;
+  CUR[bkey] = PICK[bkey] = id; sess.set("beju-cb-tab", JSON.stringify(PICK));
+  tabs.querySelectorAll("[data-cbtab]").forEach(b => b.setAttribute("aria-selected", b.dataset.cbtab === id));
+  board.dataset.tab = id;
+  board.querySelectorAll(":scope>.cb-col").forEach(c => { const on = c.dataset.col === id; c.classList.toggle("on", on); c.classList.remove("cb-in-l", "cb-in-r");
+    if (on && dir && motion()) { void c.offsetWidth; c.classList.add(dir > 0 ? "cb-in-r" : "cb-in-l"); } });
+}
+function sheetInner(s) {
+  const n = s.items.length;
+  return `<header class="cb-shh"><i class="cb-grab" aria-hidden="true"></i><div class="cb-shhd"><h2 id="cb-sht">${esc(s.name)}</h2><p class="mut">${esc([s.cname, `${n} item${n === 1 ? "" : "s"}`, dueTxt(s.due)].filter(Boolean).join(" · "))}</p></div>
+    <button type="button" class="icon-btn cb-shx" data-cbsheetx aria-label="Close"><svg aria-hidden="true"><use href="#i-x"/></svg></button></header>
+    <div class="cb-shb"><ul class="cb-ul">${s.items.map(itemHTML).join("")}</ul>${emailHTML(s)}</div>`;
+}
+const vvSync = () => { if (SHEET && VV) SHEET.el.style.setProperty("--vvt", Math.max(0, Math.round(VV.offsetTop)) + "px"); };   // stays on the visible area when the keyboard opens
+if (VV) { VV.addEventListener("resize", vvSync); VV.addEventListener("scroll", vvSync); }
+function openSheet(key, opener) {
+  const s = (ITEMS ? stacksOf(ITEMS) : []).find(x => x.key === key); if (!s) return;
+  closeSheet(true);
+  const el = document.createElement("section"); el.className = "cb-sheet" + (UNDO ? " sending" : ""); el.id = "cb-sheet"; el.setAttribute("role", "dialog"); el.setAttribute("aria-modal", "true"); el.setAttribute("aria-labelledby", "cb-sht");
+  el.innerHTML = sheetInner(s); document.body.append(el); SHEET = { key, el, opener: opener || null };
+  HTML.classList.add("cb-sheet-on"); vvSync();
+  if (motion()) requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add("on"))); else el.classList.add("on");
+  el.querySelector(".cb-shx").focus({ preventScroll: true });
+}
+function closeSheet(quick) {
+  if (!SHEET) return; const { el, key } = SHEET; SHEET = null; HTML.classList.remove("cb-sheet-on");
+  if (quick || !motion()) el.remove(); else { el.classList.remove("on"); el.classList.add("out"); el.style.setProperty("--dy", "0px"); setTimeout(() => el.remove(), 320); }
+  if (!quick) document.querySelector(`.cb-stack[data-key="${CSS.escape(key)}"] .cb-sh`)?.focus({ preventScroll: true });
+  if (DIRTY) repaint();
+}
+/* Send in the sheet: "Sent · Undo" for 5 s, then the same draft write as the desktop Send (without its confirm: the Undo is the check) */
+function undoStart(btn) {
+  const pan = btn.closest(".cb-em"); if (!pan || UNDO) return;
+  const bar = document.createElement("div"); bar.className = "cb-undo"; bar.id = "cb-undo"; bar.setAttribute("role", "status");
+  bar.innerHTML = `<span class="cb-undo-t">${ic("check")}Sent</span><button type="button" class="cb-undo-b" data-cbundo>Undo</button><i class="cb-undo-p" aria-hidden="true"></i>`;
+  document.body.append(bar); if (SHEET) SHEET.el.classList.add("sending");
+  UNDO = { id: pan.dataset.draft, bar, t: setTimeout(undoFire, 5000) };
+  bar.querySelector(".cb-undo-b").focus({ preventScroll: true });
+}
+function undoEnd() { const u = UNDO; UNDO = null; if (!u) return null; clearTimeout(u.t); u.bar.remove(); if (SHEET) SHEET.el.classList.remove("sending"); return u; }
+function undoFire() {
+  const u = undoEnd(); if (!u) return;
+  const sel = `.cb-em[data-draft="${CSS.escape(String(u.id))}"] [data-cbe="send"]`, btn = (SHEET && SHEET.el.querySelector(sel)) || document.querySelector(sel);
+  if (btn) emailOp("send", btn, true); else if (API) API.toast("Not sent: this email changed or left the board. Open it again.");
+}
+function undoCancel() { if (undoEnd() && API) API.toast("Not sent. Nothing went out."); SHEET?.el.querySelector('[data-cbe="send"]')?.focus({ preventScroll: true }); }
+/* touch: a sideways swipe on a board switches its tab (only once the move is clearly sideways, so scrolling never does);
+   a pull down on the sheet (its header, or its text when scrolled to the top) closes it */
+let TS = null;
+document.addEventListener("touchstart", e => {
+  TS = null; if (!PHONE.matches || e.touches.length !== 1 || !e.target.closest || e.target.closest("textarea,input,select")) return;
+  const t = e.touches[0], sh = SHEET && SHEET.el.contains(e.target) ? SHEET.el : null, board = sh ? null : e.target.closest(".cb-board");
+  if (sh) { const b = sh.querySelector(".cb-shb"); if (!e.target.closest(".cb-shh") && b && b.scrollTop > 0) return; TS = { k: "sheet", el: sh, x: t.clientX, y: t.clientY, lock: 0, dy: 0 }; }
+  else if (board) TS = { k: "tab", el: board, x: t.clientX, y: t.clientY, lock: 0 };
+}, { passive: true });
+document.addEventListener("touchmove", e => {
+  if (!TS) return; if (e.touches.length !== 1) { TS = null; return; }
+  const t = e.touches[0], dx = t.clientX - TS.x, dy = t.clientY - TS.y;
+  if (!TS.lock && Math.hypot(dx, dy) > 10) TS.lock = TS.k === "tab" ? (Math.abs(dx) > Math.abs(dy) * 1.5 ? 1 : -1) : (dy > 0 && dy > Math.abs(dx) ? 1 : -1);
+  if (TS.lock !== 1) return;
+  if (e.cancelable) e.preventDefault();
+  if (TS.k === "sheet" && SHEET && TS.el === SHEET.el) { TS.dy = Math.max(0, dy); TS.el.classList.add("drag"); TS.el.style.setProperty("--dy", TS.dy + "px"); }
+}, { passive: false });
+const touchEnd = e => {
+  const s = TS; TS = null; if (!s || s.lock !== 1) return;
+  if (s.k === "sheet") { s.el.classList.remove("drag"); if (s.dy > 110 && SHEET && s.el === SHEET.el) closeSheet(); else s.el.style.setProperty("--dy", "0px"); return; }
+  const t = e.changedTouches && e.changedTouches[0]; if (!t) return;
+  const dx = t.clientX - s.x, dy = t.clientY - s.y; if (Math.abs(dx) < 56 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+  const tabs = s.el.previousElementSibling; if (!tabs || !tabs.classList.contains("cb-tabs")) return;
+  const ids = [...tabs.querySelectorAll("[data-cbtab]")].map(b => b.dataset.cbtab), i = ids.indexOf(s.el.dataset.tab), nx = ids[i + (dx < 0 ? 1 : -1)];
+  if (nx) setTab(tabs, nx, dx < 0 ? 1 : -1);
+};
+document.addEventListener("touchend", touchEnd); document.addEventListener("touchcancel", () => { if (TS && TS.k === "sheet") { TS.el.classList.remove("drag"); TS.el.style.setProperty("--dy", "0px"); } TS = null; });
 
 /* ---------------- the delivery email: the same writes as the Samples board, category client_delivery ---------------- */
-async function emailOp(op, btn) {
+async function emailOp(op, btn, quick) {
   const C = X(), pan = btn.closest(".cb-em"), id = pan && pan.dataset.draft, d = id && drafts().find(x => String(x.id) === String(id)); if (!C || !pan || !d) return;
   const s = (ITEMS ? stacksOf(ITEMS) : []).find(x => x.key === pan.dataset.k), who = (s && s.cname) || "the client";
   const $p = q => pan.querySelector(q), err = $p(".cb-emerr"), say = m => { err.hidden = false; err.textContent = m; }; err.hidden = true;
@@ -252,10 +348,10 @@ async function emailOp(op, btn) {
   if (op === "send") {
     /* read the email fresh first: if Claude changed it since this page painted, show the new text and ask to read it */
     if (C.drafts) { const before = d.body_sha256; await C.drafts().catch(() => {}); const d2 = drafts().find(x => String(x.id) === String(id));
-      if (!d2 || d2.body_sha256 !== before || d2.status !== d.status) { repaint(); const p2 = document.querySelector(`.cb-em[data-draft="${CSS.escape(String(id))}"] .cb-emerr`); if (p2) { p2.hidden = false; p2.textContent = "This email just changed. Read the new version, then press Send."; } return; } }
+      if (!d2 || d2.body_sha256 !== before || d2.status !== d.status) { repaint(); const sel = `.cb-em[data-draft="${CSS.escape(String(id))}"] .cb-emerr`, p2 = (SHEET && SHEET.el.querySelector(sel)) || document.querySelector(sel); if (p2) { p2.hidden = false; p2.textContent = "This email just changed. Read the new version, then press Send."; } return; } }
     const shown = $p(".cb-emb").textContent;
     if (shown !== String(d.body).replace(/\r\n?/g, "\n")) return say("The email on screen is not the saved one any more. Close this and open it again.");
-    const r = await C.ask({ title: `Send this to ${who}?`, warn: `It goes out within a minute from ${d.inbox} to ${[d.to_email, ...(d.cc_list || [])].join(", ")}, word for word.`, sees: shown, cta: "Send it" }); if (!r) return;
+    if (!quick) { const r = await C.ask({ title: `Send this to ${who}?`, warn: `It goes out within a minute from ${d.inbox} to ${[d.to_email, ...(d.cc_list || [])].join(", ")}, word for word.`, sees: shown, cta: "Send it" }); if (!r) return; }   // quick = the phone sheet: the 5-second Undo was the check
     body = { status: "approved", approved_sha256: await C.sha256hex(d.body) }; done = "Sending. It goes out within a minute.";
   } else if (op === "save") {
     const v = $p(".cb-emta").value; if (!v.trim()) return say("The email can't be empty.");
@@ -283,9 +379,13 @@ async function setHold(id, btn) {
 document.addEventListener("click", ev => {
   const t = ev.target; if (!t.closest) return;
   const seg = t.closest("[data-cbm-set]"); if (seg) { MODE = seg.dataset.cbmSet === "board" ? "board" : "list"; store.set("beju-cb-mode", MODE); const b = document.getElementById("cb-bar"); if (b) { b.dataset.cbm = MODE; b.querySelectorAll("[data-cbm-set]").forEach(x => x.setAttribute("aria-pressed", x.dataset.cbmSet === MODE)); } return; }
-  const sh = t.closest(".cb-sh"); if (sh) { const st = sh.closest(".cb-stack"), on = sh.getAttribute("aria-expanded") !== "true"; sh.setAttribute("aria-expanded", on); st.classList.toggle("open", on); st.querySelector(".cb-items").hidden = !on; on ? OPEN.add(st.dataset.key) : OPEN.delete(st.dataset.key); return; }
+  const tb = t.closest("[data-cbtab]"); if (tb) { const tabs = tb.closest(".cb-tabs"), ids = [...tabs.querySelectorAll("[data-cbtab]")].map(b => b.dataset.cbtab), from = ids.indexOf(tabs.nextElementSibling?.dataset.tab); setTab(tabs, tb.dataset.cbtab, Math.sign(ids.indexOf(tb.dataset.cbtab) - from)); return; }
+  if (t.closest("[data-cbundo]")) { undoCancel(); return; }
+  if (t.closest("[data-cbsheetx]")) { closeSheet(); return; }
+  const sh = t.closest(".cb-sh"); if (sh && PHONE.matches && sh.closest(".cb-stack").dataset.col === "ready") { openSheet(sh.closest(".cb-stack").dataset.key, sh); return; }   // phone: a Ready stack opens its sheet
+  if (sh) { const st = sh.closest(".cb-stack"), on = sh.getAttribute("aria-expanded") !== "true"; sh.setAttribute("aria-expanded", on); st.classList.toggle("open", on); st.querySelector(".cb-items").hidden = !on; on ? OPEN.add(st.dataset.key) : OPEN.delete(st.dataset.key); return; }
   const qb = t.closest("[data-cbq]"); if (qb) { const li = qb.closest(".cb-it"), on = !li.classList.contains("q-open"); li.classList.toggle("q-open", on); qb.setAttribute("aria-expanded", on); return; }
-  const eb = t.closest("[data-cbe]"); if (eb) { emailOp(eb.dataset.cbe, eb); return; }
+  const eb = t.closest("[data-cbe]"); if (eb) { if (eb.dataset.cbe === "send" && eb.closest(".cb-sheet")) undoStart(eb); else emailOp(eb.dataset.cbe, eb); return; }
   const hb = t.closest("[data-cbhold]"); if (hb) { setHold(hb.dataset.cbhold, hb); return; }
   if (t.closest("[data-cbclose]")) { closeClient(); return; }
   /* a client row opens that client's board (the page's own handler still selects the row; a touch tap on the activity dot only shows its note) */
