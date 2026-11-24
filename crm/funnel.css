@@ -1,7 +1,7 @@
-/* BEJÚ founder CRM: Funnel page (funnel.js). 11-24 rework (SIMAS): the client page is a compact hub, not a full-screen analysis. Same glass as the Clients board: .tile cards, the panel from the right (a
-   full-screen sheet on phones), 13 px chips. Colour = meaning: red = behind / overdue, amber = at risk / due within 48 h,
-   green = on track / live, blue = in progress, sand = waiting on the client. Motion: transform + opacity only; off under reduced
-   motion and the "Calm" look. No inline styles (widths arrive as --w through the CSSOM). */
+/* BEJÚ founder CRM: Funnel page (funnel.js). SIMAS 11-24 17:04: a client opens like in the Clients tab: the list on the left, the client
+   on the right, on the same page, with the Clients tab's own head / tiles / sections (.cl-head, .cl-tiles, .cl-sec, .cl-h in side.css).
+   Colour = meaning: red = behind / overdue, amber = at risk / due within 48 h, green = on track / live, blue = in progress, sand =
+   waiting on the client. Motion off under reduced motion and the "Calm" look. No inline styles (widths arrive as --w via the CSSOM). */
 
 /* ---------- the list ---------- */
 .fc{display:grid;gap:16px;min-width:0}
@@ -12,34 +12,39 @@
 .fc-st.warn{background:var(--orange-soft);border-color:transparent} .fc-st.warn b,.fc-st.warn .fc-l{color:#8f4a05}
 :root[data-mode="dark"] .fc-st.warn b,:root[data-mode="dark"] .fc-st.warn .fc-l{color:var(--orange)}
 .fc-l{font-size:13px;font-weight:500;color:var(--mute)}
-.fc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;min-width:0}
-.fc-card{display:grid;align-content:start;gap:10px;width:100%;min-width:0;padding:16px 18px;text-align:left;font:inherit;color:var(--ink);cursor:pointer;position:relative;overflow:hidden}
-.fc-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--green);opacity:.75}
-.fc-card[data-state="risk"]::before{background:var(--orange)} .fc-card[data-state="behind"]::before{background:var(--red)}
-@media (hover:hover) and (pointer:fine){ .fc-card:hover{border-color:var(--line-2);transform:translateY(-2px)} }
-.fc-card:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
-.fc-r1{display:flex;align-items:flex-start;gap:10px;min-width:0}
-.fc-nm{flex:1;min-width:0;font-size:17px;font-weight:600;letter-spacing:-.02em;line-height:1.25;overflow-wrap:anywhere}
-.fc-plan{font-size:13px;color:var(--ink-2);overflow-wrap:anywhere}
+/* ---------- the list: Clients-tab rows (.cl-item) with a status dot, progress and the badge ---------- */
+.fc-lc{padding:10px}
+.fc-item{align-items:flex-start;min-height:44px}
+.fc-item .grow{display:grid;gap:3px}
+.fc-dotst{flex:none;width:10px;height:10px;margin-top:6px;border-radius:50%;background:var(--green)}
+.fc-dotst.s-risk{background:var(--orange)} .fc-dotst.s-behind{background:var(--red)}
+.fc-rp{display:flex;align-items:center;gap:8px;min-width:0;margin-top:3px}
 .fc-badge{flex:none;display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;font-size:13px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;font-variant-numeric:tabular-nums}
 .fc-badge.s-on{background:var(--green-soft);color:var(--green)}
 .fc-badge.s-risk{background:var(--orange-soft);color:#8f4a05}
 .fc-badge.s-behind{background:var(--red-soft);color:var(--red)}
 :root[data-mode="dark"] .fc-badge.s-risk{color:var(--orange)}
-.fc-pr{display:flex;align-items:center;gap:10px;min-width:0}
+.fc-item[aria-current="true"] .fc-badge{box-shadow:0 0 0 1px rgba(255,255,255,.5)}
 .fc-bar{flex:1;min-width:60px;height:8px;border-radius:999px;background:var(--panel);box-shadow:inset 0 0 0 1px var(--line);overflow:hidden;display:block}
 .fc-bar i{display:block;height:100%;width:var(--w,0%);border-radius:inherit;background:var(--green);transition:width .6s var(--out)}
 .fc-pn{flex:none;font-family:var(--mono);font-size:13px;font-weight:600;color:var(--ink-2);font-variant-numeric:tabular-nums}
-.fc-next{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;min-width:0;font-size:14px;line-height:1.35}
-.fc-next b{font-weight:600;overflow-wrap:anywhere;min-width:0}
-.fc-next.none{color:var(--mute);font-size:13px}
+.fc-item[aria-current="true"] .fc-pn{color:inherit}
 .fc-due{font-size:13px;font-weight:600;color:var(--ink-2);white-space:nowrap;font-variant-numeric:tabular-nums}
 .fc-due.late{color:var(--red)}
 .fc-due.soon{color:#a35a00}
 :root[data-mode="dark"] .fc-due.soon{color:var(--orange)}
-.fc-wait{font-size:13px;color:var(--mute)}
-.fc-wait.on{color:#8a5a12;font-weight:600}
-:root[data-mode="dark"] .fc-wait.on{color:#e0b35a}
+
+/* ---------- the client (right), on the Clients tab's layout ---------- */
+#fc-detail .cl-head{align-items:center;margin-bottom:16px;flex-wrap:nowrap}
+#fc-detail .cl-head .grow{flex:1;min-width:0}
+#fc-detail .cl-head h2{overflow-wrap:anywhere}
+#fc-detail .cl-head p{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fc-tiles .cl-tl .fc-bar{flex:none;width:100%}
+.fc-tn{font-size:15px;font-weight:600;line-height:1.35;overflow-wrap:anywhere}
+.fc-tiles small{font-size:13px;line-height:1.35}
+.fc-fold small{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--mute);margin-left:4px}
+.fc-fold .ic{transition:transform .25s var(--out)}
+.fc-fold[aria-expanded="true"] .ic{transform:rotate(180deg)}
 
 /* ---------- nothing tracked yet ---------- */
 .fc-none{display:grid;justify-items:center;gap:8px;padding:40px 24px;text-align:center}
@@ -48,28 +53,6 @@
 .fc-none b{font-size:20px;font-weight:600;letter-spacing:-.02em}
 .fc-none p{max-width:460px;font-size:15px;line-height:1.5;color:var(--mute)}
 
-/* ---------- the client page: a panel from the right ---------- */
-html.fc-locked{overflow:hidden}
-.fc-scrim{position:fixed;inset:0;z-index:40;background:var(--scrim);opacity:0;transition:opacity .35s ease;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
-.fc-scrim.on{opacity:1}
-.fc-pan{position:fixed;z-index:41;top:12px;right:12px;bottom:12px;width:min(620px,calc(100vw - 24px));display:grid;grid-template-rows:auto minmax(0,1fr);border-radius:26px;overflow:hidden;background:var(--solid);color:var(--ink);box-shadow:0 30px 80px -10px rgba(0,0,0,.42),var(--edge);transform:translateX(calc(100% + 24px));transition:transform .5s var(--out)}
-.fc-pan.on{transform:none}
-.fc-pan.out{transition-duration:.34s;transition-timing-function:cubic-bezier(.4,0,1,1)}
-.fc-ph{display:flex;align-items:center;gap:12px;min-width:0;padding:20px 24px 14px}
-.fc-phw{flex:1;min-width:0}
-.fc-ph h2{margin:0;font-size:26px;font-weight:600;letter-spacing:-.03em;line-height:1.15;overflow-wrap:anywhere}
-.fc-ph p{margin-top:4px;font-size:13px;overflow-wrap:anywhere}
-.fc-x{flex:none}
-.fc-pb{display:grid;align-content:start;gap:18px;min-width:0;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:4px 24px 28px}
-
-/* the hub header line: status + progress */
-.fc-sub{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:8px 0 2px;font-size:13px}
-.fc-sub .fc-pr{flex:1 1 160px;max-width:260px}
-.fc-ph p.mut{margin-top:2px}
-
-/* hub sections */
-.fc-sec{display:grid;gap:10px;min-width:0}
-.fc-sec>h3{margin:0;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
 .fc-quiet{margin:0;padding:12px 14px;border-radius:14px;background:var(--panel);font-size:14px;line-height:1.45;color:var(--mute)}
 
 /* 1. next up: a short timeline */
@@ -125,12 +108,7 @@ html.fc-locked{overflow:hidden}
 .fc-notes .fc-dtb{justify-self:start;margin-left:-8px}
 
 /* 4. the full checklist, folded */
-.fc-all>h3{text-transform:none;letter-spacing:0}
-.fc-fold{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:14px;background:var(--tile);font:inherit;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;text-align:left}
-.fc-fold small{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--mute)}
-.fc-fold i{margin-left:auto;width:8px;height:8px;border:solid var(--ink-2);border-width:0 2px 2px 0;transform:rotate(45deg) translateY(-2px);transition:transform .25s var(--out)}
-.fc-fold[aria-expanded="true"] i{transform:rotate(225deg) translateY(-2px)}
-.fc-allb{display:grid;gap:14px}
+.fc-allb{display:grid;gap:14px;margin-top:12px}
 .fc-allb[hidden]{display:none}
 .fc-grp h4{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0;font-size:14px;font-weight:600}
 .fc-grp h4 small{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--mute);font-variant-numeric:tabular-nums}
@@ -179,35 +157,28 @@ html.fc-locked{overflow:hidden}
 
 @media (max-width:1100px){ .fc-sum{grid-template-columns:repeat(2,minmax(0,1fr))} }
 
-/* ---------- phone: full-width cards; the client page is a full-screen sheet; 44 px taps; 16 px inputs ---------- */
+/* ---------- phone: the list and the client stack (as the Clients tab); 44 px taps; text >= 13 px ---------- */
 @media (max-width:600px){
   .fc{margin:0 4px}
   .fc-sum{gap:10px} .fc-st{padding:12px 14px} .fc-st b{font-size:26px}
-  .fc-grid{grid-template-columns:minmax(0,1fr);gap:12px}
-  .fc-card{padding:14px 16px;min-height:44px}
-  .fc-pan{inset:0;width:100%;border-radius:0;display:block;overflow-y:auto;overscroll-behavior:contain;transform:translateY(100%);padding-bottom:env(safe-area-inset-bottom)}
-  .fc-pan.on{transform:none}
-  .fc-ph{padding:calc(16px + env(safe-area-inset-top)) 72px 10px 16px}
-  .fc-x{position:fixed;top:calc(12px + env(safe-area-inset-top));right:12px;z-index:3;width:44px;height:44px;border-radius:50%;background:var(--solid)}
-  .fc-pb{overflow:visible;padding:4px 16px 28px}
-  .fc-ph h2{font-size:24px}
+  #fc-detail .cl-head{flex-wrap:wrap}
   .fc-nx{grid-template-columns:64px 20px minmax(0,1fr);row-gap:6px}
   .fc-tl-list::before{left:73px}
   .fc-nx>.fc-pill{grid-column:3;justify-self:start;margin-left:10px}
   .fc-nx .fc-menu{grid-column:1/-1}
   .fc-asg{grid-template-columns:minmax(0,1fr)}
   .fc-il{min-height:44px}
-  .fc-fold{min-height:52px}
+  .fc-fold{min-height:48px}
   .fc-it{padding:10px}
   .fc-pill,.fc-lk,.fc-dtb{min-height:44px;min-width:44px}
   .fc-pill{padding:0 14px}
   .fc-lk,.fc-dtb{padding:0 12px;justify-content:center}
   .fc-meta{margin-left:0;width:100%}
   .fc-mi{flex:1 1 calc(50% - 6px);min-height:44px;font-size:14px}
-  .fc-pb,.fc-pan{-webkit-user-select:none;user-select:none}
-  .fc-dt,.fc-tt{-webkit-user-select:text;user-select:text}
+  #fc-list{-webkit-user-select:none;user-select:none}
+  .fc-dt,.fc-tt,.fc-an,.fc-notes p,.fc-kv dd{-webkit-user-select:text;user-select:text}
 }
 
-html[data-motion="calm"] .fc-pan,html[data-motion="calm"] .fc-scrim,html[data-motion="calm"] .fc-bar i,html[data-motion="calm"] .fc-card{transition:none}
-html[data-motion="calm"] .fc-menu{animation:none} html[data-motion="calm"] .fc-fold i{transition:none}
-@media (prefers-reduced-motion:reduce){ .fc-pan,.fc-scrim,.fc-bar i,.fc-card{transition:none!important} .fc-menu{animation:none!important} .fc-card:hover{transform:none} }
+html[data-motion="calm"] .fc-bar i,html[data-motion="calm"] .fc-fold .ic{transition:none}
+html[data-motion="calm"] .fc-menu{animation:none}
+@media (prefers-reduced-motion:reduce){ .fc-bar i,.fc-fold .ic{transition:none!important} .fc-menu{animation:none!important} }
