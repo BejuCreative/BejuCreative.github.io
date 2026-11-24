@@ -1,5 +1,5 @@
 /* BEJÚ founder CRM: client delivery board (Clients page). One board per client (opens from a client row) and an all-clients board
-   behind the "List | Board" switch. Columns: Building → Ready → Sent → Changes asked → Approved. A batch is ONE stacked card (collapsed:
+   behind the "List | Board" switch. Columns: Building → Ready → Sent → Changes asked (BENAS 11-24: no Approved column; a fixed version goes back to Sent; Changes asked shows only when it has cards). A batch is ONE stacked card (collapsed:
    name, item count, a small count per status, due date); a click opens its items, each with its own status. A one-off is a stack of 1.
    A stack sits in the column where its work is: any item with changes asked → Changes asked, else the least advanced item.
    Ready: the batch delivery email (public.drafts, category client_delivery) with Send / Edit / What to change and the "Sends in" countdown,
@@ -24,9 +24,10 @@ const span = d => { const m = Math.max(0, Math.round(d / 6e4)); return m < 60 ? 
 
 /* the five columns: id = the client_items.status they hold */
 const COLS = [["building", "Building", "Nothing in edit"], ["ready", "Ready", "Nothing waiting to send"], ["sent", "Sent", "Nothing out right now"],
-  ["changes", "Changes asked", "No changes asked"], ["approved", "Approved", "Nothing approved yet"]];
+  ["changes", "Changes asked", "No changes asked"]];
 const ST = Object.fromEntries(COLS.map(c => [c[0], c[1]]));
-const ORDER = { building: 0, ready: 1, sent: 2, approved: 3 };   // how far along; "changes" is handled apart
+const ORDER = { building: 0, ready: 1, sent: 2 };
+const sOf = st => st === "approved" ? "sent" : st;   // 11-24: an old "approved" row counts as Sent (no Approved column)   // how far along; "changes" is handled apart
 const OPEN_ST = new Set(["building", "ready", "changes"]);       // not delivered / not settled: they carry a due date and can be overdue
 const EMPTY = "No deliveries tracked yet";
 
@@ -71,7 +72,7 @@ const keyOf = i => `${i.client_id || "n:" + lc(i.client_name)}|${i.batch_key || 
 const pretty = k => { const s = String(k || "").replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim(); return s ? s[0].toUpperCase() + s.slice(1) : "Batch"; };
 function colOf(items) {
   if (items.some(i => i.status === "changes")) return "changes";
-  return COLS.map(c => c[0]).filter(c => c !== "changes").reduce((a, c) => items.some(i => i.status === c) && (a == null || ORDER[c] < ORDER[a]) ? c : a, null) || "building";
+  return COLS.map(c => c[0]).filter(c => c !== "changes").reduce((a, c) => items.some(i => sOf(i.status) === c) && (a == null || ORDER[c] < ORDER[a]) ? c : a, null) || "building";
 }
 function stacksOf(items) {
   const m = new Map();
@@ -142,7 +143,7 @@ function emailHTML(s) {
     ${can ? `<div class="acts sm-pacts cb-emacts"><button type="button" class="act go" data-cbe="send">${ic("send")}Send</button>${edit ? `<button type="button" class="act" data-cbe="edit">${ic("edit")}Edit</button>` : ""}<button type="button" class="act" data-cbe="change">${ic("refresh")}What to change</button></div>` : ""}</section>`;
 }
 function stackHTML(s, chips) {
-  const n = s.items.length, count = st => s.items.filter(i => i.status === st).length, open = OPEN.has(s.key), hold = holdOf(s.cid);
+  const n = s.items.length, count = st => s.items.filter(i => sOf(i.status) === st).length, open = OPEN.has(s.key), hold = holdOf(s.cid);
   const d = s.col === "ready" ? draftOf(s) : null, cd = d ? cdSpan(d, hold) : "";
   const sts = COLS.filter(c => count(c[0])).map(c => `<span class="cb-chip s-${c[0]}">${count(c[0])} ${esc(c[1])}</span>`).join("");
   const due = dueTxt(s.due), over = s.due && s.due < Date.now();
@@ -158,11 +159,11 @@ function stackHTML(s, chips) {
 }
 function boardHTML(items, chips) {
   const st = stacksOf(items);
-  return `<div class="cb-board">${COLS.map(([id, name, none], ci) => { const ss = st.filter(s => s.col === id);
+  return `<div class="cb-board">${COLS.filter(([id]) => id !== "changes" || st.some(s => s.col === "changes")).map(([id, name, none], ci) => { const ss = st.filter(s => s.col === id);
     return `<section class="sm-col cb-col" data-col="${id}" aria-labelledby="cbh-${id}"><header class="sm-ch"><span class="sm-step" aria-hidden="true">${String(ci + 1).padStart(2, "0")}</span><h2 id="cbh-${id}">${name}</h2><b class="sm-cnt cb-cn" data-cnt="${id}" aria-label="${ss.length} card${ss.length === 1 ? "" : "s"}">${ss.length}</b></header>
       <div class="sm-list cb-list">${ss.length ? ss.map(s => stackHTML(s, chips)).join("") : `<p class="sm-empty">${esc(none)}</p>`}</div></section>`; }).join("")}</div>`;
 }
-const none = () => `<div class="card sp-card cb-none"><span class="cb-none-i">${ic("board")}</span><b>${EMPTY}</b><p>When we start work for a client, every batch shows up here and moves across as it is built, sent and approved.</p></div>`;
+const none = () => `<div class="card sp-card cb-none"><span class="cb-none-i">${ic("board")}</span><b>${EMPTY}</b><p>When we start work for a client, every batch shows up here and moves across as it is built and sent.</p></div>`;
 function allHTML() { return !ITEMS || !ITEMS.length ? none() : boardHTML(ITEMS, true); }
 function tilesHTML(c, its) {
   const t = statsOf(c, its);
