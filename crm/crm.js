@@ -142,7 +142,7 @@ async function fetchAll() {
     all("threads", "lead_email,at,snippet", q => q.neq("direction", "out").gte("at", since14).order("at", { ascending: false })).catch(() => []),   // 11-22: their words, last 14 days (Hot leads)
     all("scopes", "email,offer,amount,currency,monthly,sent_at,paid_at,status,url", q => q.order("sent_at", { ascending: false })).catch(() => null),   // 11-22 (SIMAS "we should see the scope that u have sent them"): the Forms person sheet
     all("briefs", BRIEF_COLS).catch(() => null),   // 11-22 (BENAS, Samples page): the sample brief per lead (graphics level + answers); one small soft read, null = no brief marks
-    all("tasks", "id,title,owner,status,lead_email,due_at,created_at,big,source,source_ref", q => q.in("source", ["founder_tasks", "board", "deferred", "manual"]).eq("status", "todo")).catch(() => []),   // 11-24 (BENAS "where is the ben kump task"): all founder to-dos; Check: cards + due-soon / big to-dos reach the card (wofOf)   // 11-23 (BENAS, Waiting on a founder): "Check:" cards in To do on the To-dos board (its own sources) = Claude's work to approve
+    all("tasks", "id,title,owner,status,lead_email,due_at,created_at,big,source,source_ref", q => q.in("source", ["founder_tasks", "board", "deferred", "manual"]).eq("status", "todo")).catch(() => []),   // 11-24 (BENAS "where is the ben kump task"): all founder to-dos; Check: cards + big to-dos + booked calls reach the card (wofOf, wofTodo; 17:2x "only big things")   // 11-23 (BENAS, Waiting on a founder): "Check:" cards in To do on the To-dos board (its own sources) = Claude's work to approve
   ]);
   /* 11-21 (tracking check, from v7): Instantly's daily "unique opportunities" counts a lead again on each day it is active, so sums over days
      ran up to 1.9x too high. Positives per day come from interested_leads: one row per lead, on the day it was marked interested. */
@@ -817,9 +817,14 @@ const WOF_URG = { client: 240, reply: 30, check: 240, deal: 1440 };
    waiting. Past that a hold lives on the Clients page's holds list only, a deal in the Big deals card, client work on the Clients page; it is
    out of the count, the split line, the colours, the badge and the toasts. Replies and "Check:" cards have no limit (they stay until answered). Tune here. */
 const WOF_MAX = { hold: 48 * 60, deal: 7 * 1440, prod: 7 * 1440 };
-/* 11-24 (BENAS "where is the ben kump task"): a founder to-do (To-dos board, not a "Check:" card) joins the card when it is big, overdue,
-   or due within WOF_TODO_SOON minutes; amber from WOF_TODO_AMBER minutes before its due time, red once it is past. Tune here. */
+/* 11-24 17:2x (BENAS, "only big things go there"): a founder to-do (To-dos board, not a "Check:" card) joins the card ONLY when it is
+   - big (tasks.big: a big deal or an essential decision), or
+   - a booked call with someone outside the team ("Call with …"), due within WOF_TODO_SOON minutes: the call reminder stays.
+   Everything else (filming, internal founder calls, chores, small follow-ups) stays on the To-dos board only, even when due or overdue.
+   Amber from WOF_TODO_AMBER minutes before its due time, red once it is past. Tune here. */
 const WOF_TODO_SOON = 48 * 60, WOF_TODO_AMBER = 24 * 60;
+const wofCall = x => /^\s*call with\b/i.test(String(x.title || "")) && !/founders?'?\s*(call|only)/i.test(String(x.title || ""));
+const wofTodo = x => !!x.big || (wofCall(x) && !!x.due_at && +new Date(x.due_at) - Date.now() <= WOF_TODO_SOON * 6e4 && +new Date(x.due_at) > Date.now() - 3 * 36e5);   // a call stays until 3 h after it starts
 const wofDue = t => new Date(t).toLocaleString("en-GB", { weekday: "short", hour: "2-digit", minute: "2-digit" });
 const wofFresh = (kind, t) => !WOF_MAX[kind] || Date.now() - t <= WOF_MAX[kind] * 6e4;   // also caps Do next's "On hold: …" line (BENAS 11-23: recent holds only; the full list stays on the On hold card)
 const WOF_UL = ["", "Today", "Act now"];
@@ -874,7 +879,7 @@ function wofOf(R, paid, waiting, why) {
       rows.push({ key: "p:" + x.id, kind: "prod", who: x.client, what: x.title, at: at(x.updated_at, x.created_at), value: 0, paying: pays(es, x.client), owner: founderOf(x.set_by), go: { t: "page", p: "clients", c: "prod" } }); });
   (R.checks || []).filter(x => x.status === "todo" && /^check:/i.test(String(x.title || "").trim())).forEach(x => rows.push({ key: "t:" + x.id, kind: "check", who: String(x.title).trim().replace(/^check:\s*/i, "") || "Check",
     what: `Claude's work${x.lead_email ? " · " + nameOf(x.lead_email) : ""}`, at: at(x.created_at), due: x.due_at || null, value: 0, paying: !!x.lead_email && pays([lc(x.lead_email)]), owner: founderOf(x.owner), go: { t: "todo", id: x.id }, big: !!x.big }));
-  (R.checks || []).filter(x => x.status === "todo" && !/^check:/i.test(String(x.title || "").trim()) && (x.big || (x.due_at && +new Date(x.due_at) - Date.now() <= WOF_TODO_SOON * 6e4)) && !(x.lead_email && flagged.has(lc(x.lead_email))))
+  (R.checks || []).filter(x => x.status === "todo" && !/^check:/i.test(String(x.title || "").trim()) && wofTodo(x) && !(x.lead_email && flagged.has(lc(x.lead_email))))
     .forEach(x => rows.push({ key: "f:" + x.id, kind: "todo", who: String(x.title).trim() || "To-do", what: x.due_at ? `${+new Date(x.due_at) < Date.now() ? "was due" : "due"} ${wofDue(x.due_at)}` : "Founder decision",
       at: at(x.created_at), due: x.due_at || null, value: 0, paying: !!x.lead_email && pays([lc(x.lead_email)]), owner: founderOf(x.owner), go: { t: "todo", id: x.id }, big: !!x.big, theirs: !!x.lead_email && onThem([lc(x.lead_email)], at(x.created_at)) }));
   /* 11-23: one row for each lead in the shared replyWait list (the Replies page's "Waiting on us")
