@@ -1,4 +1,4 @@
-/* BEJÚ founder CRM: Funnel clients page (funnel.js). Same glass as the Clients board: .tile cards, the panel from the right (a
+/* BEJÚ founder CRM: Funnel page (funnel.js). 11-24 rework (SIMAS): the client page is a compact hub, not a full-screen analysis. Same glass as the Clients board: .tile cards, the panel from the right (a
    full-screen sheet on phones), 13 px chips. Colour = meaning: red = behind / overdue, amber = at risk / due within 48 h,
    green = on track / live, blue = in progress, sand = waiting on the client. Motion: transform + opacity only; off under reduced
    motion and the "Calm" look. No inline styles (widths arrive as --w through the CSSOM). */
@@ -52,27 +52,91 @@
 html.fc-locked{overflow:hidden}
 .fc-scrim{position:fixed;inset:0;z-index:40;background:var(--scrim);opacity:0;transition:opacity .35s ease;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 .fc-scrim.on{opacity:1}
-.fc-pan{position:fixed;z-index:41;top:12px;right:12px;bottom:12px;width:min(920px,calc(100vw - 24px));display:grid;grid-template-rows:auto minmax(0,1fr);border-radius:26px;overflow:hidden;background:var(--solid);color:var(--ink);box-shadow:0 30px 80px -10px rgba(0,0,0,.42),var(--edge);transform:translateX(calc(100% + 24px));transition:transform .5s var(--out)}
+.fc-pan{position:fixed;z-index:41;top:12px;right:12px;bottom:12px;width:min(620px,calc(100vw - 24px));display:grid;grid-template-rows:auto minmax(0,1fr);border-radius:26px;overflow:hidden;background:var(--solid);color:var(--ink);box-shadow:0 30px 80px -10px rgba(0,0,0,.42),var(--edge);transform:translateX(calc(100% + 24px));transition:transform .5s var(--out)}
 .fc-pan.on{transform:none}
 .fc-pan.out{transition-duration:.34s;transition-timing-function:cubic-bezier(.4,0,1,1)}
 .fc-ph{display:flex;align-items:center;gap:12px;min-width:0;padding:20px 24px 14px}
 .fc-phw{flex:1;min-width:0}
-.fc-ph h2{margin:0;font-size:30px;font-weight:600;letter-spacing:-.03em;line-height:1.15;overflow-wrap:anywhere}
+.fc-ph h2{margin:0;font-size:26px;font-weight:600;letter-spacing:-.03em;line-height:1.15;overflow-wrap:anywhere}
 .fc-ph p{margin-top:4px;font-size:13px;overflow-wrap:anywhere}
 .fc-x{flex:none}
 .fc-pb{display:grid;align-content:start;gap:18px;min-width:0;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:4px 24px 28px}
-.fc-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
-.fc-tl{display:grid;align-content:start;gap:8px;padding:14px 16px;min-width:0}
-.fc-tl small{font-size:13px;line-height:1.35;color:var(--mute)}
-.fc-tl .fc-badge{justify-self:start}
-.fc-tl .fc-next .fc-l{display:none}   /* the tile already says "Next milestone" */
-.fc-big{font-family:var(--mono);font-size:30px;font-weight:500;letter-spacing:-.04em;line-height:1.05;font-variant-numeric:tabular-nums}
-.fc-big small{font-family:var(--sans);font-size:13px;letter-spacing:0;color:var(--mute);font-weight:500}
+
+/* the hub header line: status + progress */
+.fc-sub{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:8px 0 2px;font-size:13px}
+.fc-sub .fc-pr{flex:1 1 160px;max-width:260px}
+.fc-ph p.mut{margin-top:2px}
+
+/* hub sections */
+.fc-sec{display:grid;gap:10px;min-width:0}
+.fc-sec>h3{margin:0;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+.fc-quiet{margin:0;padding:12px 14px;border-radius:14px;background:var(--panel);font-size:14px;line-height:1.45;color:var(--mute)}
+
+/* 1. next up: a short timeline */
+.fc-tl-list{list-style:none;margin:0;padding:0;display:grid;position:relative}
+.fc-tl-list::before{content:"";position:absolute;left:83px;top:16px;bottom:16px;width:2px;border-radius:2px;background:var(--line-2)}
+.fc-nx{display:grid;grid-template-columns:72px 22px minmax(0,1fr) auto;align-items:center;min-width:0;padding:7px 0}
+.fc-nx .fc-menu{grid-column:3/-1;margin-top:6px}
+.fc-nd{display:grid;font-variant-numeric:tabular-nums;line-height:1.2}
+.fc-nd b{font-size:13px;font-weight:700;color:var(--ink)}
+.fc-nd small{font-size:13px;font-weight:600;color:var(--red)}
+.fc-nd.late b{color:var(--red)} .fc-nd.soon b{color:#a35a00}
+:root[data-mode="dark"] .fc-nd.soon b{color:var(--orange)}
+.fc-dot{position:relative;z-index:1;justify-self:center;width:10px;height:10px;border-radius:50%;background:var(--solid);box-shadow:0 0 0 2px var(--line-2)}
+.fc-dot.late{background:var(--red);box-shadow:0 0 0 3px var(--red-soft)} .fc-dot.soon{background:var(--orange);box-shadow:0 0 0 3px var(--orange-soft)}
+.fc-nb{display:grid;gap:2px;min-width:0;padding:0 10px}
+.fc-nb .fc-tt{font-size:14px;font-weight:600}
+.fc-nm2{font-size:13px;color:var(--mute);overflow-wrap:anywhere}
+
+/* 2. what we're building: asset cards */
+.fc-asg{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;min-width:0}
+.fc-as{display:grid;align-content:start;gap:6px;min-width:0;padding:12px 14px;border-radius:16px;background:var(--tile);border:1px solid var(--line);box-shadow:var(--shadow);position:relative;overflow:hidden}
+.fc-as::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--line-2)}
+.fc-as[data-st="in_progress"]::before{background:var(--blue)} .fc-as[data-st="live"]::before{background:var(--green)} .fc-as[data-st="waiting_client"]::before{background:#b7791f}
+.fc-as[data-st="shorts"]::before{background:var(--ink-2)}
+.fc-as1{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+.fc-ar{font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--mute);overflow-wrap:anywhere}
+.fc-chip{flex:none;padding:2px 9px;border-radius:999px;font-size:13px;font-weight:700;background:var(--panel);color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--line);white-space:nowrap}
+.fc-chip.s-in_progress{background:var(--blue-soft);color:var(--blue);box-shadow:none}
+.fc-chip.s-live{background:var(--green-soft);color:var(--green);box-shadow:none}
+.fc-chip.s-waiting_client{background:rgba(183,121,31,.14);color:#8a5a12;box-shadow:none}
+:root[data-mode="dark"] .fc-chip.s-in_progress{background:rgba(130,160,255,.15);color:#a9c0ff}
+:root[data-mode="dark"] .fc-chip.s-waiting_client{color:#e0b35a}
+.fc-at{font-size:14px;font-weight:600;line-height:1.35;overflow-wrap:anywhere}
+.fc-an{margin:0;font-size:13px;line-height:1.45;color:var(--ink-2);overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.fc-af{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:2px;min-width:0}
+.fc-af small,.fc-nolk{font-size:13px;color:var(--mute)}
+.fc-af .fc-lk{margin-left:-8px}
+.fc-as-sh .fc-sc{padding:8px 10px}
+
+/* 3. client info */
+.fc-kv{display:grid;gap:6px;margin:0}
+.fc-kv>div{display:grid;grid-template-columns:72px minmax(0,1fr);gap:10px;font-size:14px}
+.fc-kv dt{color:var(--mute);font-size:13px;font-weight:600}
+.fc-kv dd{margin:0;overflow-wrap:anywhere}
+.fc-ils{display:flex;flex-wrap:wrap;gap:6px}
+.fc-il{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 12px;border-radius:999px;background:var(--panel);box-shadow:inset 0 0 0 1px var(--line);font-size:13px;font-weight:600;color:var(--ink);text-decoration:none}
+.fc-il .ic{width:14px;height:14px;color:var(--blue)}
+@media (hover:hover) and (pointer:fine){ .fc-il:hover{background:var(--blue-soft)} }
+.fc-il:focus-visible,.fc-fold:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.fc-notes{display:grid;gap:4px;padding:10px 12px;border-radius:14px;background:var(--panel)}
+.fc-notes p{margin:0;font-size:13px;line-height:1.5;color:var(--ink-2);white-space:pre-line;overflow-wrap:anywhere}
+.fc-notes.short p{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.fc-notes .fc-dtb{justify-self:start;margin-left:-8px}
+
+/* 4. the full checklist, folded */
+.fc-all>h3{text-transform:none;letter-spacing:0}
+.fc-fold{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:14px;background:var(--tile);font:inherit;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;text-align:left}
+.fc-fold small{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--mute)}
+.fc-fold i{margin-left:auto;width:8px;height:8px;border:solid var(--ink-2);border-width:0 2px 2px 0;transform:rotate(45deg) translateY(-2px);transition:transform .25s var(--out)}
+.fc-fold[aria-expanded="true"] i{transform:rotate(225deg) translateY(-2px)}
+.fc-allb{display:grid;gap:14px}
+.fc-allb[hidden]{display:none}
+.fc-grp h4{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0;font-size:14px;font-weight:600}
+.fc-grp h4 small{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--mute);font-variant-numeric:tabular-nums}
 
 /* an area and its items */
 .fc-grp{display:grid;gap:8px;min-width:0}
-.fc-grp h3{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0;font-size:15px;font-weight:600;letter-spacing:-.01em}
-.fc-grp h3 small{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--mute);font-variant-numeric:tabular-nums}
 .fc-sc{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:10px 12px;border-radius:14px;background:var(--panel);border:1px solid var(--line)}
 .fc-scn{display:inline-flex;align-items:baseline;gap:5px;font-size:13px;color:var(--ink-2)}
 .fc-scn b{font-family:var(--mono);font-size:16px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
@@ -113,7 +177,7 @@ html.fc-locked{overflow:hidden}
 .fc-empty p{font-size:14px;color:var(--mute)}
 @keyframes fc-in{from{opacity:0;transform:translateY(-4px)}}
 
-@media (max-width:1100px){ .fc-sum,.fc-tiles{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width:1100px){ .fc-sum{grid-template-columns:repeat(2,minmax(0,1fr))} }
 
 /* ---------- phone: full-width cards; the client page is a full-screen sheet; 44 px taps; 16 px inputs ---------- */
 @media (max-width:600px){
@@ -124,10 +188,16 @@ html.fc-locked{overflow:hidden}
   .fc-pan{inset:0;width:100%;border-radius:0;display:block;overflow-y:auto;overscroll-behavior:contain;transform:translateY(100%);padding-bottom:env(safe-area-inset-bottom)}
   .fc-pan.on{transform:none}
   .fc-ph{padding:calc(16px + env(safe-area-inset-top)) 72px 10px 16px}
-  .fc-ph h2{font-size:26px}
   .fc-x{position:fixed;top:calc(12px + env(safe-area-inset-top));right:12px;z-index:3;width:44px;height:44px;border-radius:50%;background:var(--solid)}
   .fc-pb{overflow:visible;padding:4px 16px 28px}
-  .fc-tiles{gap:10px} .fc-tl{padding:12px 14px} .fc-big{font-size:26px}
+  .fc-ph h2{font-size:24px}
+  .fc-nx{grid-template-columns:64px 20px minmax(0,1fr);row-gap:6px}
+  .fc-tl-list::before{left:73px}
+  .fc-nx>.fc-pill{grid-column:3;justify-self:start;margin-left:10px}
+  .fc-nx .fc-menu{grid-column:1/-1}
+  .fc-asg{grid-template-columns:minmax(0,1fr)}
+  .fc-il{min-height:44px}
+  .fc-fold{min-height:52px}
   .fc-it{padding:10px}
   .fc-pill,.fc-lk,.fc-dtb{min-height:44px;min-width:44px}
   .fc-pill{padding:0 14px}
@@ -139,5 +209,5 @@ html.fc-locked{overflow:hidden}
 }
 
 html[data-motion="calm"] .fc-pan,html[data-motion="calm"] .fc-scrim,html[data-motion="calm"] .fc-bar i,html[data-motion="calm"] .fc-card{transition:none}
-html[data-motion="calm"] .fc-menu{animation:none}
+html[data-motion="calm"] .fc-menu{animation:none} html[data-motion="calm"] .fc-fold i{transition:none}
 @media (prefers-reduced-motion:reduce){ .fc-pan,.fc-scrim,.fc-bar i,.fc-card{transition:none!important} .fc-menu{animation:none!important} .fc-card:hover{transform:none} }

@@ -5,11 +5,17 @@
    a badge (BEHIND: something past due that is not live and not waiting on the client · AT RISK: something due within 48 h that is not
    live · ON TRACK: everything due by now is live or waiting on the client), the next milestone (the soonest due item not live) and
    "Waiting on client: N".
-   CLIENT PAGE (a tap on a card; a panel from the right, a full-screen sheet on phones): the items by area in a fixed order, each with its
-   status pill, title, detail (folded), due date (red overdue, amber within 48 h), owner and link. A tap on the pill opens a small menu;
-   the pick saves at once (optimistic: on an error it goes back and a toast says why). The Shorts area also counts the client's
-   Shorts on the delivery board (public.client_items: delivered = sent, ready, building), so nothing is entered twice.
-   Data: public.scope_items + clients.funnel (supabase/crm_scope_items1.sql), client_items, retainers; read once per page load, then a
+   CLIENT HUB (SIMAS 11-24 15:48: "name the tab Funnel; I don't like the almost full-screen analysis; we want to see what we promised to
+   make soonest; not only a task list but also info storing for her: the webs in progress or built"; 16:27: "the assets, you add them,
+   not us"). A tap on a card opens a compact panel from the right (a full-screen sheet on phones), top to bottom:
+     1. NEXT UP: the 5 soonest promises not live yet, as a short timeline (due · what · who · status).
+     2. WHAT WE'RE BUILDING: one card per thing we build (scope items in Websites, Lead magnets & emails, Posting, SEO & GEO) with its
+        status, link, note and last update, plus the client's Shorts from the delivery board (public.client_items). Claude keeps these
+        rows current (status, link, note); founders only read them here.
+     3. CLIENT INFO: plan, site / Instagram / YouTube / Drive folder links, emails and the client notes (clients.notes, folded when long).
+     4. THE FULL CHECKLIST, folded: every item by area, each status pill one tap to change (optimistic: on an error it goes back and a
+        toast says why).
+   Data: public.scope_items + clients.funnel (supabase/crm_scope_items1.sql), clients (links + notes), client_items, retainers; read once per page load, then a
    targeted re-read after realtime events on this page's OWN channels. A database without the table or the column shows a calm empty
    state. Writes: scope_items.status only, as the signed-in founder (row-level security, is_admin()).
    Registered with side.js through window.BEJU_SIDE_PAGES, so this file loads before side.js. CSP: no inline styles (CSSOM only). */
@@ -27,10 +33,14 @@ const H48 = 48 * 36e5;
 /* the areas, in the order the client page shows them */
 const AREAS = [["setup", "Setup & calls"], ["websites", "Websites"], ["lead_magnets", "Lead magnets & emails"], ["posting", "Posting"], ["shorts", "Shorts"],
   ["seo", "SEO & GEO"], ["reports", "Reports & calls"], ["other", "Other"]];
+const BUILD = new Set(["websites", "lead_magnets", "posting", "seo"]);   // areas whose items are things we build for them
+const AREA_L = Object.fromEntries(AREAS);
 const ST = [["not_started", "Not started"], ["in_progress", "In progress"], ["waiting_client", "Waiting on client"], ["live", "Live"], ["dropped", "Dropped"]];
 const ST_L = Object.fromEntries(ST);
 const BADGE = { behind: "Behind", risk: "At risk", on: "On track" };
 const RANK = { behind: 0, risk: 1, on: 2 };
+const BST = { not_started: "Planned", in_progress: "In progress", waiting_client: "Waiting on client", live: "Live" };
+const BRANK = { in_progress: 0, waiting_client: 1, live: 2, not_started: 3 };
 const PER = r => ({ month: "mo", year: "yr", week: "wk", day: "day" })[lc(r && r.interval) || "month"] || "mo";
 
 let A = null;               // side.js's helpers (sb, all, toast, dayOf, dLabel, usd, el)
@@ -38,8 +48,10 @@ let D = null;               // { clients, missing }: the funnel clients (with .p
 let ITEMS = null;           // scope_items rows; null = not readable (not created yet)
 let CI = null;              // client_items rows (id, client_id, status); null = not readable
 let PAN = null;             // the open client page { id, pan, scrim, opener }
-let MENU = null;            // the item id whose status menu is open
+let MENU = null;            // the open status menu: "<where>:<item id>" (where = n next up, c checklist)
 const DET = new Set();      // item ids whose detail is unfolded
+let LIST_OPEN = false;      // the full checklist is unfolded
+let NOTES_OPEN = false;     // the client notes are unfolded
 const CH = {}, CHT = {}, AT = {};   // realtime: channel, pending re-read timer, last read time (per table)
 
 /* ---------------- data ---------------- */
@@ -48,7 +60,7 @@ const readCI = () => A.all("client_items", "id,client_id,status").catch(() => nu
 async function load(api) {
   A = api;
   const [cl, items, ci, rets] = await Promise.all([
-    api.all("clients", "id,name,emails,show,funnel", q => q.eq("funnel", true)).catch(() => null),
+    api.all("clients", "id,name,emails,show,funnel,website,instagram,youtube,drive_folder,notes", q => q.eq("funnel", true)).catch(() => null),
     readItems(), readCI(),
     api.all("retainers", "email,amount,interval,status").catch(() => []),
   ]);
@@ -56,7 +68,8 @@ async function load(api) {
   const ret = {}; (rets || []).forEach(r => { if (/active|trialing|past_due/i.test(r.status || "")) ret[lc(r.email)] = r; });
   const clients = (cl || []).filter(c => c.funnel !== false).map(c => {
     const r = (c.emails || []).map(e => ret[lc(e)]).find(Boolean);
-    return { id: String(c.id), name: c.name || "Client", show: c.show || "", plan: r ? `${api.usd(r.amount)} / ${PER(r)} plan` : "" };
+    return { id: String(c.id), name: c.name || "Client", show: c.show || "", plan: r ? `${api.usd(r.amount)} / ${PER(r)} plan` : "",
+      emails: c.emails || [], website: c.website || "", instagram: c.instagram || "", youtube: c.youtube || "", drive: c.drive_folder || "", notes: c.notes || "" };
   });
   D = { clients, missing: !cl || !ITEMS };
   if (ITEMS) live("scope_items", readItems, v => { ITEMS = v; });
@@ -130,38 +143,81 @@ function listHTML() {
 }
 
 /* ---------------- the client page ---------------- */
+const pillHTML = (i, key) => `<button type="button" class="fc-pill s-${esc(i.status)}" data-fcst="${esc(key)}" aria-haspopup="menu" aria-expanded="${MENU === key}" aria-label="Status: ${esc(ST_L[i.status] || i.status)}. Change it">${esc(ST_L[i.status] || i.status)}</button>`;
+const menuHTML = (i, key) => `<div class="fc-menu" role="menu" aria-label="Set the status"${MENU === key ? "" : " hidden"}>${ST.map(([id, l]) => `<button type="button" role="menuitemradio" class="fc-mi s-${id}" data-fcset="${id}" aria-checked="${id === i.status}">${esc(l)}</button>`).join("")}</div>`;
 function itemHTML(i) {
-  const [t, k] = due(i), u = webUrl(i.link), dt = String(i.detail || "").trim(), open = DET.has(String(i.id)), mo = MENU === String(i.id);
-  return `<li class="fc-it" data-id="${esc(i.id)}" data-st="${esc(i.status)}">
-    <div class="fc-row"><button type="button" class="fc-pill s-${esc(i.status)}" data-fcst="${esc(i.id)}" aria-haspopup="menu" aria-expanded="${mo}" aria-label="Status: ${esc(ST_L[i.status] || i.status)}. Change it">${esc(ST_L[i.status] || i.status)}</button>
+  const [t, k] = due(i), u = webUrl(i.link), dt = String(i.detail || "").trim(), open = DET.has(String(i.id)), key = "c:" + i.id;
+  return `<li class="fc-it" data-id="${esc(i.id)}" data-key="${esc(key)}" data-st="${esc(i.status)}">
+    <div class="fc-row">${pillHTML(i, key)}
       <span class="fc-tt">${esc(i.title)}${i.recurring ? ` <span class="fc-rec">${esc(i.recurring)}</span>` : ""}</span>
       <span class="fc-meta">${t ? `<span class="fc-due ${k}">${esc(t)}</span>` : ""}${i.owner ? `<span class="fc-own">${esc(i.owner)}</span>` : ""}
         ${u ? `<a class="fc-lk" href="${esc(u)}" target="_blank" rel="noopener noreferrer" aria-label="Open the link for ${esc(i.title)}">${ic("link")}<span>Open</span></a>` : ""}
         ${dt ? `<button type="button" class="fc-dtb" data-fcdt="${esc(i.id)}" aria-expanded="${open}">${open ? "Less" : "Details"}</button>` : ""}</span></div>
     ${dt ? `<p class="fc-dt"${open ? "" : " hidden"}>${esc(dt)}</p>` : ""}
-    <div class="fc-menu" role="menu" aria-label="Set the status"${mo ? "" : " hidden"}>${ST.map(([id, l]) => `<button type="button" role="menuitemradio" class="fc-mi s-${id}" data-fcset="${id}" aria-checked="${id === i.status}">${esc(l)}</button>`).join("")}</div></li>`;
+    ${menuHTML(i, key)}</li>`;
 }
 function shortsHTML(s) {
   return `<div class="fc-sc" aria-label="Shorts on the delivery board">${[["sent", "delivered"], ["ready", "ready"], ["building", "building"], ...(s.changes ? [["changes", "changes asked"]] : [])]
     .map(([k, l]) => `<span class="fc-scn" data-sc="${k}"><b>${s[k]}</b>${l}</span>`).join("")}<small>from the delivery board</small></div>`;
 }
-function pageHTML(c) {
-  const m = model(c), s = shortsOf(c.id), sort = (a, b) => (a.sort || 0) - (b.sort || 0) || (ms(a.due_at) || 1e15) - (ms(b.due_at) || 1e15) || a.id - b.id;
-  const tiles = `<div class="fc-tiles">
-    <div class="tile fc-tl"><span class="fc-l">Progress</span><b class="fc-big">${m.live}<small> / ${m.total} live</small></b>${bar(m)}</div>
-    <div class="tile fc-tl" data-state="${m.state}"><span class="fc-l">Status</span>${badge(m)}<small>${m.state === "behind" ? `${m.n} past due` : m.state === "risk" ? `${m.n} due within 48 h` : "Everything due is live or with the client"}</small></div>
-    <div class="tile fc-tl"><span class="fc-l">Next milestone</span>${nextHTML(m)}</div>
-    <div class="tile fc-tl"><span class="fc-l">Waiting on client</span><b class="fc-big">${m.wait}</b></div></div>`;
-  const groups = AREAS.map(([a, name]) => {
+const dShort = t => { const now = Date.now(), d = A.dayOf(t); return d === A.dayOf(now) ? "Today" : d === A.dayOf(now + 864e5) ? "Tomorrow" : A.dLabel(d); };
+const ago = t => { const v = ms(t); if (!v) return ""; const d = A.dayOf(v), n = Date.now(); return d === A.dayOf(n) ? "today" : d === A.dayOf(n - 864e5) ? "yesterday" : A.dLabel(d); };
+/* 1. next up: the soonest promises that are not live yet */
+function nextUpHTML(m) {
+  const up = m.its.filter(i => i.status !== "live" && i.status !== "dropped" && ms(i.due_at)).sort((a, b) => ms(a.due_at) - ms(b.due_at) || a.id - b.id).slice(0, 5);
+  if (!up.length) return `<p class="fc-quiet">${m.total ? "Nothing open with a due date. Everything promised so far is live." : "No promises tracked yet."}</p>`;
+  return `<ol class="fc-tl-list">${up.map(i => { const [, k] = due(i), key = "n:" + i.id;
+    return `<li class="fc-nx" data-id="${esc(i.id)}" data-key="${esc(key)}" data-st="${esc(i.status)}">
+      <span class="fc-nd ${k}"><b>${esc(dShort(ms(i.due_at)))}</b>${k === "late" ? "<small>overdue</small>" : ""}</span><i class="fc-dot ${k}" aria-hidden="true"></i>
+      <span class="fc-nb"><span class="fc-tt">${esc(i.title)}</span><span class="fc-nm2">${esc(AREA_L[i.area] || "")}${i.owner ? ` · ${esc(i.owner)}` : ""}</span></span>
+      ${pillHTML(i, key)}${menuHTML(i, key)}</li>`; }).join("")}</ol>`;
+}
+/* 2. what we're building: the things in the build areas + the Shorts */
+function buildHTML(m, s) {
+  const its = m.its.filter(i => BUILD.has(i.area) && i.status !== "dropped").sort((a, b) => BRANK[a.status] - BRANK[b.status] || (ms(a.due_at) || 1e15) - (ms(b.due_at) || 1e15) || a.id - b.id);
+  const card = i => { const u = webUrl(i.link), dt = String(i.detail || "").trim(), up = ago(i.updated_at);
+    return `<article class="fc-as" data-id="${esc(i.id)}" data-st="${esc(i.status)}">
+      <span class="fc-as1"><span class="fc-ar">${esc(AREA_L[i.area] || "")}</span><span class="fc-chip s-${esc(i.status)}">${esc(BST[i.status] || ST_L[i.status] || i.status)}</span></span>
+      <b class="fc-at">${esc(i.title)}</b>${dt ? `<p class="fc-an">${esc(dt)}</p>` : ""}
+      <span class="fc-af">${u ? `<a class="fc-lk" href="${esc(u)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${esc(i.title)}">${ic("link")}<span>Open</span></a>` : `<span class="fc-nolk">No link yet</span>`}${up ? `<small>Updated ${esc(up)}</small>` : ""}</span></article>`; };
+  const sh = s && s.total ? `<article class="fc-as fc-as-sh" data-st="shorts"><span class="fc-as1"><span class="fc-ar">Shorts</span></span><b class="fc-at">${s.total} Shorts on the delivery board</b>${shortsHTML(s)}</article>` : "";
+  if (!its.length && !sh) return `<p class="fc-quiet">Nothing being built yet. Sites, lead magnets and posting set-ups show here as we start them.</p>`;
+  return `<div class="fc-asg">${its.map(card).join("")}${sh}</div>`;
+}
+/* 3. client info */
+function infoHTML(c) {
+  const lk = (label, v, icn) => { const u = webUrl(v); return u ? `<a class="fc-il" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${ic(icn)}<span>${esc(label)}</span></a>` : ""; };
+  const links = [lk("Website", c.website, "link"), lk("Instagram", c.instagram, "link"), lk("YouTube", c.youtube, "link"), lk("Drive folder", c.drive, "link")].join("");
+  const notes = String(c.notes || "").trim(), long = notes.length > 280 || notes.split("\n").length > 4;   // folded to 4 lines
+  return `<dl class="fc-kv">
+    ${c.plan ? `<div><dt>Plan</dt><dd>${esc(c.plan)}</dd></div>` : ""}
+    ${c.emails.length ? `<div><dt>Email</dt><dd>${c.emails.map(esc).join("<br>")}</dd></div>` : ""}
+    ${c.show ? `<div><dt>Show</dt><dd>${esc(c.show)}</dd></div>` : ""}</dl>
+    ${links ? `<div class="fc-ils">${links}</div>` : ""}
+    ${notes ? `<div class="fc-notes${long && !NOTES_OPEN ? " short" : ""}"><p>${esc(notes)}</p>${long ? `<button type="button" class="fc-dtb" data-fcnotes aria-expanded="${NOTES_OPEN}">${NOTES_OPEN ? "Show less" : "Show all notes"}</button>` : ""}</div>` : ""}`;
+}
+/* 4. the full checklist (folded) */
+function checklistHTML(m, s) {
+  const sort = (a, b) => (a.sort || 0) - (b.sort || 0) || (ms(a.due_at) || 1e15) - (ms(b.due_at) || 1e15) || a.id - b.id;
+  return AREAS.map(([a, name]) => {
     const its = m.its.filter(i => i.area === a).sort(sort), sh = a === "shorts" && s && s.total ? s : null;
     if (!its.length && !sh) return "";
     const act = its.filter(i => i.status !== "dropped"), lv = act.filter(i => i.status === "live").length;
-    return `<section class="fc-grp" data-area="${a}"><h3>${esc(name)}${its.length ? `<small>${lv} / ${act.length} live</small>` : ""}</h3>${sh ? shortsHTML(sh) : ""}${its.length ? `<ul class="fc-ul">${its.map(itemHTML).join("")}</ul>` : ""}</section>`;
+    return `<section class="fc-grp" data-area="${a}"><h4>${esc(name)}${its.length ? `<small>${lv} / ${act.length} live</small>` : ""}</h4>${its.length ? `<ul class="fc-ul">${its.map(itemHTML).join("")}</ul>` : ""}</section>`;
   }).join("");
-  return `${tiles}${groups || `<div class="fc-empty"><b>No scope items yet</b><p>Everything this client's scope promised shows up here once it is added.</p></div>`}`;
+}
+function pageHTML(c) {
+  const m = model(c), s = shortsOf(c.id);
+  return `<section class="fc-sec" aria-labelledby="fc-h-next"><h3 id="fc-h-next">Next up</h3>${nextUpHTML(m)}</section>
+    <section class="fc-sec" aria-labelledby="fc-h-build"><h3 id="fc-h-build">What we're building</h3>${buildHTML(m, s)}</section>
+    <section class="fc-sec" aria-labelledby="fc-h-info"><h3 id="fc-h-info">Client info</h3>${infoHTML(c)}</section>
+    ${m.its.length ? `<section class="fc-sec fc-all" aria-labelledby="fc-h-all"><h3 id="fc-h-all"><button type="button" class="fc-fold" data-fcall aria-expanded="${LIST_OPEN}">Full checklist <small>${m.live} / ${m.total} live</small><i aria-hidden="true"></i></button></h3>
+      <div class="fc-allb"${LIST_OPEN ? "" : " hidden"}>${checklistHTML(m, s)}</div></section>` : ""}`;
 }
 function headHTML(c) {
-  return `<div class="fc-phh"><h2 id="fc-pt">${esc(c.name)}</h2><p class="mut">${esc([c.plan, c.show].filter(Boolean).join(" · ") || "Funnel client")}</p></div>`;
+  const m = model(c);
+  return `<div class="fc-phh"><h2 id="fc-pt">${esc(c.name)}</h2><p class="fc-sub">${badge(m)}<span class="fc-pr">${bar(m)}<span class="fc-pn">${m.live} / ${m.total} live</span></span>${m.wait ? `<span class="fc-wait on">Waiting on client: ${m.wait}</span>` : ""}</p>
+    <p class="mut">${esc([c.plan, c.show].filter(Boolean).join(" · ") || "Funnel client")}</p></div>`;
 }
 
 /* ---------------- painting ---------------- */
@@ -173,13 +229,15 @@ function paint() {
   if (PAN) { const c = clientOf(PAN.id); if (!c) { closeClient(true); return; } paintPanel(c); }
 }
 function paintPanel(c) {
-  const body = PAN.pan.querySelector(".fc-pb"), a = document.activeElement, keep = a && body.contains(a) ? [a.dataset.fcst ? "fcst" : a.dataset.fcset ? "fcset" : a.dataset.fcdt ? "fcdt" : "", a.closest(".fc-it")?.dataset.id, a.dataset.fcset] : null, top = body.scrollTop, ptop = PAN.pan.scrollTop;
-  PAN.pan.querySelector(".fc-phw").innerHTML = headHTML(c); body.innerHTML = pageHTML(c); fw(body); body.scrollTop = top; PAN.pan.scrollTop = ptop;
-  if (keep && keep[0] && keep[1]) { const li = body.querySelector(`.fc-it[data-id="${CSS.escape(keep[1])}"]`), el = li && (keep[0] === "fcset" ? li.querySelector(`[data-fcset="${keep[2]}"]`) || li.querySelector("[data-fcst]") : li.querySelector(`[data-${keep[0]}]`)); el?.focus({ preventScroll: true }); }
+  const body = PAN.pan.querySelector(".fc-pb"), a = document.activeElement, top = body.scrollTop, ptop = PAN.pan.scrollTop;
+  const keep = a && body.contains(a) ? (a.dataset.fcall !== undefined ? ["fcall"] : a.dataset.fcnotes !== undefined ? ["fcnotes"] : [a.dataset.fcst ? "fcst" : a.dataset.fcset ? "fcset" : a.dataset.fcdt ? "fcdt" : "", a.closest("[data-key]")?.dataset.key, a.dataset.fcset]) : null;
+  PAN.pan.querySelector(".fc-phw").innerHTML = headHTML(c); body.innerHTML = pageHTML(c); fw(PAN.pan); body.scrollTop = top; PAN.pan.scrollTop = ptop;
+  if (keep && keep.length === 1) body.querySelector(`[data-${keep[0]}]`)?.focus({ preventScroll: true });
+  else if (keep && keep[0] && keep[1]) { const li = body.querySelector(`[data-key="${CSS.escape(keep[1])}"]`), el = li && (keep[0] === "fcset" ? li.querySelector(`[data-fcset="${keep[2]}"]`) || li.querySelector("[data-fcst]") : li.querySelector(`[data-${keep[0]}]`)); el?.focus({ preventScroll: true }); }
 }
 const otherLayer = () => !!document.querySelector("#drawer:not([hidden]), #veil:not([hidden]), #pal:not([hidden]), #dlg:not([hidden])");
 function openClient(id, opener) {
-  const c = clientOf(id); if (!c) return; closeClient(true); MENU = null;
+  const c = clientOf(id); if (!c) return; closeClient(true); MENU = null; LIST_OPEN = false; NOTES_OPEN = false; DET.clear();
   const scrim = document.createElement("div"); scrim.className = "fc-scrim"; scrim.id = "fc-scrim";
   const pan = document.createElement("aside"); pan.className = "fc-pan"; pan.id = "fc-pan"; pan.setAttribute("role", "dialog"); pan.setAttribute("aria-modal", "true"); pan.setAttribute("aria-labelledby", "fc-pt"); pan.dataset.client = c.id;
   pan.innerHTML = `<header class="fc-ph"><div class="fc-phw"></div><button type="button" class="icon-btn fc-x" data-fcx aria-label="Close"><svg aria-hidden="true"><use href="#i-x"/></svg></button></header><div class="fc-pb"></div>`;
@@ -219,8 +277,10 @@ document.addEventListener("click", ev => {
   const card = t.closest("#fc-list [data-fc]"); if (card) { openClient(card.dataset.fc, card); return; }
   if (!PAN || !PAN.pan.contains(t)) return;
   if (t.closest("[data-fcx]")) { closeClient(); return; }
-  const pill = t.closest("[data-fcst]"); if (pill) { MENU = MENU === pill.dataset.fcst ? null : pill.dataset.fcst; paint(); if (MENU) PAN.pan.querySelector(`.fc-it[data-id="${CSS.escape(MENU)}"] [aria-checked="true"]`)?.focus({ preventScroll: true }); return; }
-  const mi = t.closest("[data-fcset]"); if (mi) { setStatus(mi.closest(".fc-it").dataset.id, mi.dataset.fcset); return; }
+  const pill = t.closest("[data-fcst]"); if (pill) { MENU = MENU === pill.dataset.fcst ? null : pill.dataset.fcst; paint(); if (MENU) PAN.pan.querySelector(`[data-key="${CSS.escape(MENU)}"] [aria-checked="true"]`)?.focus({ preventScroll: true }); return; }
+  const mi = t.closest("[data-fcset]"); if (mi) { setStatus(mi.closest("[data-key]").dataset.id, mi.dataset.fcset); return; }
+  if (t.closest("[data-fcall]")) { LIST_OPEN = !LIST_OPEN; MENU = null; paint(); return; }
+  if (t.closest("[data-fcnotes]")) { NOTES_OPEN = !NOTES_OPEN; paint(); return; }
   const db = t.closest("[data-fcdt]"); if (db) { const k = db.dataset.fcdt; DET.has(k) ? DET.delete(k) : DET.add(k); paint(); return; }
 });
 document.addEventListener("keydown", ev => {
@@ -233,14 +293,14 @@ document.addEventListener("keydown", ev => {
   }
 }, true);
 
-function view() { return `<section class="fc" id="fc-list" aria-label="Funnel clients">${listHTML()}</section>`; }
+function view() { return `<section class="fc" id="fc-list" aria-label="Funnel">${listHTML()}</section>`; }
 function wire(api) {
   A = api; const list = document.getElementById("fc-list"); if (list) fw(list);
   if (PAN) { const c = clientOf(PAN.id); c ? paintPanel(c) : closeClient(true); }   // the 5-minute refresh redrew the list: the open client follows the new rows
 }
 (window.BEJU_SIDE_PAGES = window.BEJU_SIDE_PAGES || {}).funnel = {
-  title: "Funnel clients",
-  head: ["Funnel <em class=\"sf\">clients</em>", ""],
+  title: "Funnel",
+  head: ["Funnel", "What we promised each funnel client, what's due next, and what we've built for them."],
   src: d => d && !d.missing ? ["Scopes", null] : null,
   load, view, wire,
 };
