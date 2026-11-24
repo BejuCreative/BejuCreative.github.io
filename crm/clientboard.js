@@ -208,7 +208,13 @@ function stackHTML(s, chips) {
   const d = s.col === "ready" ? draftOf(s) : null, cd = d ? cdSpan(d, hold) : "";
   const sts = COLS.filter(c => count(c[0])).map(c => `<span class="cb-chip s-${c[0]}">${count(c[0])} ${esc(c[1])}</span>`).join("");
   const due = dueTxt(s.due), over = s.due && s.due < Date.now(), cid = esc("cbi-" + s.key.replace(/[^\w-]/g, "_"));
-  const mail = s.col === "ready" ? (hold ? `<span class="cb-chip s-hold">Waits for a founder</span>` : cd ? `<span class="cb-chip s-go">${cd}</span>` : d ? `<span class="cb-chip s-ready">Email ready</span>` : "") : "";
+  /* 11-24 (BENAS: "I clicked approved on every card and it still said waiting for a founder"): the chip tells the truth about the approvals.
+     No delivery email (clients whose Shorts we post ourselves) → "Approved · ready to post" once every Ready Short is approved, else "To review".
+     With an email: on a held client, "Approved · send it" once all are approved, else "Waits for a founder"; otherwise the countdown / Email ready. */
+  const rdy = s.items.filter(i => i.status === "ready"), allOk = rdy.length > 0 && rdy.every(i => i.founder_ok_at);
+  const mail = s.col !== "ready" ? "" : !d ? (allOk ? `<span class="cb-chip s-approved">Approved · ready to post</span>` : `<span class="cb-chip s-hold">To review</span>`)
+    : hold ? (allOk ? `<span class="cb-chip s-approved">Approved · send it</span>` : `<span class="cb-chip s-hold">Waits for a founder</span>`)
+    : cd ? `<span class="cb-chip s-go">${cd}</span>` : `<span class="cb-chip s-ready">Email ready</span>`;
   return `<article class="cb-stack${n > 1 ? " multi" : ""}${open ? " open" : ""}${rv ? " rv" : ""}" data-key="${esc(s.key)}" data-col="${s.col}" data-n="${n}">
     <button type="button" class="cb-sh" ${rv ? `aria-haspopup="dialog"` :`aria-expanded="${open}" aria-controls="${cid}"`}>
       <span class="cb-r1"><b class="cb-nm">${esc(s.name)}</b><span class="cb-cnt" aria-label="${n} item${n === 1 ? "" : "s"}">${n}</span></span>

@@ -684,7 +684,7 @@ async function loadClients() {
     all("clients", "id,name,emails,show,drive_folder,source"),
     all("deliveries", "id,client_id,title,order_name,kind,duration_s,link,delivered_at", q => q.order("delivered_at", { ascending: false }).order("id")),
     all("payments", "client_id,email,amount,refunded,paid_at,package"),
-    all("retainers", "id,email,name,amount,interval,status,started_at,current_period_end").catch(() => []),
+    all("retainers", "id,email,name,amount,interval,status,started_at,current_period_end,cancel_at_period_end").catch(() => []),
     all("sync_status", "name,ran_at,ok,detail").catch(() => []),
     all("client_notes", "lead_email,kind,note,noted_at,created_at", q => q.eq("kind", "priority")).catch(() => []),
     panel("metrics").catch(() => null),
@@ -709,7 +709,10 @@ async function loadClients() {
     if (!lastAt[p.client_id] || +new Date(p.paid_at) > +new Date(lastAt[p.client_id])) { lastAt[p.client_id] = p.paid_at; lastAmt[p.client_id] = +p.amount || 0; } });   // the newest payment = the price of the last pack (row money)
   const payByE = {}; payments.forEach(p => { if (p.refunded || !p.email || !p.paid_at) return; const k = lc(p.email), x = +new Date(p.paid_at); if (!(payByE[k] >= x)) payByE[k] = x; });   // 11-23 activity dot: a payment matched by the client's email too
   const liveCalls = calls.filter(k => !/cancel/i.test(k.status || "")), nowMs = Date.now();
-  const ret = {}; retainers.forEach(r => { if (/active|trialing|past_due/i.test(r.status || "")) ret[lc(r.email)] = r; });
+  /* 11-24 audit (C1): one client can have two live subscriptions (an old plan ending at period end + its replacement). The shown plan is
+     the one that renews (not cancel_at_period_end), then the larger amount: never "whichever row came last". */
+  const better = (a, b) => !a ? b : (!!a.cancel_at_period_end !== !!b.cancel_at_period_end ? (a.cancel_at_period_end ? b : a) : ((+b.amount || 0) > (+a.amount || 0) ? b : a));
+  const ret = {}; retainers.forEach(r => { if (/active|trialing|past_due/i.test(r.status || "")) { const k = lc(r.email); ret[k] = better(ret[k], r); } });
   const prio = {}; notes.slice().sort((a, b) => ((a.noted_at || "") + (a.created_at || "")).localeCompare((b.noted_at || "") + (b.created_at || ""))).forEach(n => { prio[lc(n.lead_email)] = n.note; });
   const uniq = vs => { const k = new Set(); vs.forEach(v => { const mm = /Short\s*(\d+)/i.exec(v.title || ""); k.add(mm ? (v.order_name || "") + "#" + mm[1] : v.id); }); return k.size; };
   const list = clients.map(c => {
@@ -1029,7 +1032,7 @@ async function loadWeekly() {
     all("interested_leads", "email,first_name,company,campaign_id,interest_changed_at,last_reply_at,created_at"),
     all("pipeline", "email,name,status,yes_at,delivered_at,last_reply_at,paid,fu_stage,fu_day0,notes,updated_at"),
     all("payments", "client_id,email,payer_name,amount,refunded,paid_at"),
-    optL(all("retainers", "id,email,name,amount,interval,status,started_at,current_period_end,canceled_at")),
+    optL(all("retainers", "id,email,name,amount,interval,status,started_at,current_period_end,canceled_at,cancel_at_period_end")),
     all("deliveries", "delivered_at", q => q.gte("delivered_at", from)),
     optL(all("promises", "lead_email,promise,owner,due_at,status", q => q.eq("status", "open"))),
     optL(all("fu_state", "email,state,due_at")),
@@ -1075,7 +1078,7 @@ async function loadWeekly() {
     fuOver: fu.filter(f => f.state === "active" && f.due_at && new Date(f.due_at) < new Date()).length };
   if (HOT.weekAgo == null) missing.push("Hot leads a week ago: no saved snapshot yet. This page saves one each week from now on, so the comparison appears next week.");
   /* clients / retention */
-  const live = retainers.filter(r => /active|trialing|past_due/i.test(r.status || "")), mrr = live.reduce((a, r) => a + (+r.amount || 0), 0), newR = live.filter(r => inC(dayOf(r.started_at)));
+  const live = retainers.filter(r => /active|trialing|past_due/i.test(r.status || "") && !r.cancel_at_period_end), mrr = live.reduce((a, r) => a + (+r.amount || 0), 0), newR = live.filter(r => inC(dayOf(r.started_at)));
   const firstPay = {}; pays.forEach(p => { const key = p.client_id || lc(p.email); if (!firstPay[key] || p.day < firstPay[key]) firstPay[key] = p.day; });
   const repeat = new Set(pays.filter(p => inC(p.day) && firstPay[p.client_id || lc(p.email)] < w0).map(p => p.client_id || lc(p.email)));
   const cName = Object.fromEntries(clients.map(c => [c.id, c.name]));

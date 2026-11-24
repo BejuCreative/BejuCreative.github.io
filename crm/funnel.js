@@ -63,10 +63,12 @@ async function load(api) {
   const [cl, items, ci, rets] = await Promise.all([
     api.all("clients", "id,name,emails,show,funnel,website,instagram,youtube,drive_folder,notes", q => q.eq("funnel", true)).catch(() => null),
     readItems(), readCI(),
-    api.all("retainers", "email,amount,interval,status").catch(() => []),
+    api.all("retainers", "email,amount,interval,status,cancel_at_period_end").catch(() => []),
   ]);
   ITEMS = items; CI = ci; AT.scope_items = AT.client_items = Date.now();
-  const ret = {}; (rets || []).forEach(r => { if (/active|trialing|past_due/i.test(r.status || "")) ret[lc(r.email)] = r; });
+  /* 11-24 audit (C1): the plan that renews wins over one ending at period end, then the larger amount */
+  const better = (a, b) => !a ? b : (!!a.cancel_at_period_end !== !!b.cancel_at_period_end ? (a.cancel_at_period_end ? b : a) : ((+b.amount || 0) > (+a.amount || 0) ? b : a));
+  const ret = {}; (rets || []).forEach(r => { if (/active|trialing|past_due/i.test(r.status || "")) { const k = lc(r.email); ret[k] = better(ret[k], r); } });
   const clients = (cl || []).filter(c => c.funnel !== false).map(c => {
     const r = (c.emails || []).map(e => ret[lc(e)]).find(Boolean);
     return { id: String(c.id), name: c.name || "Client", show: c.show || "", plan: r ? `${api.usd(r.amount)} / ${PER(r)} plan` : "",
