@@ -142,7 +142,7 @@ async function fetchAll() {
     all("threads", "lead_email,at,snippet", q => q.neq("direction", "out").gte("at", since14).order("at", { ascending: false })).catch(() => []),   // 11-22: their words, last 14 days (Hot leads)
     all("scopes", "email,offer,amount,currency,monthly,sent_at,paid_at,status,url", q => q.order("sent_at", { ascending: false })).catch(() => null),   // 11-22 (SIMAS "we should see the scope that u have sent them"): the Forms person sheet
     all("briefs", BRIEF_COLS).catch(() => null),   // 11-22 (BENAS, Samples page): the sample brief per lead (graphics level + answers); one small soft read, null = no brief marks
-    all("tasks", "id,title,owner,status,lead_email,due_at,created_at,big", q => q.in("source", ["founder_tasks", "board", "deferred", "manual"]).eq("status", "todo")).catch(() => []),   // 11-24 (BENAS "where is the ben kump task"): all founder to-dos; Check: cards + due-soon / big to-dos reach the card (wofOf)   // 11-23 (BENAS, Waiting on a founder): "Check:" cards in To do on the To-dos board (its own sources) = Claude's work to approve
+    all("tasks", "id,title,owner,status,lead_email,due_at,created_at,big,source,source_ref", q => q.in("source", ["founder_tasks", "board", "deferred", "manual"]).eq("status", "todo")).catch(() => []),   // 11-24 (BENAS "where is the ben kump task"): all founder to-dos; Check: cards + due-soon / big to-dos reach the card (wofOf)   // 11-23 (BENAS, Waiting on a founder): "Check:" cards in To do on the To-dos board (its own sources) = Claude's work to approve
   ]);
   /* 11-21 (tracking check, from v7): Instantly's daily "unique opportunities" counts a lead again on each day it is active, so sums over days
      ran up to 1.9x too high. Positives per day come from interested_leads: one row per lead, on the day it was marked interested. */
@@ -837,22 +837,35 @@ const wofUrg = r => { const m = (Date.now() - r.at) / 6e4, U = [0];
 const WOF_K = { todo: ["Founder to-do", "flag", "c-orange"], reply: ["Reply", "mail", "c-purple"], check: ["To approve", "check", "c-blue"], deal: ["Deal", "cash", "c-green"], hold: ["Hold", "flag", "c-red"], prod: ["Client work", "film", "c-orange"] };
 const WOF_ST = { failed: "Not sent", stale: "They wrote again", unknown: "Check Instantly" };
 const founderOf = o => ({ benas: "Benas", simas: "Simas" })[lc(o)] || "";
-const WOF = { el: null, html: "", prev: null, told: new Set(), open: new Set(), all: false, rows: [] };
+const WOF = { el: null, html: "", prev: null, told: new Set(), open: new Set(), all: false, rows: [], them: false, gone: new Set(), undo: null };
+/* 11-24 (BENAS, accuracy): what the page already knows clears the card by itself, before anyone ticks it.
+   - a reply draft whose thread has a NEWER email of ours than the draft (we answered by hand; a 'stale' draft someone answered the same
+     way) leaves the card. Delivery and sample emails are not replies and never clear this way.
+   - a founder to-do about a lead who is lost or snoozed (lead_flags) leaves the card.
+   - a deal or a founder to-do waiting on the LEAD (our newest email is newer than the item and they have not written since) moves to one
+     quiet line under the list, "Waiting on them: N": out of the count, the split line, the colours, the badge and the pop-ups.
+   Threads = public.threads (every message, in and out) + the reply queue's real replies. */
 function wofOf(R, paid, waiting, why) {
   const rows = [], seen = new Set(), at = (...v) => { const x = v.find(Boolean); return x ? +new Date(x) : Date.now(); };
+  const tOut = {}, tIn = {}, mx = (m, e, t) => { e = lc(e); t = +new Date(t) || 0; if (e && t > (m[e] || 0)) m[e] = t; };
+  (R.tlite || []).forEach(m => mx(m.direction === "out" ? tOut : tIn, m.lead_email, m.at));
+  (R.replies || []).forEach(x => { if (x.kind === "REAL") mx(tIn, x.lead_email, x.received_at); });
+  const flagged = new Set((R.flags || []).filter(x => x.lost_reason || (x.snoozed_until && +new Date(x.snoozed_until) > Date.now())).map(x => lc(x.email)));
+  const answered = x => !/^(sample|client_delivery)$/.test(x.category || "") && (tOut[lc(x.lead_email)] || 0) > at(x.created_at);
+  const onThem = (es, t) => es.some(e => { const o = tOut[e] || 0; return o > t && o >= (tIn[e] || 0); });
   const payN = new Set(R.clients.filter(c => (c.emails || []).some(e => paid.has(lc(e)))).map(c => lc(c.name)));
   const pays = (es, name) => es.some(e => paid.has(lc(e))) || (!!name && payN.has(lc(name)));
   const deals = {}; (R.deals || []).forEach(x => (x.emails || [x.email]).forEach(e => { if (e) deals[lc(e)] = x; }));
   const next = new Set((R.nextSteps || []).filter(x => String(x.next_step || "").trim()).map(x => lc(x.email)));
   R.pipeline.forEach(p => { if (String(p.next_action || "").trim()) next.add(lc(p.email)); });
-  (R.drafts || []).filter(x => /^(pending|held|failed|stale|unknown)$/.test(x.status || "")).forEach(x => { const e = lc(x.lead_email), dl = deals[e]; seen.add(e);
+  (R.drafts || []).filter(x => /^(pending|held|failed|stale|unknown)$/.test(x.status || "") && !answered(x)).forEach(x => { const e = lc(x.lead_email), dl = deals[e]; seen.add(e);
     rows.push({ key: "d:" + x.id, kind: "reply", who: nameOf(x.lead_email), what: [WOF_ST[x.status], DRAFT_L[x.category] || x.category, x.reason].filter(Boolean).join(" · "), at: at(x.created_at),
       value: dl ? +dl.value_usd || 0 : 0, mo: !!(dl && dl.monthly), paying: pays([e]) || !!(dl && dl.current_mrr), owner: /^(new_terms|client_problem)$/.test(x.category) ? ownerOfInbox(x.inbox) : "", go: { t: "lead", e }, draft: x }); });
   (R.deals || []).forEach(x => { const es = (x.emails || [x.email]).filter(Boolean).map(lc);
     const t = at(x.last_in_at, x.quoted_at, x.scope_at);   // waiting since their last message (else the quote, else the scope)
     if (!es.length || es.some(e => seen.has(e)) || !(x.on_hold || !es.some(e => next.has(e))) || !wofFresh("deal", t)) return; es.forEach(e => seen.add(e));   // a stale deal stays in the Big deals card
     rows.push({ key: "b:" + es[0], kind: "deal", who: x.name || x.email, what: x.on_hold ? `On hold, ${lifts({ set_by: x.hold_by }, "decide")}` : "No next step set", at: t,
-      value: +x.value_usd || 0, mo: !!x.monthly, paying: pays(es) || !!x.current_mrr, owner: "", nonext: !es.some(e => next.has(e)), go: { t: "lead", e: es[0] } }); });
+      value: +x.value_usd || 0, mo: !!x.monthly, paying: pays(es) || !!x.current_mrr, owner: "", nonext: !es.some(e => next.has(e)), go: { t: "lead", e: es[0] }, theirs: onThem(es, t) }); });
   const holdCov = new Set();
   (R.desk || []).forEach(x => { const es = (x.emails || []).map(lc);
     if (x.kind === "hold") { if (es.some(e => seen.has(e)) || !wofFresh("hold", at(x.created_at))) return; es.forEach(e => holdCov.add(e));   // age from when the hold was SET (created_at), never updated_at   // a draft or a deal row already covers this lead; two holds on one client stay two rows
@@ -861,16 +874,16 @@ function wofOf(R, paid, waiting, why) {
       rows.push({ key: "p:" + x.id, kind: "prod", who: x.client, what: x.title, at: at(x.updated_at, x.created_at), value: 0, paying: pays(es, x.client), owner: founderOf(x.set_by), go: { t: "page", p: "clients", c: "prod" } }); });
   (R.checks || []).filter(x => x.status === "todo" && /^check:/i.test(String(x.title || "").trim())).forEach(x => rows.push({ key: "t:" + x.id, kind: "check", who: String(x.title).trim().replace(/^check:\s*/i, "") || "Check",
     what: `Claude's work${x.lead_email ? " · " + nameOf(x.lead_email) : ""}`, at: at(x.created_at), due: x.due_at || null, value: 0, paying: !!x.lead_email && pays([lc(x.lead_email)]), owner: founderOf(x.owner), go: { t: "todo", id: x.id }, big: !!x.big }));
-  (R.checks || []).filter(x => x.status === "todo" && !/^check:/i.test(String(x.title || "").trim()) && (x.big || (x.due_at && +new Date(x.due_at) - Date.now() <= WOF_TODO_SOON * 6e4)))
+  (R.checks || []).filter(x => x.status === "todo" && !/^check:/i.test(String(x.title || "").trim()) && (x.big || (x.due_at && +new Date(x.due_at) - Date.now() <= WOF_TODO_SOON * 6e4)) && !(x.lead_email && flagged.has(lc(x.lead_email))))
     .forEach(x => rows.push({ key: "f:" + x.id, kind: "todo", who: String(x.title).trim() || "To-do", what: x.due_at ? `${+new Date(x.due_at) < Date.now() ? "was due" : "due"} ${wofDue(x.due_at)}` : "Founder decision",
-      at: at(x.created_at), due: x.due_at || null, value: 0, paying: !!x.lead_email && pays([lc(x.lead_email)]), owner: founderOf(x.owner), go: { t: "todo", id: x.id }, big: !!x.big }));
+      at: at(x.created_at), due: x.due_at || null, value: 0, paying: !!x.lead_email && pays([lc(x.lead_email)]), owner: founderOf(x.owner), go: { t: "todo", id: x.id }, big: !!x.big, theirs: !!x.lead_email && onThem([lc(x.lead_email)], at(x.created_at)) }));
   /* 11-23: one row for each lead in the shared replyWait list (the Replies page's "Waiting on us")
      that no row above already covers: a draft, a deal, a hold, or a Check card about that lead. The reason is the same "why" chip text. */
   const cov = new Set([...seen, ...holdCov]);
   (R.checks || []).filter(x => x.status === "todo" && /^check:/i.test(String(x.title || "").trim()) && x.lead_email).forEach(x => cov.add(lc(x.lead_email)));
   [...waiting].sort((a, b) => +new Date(b.due) - +new Date(a.due)).forEach(x => { const e = lc(x.email), t = at(x.due), dl = deals[e]; if (cov.has(e)) return; cov.add(e);   // the newest reply of a lead is its row
     rows.push({ key: "r:" + e, kind: "reply", who: nameOf(x.email), what: why(x.email, t).t, at: t, value: dl ? +dl.value_usd || 0 : 0, mo: !!(dl && dl.monthly), paying: pays([e]) || !!(dl && dl.current_mrr), owner: "", go: { t: "lead", e }, nodraft: true }); });
-  rows.forEach(r => { r.urg = wofUrg(r); });   // colour only: the order below never reads it
+  rows.forEach(r => { r.urg = r.theirs ? 0 : wofUrg(r); });   // colour only: the order below never reads it; "waiting on them" has none
   return rows.sort((a, b) => (b.paying - a.paying) || (!!b.big - !!a.big) || (b.value - a.value) || (a.at - b.at));
 }
 /* design pass (BENAS 11-23 "more professional, just like the other cards"): the bento list row (.li / .li-n / .li-nm / .li-v) with a sprite line
@@ -881,20 +894,21 @@ const wofRow = r => { const K = WOF_K[r.kind], x = r.draft, open = !!x && WOF.op
   return `<div class="li wof-r${x ? " dr" : ""}">${ic(K[1])}<span class="li-n"><span class="li-nm"><span class="wof-who">${r.urg ? `<i class="wof-dot u${r.urg}" role="img" aria-label="${WOF_UL[r.urg]}" title="${WOF_UL[r.urg]}"></i>` : ""}<span>${esc(cut(r.who, 70))}</span>${r.paying ? `<span class="chip wof-cl">client</span>` : ""}${r.owner ? `<span class="chip wof-f" title="${r.owner} decides">${r.owner[0]}</span>` : ""}</span>
     <small class="wof-ask"><span><span class="wof-kl">${K[0]}</span> · ${esc(cut(r.what, 140))}</span>${x ? `<button type="button" class="lk wof-rd" data-act="wofx" data-k="${esc(r.key)}" aria-expanded="${open}" aria-controls="${id}">${open ? "Hide the draft" : "Read the draft"}</button>` : ""}</small></span></span>
     ${r.value ? `<span class="li-v">${usd(r.value)}${r.mo ? "/mo" : ""}</span>` : ""}<span class="li-v mu${r.urg ? " u" + r.urg : ""}" title="${r.urg ? WOF_UL[r.urg] + " · " : ""}Waiting since ${esc(fDT(r.at))}">${esc(rel(r.at))}</span>
-    <button type="button" class="wof-b" data-act="wof" data-k="${esc(r.key)}" aria-label="${esc(`${r.urg ? WOF_UL[r.urg] + ". " : ""}${r.who}: ${K[0]}, ${r.what}. Waiting ${ago(r.at)}. ${r.go.t === "lead" ? "Open the lead" : r.go.t === "todo" ? "Open the card on the To-dos page" : "Open it on the Clients page"}`)}"></button></div>
+    <button type="button" class="wof-b" data-act="wof" data-k="${esc(r.key)}" aria-label="${esc(`${r.urg ? WOF_UL[r.urg] + ". " : ""}${r.who}: ${K[0]}, ${r.what}. Waiting ${ago(r.at)}. ${r.go.t === "lead" ? "Open the lead" : r.go.t === "todo" ? "Open the card on the To-dos page" : "Open it on the Clients page"}`)}"></button>${wofCan(r) ? `<button type="button" class="act wof-dn" data-act="wofdone" data-k="${esc(r.key)}" aria-label="${esc(`Done: ${r.who}. Closes it in 5 seconds unless you undo`)}">${ic("check")}<span>Done</span></button>` : ""}</div>
     ${x ? `<div class="conv wof-d" id="${id}"${open ? "" : " hidden"}>${x.lead_last_snippet ? `<div class="cv-m in"><div class="cv-meta">them · ${esc(x.lead_email)}</div><div class="cv-t">${esc(cut(x.lead_last_snippet, 400))}</div></div>` : ""}
       <div class="cv-m out"><div class="cv-meta">${esc(`our draft · from ${x.inbox || "—"} to ${x.to_email || "—"} · written by ${x.created_by || "Claude"} ${relA(r.at)}`)}</div><div class="cv-t">${esc(x.body || "")}</div></div>
       <div class="acts"><button type="button" class="act" data-act="drill" data-k="draft" data-a="${esc(x.id)}">Open the draft sheet</button></div></div>` : ""}`; };
 function renderWof(d) {
-  const rows = d.wof || [], n = rows.length;
+  const every = (d.wof || []).filter(r => !WOF.gone.has(r.key)), rows = every.filter(r => !r.theirs), them = every.filter(r => r.theirs), n = rows.length;
   if (!WOF.el) { const el = WOF.el = document.createElement("section"); el.id = "c-wof"; el.className = "card wof"; el.dataset.tab = "home"; el.setAttribute("aria-label", "Waiting on a founder"); el.hidden = true; $("#hero").after(el); }
-  WOF.rows = rows; const shown = WOF.all ? rows : rows.slice(0, 6), was = !WOF.el.hidden;
+  WOF.rows = every; const shown = WOF.all ? rows : rows.slice(0, 6), was = !WOF.el.hidden;
   const worst = Math.max(0, ...rows.map(r => r.urg || 0));
   const split = Object.keys(WOF_K).map(k => { const c = rows.filter(r => r.kind === k).length; return c ? `<span>${c} ${WOF_SPLIT[k][c === 1 ? 0 : 1]}</span>` : ""; }).join("");
-  const html = n ? `<div class="wof-a"><header class="ch"><h2 class="ct strong">Waiting on <em class="sf">a founder</em></h2></header><p class="odo wof-n${worst ? " u" + worst : ""}" aria-label="${n} waiting${worst ? ", " + WOF_UL[worst].toLowerCase() : ""}">${n}</p><p class="hero-sub">${split}</p></div>
-    <div class="wof-m"><div class="lst wof-l">${shown.map(wofRow).join("")}</div>${n > 6 ? `<button type="button" class="more" data-act="wofall" aria-expanded="${WOF.all}">${WOF.all ? "Show fewer" : `Show all (${n})`}</button>` : ""}</div>` : "";
+  const html = n || them.length ? `<div class="wof-a"><header class="ch"><h2 class="ct strong">Waiting on <em class="sf">a founder</em></h2></header><p class="odo wof-n${worst ? " u" + worst : ""}" aria-label="${n} waiting${worst ? ", " + WOF_UL[worst].toLowerCase() : ""}">${n}</p><p class="hero-sub">${split}</p></div>
+    <div class="wof-m"><div class="lst wof-l">${shown.map(wofRow).join("")}</div>${n > 6 ? `<button type="button" class="more" data-act="wofall" aria-expanded="${WOF.all}">${WOF.all ? "Show fewer" : `Show all (${n})`}</button>` : ""}
+      ${them.length ? `<button type="button" class="wof-th" data-act="wofthem" aria-expanded="${WOF.them}" aria-controls="wof-them">${ic("clock")}<span>Waiting on them: <b>${them.length}</b></span>${ic("chev")}</button><div class="lst wof-l wof-tl" id="wof-them"${WOF.them ? "" : " hidden"}>${them.map(wofRow).join("")}</div>` : ""}</div>` : "";
   if (html !== WOF.html) { WOF.html = html; WOF.el.innerHTML = html; }
-  WOF.el.hidden = !n;
+  WOF.el.hidden = !(n || them.length);
   if (n && !was && WOF.prev && !RM) { WOF.el.classList.remove("wof-in"); void WOF.el.offsetWidth; WOF.el.classList.add("wof-in"); }   // an item landed: the card slides in
   const a = $('#snav .sn-list a[data-nav="dashboard"]'); let b = $("#sn-wof-n");
   if (a && !b) { a.insertAdjacentHTML("beforeend", `<i class="sn-badge" id="sn-wof-n" hidden></i>`); b = $("#sn-wof-n"); }
@@ -902,6 +916,36 @@ function renderWof(d) {
   let z = $("#wof-zero"); if (!z) { $("#asof").insertAdjacentHTML("beforeend", `<span class="wof-zero" id="wof-zero" hidden>0 waiting</span>`); z = $("#wof-zero"); } z.hidden = !!n;
   if (WOF.prev) rows.filter(r => !WOF.prev.has(r.key) && !WOF.told.has(r.key)).slice(0, 3).forEach(r => toast(`Waiting on a founder: ${cut(r.who, 48)}`, WOF_K[r.kind][1], WOF_K[r.kind][2], cut(r.what, 90), "wof:" + r.key, () => wofGo(r)));   // not on the first load; once per item
   rows.forEach(r => WOF.told.add(r.key)); WOF.prev = new Set(rows.map(r => r.key));
+}
+/* 11-24 (BENAS): "✓ Done" on a row = the founder handled it outside. The row leaves at once; a 5-second "Done · Undo" bar; only after the
+   5 seconds the write happens: a reply draft -> rejected with a note (drafts_guard lets a founder close any waiting draft); a "Check:" card
+   or a founder to-do -> done, the To-dos board's own write (side.js BEJU_CRM_TODOS). Holds, client work, deals and replies with no draft
+   have no Done: the CRM has no write that closes them (holds and client work close in crm_desk.py, deals on the lead). */
+const wofCan = r => (r.kind === "reply" && !!r.draft) || r.kind === "check" || r.kind === "todo";
+const WOF_DONE_NOTE = "closed from Waiting on a founder: handled outside";
+async function wofWrite(r) {
+  if (r.kind === "reply") return upd("drafts", +r.draft.id, { status: "rejected", founder_note: WOF_DONE_NOTE });
+  const t = (RAW.checks || []).find(x => String(x.id) === String(r.go.id)); if (!t) throw new Error("that to-do is not loaded any more");
+  if (window.BEJU_CRM_TODOS) return window.BEJU_CRM_TODOS.done(t);
+  const n = nowIso(); return upd("tasks", +t.id, { status: "done", done_at: n, updated_at: n });
+}
+function wofDone(key) {
+  const r = WOF.rows.find(x => x.key === key); if (!r || !wofCan(r)) return;
+  if (WOF.undo) wofCommit();   // a second Done: the first one writes now
+  WOF.gone.add(key); renderWof(D);
+  const bar = document.createElement("div"); bar.className = "cb-undo wof-undo"; bar.setAttribute("role", "status");
+  bar.innerHTML = `<span class="cb-undo-t">${ic("check")}<span>Done · ${esc(cut(r.who, 34))}</span></span><button type="button" class="cb-undo-b" data-act="wofundo">Undo</button><i class="cb-undo-p" aria-hidden="true"></i>`;
+  document.body.append(bar); WOF.undo = { r, bar, t: setTimeout(wofCommit, 5000) };
+  bar.querySelector(".cb-undo-b").focus({ preventScroll: true });
+}
+async function wofCommit() {
+  const u = WOF.undo; WOF.undo = null; if (!u) return; clearTimeout(u.t); u.bar.remove();
+  try { await wofWrite(u.r); await refresh(); }
+  catch (e) { WOF.gone.delete(u.r.key); renderWof(D); toast("Not closed", "alert", "c-red", cut(String(e && e.message || e), 140)); }
+}
+function wofUndo() {
+  const u = WOF.undo; WOF.undo = null; if (!u) return; clearTimeout(u.t); u.bar.remove(); WOF.gone.delete(u.r.key); renderWof(D);
+  toast("Undone. Nothing changed.", "check", "c-green"); $(`#c-wof [data-act="wofdone"][data-k="${CSS.escape(u.r.key)}"]`)?.focus({ preventScroll: true });
 }
 const waitEl = (sel, ms = 8000) => new Promise(res => { const t0 = Date.now(), tick = () => { const el = $(sel); if (el && el.offsetParent !== null) return res(el); if (Date.now() - t0 > ms) return res(null); setTimeout(tick, 100); }; tick(); });
 function wofGo(r, opener) {
@@ -2163,6 +2207,9 @@ document.addEventListener("click", ev => {
   else if (a === "dft") draftOp(b.dataset.op, b.dataset.id, b);
   else if (a === "wof") wofGo(WOF.rows.find(x => x.key === b.dataset.k), b);   // 11-23: Waiting on a founder row
   else if (a === "wofx") { const k = b.dataset.k; if (!WOF.open.delete(k)) WOF.open.add(k); renderWof(D); const nb = $(`[data-act="wofx"][data-k="${CSS.escape(k)}"]`); if (nb) nb.focus(); }
+  else if (a === "wofdone") wofDone(b.dataset.k);   // 11-24: ✓ Done, with a 5-second Undo
+  else if (a === "wofundo") wofUndo();
+  else if (a === "wofthem") { WOF.them = !WOF.them; renderWof(D); const nb = $('[data-act="wofthem"]'); if (nb) nb.focus(); }
   else if (a === "wofall") { WOF.all = !WOF.all; renderWof(D); const nb = $('[data-act="wofall"]'); if (nb) nb.focus(); }
   else if (a === "ctdone") ctDone(b.dataset.id, b);
   else if (a === "cnadd") { b.hidden = true; b.insertAdjacentHTML("afterend", callNotesForm(b.dataset.uid, b.dataset.email)); const t = b.nextElementSibling && $("textarea", b.nextElementSibling); if (t) t.focus(); }

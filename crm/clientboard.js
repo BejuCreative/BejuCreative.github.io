@@ -12,7 +12,14 @@
    Phone (≤ 600 px, BENAS 11-24 "like an expensive app"): the board is tabs (Building · Ready N · Sent · Changes N, one column at a time,
    tap or swipe sideways; opens on Changes asked if it has cards, else Ready, else Building; a picked tab is kept for the session), and a
    Ready stack opens a full-screen sheet with the email and a fixed Send · Edit · What to change bar. Send there is one tap with a
-   5-second "Sent · Undo" bar: the draft write happens only when the 5 seconds are up. Desktop is unchanged. */
+   5-second "Sent · Undo" bar: the draft write happens only when the 5 seconds are up.
+   Review (BENAS 11-24: "the delivery draft is already done; we click the Ready card, watch each Short, then approve; we see the email that
+   will go out, edit it inside the CRM or send it as it is"): a Ready stack (phone: the full-screen sheet; desktop: a centred panel) is ONE
+   screen: the batch's Shorts as a carousel of Drive players (swipe / arrows / ← →), each with ✓ Approve (client_items.founder_ok_at) and
+   ✎ Needs changes (status 'changes' + changes_note "[m:ss] note", and the draft goes back to Claude: held, founder_note listing every
+   Short's note); below it the delivery email as it will go out (Edit = the same editor); a fixed bar "Approve & send" (approves every Short
+   not marked, then the same send: phone = 5-s Undo, desktop = the confirm) · "Needs changes" (the batch "What to change" note). With
+   some Shorts approved and some marked, "Send the N approved now" holds the draft with "SEND APPROVED NOW: …; HOLD: …" for Claude. */
 (() => {
 "use strict";
 const X = () => window.BEJU_CRM_SAMPLES;
@@ -27,6 +34,9 @@ const sess = { get(k) { try { return sessionStorage.getItem(k); } catch { return
 const PHONE = matchMedia("(max-width: 600px)"), VV = window.visualViewport;
 const webUrl = v => { try { const u = new URL(String(v || "").trim()); return u.protocol === "https:" ? u.href : ""; } catch { return ""; } };
 const span = d => { const m = Math.max(0, Math.round(d / 6e4)); return m < 60 ? `${Math.max(1, m)} min` : m < 2880 ? `${Math.round(m / 60)} h` : `${Math.round(m / 1440)} d`; };
+/* Drive: the same parse and player URL as samples.js (a file link or a bare id; a folder link has no file id = "Open in Drive" only) */
+const driveId = v => { v = String(v || "").trim(); if (!v) return ""; const m = v.match(/\/file\/d\/([\w-]{10,})/) || v.match(/[?&]id=([\w-]{10,})/); if (m) return m[1]; return /^[\w-]{10,}$/.test(v) ? v : ""; };
+const frameUrl = id => `https://drive.google.com/file/d/${encodeURIComponent(id)}/preview`;
 
 /* the five columns: id = the client_items.status they hold */
 const COLS = [["building", "Building", "Nothing in edit"], ["ready", "Ready", "Nothing waiting to send"], ["sent", "Sent", "Nothing out right now"],
@@ -45,8 +55,8 @@ let MODE = store.get("beju-cb-mode") === "board" ? "board" : "list";
 const OPEN = new Set();      // expanded stack keys
 let DRW = null;              // the open client board { id, pan, scrim, opener }
 let CH = null, CHT = null, CHR = null, DIRTY = false, READ_AT = 0;
-let SHEET = null;            // phone: the open Ready sheet { key, el, opener }
-let UNDO = null;             // phone: a Send waiting out its 5 seconds { id, bar, t }
+let SHEET = null;            // the open review (phone sheet / desktop panel) { key, el, scrim, opener, idx = the Short shown, sig = its slides }
+let UNDO = null;             // phone: an "Approve & send" waiting out its 5 seconds { id, bar, t }
 const CUR = {};              // phone: the tab each board shows now (board key: "all" or "c:<client id>")
 const PICK = (() => { try { return JSON.parse(sess.get("beju-cb-tab") || "{}") || {}; } catch { return {}; } })();   // tabs picked by hand this session
 
@@ -137,35 +147,76 @@ function itemHTML(i) {
 }
 const EM_ST = { pending: "", held: "Sent back with changes. Claude is on it; it comes back here when fixed.", approved: "Approved. It goes out within a minute.", sending: "Sending now.",
   failed: "Not sent: Instantly refused it. Read the reason, then send again or close it.", stale: "Not sent: the thread moved after this was drafted. Claude is writing a fresh one; it comes back here.", unknown: "Unclear if it went out. Check Instantly before anything else." };
+/* the delivery email in the review, exactly as it goes out: From / To / Subject (when the draft has one) / text, Edit in its header.
+   Send and "What to change" live in the review's fixed bar (barHTML) */
 function emailHTML(s) {
   const d = draftOf(s), hold = holdOf(s.cid);
   if (!d) return `<section class="cb-em" data-k="${esc(s.key)}"><h4>Delivery email</h4><p class="sm-pe">No email drafted yet. Claude adds it here when the batch is ready.</p></section>`;
-  const st = d.status, can = /^(pending|held|failed)$/.test(st), edit = /^(pending|held)$/.test(st), tm = autoTxt(d, hold);
-  return `<section class="cb-em" data-k="${esc(s.key)}" data-draft="${esc(d.id)}"><h4>Delivery email</h4>
-    <p class="sm-emh"><span>From <b>${esc(d.inbox)}</b></span><span>To <b>${esc([d.to_email, ...(d.cc_list || [])].join(", "))}</b></span></p>
+  const st = d.status, edit = /^(pending|held)$/.test(st), tm = autoTxt(d, hold), subj = String(d.subject || "").trim();
+  return `<section class="cb-em" data-k="${esc(s.key)}" data-draft="${esc(d.id)}"><header class="cb-emhd"><h4>Delivery email</h4>${edit ? `<button type="button" class="act cb-edb" data-cbe="edit">${ic("edit")}Edit</button>` : ""}</header>
+    <p class="sm-emh"><span>From <b>${esc(d.inbox)}</b></span><span>To <b>${esc([d.to_email, ...(d.cc_list || [])].join(", "))}</b></span>${subj ? `<span>Subject <b>${esc(subj)}</b></span>` : ""}</p>
     ${hold && st === "pending" ? `<p class="sm-ems timer cb-hold">Waits for a founder. This client's emails never send themselves.</p>` : tm ? `<p class="sm-ems timer"><b class="sm-cdb" data-cd="${ms(d.auto_send_at)}">${esc(tm)}</b> unless you send it, edit it or send it back. An edit restarts the hour.</p>` : ""}
     ${EM_ST[st] ? `<p class="sm-ems ${st}">${esc(EM_ST[st])}${d.error && /^(failed|unknown|stale)$/.test(st) ? ` <small>${esc(String(d.error).slice(0, 200))}</small>` : ""}</p>` : ""}
     ${d.founder_note ? `<p class="sm-emn"><b>Your note</b> ${esc(d.founder_note)}</p>` : ""}
     <pre class="sm-emb cb-emb">${esc(d.body)}</pre>
     <div class="sm-emed cb-emed" hidden><textarea class="sm-emta cb-emta" rows="10" aria-label="Edit the email"></textarea><div class="acts sm-pacts"><button type="button" class="act go" data-cbe="save">${ic("check")}Save</button><button type="button" class="act" data-cbe="cancel">Cancel</button></div></div>
     <div class="sm-emch cb-emch" hidden><label class="sm-eml">What should change? The videos, the email, or both.</label><textarea class="sm-emta cb-chta" rows="4" maxlength="1000" aria-label="What should change" placeholder="e.g. start on the second sentence; make the captions bigger; drop the last line of the email"></textarea><div class="acts sm-pacts"><button type="button" class="act go" data-cbe="back">${ic("send")}Send to Claude</button><button type="button" class="act" data-cbe="cancel">Cancel</button></div></div>
-    <p class="sm-emerr cb-emerr" role="alert" hidden></p>
-    ${can ? `<div class="acts sm-pacts cb-emacts"><button type="button" class="act go" data-cbe="send">${ic("send")}Send</button>${edit ? `<button type="button" class="act" data-cbe="edit">${ic("edit")}Edit</button>` : ""}<button type="button" class="act" data-cbe="change">${ic("refresh")}What to change</button></div>` : ""}</section>`;
+    <p class="sm-emerr cb-emerr" role="alert" hidden></p></section>`;
+}
+/* ---------------- the review: which stacks open it, the carousel, the fixed bar ---------------- */
+const isRv = s => s.col === "ready" || (s.col === "changes" && s.items.some(i => i.status === "ready"));   // a batch with Shorts to approve
+const chOf = s => s.items.filter(i => i.status === "changes");
+const okOf = s => s.items.filter(i => i.status === "ready" && i.founder_ok_at);
+const tsOk = v => /^\d{1,3}:[0-5]\d$/.test(v);
+const shortsNote = its => its.length ? `Needs changes: ${its.map(i => `${i.title}: ${String(i.changes_note || "").trim()}`).join("; ")}` : "";
+function slideVid(i) {
+  const id = driveId(i.drive_link), u = webUrl(i.drive_link);
+  if (id) return `<iframe class="cb-frame" src="${esc(frameUrl(id))}" title="Short: ${esc(i.title)}" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="no-referrer" loading="lazy"></iframe>`;
+  return `<div class="cb-nov"><span class="cb-nov-i">${ic("video")}</span><b>${u ? "No preview for this link" : "No video yet"}</b>${u ? `<a class="act cb-ndl" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${ic("link")}Open in Drive</a>` : `<small>The Short shows here once its file is in Drive.</small>`}</div>`;
+}
+function slideInfo(i, k, n) {
+  const id = esc(i.id), st = i.status, ok = st === "ready" && !!i.founder_ok_at, u = driveId(i.drive_link) ? webUrl(i.drive_link) || `https://drive.google.com/file/d/${encodeURIComponent(driveId(i.drive_link))}/view` : "", note = st === "changes" && String(i.changes_note || "").trim();
+  const chip = st === "changes" ? `<span class="cb-chip s-changes">Needs changes</span>` : ok ? `<span class="cb-chip s-approved">Approved${i.founder_ok_by ? ` by ${esc(i.founder_ok_by)}` : ""}</span>` : st !== "ready" ? `<span class="cb-chip s-${sOf(st)}">${esc(ST[sOf(st)] || st)}</span>` : "";
+  return `<div class="cb-slh"><b class="cb-slt">${esc(i.title)}</b><span class="cb-sln">${k + 1} of ${n}</span></div>
+    ${chip || u ? `<p class="cb-slm">${chip}${u ? `<a class="cb-lk" href="${esc(u)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${esc(i.title)} in Drive">${ic("link")}<span>Open in Drive</span></a>` : ""}</p>` : ""}
+    ${note ? `<p class="cb-note cb-slnote">${esc(note)}</p>` : ""}
+    ${st === "ready" ? `<div class="cb-slacts"><button type="button" class="act cb-okb" data-cbok="${id}" aria-pressed="${ok}">${ic("check")}${ok ? "Approved" : "Approve"}</button><button type="button" class="act cb-ncb" data-cbnc="${id}" aria-expanded="false">${ic("edit")}Needs changes</button></div>
+    <div class="cb-nc" hidden><label class="sm-eml" for="cbn-${id}">What should change in this Short?</label><textarea id="cbn-${id}" class="sm-emta cb-ncta" rows="3" maxlength="600" placeholder="e.g. start on the second sentence; bigger captions"></textarea>
+      <label class="cb-ncat"><span>At <small>(optional)</small></span><input class="cb-ncts" type="text" inputmode="numeric" placeholder="m:ss" maxlength="6" autocomplete="off" aria-label="At which moment, m:ss (optional)"></label>
+      <p class="sm-emerr cb-ncerr" role="alert" hidden></p>
+      <div class="acts sm-pacts"><button type="button" class="act go" data-cbncs="${id}">${ic("send")}Send to Claude</button><button type="button" class="act" data-cbncx>Cancel</button></div></div>` : ""}`;
+}
+function carHTML(s) {
+  const n = s.items.length;
+  return `<section class="cb-car" aria-roledescription="carousel" aria-label="The Shorts in this batch"><div class="cb-track">${s.items.map((i, k) => `<article class="cb-sl" data-id="${esc(i.id)}" role="group" aria-roledescription="slide" aria-label="${k + 1} of ${n}: ${esc(i.title)}">
+      <div class="cb-vfw"><div class="cb-vf">${slideVid(i)}</div>${n > 1 ? `<button type="button" class="cb-nav prev" data-cbnav="-1" aria-label="Previous Short"${k ? "" : " hidden"}>${ic("back")}</button><button type="button" class="cb-nav next" data-cbnav="1" aria-label="Next Short"${k < n - 1 ? "" : " hidden"}>${ic("chev")}</button>` : ""}</div>
+      <div class="cb-sli">${slideInfo(i, k, n)}</div></article>`).join("")}</div>
+    ${n > 1 ? `<div class="cb-dots" aria-hidden="true">${s.items.map((_, k) => `<i${k ? "" : ' class="on"'}></i>`).join("")}</div>` : ""}</section>`;
+}
+/* the fixed bar: "Approve & send" (off, with the reason, while a Short needs changes) · "Needs changes"; "Send the N approved now" only
+   when some Shorts are approved and some need changes (it sends nothing itself: Claude rewrites the email for those) */
+function barHTML(s) {
+  const d = draftOf(s); if (!d || !/^(pending|held|failed)$/.test(d.status)) return "";
+  const ch = chOf(s), ok = okOf(s), part = ch.length > 0 && ok.length > 0;
+  return `<div class="cb-emacts cb-rvbar" data-draft="${esc(d.id)}" data-k="${esc(s.key)}">
+    ${ch.length ? `<p class="cb-rvh" id="cb-rvh">${ch.length} Short${ch.length === 1 ? "" : "s"} need${ch.length === 1 ? "s" : ""} changes, so the batch waits for the fix.</p>` : ""}
+    ${part ? `<p class="cb-rvp"><button type="button" class="cb-rvok" data-cbpart>Send the ${ok.length} approved now</button><small>Claude rewrites the email for just ${ok.length === 1 ? "that one" : `those ${ok.length}`}; it comes back here.</small></p>` : ""}
+    <div class="cb-rvbtns"><button type="button" class="act go" data-cbe="send" data-draft="${esc(d.id)}"${ch.length ? ` disabled aria-describedby="cb-rvh"` : ""}>${ic("send")}Approve &amp; send</button><button type="button" class="act" data-cbe="change">${ic("refresh")}Needs changes</button></div></div>`;
 }
 function stackHTML(s, chips) {
-  const n = s.items.length, count = st => s.items.filter(i => sOf(i.status) === st).length, open = OPEN.has(s.key), hold = holdOf(s.cid);
+  const n = s.items.length, count = st => s.items.filter(i => sOf(i.status) === st).length, rv = isRv(s), open = !rv && OPEN.has(s.key), hold = holdOf(s.cid);
   const d = s.col === "ready" ? draftOf(s) : null, cd = d ? cdSpan(d, hold) : "";
   const sts = COLS.filter(c => count(c[0])).map(c => `<span class="cb-chip s-${c[0]}">${count(c[0])} ${esc(c[1])}</span>`).join("");
-  const due = dueTxt(s.due), over = s.due && s.due < Date.now();
+  const due = dueTxt(s.due), over = s.due && s.due < Date.now(), cid = esc("cbi-" + s.key.replace(/[^\w-]/g, "_"));
   const mail = s.col === "ready" ? (hold ? `<span class="cb-chip s-hold">Waits for a founder</span>` : cd ? `<span class="cb-chip s-go">${cd}</span>` : d ? `<span class="cb-chip s-ready">Email ready</span>` : "") : "";
-  return `<article class="cb-stack${n > 1 ? " multi" : ""}${open ? " open" : ""}" data-key="${esc(s.key)}" data-col="${s.col}" data-n="${n}">
-    <button type="button" class="cb-sh" aria-expanded="${open}" aria-controls="${esc("cbi-" + s.key.replace(/[^\w-]/g, "_"))}">
+  return `<article class="cb-stack${n > 1 ? " multi" : ""}${open ? " open" : ""}${rv ? " rv" : ""}" data-key="${esc(s.key)}" data-col="${s.col}" data-n="${n}">
+    <button type="button" class="cb-sh" ${rv ? `aria-haspopup="dialog"` :`aria-expanded="${open}" aria-controls="${cid}"`}>
       <span class="cb-r1"><b class="cb-nm">${esc(s.name)}</b><span class="cb-cnt" aria-label="${n} item${n === 1 ? "" : "s"}">${n}</span></span>
       ${chips ? `<span class="cb-cl">${esc(s.cname)}</span>` : ""}
       <span class="cb-sts">${sts}</span>
       ${due || mail ? `<span class="cb-ft">${due ? `<span class="cb-due${over ? " late" : ""}">${esc(due)}</span>` : ""}${mail}</span>` : ""}
     </button>
-    <div class="cb-items" id="${esc("cbi-" + s.key.replace(/[^\w-]/g, "_"))}"${open ? "" : " hidden"}><ul class="cb-ul">${s.items.map(itemHTML).join("")}</ul>${s.col === "ready" ? emailHTML(s) : ""}</div></article>`;
+    ${rv ? "" : `<div class="cb-items" id="${cid}"${open ? "" : " hidden"}><ul class="cb-ul">${s.items.map(itemHTML).join("")}</ul></div>`}</article>`;
 }
 /* phone tabs: the same columns, one at a time (the tab strip is hidden on desktop) */
 const TAB_NM = { building: "Building", ready: "Ready", sent: "Sent", changes: "Changes" };
@@ -208,7 +259,7 @@ function bar(d) {
 }
 
 /* ---------------- painting ---------------- */
-const editing = el => !!el && [...el.querySelectorAll(".cb-emed,.cb-emch")].some(x => !x.hidden);
+const editing = el => !!el && [...el.querySelectorAll(".cb-emed,.cb-emch,.cb-nc")].some(x => !x.hidden);
 function paintInto(el, html) {
   const a = document.activeElement, sh = a && a.classList && a.classList.contains("cb-sh") && el.contains(a) ? a.closest(".cb-stack").dataset.key : null;
   el.innerHTML = html; if (sh) el.querySelector(`[data-key="${CSS.escape(sh)}"] .cb-sh`)?.focus({ preventScroll: true });
@@ -218,7 +269,7 @@ function repaint() {
   const all = document.getElementById("cb-all"), body = DRW && DRW.pan.querySelector(".cb-pb");
   if ((all && editing(all)) || (body && editing(body)) || (SHEET && editing(SHEET.el))) { DIRTY = true; return; }   // never wipe an email someone is typing
   DIRTY = false;
-  if (SHEET) { const s = (ITEMS ? stacksOf(ITEMS) : []).find(x => x.key === SHEET.key); if (s) SHEET.el.innerHTML = sheetInner(s); else closeSheet(true); }
+  if (SHEET) { const s = (ITEMS ? stacksOf(ITEMS) : []).find(x => x.key === SHEET.key); if (s) paintSheet(s); else closeSheet(true); }
   if (all) paintInto(all, allHTML());
   if (DRW && body) { const c = clientOf(DRW.id); if (c) { paintInto(body, clientBoardHTML(c)); const hs = DRW.pan.querySelector(".cb-hs"); if (hs) hs.innerHTML = holdHTML(c); } }
 }
@@ -251,6 +302,7 @@ document.addEventListener("keydown", ev => {
   const L = SHEET ? SHEET.el : DRW ? DRW.pan : null;
   if (!L || otherLayer()) return;
   if (ev.key === "Escape") { ev.preventDefault(); ev.stopImmediatePropagation(); SHEET ? closeSheet() : closeClient(); return; }
+  if (SHEET && (ev.key === "ArrowLeft" || ev.key === "ArrowRight") && !(ev.target.closest && ev.target.closest("textarea,input,select"))) { ev.preventDefault(); carGo(SHEET.idx + (ev.key === "ArrowRight" ? 1 : -1)); return; }   // the review: ← → change Short
   if (ev.key === "Tab") {
     const f = [...L.querySelectorAll('button:not([disabled]),a[href],input,textarea,[tabindex="0"]')].filter(x => x.offsetParent !== null && !x.closest("[hidden]")); if (!f.length) return;
     const a = document.activeElement, first = f[0], last = f[f.length - 1];
@@ -268,43 +320,75 @@ function setTab(tabs, id, dir) {
   board.querySelectorAll(":scope>.cb-col").forEach(c => { const on = c.dataset.col === id; c.classList.toggle("on", on); c.classList.remove("cb-in-l", "cb-in-r");
     if (on && dir && motion()) { void c.offsetWidth; c.classList.add(dir > 0 ? "cb-in-r" : "cb-in-l"); } });
 }
+const hdHTML = s => { const n = s.items.length, rd = s.items.filter(i => i.status === "ready").length, ok = okOf(s).length;
+  return `<h2 id="cb-sht">${esc(s.name)}</h2><p class="mut">${esc([s.cname, `${n} Short${n === 1 ? "" : "s"}`, rd ? `${ok} of ${rd} approved` : "", dueTxt(s.due)].filter(Boolean).join(" · "))}</p>`; };
 function sheetInner(s) {
-  const n = s.items.length;
-  return `<header class="cb-shh"><i class="cb-grab" aria-hidden="true"></i><div class="cb-shhd"><h2 id="cb-sht">${esc(s.name)}</h2><p class="mut">${esc([s.cname, `${n} item${n === 1 ? "" : "s"}`, dueTxt(s.due)].filter(Boolean).join(" · "))}</p></div>
+  return `<header class="cb-shh"><i class="cb-grab" aria-hidden="true"></i><div class="cb-shhd">${hdHTML(s)}</div>
     <button type="button" class="icon-btn cb-shx" data-cbsheetx aria-label="Close"><svg aria-hidden="true"><use href="#i-x"/></svg></button></header>
-    <div class="cb-shb"><ul class="cb-ul">${s.items.map(itemHTML).join("")}</ul>${emailHTML(s)}</div>`;
+    <div class="cb-shb">${carHTML(s)}${emailHTML(s)}</div>${barHTML(s)}`;
 }
+const sigOf = s => s.items.map(i => `${i.id}:${driveId(i.drive_link)}`).join(",");
+/* a repaint never reloads the players (a video someone is watching keeps playing): the slides' text, the email and the bar are redrawn,
+   the carousel itself only when the batch's Shorts or their files changed. The focused button keeps its focus. */
+function paintSheet(s) {
+  const el = SHEET.el, a = document.activeElement, fk = a && el.contains(a) ? ["cbok", "cbnc", "cbe", "cbpart", "cbnav"].find(k => a.dataset && a.dataset[k] != null) : null;
+  const fsel = fk ? `[data-${fk}="${CSS.escape(a.dataset[fk])}"]` : "";
+  el.querySelector(".cb-shhd").innerHTML = hdHTML(s);
+  const sig = sigOf(s);
+  if (sig !== SHEET.sig) { el.querySelector(".cb-car").outerHTML = carHTML(s); SHEET.sig = sig; carGo(SHEET.idx, true); }
+  else s.items.forEach((i, k) => { const x = el.querySelector(`.cb-sl[data-id="${CSS.escape(String(i.id))}"] .cb-sli`); if (x) x.innerHTML = slideInfo(i, k, s.items.length); });
+  const em = el.querySelector(".cb-em"); if (em) em.outerHTML = emailHTML(s);
+  const old = el.querySelector(".cb-rvbar"), nb = barHTML(s); if (old) { if (nb) old.outerHTML = nb; else old.remove(); } else if (nb) el.insertAdjacentHTML("beforeend", nb);
+  if (fsel) { const f = el.querySelector(fsel); if (f && !f.disabled) f.focus({ preventScroll: true }); }
+}
+/* the carousel: native scroll-snap (a swipe on the phone), the arrows / ← → move it; leaving a Short reloads its player so it stops playing */
+function carGo(k, instant) {
+  const tr = SHEET && SHEET.el.querySelector(".cb-track"); if (!tr) return;
+  const n = tr.children.length; k = Math.max(0, Math.min(n - 1, k));
+  carMark(k); SHEET.to = Math.abs(tr.scrollLeft - k * tr.clientWidth) < 2 ? null : k; clearTimeout(SHEET.toT); SHEET.toT = setTimeout(() => { if (SHEET) SHEET.to = null; }, 900);   // the scroll events of this move are not a swipe
+  tr.scrollTo({ left: k * tr.clientWidth, behavior: instant || !motion() ? "auto" : "smooth" });
+}
+function carMark(k) {
+  if (!SHEET) return; const el = SHEET.el, was = SHEET.idx; SHEET.idx = k;
+  el.querySelectorAll(".cb-dots i").forEach((d, j) => d.classList.toggle("on", j === k));
+  if (was !== k) { const f = el.querySelectorAll(".cb-sl")[was]?.querySelector("iframe"); if (f) f.src = f.getAttribute("src"); }
+}
+document.addEventListener("scroll", e => { const tr = e.target; if (!SHEET || !tr.classList || !tr.classList.contains("cb-track") || !SHEET.el.contains(tr)) return;
+  const w = Math.max(1, tr.clientWidth), k = Math.round(tr.scrollLeft / w);
+  if (SHEET.to != null) { if (Math.abs(tr.scrollLeft - SHEET.to * w) < 2) SHEET.to = null; return; }
+  if (k !== SHEET.idx) carMark(k); }, true);
 const vvSync = () => { if (SHEET && VV) SHEET.el.style.setProperty("--vvt", Math.max(0, Math.round(VV.offsetTop)) + "px"); };   // stays on the visible area when the keyboard opens
 if (VV) { VV.addEventListener("resize", vvSync); VV.addEventListener("scroll", vvSync); }
 function openSheet(key, opener) {
   const s = (ITEMS ? stacksOf(ITEMS) : []).find(x => x.key === key); if (!s) return;
   closeSheet(true);
+  const scrim = document.createElement("div"); scrim.className = "cb-rvscrim"; scrim.addEventListener("click", () => closeSheet());
   const el = document.createElement("section"); el.className = "cb-sheet" + (UNDO ? " sending" : ""); el.id = "cb-sheet"; el.setAttribute("role", "dialog"); el.setAttribute("aria-modal", "true"); el.setAttribute("aria-labelledby", "cb-sht");
-  el.innerHTML = sheetInner(s); document.body.append(el); SHEET = { key, el, opener: opener || null };
+  el.innerHTML = sheetInner(s); document.body.append(scrim, el); SHEET = { key, el, scrim, opener: opener || null, idx: 0, sig: sigOf(s) };
   HTML.classList.add("cb-sheet-on"); vvSync();
-  if (motion()) requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add("on"))); else el.classList.add("on");
+  if (motion()) requestAnimationFrame(() => requestAnimationFrame(() => { el.classList.add("on"); scrim.classList.add("on"); })); else { el.classList.add("on"); scrim.classList.add("on"); }
   el.querySelector(".cb-shx").focus({ preventScroll: true });
 }
 function closeSheet(quick) {
-  if (!SHEET) return; const { el, key } = SHEET; SHEET = null; HTML.classList.remove("cb-sheet-on");
-  if (quick || !motion()) el.remove(); else { el.classList.remove("on"); el.classList.add("out"); el.style.setProperty("--dy", "0px"); setTimeout(() => el.remove(), 320); }
+  if (!SHEET) return; const { el, key, scrim } = SHEET; SHEET = null; HTML.classList.remove("cb-sheet-on");
+  if (quick || !motion()) { el.remove(); scrim.remove(); } else { el.classList.remove("on"); scrim.classList.remove("on"); el.classList.add("out"); el.style.setProperty("--dy", "0px"); setTimeout(() => { el.remove(); scrim.remove(); }, 320); }
   if (!quick) document.querySelector(`.cb-stack[data-key="${CSS.escape(key)}"] .cb-sh`)?.focus({ preventScroll: true });
   if (DIRTY) repaint();
 }
-/* Send in the sheet: "Sent · Undo" for 5 s, then the same draft write as the desktop Send (without its confirm: the Undo is the check) */
+/* "Approve & send" on the phone: "Sent · Undo" for 5 s, then the same writes as the desktop (without its confirm: the Undo is the check) */
 function undoStart(btn) {
-  const pan = btn.closest(".cb-em"); if (!pan || UNDO) return;
+  const id = btn.dataset.draft; if (!id || UNDO) return;
   const bar = document.createElement("div"); bar.className = "cb-undo"; bar.id = "cb-undo"; bar.setAttribute("role", "status");
   bar.innerHTML = `<span class="cb-undo-t">${ic("check")}Sent</span><button type="button" class="cb-undo-b" data-cbundo>Undo</button><i class="cb-undo-p" aria-hidden="true"></i>`;
   document.body.append(bar); if (SHEET) SHEET.el.classList.add("sending");
-  UNDO = { id: pan.dataset.draft, bar, t: setTimeout(undoFire, 5000) };
+  UNDO = { id, bar, t: setTimeout(undoFire, 5000) };
   bar.querySelector(".cb-undo-b").focus({ preventScroll: true });
 }
 function undoEnd() { const u = UNDO; UNDO = null; if (!u) return null; clearTimeout(u.t); u.bar.remove(); if (SHEET) SHEET.el.classList.remove("sending"); return u; }
 function undoFire() {
   const u = undoEnd(); if (!u) return;
-  const sel = `.cb-em[data-draft="${CSS.escape(String(u.id))}"] [data-cbe="send"]`, btn = (SHEET && SHEET.el.querySelector(sel)) || document.querySelector(sel);
-  if (btn) emailOp("send", btn, true); else if (API) API.toast("Not sent: this email changed or left the board. Open it again.");
+  const btn = SHEET && SHEET.el.querySelector(`.cb-rvbar [data-cbe="send"][data-draft="${CSS.escape(String(u.id))}"]`);
+  if (btn && !btn.disabled) emailOp("send", btn, true); else if (API) API.toast("Not sent: this email changed or left the board. Open it again.");
 }
 function undoCancel() { if (undoEnd() && API) API.toast("Not sent. Nothing went out."); SHEET?.el.querySelector('[data-cbe="send"]')?.focus({ preventScroll: true }); }
 /* touch: a sideways swipe on a board switches its tab (only once the move is clearly sideways, so scrolling never does);
@@ -337,15 +421,17 @@ document.addEventListener("touchend", touchEnd); document.addEventListener("touc
 
 /* ---------------- the delivery email: the same writes as the Samples board, category client_delivery ---------------- */
 async function emailOp(op, btn, quick) {
-  const C = X(), pan = btn.closest(".cb-em"), id = pan && pan.dataset.draft, d = id && drafts().find(x => String(x.id) === String(id)); if (!C || !pan || !d) return;
+  const C = X(), sheet = btn.closest(".cb-sheet"), pan = btn.closest(".cb-em") || (sheet && sheet.querySelector(".cb-em")), id = pan && pan.dataset.draft, d = id && drafts().find(x => String(x.id) === String(id)); if (!C || !pan || !d) return;
   const s = (ITEMS ? stacksOf(ITEMS) : []).find(x => x.key === pan.dataset.k), who = (s && s.cname) || "the client";
-  const $p = q => pan.querySelector(q), err = $p(".cb-emerr"), say = m => { err.hidden = false; err.textContent = m; }; err.hidden = true;
-  const show = w => { $p(".cb-emed").hidden = w !== "edit"; $p(".cb-emch").hidden = w !== "change"; $p(".cb-emb").hidden = w === "edit"; const a = $p(".cb-emacts"); if (a) a.hidden = !!w; if (!w && DIRTY) repaint(); };
+  const $p = q => pan.querySelector(q), err = $p(".cb-emerr"), say = m => { err.hidden = false; err.textContent = m; err.scrollIntoView({ block: "nearest" }); }; err.hidden = true;
+  const show = w => { $p(".cb-emed").hidden = w !== "edit"; $p(".cb-emch").hidden = w !== "change"; $p(".cb-emb").hidden = w === "edit"; const eb = $p(".cb-edb"); if (eb) eb.hidden = !!w;
+    const a = (sheet || pan).querySelector(".cb-emacts"); if (a) a.hidden = !!w; if (!w && DIRTY) repaint(); };
   if (op === "edit") { show("edit"); const t = $p(".cb-emta"); t.value = d.body; t.focus(); return; }
-  if (op === "change") { show("change"); $p(".cb-chta").focus(); return; }
+  if (op === "change") { show("change"); const t = $p(".cb-chta"); t.focus({ preventScroll: true }); t.scrollIntoView({ block: "center", behavior: motion() ? "smooth" : "auto" }); return; }
   if (op === "cancel") { show(""); return; }
   let body = null, done = "";
   if (op === "send") {
+    if (s && chOf(s).length) return say("A Short is marked Needs changes: the batch waits for the fix.");
     /* read the email fresh first: if Claude changed it since this page painted, show the new text and ask to read it */
     if (C.drafts) { const before = d.body_sha256; await C.drafts().catch(() => {}); const d2 = drafts().find(x => String(x.id) === String(id));
       if (!d2 || d2.body_sha256 !== before || d2.status !== d.status) { repaint(); const sel = `.cb-em[data-draft="${CSS.escape(String(id))}"] .cb-emerr`, p2 = (SHEET && SHEET.el.querySelector(sel)) || document.querySelector(sel); if (p2) { p2.hidden = false; p2.textContent = "This email just changed. Read the new version, then press Send."; } return; } }
@@ -358,11 +444,72 @@ async function emailOp(op, btn, quick) {
     body = { body: v, ...(d.status === "pending" ? {} : { status: "pending" }) }; done = "Saved. Read it once more, then send.";
   } else if (op === "back") {
     const v = $p(".cb-chta").value.trim(); if (!v) return say("Write what should change first.");
-    body = { status: "held", founder_note: v.slice(0, 1000) }; done = "Sent to Claude. The fixed version comes back here.";
+    body = { status: "held", founder_note: [v, s ? shortsNote(chOf(s)) : ""].filter(Boolean).join(" | ").slice(0, 1000) }; done = "Sent to Claude. The fixed version comes back here.";   // the Shorts already marked stay in the note
   }
   if (!body) return; btn.disabled = true;
-  try { await C.upd("drafts", +d.id, body); C.toast(done, "check", "c-green", who); show(""); await (C.drafts ? C.drafts() : C.refresh()); repaint(); }
+  try { await C.upd("drafts", +d.id, body); C.toast(done, "check", "c-green", who); show("");
+    if (op === "send" && s) await approveAll(s).catch(e => API.toast(`Sent. The per-Short approvals didn't save: ${String(e && e.message || e).slice(0, 100)}`));
+    await (C.drafts ? C.drafts() : C.refresh()); repaint(); }
   catch (e) { say(String(e && e.message || e)); if (btn.isConnected) btn.disabled = false; }
+}
+/* ---------------- the review's per-Short writes (client_items, the founder's own login: policy "founders write client_items") ---------------- */
+async function itemsUpd(ids, body) {
+  let q = API.sb().from("client_items").update(body); q = ids.length === 1 ? q.eq("id", ids[0]) : q.in("id", ids);
+  const { data, error } = await q.select("id"); if (error) throw error;
+  if (!data || !data.length) throw new Error("not allowed. The 2-step login may have expired: sign in again");
+  const set = new Set(ids.map(String)); (ITEMS || []).forEach(i => { if (set.has(String(i.id))) Object.assign(i, body); });
+}
+const okBody = async () => { const m = await API.me().catch(() => null); return { founder_ok_at: new Date().toISOString(), founder_ok_by: (m && m.name) || null }; };
+/* "Approve & send": every Short not marked Needs changes (and not approved yet) gets the founder's OK, in ONE write */
+async function approveAll(s) {
+  const ids = s.items.filter(i => i.status === "ready" && !i.founder_ok_at).map(i => i.id);
+  if (ids.length) await itemsUpd(ids, await okBody());
+}
+const stackOf = key => (ITEMS ? stacksOf(ITEMS) : []).find(x => x.key === key) || null;
+const itemOf = id => (ITEMS || []).find(i => String(i.id) === String(id)) || null;
+const tell = (t, sub) => { const C = X(); if (C) C.toast(t, "check", "c-green", sub || ""); else API.toast(t); };
+const fail = e => API.toast(`Couldn't save: ${String(e && e.message || e).slice(0, 120)}`);
+/* ✓ Approve (a second tap takes it back); after an approval the carousel moves on to the next Short still to review */
+async function toggleOk(id, btn) {
+  const i = itemOf(id); if (!i || !SHEET) return; const on = !i.founder_ok_at; btn.disabled = true;
+  try { await itemsUpd([i.id], on ? await okBody() : { founder_ok_at: null, founder_ok_by: null }); repaint();
+    if (on && SHEET) { const s = stackOf(SHEET.key), nx = s ? s.items.findIndex((x, k) => k > SHEET.idx && x.status === "ready" && !x.founder_ok_at) : -1; if (nx > 0) setTimeout(() => carGo(nx), 380); } }
+  catch (e) { btn.disabled = false; fail(e); }
+}
+/* the draft goes back to Claude: the existing "What to change" write (held + founder_note) */
+async function holdDraft(d, note) { const C = X(); await C.upd("drafts", +d.id, { status: "held", founder_note: String(note).slice(0, 1000) }); await (C.drafts ? C.drafts() : C.refresh()); }
+const holdable = d => !!d && /^(pending|held|failed|stale)$/.test(d.status);
+function ncOpen(sl, on) {
+  const nc = sl.querySelector(".cb-nc"), acts = sl.querySelector(".cb-slacts"); if (!nc) return;
+  nc.hidden = !on; if (acts) acts.hidden = on; sl.querySelector("[data-cbnc]")?.setAttribute("aria-expanded", on);
+  const bar = SHEET && SHEET.el.querySelector(".cb-rvbar"); if (bar) bar.hidden = on;   // the note gets the room above the keyboard
+  if (on) { const ta = nc.querySelector(".cb-ncta"); ta.focus({ preventScroll: true }); nc.scrollIntoView({ block: "nearest", behavior: motion() ? "smooth" : "auto" }); }
+  else { sl.querySelector("[data-cbnc]")?.focus({ preventScroll: true }); if (DIRTY) repaint(); }
+}
+/* ✎ Needs changes: the Short goes to 'changes' with its note ("[m:ss] " first when a moment is given) and the whole batch waits:
+   the draft is held with every marked Short's note, so Claude fixes them and brings the email back */
+async function saveChanges(id, btn) {
+  const sl = btn.closest(".cb-sl"), i = itemOf(id); if (!sl || !i || !SHEET) return;
+  const v = sl.querySelector(".cb-ncta").value.trim(), at = sl.querySelector(".cb-ncts").value.trim(), er = sl.querySelector(".cb-ncerr");
+  const say = m => { er.hidden = false; er.textContent = m; }; er.hidden = true;
+  if (!v) return say("Write what should change first.");
+  if (at && !tsOk(at)) return say("Write the moment as m:ss, e.g. 0:12.");
+  const note = `${at ? `[${at}] ` : ""}${v}`.slice(0, 1000); btn.disabled = true;
+  try {
+    await itemsUpd([i.id], { status: "changes", changes_note: note, ...(i.founder_ok_at ? { founder_ok_at: null, founder_ok_by: null } : {}) });
+    const s = stackOf(SHEET.key), d = s && draftOf(s);
+    if (holdable(d)) await holdDraft(d, shortsNote(chOf(s)));
+    tell(`Sent to Claude: ${i.title}`, d ? "The batch waits for the fix. Nothing goes out." : "");
+    ncOpen(sl, false); repaint();
+  } catch (e) { btn.disabled = false; say(String(e && e.message || e)); }
+}
+/* "Send the N approved now": sends nothing itself; the held draft tells Claude to rewrite the email for the approved Shorts only */
+async function sendPart(btn) {
+  const s = SHEET && stackOf(SHEET.key), d = s && draftOf(s); if (!s || !holdable(d)) return;
+  const ok = okOf(s), ch = chOf(s); if (!ok.length || !ch.length) return; btn.disabled = true;
+  try { await holdDraft(d, `SEND APPROVED NOW: ${ok.map(i => i.title).join(", ")}; HOLD: ${ch.map(i => i.title).join(", ")}`);
+    tell(`Sent to Claude: an email for the ${ok.length} approved`, "It comes back here to send."); repaint(); }
+  catch (e) { btn.disabled = false; fail(e); }
 }
 /* "Always wait for a founder": clients.hold_sends, written like the page's other writes (the founder's own login, row-level security) */
 async function setHold(id, btn) {
@@ -382,10 +529,16 @@ document.addEventListener("click", ev => {
   const tb = t.closest("[data-cbtab]"); if (tb) { const tabs = tb.closest(".cb-tabs"), ids = [...tabs.querySelectorAll("[data-cbtab]")].map(b => b.dataset.cbtab), from = ids.indexOf(tabs.nextElementSibling?.dataset.tab); setTab(tabs, tb.dataset.cbtab, Math.sign(ids.indexOf(tb.dataset.cbtab) - from)); return; }
   if (t.closest("[data-cbundo]")) { undoCancel(); return; }
   if (t.closest("[data-cbsheetx]")) { closeSheet(); return; }
-  const sh = t.closest(".cb-sh"); if (sh && PHONE.matches && sh.closest(".cb-stack").dataset.col === "ready") { openSheet(sh.closest(".cb-stack").dataset.key, sh); return; }   // phone: a Ready stack opens its sheet
+  const sh = t.closest(".cb-sh"); if (sh && sh.closest(".cb-stack").classList.contains("rv")) { openSheet(sh.closest(".cb-stack").dataset.key, sh); return; }   // a Ready stack opens the review (phone: full-screen sheet; desktop: panel)
+  const nv = t.closest("[data-cbnav]"); if (nv && SHEET) { carGo(SHEET.idx + +nv.dataset.cbnav); return; }
+  const okb = t.closest("[data-cbok]"); if (okb) { toggleOk(okb.dataset.cbok, okb); return; }
+  const ncb = t.closest("[data-cbnc]"); if (ncb) { ncOpen(ncb.closest(".cb-sl"), true); return; }
+  if (t.closest("[data-cbncx]")) { ncOpen(t.closest(".cb-sl"), false); return; }
+  const ncs = t.closest("[data-cbncs]"); if (ncs) { saveChanges(ncs.dataset.cbncs, ncs); return; }
+  const pt = t.closest("[data-cbpart]"); if (pt) { sendPart(pt); return; }
   if (sh) { const st = sh.closest(".cb-stack"), on = sh.getAttribute("aria-expanded") !== "true"; sh.setAttribute("aria-expanded", on); st.classList.toggle("open", on); st.querySelector(".cb-items").hidden = !on; on ? OPEN.add(st.dataset.key) : OPEN.delete(st.dataset.key); return; }
   const qb = t.closest("[data-cbq]"); if (qb) { const li = qb.closest(".cb-it"), on = !li.classList.contains("q-open"); li.classList.toggle("q-open", on); qb.setAttribute("aria-expanded", on); return; }
-  const eb = t.closest("[data-cbe]"); if (eb) { if (eb.dataset.cbe === "send" && eb.closest(".cb-sheet")) undoStart(eb); else emailOp(eb.dataset.cbe, eb); return; }
+  const eb = t.closest("[data-cbe]"); if (eb) { if (eb.dataset.cbe === "send" && PHONE.matches && eb.closest(".cb-sheet")) undoStart(eb); else emailOp(eb.dataset.cbe, eb); return; }
   const hb = t.closest("[data-cbhold]"); if (hb) { setHold(hb.dataset.cbhold, hb); return; }
   if (t.closest("[data-cbclose]")) { closeClient(); return; }
   /* a client row opens that client's board (the page's own handler still selects the row; a touch tap on the activity dot only shows its note) */

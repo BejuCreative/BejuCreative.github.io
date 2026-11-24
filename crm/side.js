@@ -1507,6 +1507,9 @@ async function writeTask(c, patch) {   // c = the card before the change. tasks 
   if (!ok || !ok.length) throw new Error("not allowed");
   if (warn) toast("Saved. The list it came from didn't update.");
 }
+/* 11-24 (BENAS): "Waiting on a founder" ticks a "Check:" card or a founder to-do Done with this board's own write (crm.js wofWrite):
+   the tasks row (done, done_at) plus the same mirror onto the list it came from. t = the tasks row as crm.js reads it. */
+window.BEJU_CRM_TODOS = { done: t => writeTask({ id: t.id, st: t.status, source: t.source, ref: t.source_ref ?? null }, { st: "done" }) };
 async function saveCard(id, patch) {
   const c = CACHE.todos.find(x => x.id === id); if (!c) return; const before = { ...c };
   Object.assign(c, patch); c.col = colOf(c.st, c.owner); if ("st" in patch) c.done = patch.st === "done" ? new Date().toISOString() : null;
