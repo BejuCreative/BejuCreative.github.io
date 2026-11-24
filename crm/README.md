@@ -8,7 +8,7 @@ One page for the two founders: money, outreach, leads, samples, conversations an
 - `https://juceviciussimas-max.github.io/beju-v2/crm/`
 - Local: `http://localhost:8765/crm/` (any static server on the `beju-v2` folder)
 
-The folder is self-contained: relative paths only, own fonts, no build step. Files: `index.html`, `theme.js`, `crm.css`, `config.js`, `crm.js`, `manifest.webmanifest`, `fonts/`. After any change to `theme.js`, `crm.css` or `crm.js`, bump the four `?v=` strings in `index.html`.
+The folder is self-contained: relative paths only, own fonts, no build step. Files: `index.html`, `theme.js`, `lock.js` (phone zoom lock), `crm.css`, `config.js`, `crm.js`, `manifest.webmanifest`, `fonts/`. After any change to `theme.js`, `crm.css` or `crm.js`, bump the four `?v=` strings in `index.html`.
 
 ## Who can open it
 
@@ -80,7 +80,7 @@ Every client-portal action shows a confirm sheet that says what the client will 
 
 ## Phone (600px and narrower)
 
-Five bottom tabs (Home · Money · Leads · Outreach · Clients), each with its own cards; the last tab is remembered. Compact header with the owner switch, search, live dot and account menu. Lead drawers and lists are bottom sheets (drag the handle down to close); a conversation opens at the latest message. Charts: first tap shows the value, second tap opens it. On phones that report tilt without asking (Android), the hero highlight follows the device; the page never asks for that permission. `manifest.webmanifest` + Apple meta tags make it installable ("Add to Home Screen"); there is no service worker, so it needs a connection.
+Five bottom tabs (Home · Money · Leads · Outreach · Clients), each with its own cards; the last tab is remembered. Compact header with the owner switch, search, live dot and account menu. Lead drawers and lists are bottom sheets (drag the handle down to close); a conversation opens at the latest message. Charts: first tap shows the value, second tap opens it. On phones that report tilt without asking (Android), the hero highlight follows the device; the page never asks for that permission. `manifest.webmanifest` + Apple meta tags make it installable ("Add to Home Screen"); there is no service worker, so it needs a connection. On the phone it is locked like an app (11-24): no pinch or double-tap zoom (viewport meta + `lock.js` + `touch-action`), no sideways drift, no rubber band, every input 16 px so iOS never zooms on focus; the page, theme colour and status bar follow the saved look from the first frame. The client board is tabs there (Building · Ready · Sent · Changes, tap or swipe), and a Ready stack opens a full-screen sheet whose Send waits 5 seconds behind an Undo.
 
 ## Money page (`money.html`, 2026-11-14)
 

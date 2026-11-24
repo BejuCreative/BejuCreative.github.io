@@ -2044,6 +2044,7 @@ function setTheme(id, save) {
   const t = THEMES.find(x => x[0] === id) || THEMES[0], h = document.documentElement;
   h.dataset.theme = t[0]; h.dataset.mode = t[2];
   const tc = $('meta[name="theme-color"]'); if (tc) tc.content = t[3];
+  h.style.backgroundColor = t[3]; const sbar = $('meta[name="apple-mobile-web-app-status-bar-style"]'); if (sbar) sbar.content = t[2] === "dark" ? "black-translucent" : "default";   // like theme.js (the status bar takes it on the next launch)
   if (save) store.set("beju-crm-look", t[0]); syncLook();
 }
 function setMotion(m, save) { document.documentElement.dataset.motion = RM || m === "calm" ? "calm" : "full"; if (save) store.set("beju-crm-motion", m); syncLook(); }

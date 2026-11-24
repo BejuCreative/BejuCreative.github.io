@@ -1426,3 +1426,24 @@ html.pg-in .wof{animation:a-fade .3s ease-out backwards,a-up .5s var(--out) back
   .sum-l,#asof>span{font-size:13px}
 }
 @media (max-width:600px){.top-tools .nt-n,.nt-n{top:0;right:-1px;height:16px;min-width:16px;font-size:9.5px;line-height:16px}}   /* 11-23: after the phone rule that made tab badges 20 px */
+
+/* ======================================================================
+   App lock (BENAS 11-24: "make the CRM on phone not cheap ... locked like an expensive app"). With the viewport meta
+   (maximum-scale=1, user-scalable=no) and lock.js: no pinch or double-tap zoom, no sideways drift, no rubber band on the page
+   (inner panels keep their own contained scroll), no grey tap flash, no text selection or callout on buttons and navigation
+   (email text and notes stay selectable), and no input under 16 px, so iOS never zooms in on focus.
+   ====================================================================== */
+html{background:var(--bg);-webkit-tap-highlight-color:transparent;touch-action:pan-x pan-y}
+body{touch-action:pan-x pan-y}
+button,a[href],[role="button"],[role="tab"],[role="switch"],summary,label,input,select,textarea{touch-action:manipulation}
+@media (max-width:600px){
+  html{overflow-x:hidden}
+  @supports (overflow:clip){ html,body{overflow-x:clip} }
+  html,body{overscroll-behavior:none}
+  .dr-body,.modal-body,.pal-list,.snav,.sm-pan,.sm-pd,.cb-pan,.cb-pb,.cb-shb{overscroll-behavior:contain}
+  button,[role="tab"],[role="switch"],.tabs,.top,.snav,.act,.icon-btn{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),textarea,select{font-size:16px!important}
+  #mfa-code{font-size:22px!important}
+  .wk button::after{left:-4px;right:-4px}
+  .snav:not(.open){visibility:hidden;transition:width .42s var(--ease),transform .42s var(--ease),box-shadow .3s,visibility 0s linear .42s}   /* the closed menu's shadow no longer bleeds in at the left edge */   /* the week bars: 37 px wide, so their tap area reaches 45 px (a 1.5 px overlap with the next bar) */
+}

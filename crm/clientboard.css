@@ -2,8 +2,8 @@
    .sm-ch, .sm-cnt, .sm-list, .sm-empty) and its delivery-email panel classes (.sm-em*, .sm-ems, .sm-pacts) are reused as they are;
    the stacked batch card, the status chips, the stats and the List | Board switch are new. Type: 13 (chips, meta) · 14-15 (names, body)
    · 30 (panel title). Colour = meaning: orange = being built, blue = ready / live, green = approved, red = overdue / changes asked.
-   Motion: transform + opacity only; off under reduced motion and the "Calm" look. No inline styles. Phone: the five columns stack
-   as sections, one under the other. */
+   Motion: transform + opacity only; off under reduced motion and the "Calm" look. No inline styles. Phone (BENAS 11-24): tabs, one
+   column at a time as a clean full-width list; a Ready stack opens a full-screen sheet with a fixed Send · Edit · What to change bar. */
 
 /* ---------- List | Board ---------- */
 .cb-bar{display:flex;align-items:center;gap:12px;margin:0 0 14px}
@@ -16,7 +16,8 @@
 .cb-bar[data-cbm="board"]~:not(.cb-all){display:none}
 .cb-all{min-width:0}
 
-/* ---------- the board: five glass columns ---------- */
+/* ---------- the board: five glass columns (phone: the tab strip above picks one) ---------- */
+.cb-tabs,.cb-sheet{display:none}
 .cb-board{display:grid;grid-template-columns:repeat(5,minmax(176px,1fr));gap:12px;align-items:start;min-width:0;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;padding:4px 2px 10px;margin:-4px -2px -10px}
 .cb-col{min-height:200px}
 .cb-col[data-col="building"]::before{background:var(--orange);opacity:.7}
@@ -131,9 +132,23 @@ html.cb-locked{overflow:hidden}
   .cb-bar{margin:0 4px 12px}
   .cb-sg{min-height:44px;min-width:84px}
   .cb-all{margin:0 4px}
-  .cb-board{grid-template-columns:minmax(0,1fr);gap:14px;overflow:visible;margin:0;padding:0}
-  .cb-col{min-height:0;padding:12px 10px 10px}
-  .cb-col .sm-empty{min-height:56px}
+  .cb-board{grid-template-columns:minmax(0,1fr);gap:14px;overflow:visible;margin:0;padding:0;min-height:50vh}
+  /* tabs: Building · Ready N · Sent · Changes N; the board shows the picked column only, as a plain list (no glass column around it) */
+  .cb-tabs{display:flex;gap:2px;padding:3px;margin:0 0 12px;border-radius:15px;background:var(--panel);border:1px solid var(--line);-webkit-user-select:none;user-select:none}
+  .cb-tab{flex:1 1 auto;min-width:0;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:0 6px;border-radius:12px;font-size:14px;font-weight:600;letter-spacing:-.01em;color:var(--ink-2);white-space:nowrap;-webkit-touch-callout:none;transition:background-color .2s,color .2s}
+  .cb-tab[aria-selected="true"]{background:var(--solid);color:var(--ink);box-shadow:0 1px 2px rgba(10,16,40,.08),0 2px 8px rgba(10,16,40,.08)}
+  :root[data-mode="dark"] .cb-tab[aria-selected="true"]{background:rgba(255,255,255,.12);box-shadow:none}
+  .cb-tab:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+  .cb-tn{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;font:600 13px/1 var(--mono);font-variant-numeric:tabular-nums;background:var(--blue-soft);color:var(--blue)}
+  :root[data-mode="dark"] .cb-tn{color:var(--blue-2)}
+  .cb-tab[data-cbtab="changes"] .cb-tn{background:var(--red-soft);color:var(--red)}
+  .cb-board>.cb-col:not(.on){display:none}
+  .cb-board>.cb-col.on{min-height:0;padding:0;border-radius:0;background:none;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+  .cb-board>.cb-col::before,.cb-board>.cb-col>.sm-ch{display:none}
+  .cb-col .sm-empty{min-height:120px}
+  .cb-col.cb-in-r{animation:cb-in-r .32s var(--out) both} .cb-col.cb-in-l{animation:cb-in-l .32s var(--out) both}
+  .cb-stack[data-col="ready"] .cb-sh{padding-right:40px;position:relative}
+  .cb-stack[data-col="ready"] .cb-sh::after{content:"";position:absolute;right:16px;top:50%;width:9px;height:9px;margin-top:-6px;border:solid var(--mute);border-width:2px 2px 0 0;transform:rotate(45deg)}   /* opens a sheet */
   .cb-sh{min-height:56px;padding:12px}
   .cb-lk,.cb-qb{min-height:44px;padding:0 12px}
   .cb-pan{inset:0;width:100%;border-radius:0;display:block;overflow-y:auto;overscroll-behavior:contain;transform:translateY(100%);padding-bottom:env(safe-area-inset-bottom)}
@@ -146,7 +161,43 @@ html.cb-locked{overflow:hidden}
   .cb-pb{overflow:visible;padding:4px 16px 28px}
   .cb-stats{gap:10px} .cb-tl{padding:12px 14px} .cb-big{font-size:30px}
   .cb-emb{font-size:15px;max-height:none}
+
+  /* the Ready sheet: full screen, the email and its links, the countdown or "Waits for a founder"; a fixed bar above the home indicator */
+  html.cb-sheet-on{overflow:hidden}
+  .cb-sheet{position:fixed;z-index:55;left:0;right:0;top:var(--vvt,0px);height:var(--vvh,100dvh);display:flex;flex-direction:column;background:var(--solid);color:var(--ink);transform:translateY(calc(100% + 20px));transition:transform .42s var(--out);will-change:transform}
+  .cb-sheet.on{transform:translateY(var(--dy,0px))}
+  .cb-sheet.drag{transition:none}
+  .cb-sheet.out{transform:translateY(calc(100% + 20px));transition-duration:.3s;transition-timing-function:cubic-bezier(.4,0,1,1)}
+  .cb-shh{position:relative;flex:none;display:flex;align-items:center;gap:12px;min-width:0;padding:calc(22px + env(safe-area-inset-top)) 12px 12px 18px;border-bottom:1px solid var(--line);touch-action:none;-webkit-user-select:none;user-select:none}
+  .cb-grab{position:absolute;top:calc(8px + env(safe-area-inset-top));left:50%;width:40px;height:5px;margin-left:-20px;border-radius:9px;background:var(--line-2)}
+  .cb-shhd{flex:1;min-width:0}
+  .cb-shh h2{margin:0;font-size:22px;font-weight:600;letter-spacing:-.02em;line-height:1.2;overflow-wrap:anywhere}
+  .cb-shh p{margin-top:3px;font-size:13px;overflow-wrap:anywhere}
+  .cb-shx{flex:none;width:44px;height:44px;border-radius:50%;background:var(--panel);display:grid;place-items:center}
+  .cb-shb{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;display:grid;align-content:start;gap:12px;padding:8px 16px calc(104px + env(safe-area-inset-bottom))}
+  .cb-sheet .cb-em{border-top:1px solid var(--line);padding-top:14px}
+  .cb-sheet .cb-emb,.cb-sheet .sm-emn,.cb-sheet .cb-note,.cb-sheet .cb-q{-webkit-user-select:text;user-select:text}
+  .cb-sheet .cb-emacts{position:absolute;z-index:2;left:0;right:0;bottom:0;display:flex;gap:8px;margin:0;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:var(--solid);border-top:1px solid var(--line)}
+  .cb-sheet .cb-emacts .act{flex:1 1 auto;height:52px;padding:0 12px;justify-content:center;border-radius:14px;font-size:15px}
+  .cb-sheet .cb-emacts .act.go{flex-grow:1.4}
+  .cb-sheet .cb-emacts .act .ic{width:16px;height:16px}
+  .cb-sheet.sending .cb-emacts{visibility:hidden}
+  .cb-sheet .cb-emed .act,.cb-sheet .cb-emch .act{height:48px;flex:1 1 40%;justify-content:center;font-size:15px}
 }
 
-html[data-motion="calm"] .cb-pan,html[data-motion="calm"] .cb-sw i::after,html[data-motion="calm"] .cb-stack{transition:none}
-@media (prefers-reduced-motion:reduce){ .cb-pan,.cb-sw i::after,.cb-stack{transition:none!important} }
+/* ---------- Send on the phone: "Sent · Undo" for 5 seconds, then it really sends ---------- */
+.cb-undo{position:fixed;z-index:58;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:12px;min-height:60px;padding:8px 8px 8px 18px;border-radius:18px;overflow:hidden;background:#141416;color:#fff;box-shadow:0 18px 44px -12px rgba(0,0,0,.5);animation:cb-up .32s var(--out) both;-webkit-user-select:none;user-select:none}
+.cb-undo-t{display:inline-flex;align-items:center;gap:8px;font-size:15px;font-weight:600}
+.cb-undo-t .ic{width:18px;height:18px;stroke:#7ee2a8}
+.cb-undo-b{margin-left:auto;min-width:96px;min-height:44px;padding:0 18px;border-radius:13px;background:rgba(255,255,255,.16);color:#fff;font-size:15px;font-weight:600;-webkit-touch-callout:none}
+.cb-undo-b:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.cb-undo-p{position:absolute;left:0;right:0;bottom:0;height:3px;background:#6f9bff;transform-origin:left;animation:cb-undo 5s linear forwards}
+:root[data-mode="dark"] .cb-undo-p{background:var(--key)}
+@keyframes cb-undo{to{transform:scaleX(0)}}
+@keyframes cb-up{from{opacity:0;transform:translateY(16px)}}
+@keyframes cb-in-r{from{opacity:0;transform:translateX(32px)}}
+@keyframes cb-in-l{from{opacity:0;transform:translateX(-32px)}}
+
+html[data-motion="calm"] .cb-pan,html[data-motion="calm"] .cb-sw i::after,html[data-motion="calm"] .cb-stack,html[data-motion="calm"] .cb-sheet{transition:none}
+html[data-motion="calm"] .cb-col.cb-in-r,html[data-motion="calm"] .cb-col.cb-in-l,html[data-motion="calm"] .cb-undo{animation:none}
+@media (prefers-reduced-motion:reduce){ .cb-pan,.cb-sw i::after,.cb-stack,.cb-sheet{transition:none!important} .cb-col.cb-in-r,.cb-col.cb-in-l,.cb-undo{animation:none!important} }
