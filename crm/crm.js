@@ -142,7 +142,7 @@ async function fetchAll() {
     all("threads", "lead_email,at,snippet", q => q.neq("direction", "out").gte("at", since14).order("at", { ascending: false })).catch(() => []),   // 11-22: their words, last 14 days (Hot leads)
     all("scopes", "email,offer,amount,currency,monthly,sent_at,paid_at,status,url", q => q.order("sent_at", { ascending: false })).catch(() => null),   // 11-22 (SIMAS "we should see the scope that u have sent them"): the Forms person sheet
     all("briefs", BRIEF_COLS).catch(() => null),   // 11-22 (BENAS, Samples page): the sample brief per lead (graphics level + answers); one small soft read, null = no brief marks
-    all("tasks", "id,title,owner,status,lead_email,due_at,created_at,big", q => q.in("source", ["founder_tasks", "board", "deferred", "manual"]).eq("status", "todo").ilike("title", "check:%")).catch(() => []),   // 11-23 (BENAS, Waiting on a founder): "Check:" cards in To do on the To-dos board (its own sources) = Claude's work to approve
+    all("tasks", "id,title,owner,status,lead_email,due_at,created_at,big", q => q.in("source", ["founder_tasks", "board", "deferred", "manual"]).eq("status", "todo")).catch(() => []),   // 11-24 (BENAS "where is the ben kump task"): all founder to-dos; Check: cards + due-soon / big to-dos reach the card (wofOf)   // 11-23 (BENAS, Waiting on a founder): "Check:" cards in To do on the To-dos board (its own sources) = Claude's work to approve
   ]);
   /* 11-21 (tracking check, from v7): Instantly's daily "unique opportunities" counts a lead again on each day it is active, so sums over days
      ran up to 1.9x too high. Positives per day come from interested_leads: one row per lead, on the day it was marked interested. */
@@ -817,6 +817,10 @@ const WOF_URG = { client: 240, reply: 30, check: 240, deal: 1440 };
    waiting. Past that a hold lives on the Clients page's holds list only, a deal in the Big deals card, client work on the Clients page; it is
    out of the count, the split line, the colours, the badge and the toasts. Replies and "Check:" cards have no limit (they stay until answered). Tune here. */
 const WOF_MAX = { hold: 48 * 60, deal: 7 * 1440, prod: 7 * 1440 };
+/* 11-24 (BENAS "where is the ben kump task"): a founder to-do (To-dos board, not a "Check:" card) joins the card when it is big, overdue,
+   or due within WOF_TODO_SOON minutes; amber from WOF_TODO_AMBER minutes before its due time, red once it is past. Tune here. */
+const WOF_TODO_SOON = 48 * 60, WOF_TODO_AMBER = 24 * 60;
+const wofDue = t => new Date(t).toLocaleString("en-GB", { weekday: "short", hour: "2-digit", minute: "2-digit" });
 const wofFresh = (kind, t) => !WOF_MAX[kind] || Date.now() - t <= WOF_MAX[kind] * 6e4;   // also caps Do next's "On hold: …" line (BENAS 11-23: recent holds only; the full list stays on the On hold card)
 const WOF_UL = ["", "Today", "Act now"];
 const wofUrg = r => { const m = (Date.now() - r.at) / 6e4, U = [0];
@@ -827,8 +831,10 @@ const wofUrg = r => { const m = (Date.now() - r.at) / 6e4, U = [0];
   if (r.kind === "check" && m > WOF_URG.check) U.push(1);
   if (r.kind === "check" && r.big) U.push(2);   // BENAS 11-23: a founder decision with money at stake is a red alert from the first minute
   if (r.kind === "deal" && r.nonext && m > WOF_URG.deal) U.push(1);
+  if (r.kind === "todo" && r.due && +new Date(r.due) - Date.now() < WOF_TODO_AMBER * 6e4) U.push(1);   // 11-24: a founder to-do due within a day = Today
+  if (r.kind === "todo" && r.big) U.push(2);
   return Math.max(...U); };
-const WOF_K = { reply: ["Reply", "mail", "c-purple"], check: ["To approve", "check", "c-blue"], deal: ["Deal", "cash", "c-green"], hold: ["Hold", "flag", "c-red"], prod: ["Client work", "film", "c-orange"] };
+const WOF_K = { todo: ["Founder to-do", "flag", "c-orange"], reply: ["Reply", "mail", "c-purple"], check: ["To approve", "check", "c-blue"], deal: ["Deal", "cash", "c-green"], hold: ["Hold", "flag", "c-red"], prod: ["Client work", "film", "c-orange"] };
 const WOF_ST = { failed: "Not sent", stale: "They wrote again", unknown: "Check Instantly" };
 const founderOf = o => ({ benas: "Benas", simas: "Simas" })[lc(o)] || "";
 const WOF = { el: null, html: "", prev: null, told: new Set(), open: new Set(), all: false, rows: [] };
@@ -855,6 +861,9 @@ function wofOf(R, paid, waiting, why) {
       rows.push({ key: "p:" + x.id, kind: "prod", who: x.client, what: x.title, at: at(x.updated_at, x.created_at), value: 0, paying: pays(es, x.client), owner: founderOf(x.set_by), go: { t: "page", p: "clients", c: "prod" } }); });
   (R.checks || []).filter(x => x.status === "todo" && /^check:/i.test(String(x.title || "").trim())).forEach(x => rows.push({ key: "t:" + x.id, kind: "check", who: String(x.title).trim().replace(/^check:\s*/i, "") || "Check",
     what: `Claude's work${x.lead_email ? " · " + nameOf(x.lead_email) : ""}`, at: at(x.created_at), due: x.due_at || null, value: 0, paying: !!x.lead_email && pays([lc(x.lead_email)]), owner: founderOf(x.owner), go: { t: "todo", id: x.id }, big: !!x.big }));
+  (R.checks || []).filter(x => x.status === "todo" && !/^check:/i.test(String(x.title || "").trim()) && (x.big || (x.due_at && +new Date(x.due_at) - Date.now() <= WOF_TODO_SOON * 6e4)))
+    .forEach(x => rows.push({ key: "f:" + x.id, kind: "todo", who: String(x.title).trim() || "To-do", what: x.due_at ? `${+new Date(x.due_at) < Date.now() ? "was due" : "due"} ${wofDue(x.due_at)}` : "Founder decision",
+      at: at(x.created_at), due: x.due_at || null, value: 0, paying: !!x.lead_email && pays([lc(x.lead_email)]), owner: founderOf(x.owner), go: { t: "todo", id: x.id }, big: !!x.big }));
   /* 11-23: one row for each lead in the shared replyWait list (the Replies page's "Waiting on us")
      that no row above already covers: a draft, a deal, a hold, or a Check card about that lead. The reason is the same "why" chip text. */
   const cov = new Set([...seen, ...holdCov]);
@@ -867,7 +876,7 @@ function wofOf(R, paid, waiting, why) {
 /* design pass (BENAS 11-23 "more professional, just like the other cards"): the bento list row (.li / .li-n / .li-nm / .li-v) with a sprite line
    icon; the whole row is one button stretched over it (.wof-b), so "Read the draft" can sit in the row's own meta line. The draft opens in the
    lead drawer's message bubbles (.conv / .cv-m). */
-const WOF_SPLIT = { reply: ["reply", "replies"], check: ["to approve", "to approve"], deal: ["deal", "deals"], hold: ["hold", "holds"], prod: ["client check", "client checks"] };
+const WOF_SPLIT = { todo: ["founder to-do", "founder to-dos"], reply: ["reply", "replies"], check: ["to approve", "to approve"], deal: ["deal", "deals"], hold: ["hold", "holds"], prod: ["client check", "client checks"] };
 const wofRow = r => { const K = WOF_K[r.kind], x = r.draft, open = !!x && WOF.open.has(r.key), id = "wofd-" + String(x ? x.id : "").replace(/\W/g, "");
   return `<div class="li wof-r${x ? " dr" : ""}">${ic(K[1])}<span class="li-n"><span class="li-nm"><span class="wof-who">${r.urg ? `<i class="wof-dot u${r.urg}" role="img" aria-label="${WOF_UL[r.urg]}" title="${WOF_UL[r.urg]}"></i>` : ""}<span>${esc(cut(r.who, 70))}</span>${r.paying ? `<span class="chip wof-cl">client</span>` : ""}${r.owner ? `<span class="chip wof-f" title="${r.owner} decides">${r.owner[0]}</span>` : ""}</span>
     <small class="wof-ask"><span><span class="wof-kl">${K[0]}</span> · ${esc(cut(r.what, 140))}</span>${x ? `<button type="button" class="lk wof-rd" data-act="wofx" data-k="${esc(r.key)}" aria-expanded="${open}" aria-controls="${id}">${open ? "Hide the draft" : "Read the draft"}</button>` : ""}</small></span></span>
