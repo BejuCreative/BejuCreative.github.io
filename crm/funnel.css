@@ -1,0 +1,143 @@
+/* BEJÚ founder CRM: Funnel clients page (funnel.js). Same glass as the Clients board: .tile cards, the panel from the right (a
+   full-screen sheet on phones), 13 px chips. Colour = meaning: red = behind / overdue, amber = at risk / due within 48 h,
+   green = on track / live, blue = in progress, sand = waiting on the client. Motion: transform + opacity only; off under reduced
+   motion and the "Calm" look. No inline styles (widths arrive as --w through the CSSOM). */
+
+/* ---------- the list ---------- */
+.fc{display:grid;gap:16px;min-width:0}
+.fc-sum{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.fc-st{display:grid;gap:4px;padding:14px 16px}
+.fc-st b{font-family:var(--mono);font-size:30px;font-weight:500;letter-spacing:-.04em;line-height:1.1;font-variant-numeric:tabular-nums}
+.fc-st.bad{background:var(--red-soft);border-color:transparent} .fc-st.bad b,.fc-st.bad .fc-l{color:var(--red)}
+.fc-st.warn{background:var(--orange-soft);border-color:transparent} .fc-st.warn b,.fc-st.warn .fc-l{color:#8f4a05}
+:root[data-mode="dark"] .fc-st.warn b,:root[data-mode="dark"] .fc-st.warn .fc-l{color:var(--orange)}
+.fc-l{font-size:13px;font-weight:500;color:var(--mute)}
+.fc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;min-width:0}
+.fc-card{display:grid;align-content:start;gap:10px;width:100%;min-width:0;padding:16px 18px;text-align:left;font:inherit;color:var(--ink);cursor:pointer;position:relative;overflow:hidden}
+.fc-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--green);opacity:.75}
+.fc-card[data-state="risk"]::before{background:var(--orange)} .fc-card[data-state="behind"]::before{background:var(--red)}
+@media (hover:hover) and (pointer:fine){ .fc-card:hover{border-color:var(--line-2);transform:translateY(-2px)} }
+.fc-card:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.fc-r1{display:flex;align-items:flex-start;gap:10px;min-width:0}
+.fc-nm{flex:1;min-width:0;font-size:17px;font-weight:600;letter-spacing:-.02em;line-height:1.25;overflow-wrap:anywhere}
+.fc-plan{font-size:13px;color:var(--ink-2);overflow-wrap:anywhere}
+.fc-badge{flex:none;display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;font-size:13px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;font-variant-numeric:tabular-nums}
+.fc-badge.s-on{background:var(--green-soft);color:var(--green)}
+.fc-badge.s-risk{background:var(--orange-soft);color:#8f4a05}
+.fc-badge.s-behind{background:var(--red-soft);color:var(--red)}
+:root[data-mode="dark"] .fc-badge.s-risk{color:var(--orange)}
+.fc-pr{display:flex;align-items:center;gap:10px;min-width:0}
+.fc-bar{flex:1;min-width:60px;height:8px;border-radius:999px;background:var(--panel);box-shadow:inset 0 0 0 1px var(--line);overflow:hidden;display:block}
+.fc-bar i{display:block;height:100%;width:var(--w,0%);border-radius:inherit;background:var(--green);transition:width .6s var(--out)}
+.fc-pn{flex:none;font-family:var(--mono);font-size:13px;font-weight:600;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.fc-next{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;min-width:0;font-size:14px;line-height:1.35}
+.fc-next b{font-weight:600;overflow-wrap:anywhere;min-width:0}
+.fc-next.none{color:var(--mute);font-size:13px}
+.fc-due{font-size:13px;font-weight:600;color:var(--ink-2);white-space:nowrap;font-variant-numeric:tabular-nums}
+.fc-due.late{color:var(--red)}
+.fc-due.soon{color:#a35a00}
+:root[data-mode="dark"] .fc-due.soon{color:var(--orange)}
+.fc-wait{font-size:13px;color:var(--mute)}
+.fc-wait.on{color:#8a5a12;font-weight:600}
+:root[data-mode="dark"] .fc-wait.on{color:#e0b35a}
+
+/* ---------- nothing tracked yet ---------- */
+.fc-none{display:grid;justify-items:center;gap:8px;padding:40px 24px;text-align:center}
+.fc-none-i{display:grid;place-items:center;width:52px;height:52px;border-radius:17px;background:var(--blue-soft);color:var(--blue);margin-bottom:4px}
+.fc-none-i .ic{width:24px;height:24px}
+.fc-none b{font-size:20px;font-weight:600;letter-spacing:-.02em}
+.fc-none p{max-width:460px;font-size:15px;line-height:1.5;color:var(--mute)}
+
+/* ---------- the client page: a panel from the right ---------- */
+html.fc-locked{overflow:hidden}
+.fc-scrim{position:fixed;inset:0;z-index:40;background:var(--scrim);opacity:0;transition:opacity .35s ease;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.fc-scrim.on{opacity:1}
+.fc-pan{position:fixed;z-index:41;top:12px;right:12px;bottom:12px;width:min(920px,calc(100vw - 24px));display:grid;grid-template-rows:auto minmax(0,1fr);border-radius:26px;overflow:hidden;background:var(--solid);color:var(--ink);box-shadow:0 30px 80px -10px rgba(0,0,0,.42),var(--edge);transform:translateX(calc(100% + 24px));transition:transform .5s var(--out)}
+.fc-pan.on{transform:none}
+.fc-pan.out{transition-duration:.34s;transition-timing-function:cubic-bezier(.4,0,1,1)}
+.fc-ph{display:flex;align-items:center;gap:12px;min-width:0;padding:20px 24px 14px}
+.fc-phw{flex:1;min-width:0}
+.fc-ph h2{margin:0;font-size:30px;font-weight:600;letter-spacing:-.03em;line-height:1.15;overflow-wrap:anywhere}
+.fc-ph p{margin-top:4px;font-size:13px;overflow-wrap:anywhere}
+.fc-x{flex:none}
+.fc-pb{display:grid;align-content:start;gap:18px;min-width:0;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:4px 24px 28px}
+.fc-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.fc-tl{display:grid;align-content:start;gap:8px;padding:14px 16px;min-width:0}
+.fc-tl small{font-size:13px;line-height:1.35;color:var(--mute)}
+.fc-tl .fc-badge{justify-self:start}
+.fc-tl .fc-next .fc-l{display:none}   /* the tile already says "Next milestone" */
+.fc-big{font-family:var(--mono);font-size:30px;font-weight:500;letter-spacing:-.04em;line-height:1.05;font-variant-numeric:tabular-nums}
+.fc-big small{font-family:var(--sans);font-size:13px;letter-spacing:0;color:var(--mute);font-weight:500}
+
+/* an area and its items */
+.fc-grp{display:grid;gap:8px;min-width:0}
+.fc-grp h3{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0;font-size:15px;font-weight:600;letter-spacing:-.01em}
+.fc-grp h3 small{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--mute);font-variant-numeric:tabular-nums}
+.fc-sc{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:10px 12px;border-radius:14px;background:var(--panel);border:1px solid var(--line)}
+.fc-scn{display:inline-flex;align-items:baseline;gap:5px;font-size:13px;color:var(--ink-2)}
+.fc-scn b{font-family:var(--mono);font-size:16px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.fc-scn[data-sc="sent"] b{color:var(--green)} .fc-scn[data-sc="changes"] b{color:var(--red)}
+.fc-sc small{margin-left:auto;font-size:13px;color:var(--mute)}
+.fc-ul{list-style:none;margin:0;padding:0;display:grid;border-radius:16px;background:var(--tile);border:1px solid var(--line);box-shadow:var(--shadow)}
+.fc-it{display:grid;gap:6px;min-width:0;padding:10px 12px;border-top:1px solid var(--line)}
+.fc-it:first-child{border-top:0}
+.fc-it[data-st="dropped"] .fc-tt{color:var(--mute);text-decoration:line-through}
+.fc-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;min-width:0}
+.fc-pill{flex:none;display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:0 12px;border-radius:999px;border:0;font:inherit;font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer;background:var(--panel);color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--line-2)}
+.fc-pill::after{content:"";width:6px;height:6px;margin-top:-3px;border:solid currentColor;border-width:0 1.5px 1.5px 0;transform:rotate(45deg);opacity:.7}
+.fc-pill:focus-visible,.fc-mi:focus-visible,.fc-dtb:focus-visible,.fc-lk:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.s-in_progress.fc-pill,.s-in_progress.fc-mi{background:var(--blue-soft);color:var(--blue);box-shadow:none}
+.s-waiting_client.fc-pill,.s-waiting_client.fc-mi{background:rgba(183,121,31,.14);color:#8a5a12;box-shadow:none}
+.s-live.fc-pill,.s-live.fc-mi{background:var(--green-soft);color:var(--green);box-shadow:none}
+.s-dropped.fc-pill,.s-dropped.fc-mi{background:transparent;color:var(--mute)}
+:root[data-mode="dark"] .s-in_progress.fc-pill,:root[data-mode="dark"] .s-in_progress.fc-mi{background:rgba(130,160,255,.15);color:#a9c0ff}   /* the dark theme's blue is green: keep In progress apart from Live */
+:root[data-mode="dark"] .s-waiting_client.fc-pill,:root[data-mode="dark"] .s-waiting_client.fc-mi{color:#e0b35a}
+.fc-tt{flex:1 1 200px;min-width:0;font-size:14px;font-weight:500;line-height:1.35;overflow-wrap:anywhere}
+.fc-rec{display:inline-block;margin-left:4px;padding:1px 8px;border-radius:999px;font-size:13px;font-weight:600;background:var(--blue-soft);color:var(--blue);vertical-align:1px}
+:root[data-mode="dark"] .fc-rec{background:rgba(130,160,255,.15);color:#a9c0ff}
+.fc-meta{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin-left:auto;min-width:0}
+.fc-own{display:inline-flex;align-items:center;padding:2px 9px;border-radius:999px;font-size:13px;font-weight:600;background:var(--panel);color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--line)}
+.fc-lk,.fc-dtb{display:inline-flex;align-items:center;gap:5px;min-height:30px;padding:0 8px;border:0;border-radius:10px;background:none;font:inherit;font-size:13px;font-weight:600;color:var(--blue);text-decoration:none;cursor:pointer}
+:root[data-mode="dark"] .fc-lk,:root[data-mode="dark"] .fc-dtb{color:var(--blue-2)}
+.fc-lk:hover,.fc-dtb:hover{background:var(--blue-soft)}
+.fc-lk .ic{width:15px;height:15px}
+.fc-dtb{color:var(--ink-2)}
+.fc-dt{margin:0;padding:8px 11px;border-radius:10px;background:var(--panel);font-size:13px;line-height:1.5;color:var(--ink-2);white-space:pre-line;overflow-wrap:anywhere}
+.fc-dt[hidden],.fc-menu[hidden]{display:none}
+/* the status menu: one row of choices under the item */
+.fc-menu{display:flex;flex-wrap:wrap;gap:6px;padding:8px;border-radius:14px;background:var(--panel);border:1px solid var(--line);animation:fc-in .22s var(--out) both}
+.fc-mi{min-height:34px;padding:0 12px;border-radius:999px;border:0;font:inherit;font-size:13px;font-weight:600;cursor:pointer;background:var(--tile);color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--line-2)}
+.fc-mi[aria-checked="true"]{outline:2px solid currentColor;outline-offset:1px}
+.fc-empty{display:grid;gap:6px;padding:28px 16px;text-align:center;border-radius:16px;background:var(--panel)}
+.fc-empty b{font-size:17px;font-weight:600}
+.fc-empty p{font-size:14px;color:var(--mute)}
+@keyframes fc-in{from{opacity:0;transform:translateY(-4px)}}
+
+@media (max-width:1100px){ .fc-sum,.fc-tiles{grid-template-columns:repeat(2,minmax(0,1fr))} }
+
+/* ---------- phone: full-width cards; the client page is a full-screen sheet; 44 px taps; 16 px inputs ---------- */
+@media (max-width:600px){
+  .fc{margin:0 4px}
+  .fc-sum{gap:10px} .fc-st{padding:12px 14px} .fc-st b{font-size:26px}
+  .fc-grid{grid-template-columns:minmax(0,1fr);gap:12px}
+  .fc-card{padding:14px 16px;min-height:44px}
+  .fc-pan{inset:0;width:100%;border-radius:0;display:block;overflow-y:auto;overscroll-behavior:contain;transform:translateY(100%);padding-bottom:env(safe-area-inset-bottom)}
+  .fc-pan.on{transform:none}
+  .fc-ph{padding:calc(16px + env(safe-area-inset-top)) 72px 10px 16px}
+  .fc-ph h2{font-size:26px}
+  .fc-x{position:fixed;top:calc(12px + env(safe-area-inset-top));right:12px;z-index:3;width:44px;height:44px;border-radius:50%;background:var(--solid)}
+  .fc-pb{overflow:visible;padding:4px 16px 28px}
+  .fc-tiles{gap:10px} .fc-tl{padding:12px 14px} .fc-big{font-size:26px}
+  .fc-it{padding:10px}
+  .fc-pill,.fc-lk,.fc-dtb{min-height:44px;min-width:44px}
+  .fc-pill{padding:0 14px}
+  .fc-lk,.fc-dtb{padding:0 12px;justify-content:center}
+  .fc-meta{margin-left:0;width:100%}
+  .fc-mi{flex:1 1 calc(50% - 6px);min-height:44px;font-size:14px}
+  .fc-pb,.fc-pan{-webkit-user-select:none;user-select:none}
+  .fc-dt,.fc-tt{-webkit-user-select:text;user-select:text}
+}
+
+html[data-motion="calm"] .fc-pan,html[data-motion="calm"] .fc-scrim,html[data-motion="calm"] .fc-bar i,html[data-motion="calm"] .fc-card{transition:none}
+html[data-motion="calm"] .fc-menu{animation:none}
+@media (prefers-reduced-motion:reduce){ .fc-pan,.fc-scrim,.fc-bar i,.fc-card{transition:none!important} .fc-menu{animation:none!important} .fc-card:hover{transform:none} }
