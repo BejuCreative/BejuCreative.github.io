@@ -335,13 +335,22 @@ function paintSheet(s) {
   const fsel = fk ? `[data-${fk}="${CSS.escape(a.dataset[fk])}"]` : "";
   el.querySelector(".cb-shhd").innerHTML = hdHTML(s);
   const sig = sigOf(s);
-  if (sig !== SHEET.sig) { el.querySelector(".cb-car").outerHTML = carHTML(s); SHEET.sig = sig; carGo(SHEET.idx, true); }
+  if (sig !== SHEET.sig) { el.querySelector(".cb-car").outerHTML = carHTML(s); SHEET.sig = sig; fitFrames(el); carGo(SHEET.idx, true); }
   else s.items.forEach((i, k) => { const x = el.querySelector(`.cb-sl[data-id="${CSS.escape(String(i.id))}"] .cb-sli`); if (x) x.innerHTML = slideInfo(i, k, s.items.length); });
   const em = el.querySelector(".cb-em"); if (em) em.outerHTML = emailHTML(s);
   const old = el.querySelector(".cb-rvbar"), nb = barHTML(s); if (old) { if (nb) old.outerHTML = nb; else old.remove(); } else if (nb) el.insertAdjacentHTML("beforeend", nb);
   if (fsel) { const f = el.querySelector(fsel); if (f && !f.disabled) f.focus({ preventScroll: true }); }
 }
 /* the carousel: native scroll-snap (a swipe on the phone), the arrows / ← → move it; leaving a Short reloads its player so it stops playing */
+/* Drive's /preview player has a minimum width: under ~320 px it shifts the video sideways (BENAS 11-24: "the player is off-centered").
+   A frame narrower than 340 px gets the player drawn at 340 px and scaled down to fit, so the video always sits centered. */
+const FIT = 340;
+const fitRO = "ResizeObserver" in window ? new ResizeObserver(es => es.forEach(e => fitFrame(e.target))) : null;
+function fitFrame(vf) {
+  const w = vf.clientWidth, s = w && w < FIT ? w / FIT : 1;
+  vf.classList.toggle("cb-fit", s < 1); vf.style.setProperty("--fs", s.toFixed(4));
+}
+function fitFrames(root) { root.querySelectorAll(".cb-vf").forEach(vf => { fitFrame(vf); if (fitRO) fitRO.observe(vf); }); }
 function carGo(k, instant) {
   const tr = SHEET && SHEET.el.querySelector(".cb-track"); if (!tr) return;
   const n = tr.children.length; k = Math.max(0, Math.min(n - 1, k));
@@ -365,7 +374,7 @@ function openSheet(key, opener) {
   const scrim = document.createElement("div"); scrim.className = "cb-rvscrim"; scrim.addEventListener("click", () => closeSheet());
   const el = document.createElement("section"); el.className = "cb-sheet" + (UNDO ? " sending" : ""); el.id = "cb-sheet"; el.setAttribute("role", "dialog"); el.setAttribute("aria-modal", "true"); el.setAttribute("aria-labelledby", "cb-sht");
   el.innerHTML = sheetInner(s); document.body.append(scrim, el); SHEET = { key, el, scrim, opener: opener || null, idx: 0, sig: sigOf(s) };
-  HTML.classList.add("cb-sheet-on"); vvSync();
+  HTML.classList.add("cb-sheet-on"); vvSync(); fitFrames(el);
   if (motion()) requestAnimationFrame(() => requestAnimationFrame(() => { el.classList.add("on"); scrim.classList.add("on"); })); else { el.classList.add("on"); scrim.classList.add("on"); }
   el.querySelector(".cb-shx").focus({ preventScroll: true });
 }
