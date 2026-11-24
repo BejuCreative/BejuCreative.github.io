@@ -349,6 +349,16 @@ function videoHTML(c) {
   if (c.id) return `<div class="sm-vf"><iframe class="sm-frame" src="${esc(frameUrl(c.id))}" title="Sample video: ${esc(nm)}" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="no-referrer"></iframe></div>`;
   return `<div class="sm-vf sm-nov" data-col="${c.col}"><span class="sm-nov-i">${ic("video")}</span><b>No video yet</b><small>${c.col === "build" ? "In edit. The Short shows here once its file is in Drive." : "The Short shows here once its file is in Drive."}</small></div>`;
 }
+/* 11-25 (BENAS, iPhone screenshot: the Drive player sat shifted right with a black bar): Drive's /preview player has a minimum
+   width (~320 px) and shifts the video sideways below it. Same fix as the client board (#39): a frame narrower than 340 px
+   gets the player drawn at 340 px and scaled down to fit, so the video always sits centered. */
+const SM_FIT = 340;
+const smFitRO = "ResizeObserver" in window ? new ResizeObserver(es => es.forEach(e => fitFrame(e.target))) : null;
+function fitFrame(vf) {
+  const w = vf.clientWidth, s = w && w < SM_FIT ? w / SM_FIT : 1;
+  vf.classList.toggle("sm-fit", s < 1); vf.style.setProperty("--fs", s.toFixed(4));
+}
+function fitFrames(root) { root.querySelectorAll(".sm-vf").forEach(vf => { fitFrame(vf); if (smFitRO) smFitRO.observe(vf); }); }
 function openPanel(k, opener) {
   const c = M && M.cards.find(x => x.k === k); if (!c) return; closePanel(true);
   const p = c.p, nm = p.name || p.email || k, link = c.id ? `https://drive.google.com/file/d/${encodeURIComponent(c.id)}/view` : webUrl(p.drive_link);
@@ -365,6 +375,7 @@ function openPanel(k, opener) {
   PAN = { k, opener: opener || null, pan, scrim };
   HTML.classList.add("sm-locked");
   requestAnimationFrame(() => { scrim.classList.add("on"); pan.classList.add("on"); });
+  fitFrames(pan);   // 11-25 (BENAS, iPhone): keep the Drive player centered on narrow screens
   pan.querySelector("#sm-x").focus({ preventScroll: true });
   scrim.addEventListener("click", () => closePanel());
   pan.querySelector("#sm-x").addEventListener("click", () => closePanel());
