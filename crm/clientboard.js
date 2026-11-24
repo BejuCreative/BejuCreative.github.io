@@ -96,7 +96,9 @@ function colOf(items) {
 }
 function stacksOf(items) {
   const m = new Map();
-  items.forEach(i => { const k = keyOf(i); (m.get(k) || m.set(k, []).get(k)).push(i); });
+  /* 11-24 (SIMAS 23:40: "I added a revision for one video and it moved all their videos to Needs fixing… the videos should be separated
+     and not grouped"): a batch only stacks the Shorts that sit in the SAME column; each Short moves on its own. */
+  items.forEach(i => { const k = keyOf(i) + "|" + colOf([i]); (m.get(k) || m.set(k, []).get(k)).push(i); });
   const out = [...m].map(([key, its]) => {
     its.sort((a, b) => ms(a.status_at) - ms(b.status_at) || a.id - b.id);
     const open = its.filter(i => OPEN_ST.has(i.status)), due = Math.min(Infinity, ...open.map(i => ms(i.due_at) || Infinity)), f = its[0];
