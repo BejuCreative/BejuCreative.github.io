@@ -683,7 +683,7 @@ async function loadClients() {
   const [clients, deliveries, payments, retainers, st, notes, m, proms, scs, pipe, ordRows, probs, calls, cNotes, cTasks] = await Promise.all([
     all("clients", "id,name,emails,show,drive_folder,source"),
     all("deliveries", "id,client_id,title,order_name,kind,duration_s,link,delivered_at", q => q.order("delivered_at", { ascending: false }).order("id")),
-    all("payments", "client_id,amount,refunded,paid_at,package"),
+    all("payments", "client_id,email,amount,refunded,paid_at,package"),
     all("retainers", "id,email,name,amount,interval,status,started_at,current_period_end").catch(() => []),
     all("sync_status", "name,ran_at,ok,detail").catch(() => []),
     all("client_notes", "lead_email,kind,note,noted_at,created_at", q => q.eq("kind", "priority")).catch(() => []),
@@ -707,6 +707,7 @@ async function loadClients() {
   deliveries.forEach(v => (vids[v.client_id] = vids[v.client_id] || []).push(v));
   payments.forEach(p => { if (p.refunded) return; paid[p.client_id] = (paid[p.client_id] || 0) + (+p.amount || 0); nPay[p.client_id] = (nPay[p.client_id] || 0) + 1; const d = dayOf(p.paid_at); if (!lastPay[p.client_id] || d > lastPay[p.client_id]) lastPay[p.client_id] = d;
     if (!lastAt[p.client_id] || +new Date(p.paid_at) > +new Date(lastAt[p.client_id])) { lastAt[p.client_id] = p.paid_at; lastAmt[p.client_id] = +p.amount || 0; } });   // the newest payment = the price of the last pack (row money)
+  const payByE = {}; payments.forEach(p => { if (p.refunded || !p.email || !p.paid_at) return; const k = lc(p.email), x = +new Date(p.paid_at); if (!(payByE[k] >= x)) payByE[k] = x; });   // 11-23 activity dot: a payment matched by the client's email too
   const liveCalls = calls.filter(k => !/cancel/i.test(k.status || "")), nowMs = Date.now();
   const ret = {}; retainers.forEach(r => { if (/active|trialing|past_due/i.test(r.status || "")) ret[lc(r.email)] = r; });
   const prio = {}; notes.slice().sort((a, b) => ((a.noted_at || "") + (a.created_at || "")).localeCompare((b.noted_at || "") + (b.created_at || ""))).forEach(n => { prio[lc(n.lead_email)] = n.note; });
@@ -751,7 +752,9 @@ async function loadClients() {
     const cur = open.length ? { done: open.reduce((a, o) => a + o.done, 0), bought: open.reduce((a, o) => a + o.bought, 0), open: true } : lastPk ? { done: lastPk.done, bought: lastPk.bought, open: false } : null;
     const myC = liveCalls.filter(k => es.includes(lc(k.email))).map(k => +new Date(k.start_at)), lastCall = Math.max(0, ...myC.filter(x => x <= nowMs)), nextCall = Math.min(Infinity, ...myC.filter(x => x > nowMs));
     return { ...c, vids: vs, paid: paid[c.id] || 0, nPay: nPay[c.id] || 0, lastAmt: lastAmt[c.id] || 0, last, ret: r, plan, gone, cat, today: vs.filter(v => v.delivered_at === t).length, proms: pr, scope: sc, att, packs, legacy, prob, state, worst, waiting,
-      failed, mark, cur, lastCall: lastCall || null, nextCall: isFinite(nextCall) ? nextCall : null };
+      failed, mark, cur, lastCall: lastCall || null, nextCall: isFinite(nextCall) ? nextCall : null,
+      dlv: last ? { day: dayOf(last), title: vs.filter(v => v.delivered_at === last).sort((x, y) => (+((/Short\s*(\d+)/i.exec(y.title || "") || [])[1]) || 0) - (+((/Short\s*(\d+)/i.exec(x.title || "") || [])[1]) || 0))[0].title || "" } : null,
+      payMs: Math.max(0, +new Date(lastAt[c.id] || 0) || 0, ...es.map(e => payByE[e] || 0)) || 0 };
   }).filter(c => c.vids.length || c.paid || c.ret);
   const by = k => list.filter(c => c.cat === k);
   const groups = [["retainer", "Monthly retainer", by("retainer").sort((a, b) => b.ret.amount - a.ret.amount)],
@@ -886,16 +889,49 @@ const ordForm = o => `<form class="cl-oe" data-oid="${o.id}" novalidate><label><
   <label><span>Kind</span>${oSel("kind", OKIND, o.kind)}</label><label><span>Status</span>${oSel("status", OSTAT, o.status)}</label>
   <div class="cl-oe-b"><button type="button" class="act" data-ocancel>Cancel</button><button type="submit" class="act go">Save</button></div><p class="cl-oe-err" hidden></p></form>`;
 /* 11-23 (BENAS: "name + plan size + money + one status mark, nothing else"): data-st / data-today / data-q keep the filter and search */
-const MARK = { attn: "Needs attention", wait: "Waiting on client", ok: "On track", past: "Past client" };
-function clientRow(c, sel) {
+/* 11-23: one activity dot per client = days since the newest of: we are building for them (an open production item in desk_items),
+   we delivered (deliveries), they wrote (threads in, REAL replies) or they paid (payments). green 0-5 days, amber 6-14, red 15+; none = red.
+   The dot says why in plain words: a native title, an aria-label, and on a phone a tap opens a one-line note under the name. */
+function adCtx() {
+  const R = window.BEJU_CRM_REPLIES, raw = R && R.raw, X = { inb: {}, prod: [] }; if (!raw) return X;
+  (raw.tlite || []).forEach(m => { if (m.direction === "out") return; const k = lc(m.lead_email), x = +new Date(m.at) || 0; if (!(X.inb[k] >= x)) X.inb[k] = x; });
+  (raw.replies || []).forEach(r => { if (r.kind !== "REAL") return; const k = lc(r.lead_email), x = +new Date(r.received_at) || 0; if (!(X.inb[k] >= x)) X.inb[k] = x; });
+  X.prod = (raw.desk || []).filter(x => x.kind === "production" && (!x.status || x.status === "open"));
+  return X;
+}
+const adCut = (s, n) => (s = String(s)).length > n ? s.slice(0, n - 1) + "…" : s;
+const adName = s => lc(String(s || "").replace(/\s*\(.*?\)/g, ""));
+function adOf(c, X) {
+  const es = (c.emails || []).map(lc), sig = [], now = Date.now();
+  if (c.dlv && c.dlv.day) sig.push({ ms: Math.min(+new Date(c.dlv.day + "T12:00:00Z"), now), day: c.dlv.day, what: `delivered '${adCut(c.dlv.title || "a video", 40)}'` });
+  if (c.payMs) sig.push({ ms: c.payMs, what: "payment" });
+  const inb = Math.max(0, ...es.map(e => X.inb[e] || 0)); if (inb) sig.push({ ms: inb, what: "they wrote" });
+  const nm = adName(c.name); if (X.prod.some(x => (x.emails || []).some(e => es.includes(lc(e))) || (nm && adName(x.client) === nm))) sig.push({ ms: now, what: "building now", live: true });
+  if (!sig.length) return { cls: "a-r", why: "No activity recorded", word: "no activity recorded" };
+  const s = sig.reduce((a, b) => b.ms > a.ms ? b : a), days = s.live ? 0 : s.day ? Math.max(0, Math.round((+new Date(dayOf(now) + "T00:00:00Z") - +new Date(s.day + "T00:00:00Z")) / 864e5)) : Math.max(0, Math.floor((now - s.ms) / 864e5));
+  let t; if (s.live) t = "building now"; else if (s.day) t = days < 1 ? "today" : days === 1 ? "1 day ago" : `${days} days ago`;
+  else { const m = Math.max(0, Math.round((now - s.ms) / 6e4)); t = m < 1 ? "just now" : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : days === 1 ? "1 day ago" : `${days} days ago`; }
+  const why = s.live ? "Last: building now" : `Last: ${s.what} · ${t}`;
+  return days <= 5 ? { cls: "a-g", why, word: "active in the last 5 days" } : days <= 14 ? { cls: "a-o", why, word: "quiet for 6 to 14 days" } : { cls: "a-r", why, word: "quiet for 15 days or more" };
+}
+const adAttrs = a => `title="${esc(a.why)}" aria-label="${esc(`Activity: ${a.word}. ${a.why}`)}"`;
+function paintDots() {   // the dashboard data (threads, replies, desk) lands after this page: paint the dots again with it
+  const L = CACHE.clients && CACHE.clients.list; if (!L || !$("#cl-list")) return; const X = adCtx();
+  $$("#cl-list .cl-item[data-cl]").forEach(el => { const c = L.find(x => x.id === el.dataset.cl), d = $(".cl-ad", el); if (!c || !d) return; const a = adOf(c, X);
+    d.className = `cl-ad ${a.cls}`; d.setAttribute("title", a.why); d.setAttribute("aria-label", `Activity: ${a.word}. ${a.why}`); $(".cl-an", el).textContent = a.why; });
+}
+addEventListener("beju-crm:data", () => { if (ON && PAGE === "clients") paintDots(); });
+function clientRow(c, sel, X) {
+  const ad = adOf(c, X || adCtx());
   const size = c.plan ? (c.plan.shorts ? `${int(c.plan.shorts)} Shorts / mo` : "Monthly") : c.cur ? `${int(c.cur.bought)} Shorts` : "—";
   const money = c.ret ? `${usd(c.ret.amount)} / ${PER(c.ret)}` : c.lastAmt ? usd(c.lastAmt) : "";
-  return `<a class="cl-item" href="?p=clients&amp;c=${esc(c.id)}" data-cl="${esc(c.id)}" data-st="${esc([c.ret ? "retainer" : "", ...new Set(c.packs.map(o => o.st)), c.mark === "attn" ? "attn" : ""].join(" ").trim())}" data-today="${c.today}" data-q="${esc(lc([c.name, c.show, ...(c.emails || [])].join(" ")))}"${c.cat === "past" ? " data-past" : ""}${sel && c.id === sel.id ? ' aria-current="true"' : ""}><span class="grow"><span class="t">${esc(c.name || "Client")}</span><span class="s">${esc(size)}</span></span>${money ? `<span class="cl-mn">${esc(money)}</span>` : ""}<i class="cl-dot k-${c.mark}" role="img" aria-label="${MARK[c.mark]}" title="${MARK[c.mark]}"></i></a>`;
+  return `<a class="cl-item" href="?p=clients&amp;c=${esc(c.id)}" data-cl="${esc(c.id)}" data-st="${esc([c.ret ? "retainer" : "", ...new Set(c.packs.map(o => o.st)), c.mark === "attn" ? "attn" : ""].join(" ").trim())}" data-today="${c.today}" data-q="${esc(lc([c.name, c.show, ...(c.emails || [])].join(" ")))}"${c.cat === "past" ? " data-past" : ""}${sel && c.id === sel.id ? ' aria-current="true"' : ""}><span class="cl-ad ${ad.cls}" role="img" ${adAttrs(ad)}><i></i></span><span class="grow"><span class="t">${esc(c.name || "Client")}</span><span class="s">${esc(size)}</span><span class="cl-an" hidden>${esc(ad.why)}</span>${c.mark === "attn" ? `<span class="chip r cl-need">Needs attention</span>` : ""}</span>${money ? `<span class="cl-mn">${esc(money)}</span>` : ""}</a>`;
 }
 function viewClients(d) {
   if (!d.list.length) return `<section class="card sp-card cl-none">${empty("No clients with videos or payments yet.")}</section>`;
   const sel = d.list.find(c => c.id === (CL_SEL || param("c"))) || (d.groups.find(g => g[2].length) || [0, 0, []])[2][0], H = d.hero, fr = H.bought ? Math.round(100 * H.done / H.bought) : 0;
   CL_SEL = sel ? sel.id : null;
+  const AX = adCtx();
   /* hero (BENAS: "a proper main dashboard like with all pages at the top"): the Email campaigns overview tiles, three numbers */
   const hero = `<section class="card sp-card ec-hero cl-hero" aria-label="Clients overview"><div class="ec-board cl-board">
     <div class="tile ec-t" data-v="n:0"><span class="ec-l">Monthly recurring</span><b class="ec-n">${cu(H.mrr, "usd", "cl-mrr")}</b><small>${H.nRet} plan${H.nRet === 1 ? "" : "s"}${H.failed ? ` · <span class="dn">${H.failed} payment${H.failed === 1 ? "" : "s"} failed</span>` : ""}</small></div>
@@ -906,7 +942,7 @@ function viewClients(d) {
   const past = d.groups[2][2].length;
   return `${hero}${window.BEJU_CLIENT_BOARD ? window.BEJU_CLIENT_BOARD.bar(d) : ""}
   <div class="cl-wrap"><section class="card sp-card cl-lc"><div class="cl-tools"><input class="cl-q" id="cl-q" type="search" placeholder="Find a client" aria-label="Find a client" autocomplete="off" spellcheck="false"><select class="cl-f" id="cl-f" aria-label="Filter by status">${F.map(([k, l]) => `<option value="${k}"${CLF === k ? " selected" : ""}>${esc(l)}</option>`).join("")}</select></div>
-    <div class="cl-list" id="cl-list">${d.groups.map(([k, label, cs]) => cs.length ? `<div class="cl-grp" data-grp="${k}"><span>${label}</span><span class="n">${cs.length}</span></div>${cs.map(c => clientRow(c, sel)).join("")}` : "").join("")}</div>
+    <div class="cl-list" id="cl-list">${d.groups.map(([k, label, cs]) => cs.length ? `<div class="cl-grp" data-grp="${k}"><span>${label}</span><span class="n">${cs.length}</span></div>${cs.map(c => clientRow(c, sel, AX)).join("")}` : "").join("")}</div>
     ${past ? `<button type="button" class="more cl-past" id="cl-past" aria-expanded="${CL_PAST}">${CL_PAST ? "Hide past" : `Show past · ${past}`}</button>` : ""}<p class="empty cl-nomatch" hidden>No client matches.</p></section>
     <section class="card sp-card" id="cl-detail">${clientDetail(sel, d.t)}</section></div>
   ${callsSec(d.calls)}`;
@@ -971,6 +1007,8 @@ function wireClients() {
   });
   filterClients(); paintHold(); if (CL_MORE) fillCalls();
   $("#cl-list")?.addEventListener("click", ev => {
+    const dot = ev.target.closest(".cl-ad");   // 11-23: on a phone (or any touch screen) the dot toggles its one-line note and does not open the client
+    if (dot && (innerWidth <= 900 || matchMedia("(hover: none)").matches)) { ev.preventDefault(); const n = $(".cl-an", dot.closest(".cl-item")); if (n) n.hidden = !n.hidden; return; }
     const a = ev.target.closest("[data-cl]"); if (!a || ev.metaKey || ev.ctrlKey || ev.shiftKey) return; ev.preventDefault();
     const c = CACHE.clients.list.find(x => x.id === a.dataset.cl); if (!c) return;
     $$("#cl-list [data-cl]").forEach(x => x.dataset.cl === c.id ? x.setAttribute("aria-current", "true") : x.removeAttribute("aria-current"));
