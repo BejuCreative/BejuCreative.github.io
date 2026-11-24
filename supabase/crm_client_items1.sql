@@ -1,5 +1,8 @@
+begin;
 -- crm_client_items1.sql: the client delivery board (Clients page: one board per client + an all-clients board).
--- Prepared by Benas's side; apply only with a founder's go / Simas's side review. NOT applied to any database yet.
+-- Prepared by Benas's side. REVIEWED 11-24 by Benas's Claude (Simas's side offline, Benas: "take over simas side and review it"):
+-- diffed against the LIVE drafts_guard / draft_auto_approve / drafts_category_check. Fixes: keep the live 'report' category,
+-- keep the live 'sent outside the sender' branch, case-safe client email matching. Runs as ONE transaction.
 --
 -- ADDITIVE ONLY. What it adds:
 --   1. public.client_items: one row per Short (or other piece) we make for a client, with the batch it belongs to and where it is
@@ -72,7 +75,7 @@ alter table public.clients add column if not exists hold_sends boolean not null 
 -- 3. drafts: the 'client_delivery' category -------------------------------------------------------------------------------
 alter table public.drafts drop constraint if exists drafts_category_check;
 alter table public.drafts add constraint drafts_category_check
-  check (category in ('big_deal', 'client_problem', 'new_terms', 'big_name', 'other', 'sample', 'client_delivery'));
+  check (category in ('big_deal', 'client_problem', 'new_terms', 'big_name', 'other', 'sample', 'report', 'client_delivery'));   -- 11-24 review: 'report' is live, keep it
 
 -- how long an untouched draft of this category waits before it sends itself; null = never (not an auto category, or the client holds)
 create or replace function public.drafts_auto_window(p_category text, p_lead text) returns interval
@@ -80,7 +83,7 @@ language sql stable security definer set search_path = public, pg_temp as $$
   select case
     when p_category = 'sample' then interval '30 minutes'
     when p_category = 'client_delivery' then
-      case when exists (select 1 from public.clients c where c.hold_sends and lower(p_lead) = any (c.emails)) then null else interval '60 minutes' end
+      case when exists (select 1 from public.clients c, unnest(c.emails) e where c.hold_sends and lower(e) = lower(p_lead)) then null else interval '60 minutes' end
   end
 $$;
 revoke execute on function public.drafts_auto_window(text, text) from public, anon, authenticated;
@@ -114,6 +117,12 @@ begin
   if auto_ok then new.decided_by := 'auto: ' || (case when old.category = 'sample' then '30' else '60' end) || ' min, no founder change'; new.decided_at := now(); new.auto_send_at := null; return new; end if;
   if fix_ok then new.approved_sha256 := null; new.founder_note := null; new.decided_by := null; new.decided_at := null;
     new.auto_send_at := case when win is not null then now() + win end; return new; end if;
+  -- 11-23 (live, kept by the 11-24 review): record a draft that was SENT OUTSIDE the sender (a Claude sent the approved text by hand
+  -- after a stale/failed). System only, needs the Instantly email id; nothing is sent by this, it only closes the record.
+  if sys and old.status in ('stale','failed') and new.status = 'sent' and new.sent_email_id is not null
+     and new.body is not distinct from old.body then
+    new.sent_at := coalesce(new.sent_at, now()); new.error := 'sent outside the sender (recorded)'; return new;
+  end if;
   if old.status = 'sending' and not sys then raise exception 'draft % is being sent right now; wait a minute', old.id; end if;
   if new.body is distinct from old.body and old.status not in ('pending', 'held') then
     if old.status = 'approved' and not sys then new.status := 'pending'; new.approved_sha256 := null;   -- founder edit: approve again
@@ -166,10 +175,11 @@ language plpgsql security definer set search_path = public, pg_temp as $$
 begin
   if new.hold_sends is distinct from old.hold_sends then
     update public.drafts set auto_send_at = case when new.hold_sends then null else now() + interval '60 minutes' end
-     where category = 'client_delivery' and status = 'pending' and lower(lead_email) = any (new.emails);
+     where category = 'client_delivery' and status = 'pending' and lower(lead_email) in (select lower(e) from unnest(new.emails) e);
   end if;
   return new;
 end $$;
 revoke execute on function public.clients_hold_sends_sync() from public, anon, authenticated;
 drop trigger if exists clients_hold_sends_sync on public.clients;
 create trigger clients_hold_sends_sync after update of hold_sends on public.clients for each row execute function public.clients_hold_sends_sync();
+commit;
