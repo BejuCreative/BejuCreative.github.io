@@ -96,7 +96,7 @@ const param = k => new URLSearchParams(location.search).get(k);
 function go(p, extra = {}, replace = false) {
   const u = new URL(location.href);
   p === "dashboard" ? u.searchParams.delete("p") : u.searchParams.set("p", p);
-  if (p !== "clients") u.searchParams.delete("c"); if (p !== "expenses") u.searchParams.delete("m"); if (p !== "perf") u.searchParams.delete("k"); if (p !== "slack") u.searchParams.delete("ts");
+  if (p !== "clients") u.searchParams.delete("c"); if (p !== "expenses") u.searchParams.delete("m"); if (p !== "perf") u.searchParams.delete("k"); if (p !== "slack") u.searchParams.delete("ts"); if (p !== "approvals") u.searchParams.delete("id");
   Object.entries(extra).forEach(([k, v]) => v == null ? u.searchParams.delete(k) : u.searchParams.set(k, v));
   if (u.href !== location.href) history[replace ? "replaceState" : "pushState"]({ p }, "", u);
   show(p);
