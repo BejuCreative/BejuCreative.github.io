@@ -8,7 +8,8 @@
    we are doing and other tasks that we promised in her scope, categorised; follow the CRM style and make it clean"): a near-fullscreen
    panel (the delivery board panel's look; full screen on a phone):
      four squares: Promises live · Doing now · Waiting on client · Next due (Overdue on us when something is late);
-     DOING NOW: a card per item in progress (area, title, note, due, who, link, the status one tap away);
+     WHAT WE'RE DOING (SIMAS 11-25): a card per item in progress or waiting on a founder, newest update first (area, title, the latest
+       note + when it was updated, description, due, who, link, the status one tap away); any Claude logs work with crm.funnel_work();
      UP NEXT: the items not started yet that are due within 7 days (or overdue), as cards;
      WAITING ON THE CLIENT: the items that wait on them, as cards;
      FOUR CATEGORIES (SIMAS 11-25, replace the 8 area squares): Website (websites + seo) · Content (shorts + posting) · Funnel & sales
@@ -19,7 +20,7 @@
      CLIENT INFO: plan, email, links and the client notes (folded when long).
    ?fcl=<client id> in the address opens that client's panel. Esc, the X, the dimmed page or any sidebar item closes it. On a computer the
    panel leaves the sidebar open and clickable (funnel.css); on a phone it is full screen.
-   Data: public.scope_items + clients.funnel (supabase/crm_scope_items1.sql), clients (links + notes), client_items, retainers; read once per
+   Data: public.scope_items + clients.funnel (supabase/crm_scope_items1.sql; note + waiting_founder + Claude owners: crm_scope_items3.sql), clients (links + notes), client_items, retainers; read once per
    page load, then a targeted re-read after realtime events on this page's OWN channels. A database without the table or the column shows
    a calm empty state. Writes: scope_items.status only, as the signed-in founder (row-level security, is_admin()); optimistic: on an error
    it goes back and a toast says why. Claude keeps the rows current; founders read them here.
@@ -43,11 +44,11 @@ const AREA_L = Object.fromEntries(AREAS.map(a => [a[0], a[1]])), AREA_I = Object
 const CATS = [["web", "Website", "link", ["websites", "seo"]], ["content", "Content", "film", ["shorts", "posting"]],
   ["funnel", "Funnel & sales", "chart", ["lead_magnets", "setup", "reports", "other"]], ["asks", "What {n} asked", "mail", ["asks"]]];
 const CAT_OF = Object.fromEntries(CATS.flatMap(c => c[3].map(a => [a, c[0]])));
-const OWN = { simas: "o-simas", benas: "o-benas", both: "o-both", claude: "o-claude" };
+const OWN = { simas: "o-simas", benas: "o-benas", both: "o-both", claude: "o-claude", "simas's claude": "o-claude", "benas's claude": "o-claude" };
 const TZ = "Europe/Vilnius", HM = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
-const ST = [["not_started", "Not started"], ["in_progress", "In progress"], ["waiting_client", "Waiting on client"], ["live", "Live"], ["dropped", "Dropped"]];
+const ST = [["not_started", "Not started"], ["in_progress", "In progress"], ["waiting_client", "Waiting on client"], ["waiting_founder", "Waiting on founder"], ["live", "Live"], ["dropped", "Dropped"]];
 const ST_L = Object.fromEntries(ST);
-const SRANK = { in_progress: 0, waiting_client: 1, not_started: 2, live: 3, dropped: 4 };
+const SRANK = { in_progress: 0, waiting_founder: 1, waiting_client: 2, not_started: 3, live: 4, dropped: 5 };
 const BADGE = { behind: "Behind", risk: "At risk", on: "On track" };
 const RANK = { behind: 0, risk: 1, on: 2 };
 const PER = r => ({ month: "mo", year: "yr", week: "wk", day: "day" })[lc(r && r.interval) || "month"] || "mo";
@@ -119,6 +120,7 @@ function model(c) {
   const next = open.filter(i => ms(i.due_at)).sort(byDue)[0] || null;
   return { c, its, live, total: act.length, pct: act.length ? Math.round(100 * live / act.length) : 0, behind: behind.length, risk: risk.length, state,
     n: state === "behind" ? behind.length : state === "risk" ? risk.length : 0, next,
+    work: act.filter(i => i.status === "in_progress" || i.status === "waiting_founder").sort((a, b) => ms(b.updated_at) - ms(a.updated_at)),
     doing: act.filter(i => i.status === "in_progress").sort(byDue), waiting: act.filter(i => i.status === "waiting_client").sort(byDue),
     up: act.filter(i => i.status === "not_started" && ms(i.due_at) && ms(i.due_at) <= now + D7).sort(byDue), wait: act.filter(i => i.status === "waiting_client").length };
 }
@@ -128,6 +130,7 @@ function shortsOf(cid) {
   return { total: r.length, sent: n(i => i.status === "sent" || i.status === "approved"), ready: n(i => i.status === "ready"), building: n(i => i.status === "building"), changes: n(i => i.status === "changes") };   // an old "approved" row was sent too
 }
 const dShort = t => { const now = Date.now(), d = A.dayOf(t); return d === A.dayOf(now) ? "Today" : d === A.dayOf(now + 864e5) ? "Tomorrow" : A.dLabel(d); };
+const updAgo = t => { const v = ms(t); if (!v) return ""; const a = ago(v); return a === "today" ? `today ${HM.format(v)}` : a; };
 const ago = t => { const v = ms(t); if (!v) return ""; const d = A.dayOf(v), n = Date.now(); return d === A.dayOf(n) ? "today" : d === A.dayOf(n - 864e5) ? "yesterday" : A.dLabel(d); };
 /* a due date: [text, class] (late = past due and still on us, soon = within 48 h) */
 function due(i) {
@@ -179,13 +182,14 @@ const choices = (i, key) => ST.map(([id, l]) => `<button type="button" role="men
 const menuHTML = (i, key) => `<div class="fc-menu" role="menu" aria-label="Set the status"${MENU === key ? "" : " hidden"}>${choices(i, key)}</div>`;
 /* a task card (doing now, up next, waiting on the client) */
 function taskCard(i, where, full) {
-  const [t, k] = due(i), u = webUrl(i.link), dt = String(i.detail || "").trim(), key = where + ":" + i.id, open = DET.has(key), long = !full && dt.length > 150;
+  const [t, k] = due(i), u = webUrl(i.link), dt = String(i.detail || "").trim(), nt = String(i.note || "").trim(), up = updAgo(i.updated_at), key = where + ":" + i.id, open = DET.has(key), long = !full && dt.length > 150;
   return `<article class="fc-tc" data-id="${esc(i.id)}" data-key="${esc(key)}" data-st="${esc(i.status)}">
     <span class="fc-tc1"><span class="fc-ar">${ic(AREA_I[i.area] || "star")}<span>${esc(AREA_L[i.area] || "Other")}</span></span>${pillHTML(i, key)}</span>
     ${menuHTML(i, key)}
     <b class="fc-at">${esc(i.title)}${i.recurring ? ` <span class="fc-rec">${esc(i.recurring)}</span>` : ""}</b>
+    ${nt ? `<p class="fc-nt"><b>Latest</b> ${esc(nt)}</p>` : ""}
     ${dt ? `<p class="fc-an${long && !open ? " short" : ""}">${esc(dt)}</p>` : ""}
-    <span class="fc-af">${t ? `<span class="fc-due ${k}">${esc(t)}</span>` : ""}${i.owner ? ownChip(i.owner) : ""}
+    <span class="fc-af">${t ? `<span class="fc-due ${k}">${esc(t)}</span>` : ""}${i.owner ? ownChip(i.owner) : ""}${up ? `<small class="fc-upd">Updated ${esc(up)}</small>` : ""}
       <span class="fc-afr">${long ? `<button type="button" class="fc-dtb" data-fcdt="${esc(key)}" data-f="dt:${esc(key)}" aria-expanded="${open}">${open ? "Less" : "More"}</button>` : ""}${u ? lk(u, `Open the link for ${i.title}`) : ""}</span></span></article>`;
 }
 function shortsHTML(s) {
@@ -201,7 +205,7 @@ function catTile(m, cat, s) {
   return `<button type="button" class="tile fc-cat${on ? " on" : ""}" data-fccat="${id}" data-f="cat:${id}" aria-pressed="${on}" aria-controls="fc-catd">
     <span class="fc-cath"><span class="fc-cati">${ic(icn)}</span><b>${esc(catName(cat, m.c))}</b><span class="fc-catc">${ic("chev")}</span></span>
     <span class="fc-catn"><span class="fc-cn is-done"><b>${lv}</b><small>Done</small></span><span class="fc-cn is-doing"><b>${n("in_progress")}</b><small>Doing</small></span>
-      <span class="fc-cn is-wait"><b>${n("waiting_client")}</b><small>Waiting</small></span><span class="fc-cn${late ? " bad" : ""}"><b>${late}</b><small>Overdue</small></span></span>
+      <span class="fc-cn is-wait"><b>${n("waiting_client") + n("waiting_founder")}</b><small>Waiting</small></span><span class="fc-cn${late ? " bad" : ""}"><b>${late}</b><small>Overdue</small></span></span>
     ${barOf(lv, act.length, " fc-bar-s")}
     <span class="fc-catf">${Object.entries(own).map(([o, k]) => ownChip(o, k)).join("")}${extra ? `<small>${esc(extra)}</small>` : ""}${!act.length && !extra ? "<small>Nothing here yet</small>" : ""}</span></button>`;
 }
@@ -263,7 +267,7 @@ function bodyHTML(c, m) {
   const tiles = `<div class="fc-cats" role="group" aria-label="Categories: click one for every task in it">${CATS.map(x => catTile(m, x, s)).join("")}</div>`;
   if (CAT) return `${stats}${tiles}${catHTML(m, s)}${sec("info", "Client info", null, infoHTML(c))}`;
   return `${stats}${tiles}
-    ${sec("doing", "Doing now", m.doing.length, m.doing.length ? cards(m.doing, "d") : quiet("Nothing in progress right now."))}
+    ${sec("doing", "What we're doing", m.work.length, m.work.length ? cards(m.work, "d") : quiet("Nothing in progress right now."), "in progress or waiting on a founder · newest update first")}
     ${m.up.length ? sec("up", "Up next", m.up.length, cards(m.up.slice(0, 8), "u"), m.up.length > 8 ? `${m.up.length - 8} more in the categories above` : "not started, due within 7 days") : ""}
     ${m.waiting.length ? sec("wait", "Waiting on the client", m.waiting.length, cards(m.waiting, "w")) : ""}
     ${sec("info", "Client info", null, infoHTML(c))}`;

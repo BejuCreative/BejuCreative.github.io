@@ -106,7 +106,7 @@ html.fc-locked{overflow:hidden}
 .fc-tcg{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px;min-width:0}
 .fc-tc{display:flex;flex-direction:column;gap:8px;min-width:0;padding:14px 16px 10px 18px;border-radius:var(--r-tile);background:var(--tile);border:1px solid var(--line);box-shadow:var(--shadow);position:relative;overflow:hidden}
 .fc-tc::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--line-2)}
-.fc-tc[data-st="in_progress"]::before{background:var(--blue)} .fc-tc[data-st="live"]::before{background:var(--green)} .fc-tc[data-st="waiting_client"]::before{background:#b7791f}
+.fc-tc[data-st="in_progress"]::before{background:var(--blue)} .fc-tc[data-st="live"]::before{background:var(--green)} .fc-tc[data-st="waiting_client"]::before{background:#b7791f} .fc-tc[data-st="waiting_founder"]::before{background:#be185d}
 .fc-tc1{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
 .fc-ar{display:inline-flex;align-items:center;gap:6px;min-width:0;font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--mute)}
 .fc-ar .ic{flex:none;width:14px;height:14px}
@@ -114,6 +114,9 @@ html.fc-locked{overflow:hidden}
 .fc-at{font-size:15px;font-weight:600;line-height:1.35;overflow-wrap:anywhere}
 .fc-an{margin:0;font-size:13px;line-height:1.5;color:var(--ink-2);white-space:pre-line;overflow-wrap:anywhere}
 .fc-an.short{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+/* 11-25: the latest progress note (scope_items.note) + when the item was last updated */
+.fc-nt{margin:0;padding:6px 10px;border-radius:10px;background:var(--blue-soft);font-size:13px;line-height:1.45;color:var(--ink);overflow-wrap:anywhere}
+.fc-nt b{margin-right:4px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--blue)}
 .fc-af{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;min-width:0}
 .fc-tc>.fc-af{margin-top:auto}
 .fc-af small{font-size:13px;color:var(--mute)}
@@ -198,6 +201,7 @@ html.fc-locked{overflow:hidden}
 .fc-pill::after{content:"";width:6px;height:6px;margin-top:-3px;border:solid currentColor;border-width:0 1.5px 1.5px 0;transform:rotate(45deg);opacity:.7}
 .s-in_progress.fc-pill,.s-in_progress.fc-mi{background:var(--blue-soft);color:var(--blue);box-shadow:none}
 .s-waiting_client.fc-pill,.s-waiting_client.fc-mi{background:rgba(183,121,31,.14);color:#8a5a12;box-shadow:none}
+.s-waiting_founder.fc-pill,.s-waiting_founder.fc-mi{background:rgba(190,24,93,.11);color:#9d174d;box-shadow:none}
 .s-live.fc-pill,.s-live.fc-mi{background:var(--green-soft);color:var(--green);box-shadow:none}
 .s-dropped.fc-pill,.s-dropped.fc-mi{background:transparent;color:var(--mute)}
 .fc-menu{display:flex;flex-wrap:wrap;gap:6px;padding:8px;border-radius:14px;background:var(--panel);border:1px solid var(--line);animation:fc-in .22s var(--out) both}
@@ -217,6 +221,9 @@ html.fc-locked{overflow:hidden}
 :root[data-mode="dark"] .fc-ps.is-doing .fc-pbig,:root[data-mode="dark"] .fc-ccb.is-doing b,:root[data-mode="dark"] .fc-cn.is-doing b,:root[data-mode="dark"] .fc-cat.on .fc-catc{color:#a9c0ff}
 :root[data-mode="dark"] .fc-cat.on{box-shadow:0 0 0 2px #a9c0ff}
 :root[data-mode="dark"] .s-waiting_client.fc-pill,:root[data-mode="dark"] .s-waiting_client.fc-mi,:root[data-mode="dark"] .fc-ps.is-wait .fc-pbig,:root[data-mode="dark"] .fc-ccb.is-wait b,:root[data-mode="dark"] .fc-cn.is-wait b{color:#e0b35a}
+:root[data-mode="dark"] .s-waiting_founder.fc-pill,:root[data-mode="dark"] .s-waiting_founder.fc-mi{background:rgba(244,114,182,.15);color:#f9a8d4}
+:root[data-mode="dark"] .fc-tc[data-st="waiting_founder"]::before{background:#f472b6}
+:root[data-mode="dark"] .fc-nt{background:rgba(130,160,255,.12)} :root[data-mode="dark"] .fc-nt b{color:#a9c0ff}
 :root[data-mode="dark"] .fc-own.o-simas{background:rgba(165,180,252,.14);color:#a5b4fc}
 :root[data-mode="dark"] .fc-own.o-benas{background:rgba(94,234,212,.12);color:#5eead4}
 :root[data-mode="dark"] .fc-own.o-both{background:rgba(240,171,252,.12);color:#f0abfc}
