@@ -6,4 +6,5 @@ window.BEJU_CRM = {
   supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpmbnB2Y3JudWp4bHljbXF1a3FzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzMjMyNzgsImV4cCI6MjEwNzg5OTI3OH0.1MT1RtPT_REhVtekoLRga_BRvlxZnWSzwUF-Z_S314Y",
   monthlyGoal: 10000,          // "Road to $10k / month" (Simas 11-12)
   timezone: "Europe/Vilnius",  // every date and time on the page
+  vapidPublicKey: "BOdKrXLXvvl-xAfprUsjeuyK3nkfwX6Nze0MLEZCqzp90VMpeqfMXif2VdUvLS1r5s1R7IEFPwYArzbypGJGrSE",   // Web Push (iPhone notifications, 11-25). PUBLIC key; the private half lives only in the push-send function secrets
 };
