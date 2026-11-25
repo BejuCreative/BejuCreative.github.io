@@ -125,6 +125,9 @@ button.tile:hover,.tile.tap:hover{transform:translateY(-2px);box-shadow:0 2px 4p
 .chip{font-family:var(--sans);letter-spacing:0;display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:500;border-radius:999px;padding:3px 8px;background:var(--panel);color:var(--ink-2);white-space:nowrap}
 .tile .chip{background:var(--panel)}
 .chip.b{background:var(--blue-soft);color:var(--blue)} .chip.o{background:var(--orange-soft);color:#8f4a05} .chip.g{background:var(--green-soft);color:var(--green)} .chip.r{background:var(--red-soft);color:var(--red)}
+/* 11-23: the "why is it waiting" chip (Do next rows, Replies page): one line, ellipsis when it does not fit; 13 px so a phone can read it */
+.chip.why{display:block;width:fit-content;max-width:100%;min-width:0;flex:0 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;line-height:1.3}
+.row-main .chip.why,.li-nm .chip.why{margin:3px 0 1px} .li-nm>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis}   /* Do next card: the chip sits under the name, so a narrow card keeps both readable */
 :root[data-mode="dark"] .chip.o{color:var(--orange)}
 .delta{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:12.5px;font-weight:500;background:var(--tile);border:1px solid var(--line);border-radius:10px;padding:6px 10px;box-shadow:var(--shadow)}
 .tri{width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:8px solid currentColor}
@@ -361,7 +364,11 @@ button.row{width:100%;text-align:left;border-radius:var(--r-tile)}
 /* ======================================================================
    v2 (2026-11-12): website brand skin, top bar, hero, live, portal zone
    ====================================================================== */
-em.sf{font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:-.01em;color:var(--key)}
+/* BENAS 11-23 (third look, measured in WebKit at iPhone size): the serif word must be "THE SAME SIZE… the same line as the text before it".
+   Two separate faults: (1) its lowercase letters are ~14% shorter than the sans at the same font-size (x-height 6.9 vs 8.0 at 15px);
+   font-size-adjust scales only the glyphs so the x-heights match while the font-size stays the parent's. (2) inside flex titles
+   (.ct.go, align-items:center) it sat 2.3px above the sans baseline; those titles now align on the baseline (rule below). */
+em.sf{font-family:var(--serif);font-style:italic;font-weight:500;letter-spacing:-.01em;color:var(--key);font-size-adjust:.52;vertical-align:baseline}
 /* atmosphere: a slow colour drift behind everything (each look has its own --bd), plus grain on the dark looks */
 body::before,body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1}
 body::before{inset:-20%;background:var(--bd);animation:aurora 38s ease-in-out infinite alternate;will-change:transform}
@@ -420,6 +427,7 @@ body::before{inset:-20%;background:var(--bd);animation:aurora 38s ease-in-out in
 .odo .os span{display:block;height:1em}
 .odo .oc{display:inline-block;height:1em}
 .odo .oc.u{font-size:.56em;margin:.12em .06em 0 0;opacity:.85}
+#hero .odo{display:flex;align-items:flex-end} #hero .odo .oc.u{height:auto;line-height:1;margin:0 .06em .2em 0}   /* BENAS 11-23 "dollar sign placed poorly": .tapn (later, same weight) set display:block, so the small $ sat on the digit boxes' bottom edge ; BENAS picked a small $ sitting on the digits' baseline */
 .hero-sub{color:var(--ink-2);font-size:14.5px;max-width:46ch}
 .hero-sub .mono{color:var(--ink)}
 .hero-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
@@ -455,7 +463,7 @@ body::before{inset:-20%;background:var(--bd);animation:aurora 38s ease-in-out in
 
 /* ---------- zone heading ---------- */
 .zone-h{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;font-size:26px;font-weight:600;letter-spacing:-.03em;margin:22px 4px 14px}
-.zone-h em.sf{font-size:1.12em}
+.zone-h em.sf{font-size:1em}
 .zone-h span{font-size:13.5px;font-weight:400;color:var(--mute);letter-spacing:0}
 
 /* ---------- expand button + modal ---------- */
@@ -771,7 +779,7 @@ html.paused *,html.paused *::before,html.paused *::after{animation-play-state:pa
   .top{top:calc(6px + env(safe-area-inset-top));gap:6px;padding:5px 6px;margin-bottom:12px;border-radius:18px;background:var(--over)}
   .top-brand span:last-child,.top-nav,.hide-ph,.stat b,.stat small,.pal-btn span,.pal-btn .kbd{display:none}
   .top-brand .logo{width:38px;height:38px}
-  .ownr{display:grid;margin-right:auto;padding:3px;border-radius:12px} .ownr button{padding:0 9px;min-height:38px;font-size:12.5px}
+  .ownr{display:none} #top .top-tools{margin-left:auto}   /* BENAS 11-23: no All / Simas / Benas switch on the phone ("remove that, not needed"); the filter stays on All, and is still in Search (⌘K) on desktop */
   .stat{padding:0 10px;height:44px;background:transparent} .top .icon-btn,.pal-btn{width:44px;height:44px;padding:0;justify-content:center;border:0}
   .top-tools{gap:0;margin-left:0}
   /* hero */
@@ -1010,7 +1018,7 @@ html[data-motion="calm"] .ticker-t{animation:none;white-space:normal;flex-wrap:w
 /* ---------- 11-21: notification bell + panel + action toasts, touch form, touchpoints, Pipeline card (existing tokens only) ---------- */
 .nt-btn{position:relative}
 .nt-btn[hidden]{display:none}
-.nt-n{position:absolute;top:-4px;right:-5px;min-width:17px;height:17px;border-radius:99px;background:var(--red);color:var(--on-accent);font:600 10px/17px var(--mono);font-style:normal;text-align:center;padding:0 4px;pointer-events:none}
+.nt-n{position:absolute;top:-1px;right:-6px;min-width:16px;height:16px;border-radius:99px;background:var(--red);color:var(--on-accent);font:600 9.5px/16px var(--mono);font-style:normal;text-align:center;padding:0 4px;pointer-events:none}   /* 11-23 (SIMAS "glitched"): inside the top bar, never cut off by its edge */
 .nt-n[hidden]{display:none}
 .nt-tools{margin-bottom:2px}
 .nt .row-end{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--mute)}
@@ -1054,6 +1062,22 @@ html[data-motion="calm"] .ticker-t{animation:none;white-space:normal;flex-wrap:w
 .cc-rec{display:inline-flex;align-items:center;gap:5px;margin-top:9px;font-size:12.5px}
 .cc-rec .ic{width:15px;height:15px}
 @media (max-width:600px){.ctick{width:24px;height:24px} .ct-m{white-space:normal}}
+/* 11-25 Fathom summary inside a call card (crm.js fxBlock): 4 lines until "Show the full summary" is tapped; action items 5+ fold with it */
+.fth{margin-top:10px;padding-top:9px;border-top:1px solid var(--line)}
+.cc-h+.fth{margin-top:0;padding-top:0;border-top:0}
+.fth>.cc-l:first-child{margin-top:0}
+.fx-sum{color:var(--ink-2);line-height:1.45;overflow-wrap:anywhere}
+.fx-sum p{margin:0 0 5px}
+.fx-sum .fx-h{font-weight:600;color:var(--ink);margin:9px 0 3px}
+.fx-sum .fx-h:first-child{margin-top:0}
+.fx-sum ul{margin:0 0 6px;padding-left:18px;display:grid;gap:3px}
+.fx-sum li.l1{margin-left:14px}
+.fx-sum li.l2{margin-left:28px}
+.fth:not(.open) .fx-sum{max-height:5.8em;overflow:hidden;-webkit-mask-image:linear-gradient(#000 75%,transparent);mask-image:linear-gradient(#000 75%,transparent)}
+.fth:not(.open) .fx-x{display:none}
+button.fx-more{display:block;margin-top:4px;padding:4px 0;font-size:12.5px;text-align:left}
+.fx-acts li.done{text-decoration:line-through;color:var(--mute)}
+@media (max-width:600px){.fx-sum,.fx-acts{font-size:15px} button.fx-more{font-size:14px;min-height:44px}}
 /* 11-21 lead drawer top (Benas), class dr-sum: stage, next step with its owner, the deal; then the conversation */
 .dr-sum .dt{display:grid;grid-template-columns:76px minmax(0,1fr);gap:10px;padding:7px 0;border-bottom:1px solid var(--line)}
 .dr-sum .dt:first-child{padding-top:0}
@@ -1062,6 +1086,22 @@ html[data-motion="calm"] .ticker-t{animation:none;white-space:normal;flex-wrap:w
 .dr-sum .dt-v small{display:block;color:var(--mute);font-size:12px;margin-top:4px}
 .dr-sum .dt-v .dr-txt{margin-top:2px}
 .dr-sum .dt-v p+p{margin-top:3px}
+/* 11-22 (BENAS "status line, then newest message"): one status line on top of the drawer (stage · next step · owner + due day), then the
+   conversation newest first: the newest marked, the older ones (past the newest 10) behind "Show older messages" */
+.dr-st{display:flex;align-items:center;gap:10px;min-width:0;padding:9px 14px;background:var(--panel);border-radius:14px;font-size:13.5px}
+.dr-st-s,.dr-st-o{flex:none;white-space:nowrap}
+.dr-st-n{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dr-st-o{margin-left:auto}
+.cv-older{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+.cv-more{justify-self:center;margin-top:4px}
+.cv-m{scroll-margin-top:64px}
+.cv-new{display:inline-block;color:var(--blue);border:1px solid currentColor;border-radius:6px;padding:0 5px;margin-right:6px;font-weight:600}
+@media (max-width:600px){
+  .dr-st{font-size:15px;padding:9px 12px}
+  .dr-st-s{display:none}   /* the stage chip is in the fixed top on a phone */
+  .dr-st-n{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .act.cv-more{min-height:44.5px}   /* 44 px tap height with a half-pixel margin: the button measured 43.999 px on some runs, so the tap-size check flaked (founder request 11-23) */
+}
 /* 11-21 "Add call notes" form on a call card (crm.js callNotesForm) */
 .cc-add{margin-top:8px}
 .cnform{border-top:1px solid var(--line);padding-top:12px}
@@ -1292,8 +1332,8 @@ html:not([data-tab="home"]) .asof{display:none}
 #grid .card{padding:20px 20px 18px}
 #grid .ch{margin-bottom:14px}
 #grid .card:not(.feat) .ct{color:var(--ink);font-weight:600;font-size:15px;letter-spacing:-.01em}
-.ct.go{display:inline-flex;align-items:center;gap:3px;min-width:0;border-radius:8px;text-align:left}
-.ct.go .ic{width:15px;height:15px;opacity:.4;transition:transform .2s var(--ease),opacity .2s}
+.ct.go{display:inline-flex;align-items:baseline;gap:3px;min-width:0;border-radius:8px;text-align:left}   /* baseline, not center: the serif word and the sans words share one line (BENAS 11-23) */
+.ct.go .ic{width:15px;height:15px;opacity:.4;transition:transform .2s var(--ease),opacity .2s;align-self:center}
 .ct.go:hover .ic,.ct.go:focus-visible .ic{opacity:1;transform:translateX(2px)}
 #grid .big{font-size:30px;letter-spacing:-.035em}
 #grid .big small{font-size:12.5px}
@@ -1321,6 +1361,7 @@ button.qt:hover{color:var(--ink)}
 #c-funnel .fun .fb i{background:var(--blue)}
 #c-funnel .fun .fb{height:14px;border-radius:5px} #c-funnel .fun .fb i{border-radius:5px}
 .fphone{margin:0 0 12px}
+.fsc .act{flex:none} .fsc .row-main small .chip{margin-right:4px} .fsc-none{margin:0 2px 12px;font-size:13px} .stack:has(>.fsc){margin-bottom:12px}   /* Forms sheet: the scopes we sent (11-22) */
 /* hero: odometer, one quiet line, four period numbers, the track */
 .hero-sub{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--mute);font-size:13.5px;text-align:left}
 .hero-sub .dl{margin:0}
@@ -1347,3 +1388,94 @@ html[data-motion="full"] .card.inview .it svg{animation:none}
 }
 /* side.css has its own small .ring (22 px conic dot) that loads after this file and squashed the Emails to close ring: undo it here */
 .card button.ring{width:100%;height:auto;border-radius:18px;background:none;-webkit-mask:none;mask:none}
+
+/* 11-22 (SIMAS): the phone number on the Forms card face */
+.li-nm{display:flex;flex-direction:column;min-width:0} .li-tel{font-family:var(--mono);font-size:11.5px;color:var(--mute);letter-spacing:-.01em;white-space:nowrap}
+
+/* ---------- 11-23 (BENAS): "Waiting on a founder", full width under the money hero (crm.js renderWof). Hidden at 0 items; then a quiet
+   "0 waiting" sits by the "as of" time. Design pass (BENAS "just like the other cards"): built from the Dashboard's own parts (.ch/.ct, the
+   hero's .odo number and .hero-sub line, the bento .lst/.li rows, .chip, the drawer's .cv-m bubbles); only layout and size here. ---------- */
+.wof{display:grid;grid-template-columns:minmax(0,1fr);row-gap:6px;padding:20px 20px 18px}   /* the bento cards' padding (#grid .card) */
+@media (min-width:840px){.wof{grid-template-columns:minmax(190px,.7fr) minmax(0,2.3fr);column-gap:40px}}   /* the anchor left, the list right */
+.wof>*{position:relative}   /* content above the card's hover glow (.card::before), so text keeps its contrast under the pointer */
+.wof .ch{margin-bottom:6px}
+.wof .odo{font-size:clamp(44px,4.4vw,64px);margin:4px 0 8px}   /* the hero's number, one step smaller: the hero stays the top thing */
+.wof .hero-sub{font-size:12.5px;row-gap:2px;column-gap:8px}
+.wof .hero-sub>span::before{content:none} .wof .hero-sub>span:not(:last-child)::after{content:"·";margin-left:8px;color:var(--faint)}   /* the dot trails, so a wrapped line never starts with one */
+.wof-r{position:relative}   /* .wof-b stretches over the whole row */
+.wof-r>.ic{width:16px;height:16px;color:var(--mute)}   /* the kind mark: a sprite line icon, no colour */
+.wof-b{position:absolute;inset:0;border-radius:8px}
+.wof-r:hover .wof-who,.wof-r:has(.wof-b:focus-visible) .wof-who{color:var(--blue)} :root[data-mode="dark"] .wof-r:hover .wof-who{color:var(--key)}
+.wof-who{display:flex;align-items:center;gap:6px;min-width:0;transition:color .2s} .wof-who>span:first-of-type{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.wof-who .chip{font-size:10.5px;padding:1px 6px}
+.wof-ask{display:flex;gap:8px;min-width:0;font-size:12.5px;font-weight:400;color:var(--mute);letter-spacing:0}
+.wof-ask>span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.wof .wof-rd{position:relative;z-index:1;flex:none;font-size:12.5px;color:var(--ink-2);text-decoration:none}   /* a quiet text control, above the row's button */
+.wof .wof-rd:hover,.wof .wof-rd[aria-expanded="true"]{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+.wof-d{padding:0 0 12px 30px}
+.wof-d .acts{margin:0}
+.wof .more{margin-top:6px}
+/* urgency: one level per row, shown only on a 6 px dot before the name and on the age; the count takes the worst row's level. The colours
+   are the chip r / chip o ones (light and dark); the count drops the hero's glow when it carries a level */
+.wof .u2,.wof .odo.u2{color:var(--red)} .wof .u1,.wof .odo.u1{color:#8f4a05}
+:root[data-mode="dark"] .wof .u2{color:color-mix(in srgb,var(--red) 70%,#fff)} :root[data-mode="dark"] .wof .u1{color:var(--orange)}
+.wof .odo.u1,.wof .odo.u2{filter:none}
+.wof-dot{width:6px;height:6px;border-radius:50%;flex:none;background:currentColor}
+#snav .sn-badge.wof-bad{background:var(--red);color:#fff}   /* any row to act on now: the Dashboard badge turns red */
+.wof-zero{margin-right:auto;font-family:var(--mono)} .wof-zero::before{content:"·";margin-right:12px;color:var(--faint)}
+.wof.wof-in{animation:a-fade .35s ease-out backwards,a-up .55s var(--out) backwards}
+html.pg-in .wof{animation:a-fade .3s ease-out backwards,a-up .5s var(--out) backwards}
+/* 11-24: "✓ Done" on a row (above the row's own button), the quiet "Waiting on them: N" line and its folded list, the Done · Undo bar
+   (clientboard.css's .cb-undo; on a wide screen it sits bottom-right instead of across the page) */
+.wof .wof-dn{position:relative;z-index:1;height:30px;padding:0 10px;border-radius:9px;font-size:12.5px;color:var(--ink-2);background:transparent}
+.wof .wof-dn .ic{width:13px;height:13px}
+@media (hover:hover) and (pointer:fine){ .wof .wof-dn:hover{color:var(--green);border-color:var(--green);background:var(--green-soft)} }
+.wof-th{display:flex;align-items:center;gap:8px;width:100%;min-height:40px;margin-top:8px;padding:0 2px;border:0;border-top:1px dashed var(--line);background:none;font:inherit;font-size:13px;color:var(--mute);text-align:left;cursor:pointer}
+.wof-th b{font-family:var(--mono);font-weight:500;color:var(--ink-2)}
+.wof-th .ic{width:14px;height:14px} .wof-th .ic:last-child{margin-left:auto;transition:transform .2s}
+.wof-th[aria-expanded="true"] .ic:last-child{transform:rotate(90deg)}
+.wof-th:hover{color:var(--ink-2)} .wof-th:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:6px}
+.wof-tl{opacity:.78}
+.wof-tl .wof-r:first-child{border-top:0}
+@media (min-width:601px){ .wof-undo{left:auto;right:24px;bottom:24px;width:min(440px,calc(100vw - 48px))} }
+.wof-undo .cb-undo-t{min-width:0} .wof-undo .cb-undo-t>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:600px){
+  .wof{padding:18px 16px 16px}   /* #grid .card on phones */
+  .wof .wof-dn{min-height:44px;min-width:44px;height:auto;padding:0 12px;font-size:13px}
+  .wof-th{min-height:44px}
+  .wof-who .chip,.wof .hero-sub{font-size:13px} .wof-ask{font-size:13px;flex-wrap:wrap} .wof-ask>span{flex-basis:100%}   /* "Read the draft" drops under the ask instead of squeezing it */
+  .wof .wof-rd{font-size:13px;padding:14px 6px;margin:-14px -6px}   /* 44 px to tap, the line keeps its height */
+  .wof-d{padding-left:0}
+}
+
+/* ---------- 11-23 phone pass (founder request 11-23): 44 px taps without changing the look, 13 px minimum text. Phone only. ---------- */
+@media (max-width:600px){
+  .ch>button.ct{position:relative} .ch>button.ct::after{content:"";position:absolute;inset:-12px 0}   /* card titles: 20 px to read, 44 px to tap */
+  button.qt{min-height:44px;min-width:44px}
+  .feed.lite button.fe{min-height:44px;align-items:center}
+  .fun button.fr{min-height:44px;align-content:center}
+  .mt.sum .big small,.mt .big small,#grid .big small{font-size:13px}   /* "/mo", "potential", "to do", ... */
+  .sum-l,#asof>span{font-size:13px}
+}
+@media (max-width:600px){.top-tools .nt-n,.nt-n{top:0;right:-1px;height:16px;min-width:16px;font-size:9.5px;line-height:16px}}   /* 11-23: after the phone rule that made tab badges 20 px */
+
+/* ======================================================================
+   App lock (BENAS 11-24: "make the CRM on phone not cheap ... locked like an expensive app"). With the viewport meta
+   (maximum-scale=1, user-scalable=no) and lock.js: no pinch or double-tap zoom, no sideways drift, no rubber band on the page
+   (inner panels keep their own contained scroll), no grey tap flash, no text selection or callout on buttons and navigation
+   (email text and notes stay selectable), and no input under 16 px, so iOS never zooms in on focus.
+   ====================================================================== */
+html{background:var(--bg);-webkit-tap-highlight-color:transparent;touch-action:pan-x pan-y}
+body{touch-action:pan-x pan-y}
+button,a[href],[role="button"],[role="tab"],[role="switch"],summary,label,input,select,textarea{touch-action:manipulation}
+@media (max-width:600px){
+  html{overflow-x:hidden}
+  @supports (overflow:clip){ html,body{overflow-x:clip} }
+  html,body{overscroll-behavior:none}
+  .dr-body,.modal-body,.pal-list,.snav,.sm-pan,.sm-pd,.cb-pan,.cb-pb,.cb-shb{overscroll-behavior:contain}
+  button,[role="tab"],[role="switch"],.tabs,.top,.snav,.act,.icon-btn{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),textarea,select{font-size:16px!important}
+  #mfa-code{font-size:22px!important}
+  .wk button::after{left:-4px;right:-4px}
+  .snav:not(.open){visibility:hidden;transition:width .42s var(--ease),transform .42s var(--ease),box-shadow .3s,visibility 0s linear .42s}   /* the closed menu's shadow no longer bleeds in at the left edge */   /* the week bars: 37 px wide, so their tap area reaches 45 px (a 1.5 px overlap with the next bar) */
+}

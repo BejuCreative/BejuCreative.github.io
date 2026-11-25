@@ -8,7 +8,7 @@ One page for the two founders: money, outreach, leads, samples, conversations an
 - `https://juceviciussimas-max.github.io/beju-v2/crm/`
 - Local: `http://localhost:8765/crm/` (any static server on the `beju-v2` folder)
 
-The folder is self-contained: relative paths only, own fonts, no build step. Files: `index.html`, `theme.js`, `crm.css`, `config.js`, `crm.js`, `manifest.webmanifest`, `fonts/`. After any change to `theme.js`, `crm.css` or `crm.js`, bump the four `?v=` strings in `index.html`.
+The folder is self-contained: relative paths only, own fonts, no build step. Files: `index.html`, `theme.js`, `lock.js` (phone zoom lock), `update.js` (self-update), `crm.css`, `config.js`, `crm.js`, `manifest.webmanifest`, `fonts/`. After any change to `theme.js`, `crm.css` or `crm.js`, bump the four `?v=` strings in `index.html`.
 
 ## Who can open it
 
@@ -60,10 +60,16 @@ Everything is read-only except the client-portal actions, which make the same wr
 | Change password | the signed-in user's own password (`auth.updateUser`) |
 | Notification: Mark read / Snooze / Done / Mark all read (11-21) | the founder's own `crm_event_state` rows (upsert on `user_id, event_id`); Mark all read calls `crm_mark_all_read()` |
 | Post to Slack (11-21) | the edge function `slack-post` with the founder's JWT; the post boxes show only after a probe (`{probe: true}` answered `{ok: true}`) |
+| Client board review (11-24): ✓ Approve a Short / Approve & send | `client_items.founder_ok_at`, `founder_ok_by` (one row, or every Short not marked in one write), then the existing delivery-draft send (`drafts` approved + `approved_sha256`; phone: after a 5-second Undo, desktop: after the confirm) |
+| Client board review (11-24): ✎ Needs changes on a Short | `client_items` status `changes` + `changes_note` (`[m:ss] ` first when a moment is typed), then the draft held with `founder_note` listing every marked Short; "Send the N approved now" only holds the draft with `SEND APPROVED NOW: …; HOLD: …` |
+| Waiting on a founder ✓ Done (11-24, after a 5-second Undo) | a reply draft: `drafts` status `rejected` + `founder_note` "closed from Waiting on a founder: handled outside"; a "Check:" card or founder to-do: `tasks` done (the To-dos board's own write, `BEJU_CRM_TODOS`) |
+| To-dos board, Projects lane (11-25): edit / Add a project / Done / Archive | `projects` (title, `status_line`, `next_step`, `owner`, `state`, `updated_by`; one row per big build, upsert by title from `crm.project_set()`); realtime on `projects` redraws the lane. SQL: `supabase/crm_projects1.sql` |
 
 Every client-portal action shows a confirm sheet that says what the client will see. Links must be http or https. Nothing else is ever inserted, updated or deleted. SQL that these rely on: `supabase/crm_bento1.sql`.
 
 ## Live data
+
+- Self-update (11-24, `update.js`): every 5 minutes and whenever the tab comes back into view, the page fetches `./index.html` fresh (`cache: no-store`; CSP `connect-src 'self'`) and compares the `?v=` keys of its script / stylesheet tags with the ones it was loaded with. When they differ it reloads itself, but only at a safe moment: when the tab becomes visible again, or after 60 s without input; and never while a sheet, panel, drawer, dialog or editor is open, a 5-second Undo bar is showing, a field has focus or holds text the founder typed. At most one reload per new set of keys (sessionStorage); offline = no check. So every deploy reaches open tabs and the home-screen app without a hard refresh, as long as the `?v=` keys are bumped.
 
 - Realtime (Supabase) on `payments, reply_queue, sample_requests, videos, video_notes, profiles`: a change shows a toast at once and triggers one refresh about 1.5 seconds later (bursts are merged). A new payment also throws confetti.
 - A full refresh runs every 60 seconds as well. The status chip says "Live" or "Polling" truthfully.
@@ -75,12 +81,13 @@ Every client-portal action shows a confirm sheet that says what the client will 
 ## Using it
 
 - Every number, chart mark and row opens the list behind it. Lists open leads; leads open the whole conversation.
+- Waiting on a founder (11-24): every draft row, "Check:" card and founder to-do has ✓ Done (5-second Undo, then the write; holds, client work and deals have none). The card clears itself from data the page already reads: a reply draft whose thread has a newer email of ours (answered by hand) and a to-do about a lost or snoozed lead leave it; a deal or to-do waiting on the lead (our email is newer than the item, no reply since) moves to a quiet "Waiting on them: N" line that is not counted in the number, the colours or the badge.
 - Period switch (Today · 7d · 30d · Month) in the hero drives the hero chips, the money card and the outreach range. Owner switch (All · Simas · Benas) filters every pipeline card.
 - Shortcuts: `⌘K` / `Ctrl K` search and actions · `/` lead search · `N` notifications · arrows in a chart move through days, in a lead they move through the list · `Enter` opens · `Esc` closes · `W` wall mode.
 
 ## Phone (600px and narrower)
 
-Five bottom tabs (Home · Money · Leads · Outreach · Clients), each with its own cards; the last tab is remembered. Compact header with the owner switch, search, live dot and account menu. Lead drawers and lists are bottom sheets (drag the handle down to close); a conversation opens at the latest message. Charts: first tap shows the value, second tap opens it. On phones that report tilt without asking (Android), the hero highlight follows the device; the page never asks for that permission. `manifest.webmanifest` + Apple meta tags make it installable ("Add to Home Screen"); there is no service worker, so it needs a connection.
+Five bottom tabs (Home · Money · Leads · Outreach · Clients), each with its own cards; the last tab is remembered. Compact header with the owner switch, search, live dot and account menu. Lead drawers and lists are bottom sheets (drag the handle down to close); a conversation opens at the latest message. Charts: first tap shows the value, second tap opens it. On phones that report tilt without asking (Android), the hero highlight follows the device; the page never asks for that permission. `manifest.webmanifest` + Apple meta tags make it installable ("Add to Home Screen"); there is no service worker, so it needs a connection. On the phone it is locked like an app (11-24): no pinch or double-tap zoom (viewport meta + `lock.js` + `touch-action`), no sideways drift, no rubber band, every input 16 px so iOS never zooms on focus; the page, theme colour and status bar follow the saved look from the first frame. The client board is tabs there (Building · Ready · Sent · Changes, tap or swipe), and a Ready stack opens the review as a full-screen sheet (the Shorts as a swipeable carousel of Drive players, each with ✓ Approve / ✎ Needs changes, the delivery email under them, a fixed Approve & send · Needs changes bar); Approve & send waits 5 seconds behind an Undo. On a wide screen the same review is a centred panel (arrows or ← → change Short) and Approve & send asks first. SQL for the per-Short approval and the "sent" trigger: `supabase/crm_client_review1.sql` (not applied yet; until it is, ✓ Approve says it could not save and Approve & send still sends).
 
 ## Money page (`money.html`, 2026-11-14)
 

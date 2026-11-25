@@ -57,6 +57,7 @@
 @media (max-width:600px){
   .ct-tools .ct-q{height:44px;font-size:16px;flex-basis:100%}
   .ct-chips .chip{min-height:44px;height:auto;font-size:13px}
+  .ct-chips button.chip::after{inset:0 -2px}   /* the chip box is already 44 px tall: tap area = the box, so neighbours never overlap (founder request 11-23) */
   .ct-cnt{font-size:13px}
   .ct-row{align-items:flex-start;padding-right:4px}
   .ct-main{grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;padding:11px 2px 11px 12px}
@@ -80,3 +81,12 @@
   .ct-fb .act{flex:1;height:44px}
   .ct-fb .sp-note{flex-basis:100%;font-size:13px}
 }
+
+/* 11-22 (BENAS): the Dashboard's Contacts card (crm.js card "contacts"): a search box, the 5 people who wrote most recently, "See all" */
+#grid .ctc-s{margin:0 0 4px;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:var(--tile)}
+#grid .ctc-s:focus-within{border-color:var(--focus)}
+#grid .ctc-s input{height:38px;font-size:14px}
+#grid .ctc-l{min-height:205px;align-content:start}
+#grid .ctc-all{display:inline-block;text-decoration:none}
+#grid .ctc-all:hover{text-decoration:underline;text-underline-offset:3px}
+@media (max-width:600px){ #grid .ctc-s input{height:44px;font-size:16px} #grid .ctc-l{min-height:225px} }

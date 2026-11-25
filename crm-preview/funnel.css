@@ -1,0 +1,270 @@
+/* BEJÚ founder CRM: Funnel page (funnel.js). SIMAS 11-25: a client opens in a near-fullscreen panel (the delivery board panel's look;
+   full screen on a phone; on a computer it leaves the sidebar open and clickable) with squares, four category tiles (Website, Content,
+   Funnel & sales, What the client asked: click one for every task in it), Doing now, Up next, Waiting on the client.
+   Owner chips: Simas indigo, Benas teal, Both purple, Claude clay.
+   Colour = meaning: red = behind / overdue, amber = at risk / due within 48 h, green = on track / live, blue = in progress, sand =
+   waiting on the client. Motion off under reduced motion and the "Calm" look. No inline styles (widths arrive as --w via the CSSOM). */
+
+/* ---------- the page: summary tiles ---------- */
+.fc{display:grid;gap:16px;min-width:0}
+.fc-sum{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.fc-st{display:grid;gap:4px;padding:14px 16px}
+.fc-st b{font-family:var(--mono);font-size:30px;font-weight:500;letter-spacing:-.04em;line-height:1.1;font-variant-numeric:tabular-nums}
+.fc-st.bad{background:var(--red-soft);border-color:transparent} .fc-st.bad b,.fc-st.bad .fc-l{color:var(--red)}
+.fc-st.warn{background:var(--orange-soft);border-color:transparent} .fc-st.warn b,.fc-st.warn .fc-l{color:#8f4a05}
+:root[data-mode="dark"] .fc-st.warn b,:root[data-mode="dark"] .fc-st.warn .fc-l{color:var(--orange)}
+.fc-l{font-size:13px;font-weight:500;color:var(--mute)}
+
+/* ---------- the page: a card per client ---------- */
+.fc-ccg{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px;min-width:0}
+.fc-cc{display:grid;align-content:start;gap:10px;margin:0;padding:18px 20px;color:inherit;text-decoration:none;cursor:pointer;transition:transform .25s var(--ease),background-color .3s}
+@media (hover:hover) and (pointer:fine){ .fc-cc:hover{transform:translateY(-2px)} .fc-cc:hover .fc-cco{color:var(--blue)} }
+.fc-cc:active{transform:scale(.99)}
+.fc-cc:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.fc-cc1{display:flex;align-items:center;gap:10px;min-width:0}
+.fc-ccn{flex:1;min-width:0;font-size:20px;font-weight:600;letter-spacing:-.02em;line-height:1.2;overflow-wrap:anywhere}
+.fc-ccs{font-size:13px;color:var(--mute);overflow-wrap:anywhere}
+.fc-ccq{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:2px}
+.fc-ccnx{grid-column:1/-1}
+.fc-ccb{display:grid;align-content:start;gap:2px;min-width:0;padding:10px 12px;border-radius:14px;background:var(--panel)}
+.fc-ccb b{font-family:var(--mono);font-size:22px;font-weight:500;line-height:1.15;font-variant-numeric:tabular-nums}
+.fc-ccb.fc-ccnx b{font-family:inherit;font-size:15px;font-weight:700;line-height:1.55}
+.fc-ccb small{font-size:13px;color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fc-ccb.is-doing b{color:var(--blue)} .fc-ccb.is-wait b{color:#8a5a12}
+.fc-cco{display:inline-flex;align-items:center;gap:4px;justify-self:end;font-size:13px;font-weight:600;color:var(--ink-2);transition:color .2s}
+.fc-cco .ic{width:14px;height:14px}
+
+/* ---------- shared bits: status dot, badge, bar, due ---------- */
+.fc-dotst{flex:none;width:10px;height:10px;border-radius:50%;background:var(--green)}
+.fc-dotst.s-risk{background:var(--orange)} .fc-dotst.s-behind{background:var(--red)}
+.fc-rp{display:flex;align-items:center;gap:8px;min-width:0}
+.fc-badge{flex:none;display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;font-size:13px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;font-variant-numeric:tabular-nums}
+.fc-badge.s-on{background:var(--green-soft);color:var(--green)}
+.fc-badge.s-risk{background:var(--orange-soft);color:#8f4a05}
+.fc-badge.s-behind{background:var(--red-soft);color:var(--red)}
+:root[data-mode="dark"] .fc-badge.s-risk{color:var(--orange)}
+.fc-bar{flex:1;min-width:60px;height:8px;border-radius:999px;background:var(--panel);box-shadow:inset 0 0 0 1px var(--line);overflow:hidden;display:block}
+.fc-bar i{display:block;height:100%;width:var(--w,0%);border-radius:inherit;background:var(--green);transition:width .6s var(--out)}
+.fc-bar-s{flex:none;width:100%;height:6px}
+.fc-pn{flex:none;font-family:var(--mono);font-size:13px;font-weight:600;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.fc-due{font-size:13px;font-weight:600;color:var(--ink-2);white-space:nowrap;font-variant-numeric:tabular-nums}
+.fc-due.late{color:var(--red)}
+.fc-due.soon{color:#a35a00}
+:root[data-mode="dark"] .fc-due.soon{color:var(--orange)}
+
+/* ---------- nothing tracked yet ---------- */
+.fc-none{display:grid;justify-items:center;gap:8px;padding:40px 24px;text-align:center}
+.fc-none-i{display:grid;place-items:center;width:52px;height:52px;border-radius:17px;background:var(--blue-soft);color:var(--blue);margin-bottom:4px}
+.fc-none-i .ic{width:24px;height:24px}
+.fc-none b{font-size:20px;font-weight:600;letter-spacing:-.02em}
+.fc-none p{max-width:460px;font-size:15px;line-height:1.5;color:var(--mute)}
+.fc-quiet{margin:0;padding:12px 14px;border-radius:14px;background:var(--panel);font-size:14px;line-height:1.45;color:var(--mute)}
+
+/* ---------- the client panel: near fullscreen ---------- */
+html.fc-locked{overflow:hidden}
+.fc-scrim{position:fixed;inset:0;z-index:40;background:var(--scrim);opacity:0;transition:opacity .35s ease;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.fc-scrim.on{opacity:1}
+.fc-pan{position:fixed;z-index:41;inset:12px;margin:0 auto;max-width:1560px;display:grid;grid-template-rows:auto minmax(0,1fr);border-radius:26px;overflow:hidden;background:var(--solid);color:var(--ink);box-shadow:0 30px 80px -10px rgba(0,0,0,.42),var(--edge);opacity:0;transform:translateY(28px) scale(.985);transition:transform .5s var(--out),opacity .3s ease}
+.fc-pan.on{opacity:1;transform:none}
+/* SIMAS 11-25: on a computer the panel leaves the sidebar open and clickable: the panel starts right of the rail's room (side.css), the
+   scrim stays full and the rail sits above it while the panel is open (a sidebar click closes the panel, funnel.js) */
+@media (min-width:601px){
+  html.fc-locked .snav{z-index:42}
+  html.sn-x .fc-pan{left:var(--sn-room)} html.sn-m .fc-pan{left:var(--sn-room-mini)}
+  html.wall .fc-pan{left:12px}
+}
+.fc-pan.out{transition-duration:.3s;transition-timing-function:cubic-bezier(.4,0,1,1)}
+.fc-ph{display:flex;align-items:center;gap:12px;min-width:0;padding:20px 24px 16px;border-bottom:1px solid var(--line)}
+.fc-phm{flex:1;min-width:0;display:flex;align-items:center;flex-wrap:wrap;gap:10px 20px}
+.fc-phh{flex:1 1 260px;min-width:0}
+.fc-phh h2{margin:0;font-size:30px;font-weight:600;letter-spacing:-.03em;line-height:1.15;overflow-wrap:anywhere}
+.fc-phh p{margin-top:4px;font-size:13px;overflow-wrap:anywhere}
+.fc-phb{display:flex;align-items:center;gap:14px;min-width:0}
+.fc-php{width:220px}
+.fc-x{flex:none}
+.fc-pb{display:grid;align-content:start;gap:24px;min-width:0;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:20px 24px 32px}
+
+/* the four squares on top */
+.fc-pst{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.fc-ps{display:grid;align-content:start;gap:6px;padding:14px 16px;min-width:0}
+.fc-ps .ec-l{font-size:13px;color:var(--mute);font-weight:500}
+.fc-ps small{font-size:13px;line-height:1.35;color:var(--mute);overflow-wrap:anywhere}
+.fc-ps .fc-bar{flex:none;width:100%;margin-top:4px}
+.fc-pbig{font-family:var(--mono);font-size:34px;font-weight:500;letter-spacing:-.05em;line-height:1.05;font-variant-numeric:tabular-nums}
+.fc-pbig small{font-size:18px;letter-spacing:-.02em}
+.fc-ps.is-doing .fc-pbig{color:var(--blue)} .fc-ps.is-wait .fc-pbig{color:#8a5a12}
+.fc-ps.bad{background:var(--red-soft);border-color:transparent} .fc-ps.bad .fc-pbig,.fc-ps.bad .ec-l,.fc-ps.bad small{color:var(--red)}
+.fc-tn{font-size:15px;font-weight:600;line-height:1.35;overflow-wrap:anywhere}
+
+/* sections */
+.fc-psec{display:grid;gap:12px;min-width:0}
+.fc-ph3{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;margin:0;font-size:17px;font-weight:600;letter-spacing:-.01em;color:var(--ink)}
+.fc-ph3 .n{display:inline-grid;place-items:center;min-width:26px;height:24px;padding:0 8px;border-radius:999px;background:var(--panel);box-shadow:inset 0 0 0 1px var(--line);font-family:var(--mono);font-size:13px;font-weight:600;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.fc-ph3 small{margin-left:auto;font-size:13px;font-weight:500;color:var(--mute)}
+
+/* task cards: doing now, up next, waiting on the client */
+.fc-tcg{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px;min-width:0}
+.fc-tc{display:flex;flex-direction:column;gap:8px;min-width:0;padding:14px 16px 10px 18px;border-radius:var(--r-tile);background:var(--tile);border:1px solid var(--line);box-shadow:var(--shadow);position:relative;overflow:hidden}
+.fc-tc::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--line-2)}
+.fc-tc[data-st="in_progress"]::before{background:var(--blue)} .fc-tc[data-st="live"]::before{background:var(--green)} .fc-tc[data-st="waiting_client"]::before{background:#b7791f} .fc-tc[data-st="waiting_founder"]::before{background:#be185d}
+.fc-tc1{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+.fc-ar{display:inline-flex;align-items:center;gap:6px;min-width:0;font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--mute)}
+.fc-ar .ic{flex:none;width:14px;height:14px}
+.fc-ar span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fc-at{font-size:15px;font-weight:600;line-height:1.35;overflow-wrap:anywhere}
+.fc-an{margin:0;font-size:13px;line-height:1.5;color:var(--ink-2);white-space:pre-line;overflow-wrap:anywhere}
+.fc-an.short{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+/* 11-25: the latest progress note (scope_items.note) + when the item was last updated */
+.fc-nt{margin:0;padding:6px 10px;border-radius:10px;background:var(--blue-soft);font-size:13px;line-height:1.45;color:var(--ink);overflow-wrap:anywhere}
+.fc-nt b{margin-right:4px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--blue)}
+.fc-af{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;min-width:0}
+.fc-tc>.fc-af{margin-top:auto}
+.fc-af small{font-size:13px;color:var(--mute)}
+.fc-afr{display:inline-flex;align-items:center;gap:2px;margin-left:auto}
+.fc-own{display:inline-flex;align-items:center;padding:2px 9px;border-radius:999px;font-size:13px;font-weight:600;background:var(--panel);color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--line)}
+.fc-own b{margin-left:5px;font-family:var(--mono);font-weight:600;font-variant-numeric:tabular-nums}
+.fc-own.o-simas,.fc-own.o-benas,.fc-own.o-both,.fc-own.o-claude{box-shadow:none}
+.fc-own.o-simas::before,.fc-own.o-benas::before,.fc-own.o-both::before,.fc-own.o-claude::before{content:"";flex:none;width:7px;height:7px;margin-right:6px;border-radius:50%;background:currentColor}
+.fc-own.o-simas{background:rgba(79,70,229,.12);color:#4338ca}
+.fc-own.o-benas{background:rgba(15,118,110,.12);color:#0f766e}
+.fc-own.o-both{background:rgba(162,28,175,.1);color:#a21caf}
+.fc-own.o-claude{background:rgba(201,100,66,.13);color:#a4471f}
+.fc-rec{display:inline-block;margin-left:4px;padding:1px 8px;border-radius:999px;font-size:13px;font-weight:600;background:var(--blue-soft);color:var(--blue);vertical-align:1px}
+
+/* the four categories (SIMAS 11-25): a tile each; the open one gets a blue ring and its tasks below */
+.fc-cats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;min-width:0}
+.fc-cat{display:grid;align-content:start;gap:10px;min-width:0;margin:0;padding:14px 16px;font:inherit;color:inherit;text-align:left;cursor:pointer}
+@media (hover:hover) and (pointer:fine){ .fc-cat:hover{transform:translateY(-2px)} .fc-cat:hover .fc-catc{color:var(--blue)} }
+.fc-cat:active{transform:scale(.99)}
+.fc-cat:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.fc-cat.on{border-color:transparent;box-shadow:0 0 0 2px var(--blue),var(--shadow)}
+.fc-cath{display:flex;align-items:center;gap:10px;min-width:0}
+.fc-cath b{flex:1;min-width:0;font-size:16px;font-weight:600;letter-spacing:-.01em;line-height:1.3;overflow-wrap:anywhere}
+.fc-cati{flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:11px;background:var(--blue-soft);color:var(--blue)}
+.fc-cati .ic{width:17px;height:17px}
+.fc-catc{flex:none;display:grid;place-items:center;color:var(--mute);transition:transform .25s var(--ease),color .2s}
+.fc-catc .ic{width:16px;height:16px}
+.fc-cat.on .fc-catc{transform:rotate(90deg);color:var(--blue)}
+.fc-catn{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.fc-cn{display:flex;align-items:baseline;gap:6px;min-width:0;padding:6px 10px;border-radius:11px;background:var(--panel)}
+.fc-cn b{font-family:var(--mono);font-size:19px;font-weight:500;line-height:1.2;font-variant-numeric:tabular-nums}
+.fc-cn small{min-width:0;font-size:13px;color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fc-cn.is-done b{color:var(--green)} .fc-cn.is-doing b{color:var(--blue)} .fc-cn.is-wait b{color:#8a5a12}
+.fc-cn.bad{background:var(--red-soft)} .fc-cn.bad b,.fc-cn.bad small{color:var(--red)}
+.fc-catf{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}
+.fc-catf small{font-size:13px;color:var(--mute)}
+
+/* the open category */
+.fc-catd{scroll-margin-top:8px}
+.fc-cdh{display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px;min-width:0}
+.fc-cdh .fc-ph3{flex:1 1 280px;min-width:0}
+.fc-ph4{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;margin:6px 0 0;font-size:15px;font-weight:600;color:var(--ink-2)}
+.fc-ph4 .n{display:inline-grid;place-items:center;min-width:24px;height:22px;padding:0 7px;border-radius:999px;background:var(--panel);box-shadow:inset 0 0 0 1px var(--line);font-family:var(--mono);font-size:13px;font-weight:600;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.fc-ph4 small{margin-left:auto;font-size:13px;font-weight:500;color:var(--mute)}
+
+/* the client's emails (What they asked) */
+.fc-eml{list-style:none;margin:0;padding:0;display:grid;gap:8px;min-width:0}
+.fc-emi{min-width:0;border-radius:var(--r-tile);background:var(--tile);border:1px solid var(--line);box-shadow:var(--shadow);overflow:hidden}
+.fc-emb{display:grid;gap:3px;width:100%;min-width:0;margin:0;padding:12px 16px;border:0;background:none;font:inherit;color:inherit;text-align:left;cursor:pointer;transition:background-color .2s}
+@media (hover:hover) and (pointer:fine){ .fc-emb:hover{background:var(--panel)} }
+.fc-emi.open .fc-emb{background:var(--panel)}
+.fc-emb:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.fc-emd{font-family:var(--mono);font-size:13px;color:var(--mute);font-variant-numeric:tabular-nums}
+.fc-ems{font-size:15px;font-weight:600;line-height:1.35;overflow-wrap:anywhere}
+.fc-emp{font-size:13px;line-height:1.45;color:var(--ink-2);overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.fc-emx{padding:12px 16px 16px;font-size:14px;line-height:1.55;color:var(--ink);white-space:pre-line;overflow-wrap:anywhere;animation:fc-in .22s var(--out) both}
+.fc-emall{justify-self:start}
+
+.fc-sc{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:8px 10px;border-radius:12px;background:var(--panel)}
+.fc-scn{display:inline-flex;align-items:baseline;gap:5px;font-size:13px;color:var(--ink-2)}
+.fc-scn b{font-family:var(--mono);font-size:16px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.fc-scn[data-sc="sent"] b{color:var(--green)} .fc-scn[data-sc="changes"] b{color:var(--red)}
+.fc-sc small{margin-left:auto;font-size:13px;color:var(--mute)}
+
+/* client info */
+.fc-info{display:grid;gap:12px;padding:14px 16px}
+.fc-kv{display:grid;gap:6px;margin:0}
+.fc-kv>div{display:grid;grid-template-columns:72px minmax(0,1fr);gap:10px;font-size:14px}
+.fc-kv dt{color:var(--mute);font-size:13px;font-weight:600}
+.fc-kv dd{margin:0;overflow-wrap:anywhere}
+.fc-ils{display:flex;flex-wrap:wrap;gap:6px}
+.fc-il{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 12px;border-radius:999px;background:var(--panel);box-shadow:inset 0 0 0 1px var(--line);font-size:13px;font-weight:600;color:var(--ink);text-decoration:none}
+.fc-il .ic{width:14px;height:14px;color:var(--blue)}
+@media (hover:hover) and (pointer:fine){ .fc-il:hover{background:var(--blue-soft)} }
+.fc-notes{display:grid;gap:4px;padding:10px 12px;border-radius:14px;background:var(--panel)}
+.fc-notes p{margin:0;font-size:13px;line-height:1.5;color:var(--ink-2);white-space:pre-line;overflow-wrap:anywhere}
+.fc-notes.short p{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.fc-notes .fc-dtb{justify-self:start;margin-left:-8px}
+
+/* status pill + its choices */
+.fc-pill{flex:none;display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:0 12px;border-radius:999px;border:0;font:inherit;font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer;background:var(--panel);color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--line-2)}
+.fc-pill::after{content:"";width:6px;height:6px;margin-top:-3px;border:solid currentColor;border-width:0 1.5px 1.5px 0;transform:rotate(45deg);opacity:.7}
+.s-in_progress.fc-pill,.s-in_progress.fc-mi{background:var(--blue-soft);color:var(--blue);box-shadow:none}
+.s-waiting_client.fc-pill,.s-waiting_client.fc-mi{background:rgba(183,121,31,.14);color:#8a5a12;box-shadow:none}
+.s-waiting_founder.fc-pill,.s-waiting_founder.fc-mi{background:rgba(190,24,93,.11);color:#9d174d;box-shadow:none}
+.s-live.fc-pill,.s-live.fc-mi{background:var(--green-soft);color:var(--green);box-shadow:none}
+.s-dropped.fc-pill,.s-dropped.fc-mi{background:transparent;color:var(--mute)}
+.fc-menu{display:flex;flex-wrap:wrap;gap:6px;padding:8px;border-radius:14px;background:var(--panel);border:1px solid var(--line);animation:fc-in .22s var(--out) both}
+.fc-menu[hidden]{display:none}
+.fc-mi{min-height:34px;padding:0 12px;border-radius:999px;border:0;font:inherit;font-size:13px;font-weight:600;cursor:pointer;background:var(--tile);color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--line-2)}
+.fc-mi[aria-checked="true"]{outline:2px solid currentColor;outline-offset:1px}
+.fc-lk,.fc-dtb{display:inline-flex;align-items:center;gap:5px;min-height:30px;padding:0 8px;border:0;border-radius:10px;background:none;font:inherit;font-size:13px;font-weight:600;color:var(--blue);text-decoration:none;cursor:pointer}
+.fc-dtb{color:var(--ink-2)}
+.fc-lk:hover,.fc-dtb:hover{background:var(--blue-soft)}
+.fc-lk .ic{width:15px;height:15px}
+.fc-pill:focus-visible,.fc-mi:focus-visible,.fc-dtb:focus-visible,.fc-lk:focus-visible,.fc-il:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+@keyframes fc-in{from{opacity:0;transform:translateY(-4px)}}
+
+/* dark: the theme's blue is green, so In progress gets its own blue to stay apart from Live */
+:root[data-mode="dark"] .s-in_progress.fc-pill,:root[data-mode="dark"] .s-in_progress.fc-mi,:root[data-mode="dark"] .fc-rec{background:rgba(130,160,255,.15);color:#a9c0ff}
+:root[data-mode="dark"] .fc-tc[data-st="in_progress"]::before{background:#a9c0ff}
+:root[data-mode="dark"] .fc-ps.is-doing .fc-pbig,:root[data-mode="dark"] .fc-ccb.is-doing b,:root[data-mode="dark"] .fc-cn.is-doing b,:root[data-mode="dark"] .fc-cat.on .fc-catc{color:#a9c0ff}
+:root[data-mode="dark"] .fc-cat.on{box-shadow:0 0 0 2px #a9c0ff}
+:root[data-mode="dark"] .s-waiting_client.fc-pill,:root[data-mode="dark"] .s-waiting_client.fc-mi,:root[data-mode="dark"] .fc-ps.is-wait .fc-pbig,:root[data-mode="dark"] .fc-ccb.is-wait b,:root[data-mode="dark"] .fc-cn.is-wait b{color:#e0b35a}
+:root[data-mode="dark"] .s-waiting_founder.fc-pill,:root[data-mode="dark"] .s-waiting_founder.fc-mi{background:rgba(244,114,182,.15);color:#f9a8d4}
+:root[data-mode="dark"] .fc-tc[data-st="waiting_founder"]::before{background:#f472b6}
+:root[data-mode="dark"] .fc-nt{background:rgba(130,160,255,.12)} :root[data-mode="dark"] .fc-nt b{color:#a9c0ff}
+:root[data-mode="dark"] .fc-own.o-simas{background:rgba(165,180,252,.14);color:#a5b4fc}
+:root[data-mode="dark"] .fc-own.o-benas{background:rgba(94,234,212,.12);color:#5eead4}
+:root[data-mode="dark"] .fc-own.o-both{background:rgba(240,171,252,.12);color:#f0abfc}
+:root[data-mode="dark"] .fc-own.o-claude{background:rgba(244,165,130,.13);color:#f4a582}
+:root[data-mode="dark"] .fc-lk,:root[data-mode="dark"] .fc-dtb{color:var(--blue-2)}
+
+@media (max-width:1100px){ .fc-sum,.fc-pst,.fc-cats{grid-template-columns:repeat(2,minmax(0,1fr))} }
+
+/* ---------- phone: the panel is full screen and slides up; one column; 44 px taps; text >= 13 px ---------- */
+@media (max-width:600px){
+  .fc{margin:0 4px}
+  .fc-sum{gap:10px} .fc-st{padding:12px 14px} .fc-st b{font-size:26px}
+  .fc-ccg{grid-template-columns:minmax(0,1fr)}
+  .fc-cc{padding:16px}
+
+  .fc-cco{min-height:32px}
+  .fc-pan{inset:0;max-width:none;border-radius:0;display:block;overflow-y:auto;overscroll-behavior:contain;opacity:1;transform:translateY(100%);padding-bottom:env(safe-area-inset-bottom)}
+  .fc-pan.on{transform:none}
+  .fc-ph{flex-wrap:wrap;padding:calc(16px + env(safe-area-inset-top)) 72px 12px 16px}
+  .fc-phh{flex-basis:100%}
+  .fc-phh h2{font-size:26px}
+  .fc-phb{flex:1 1 100%;flex-wrap:wrap}
+  .fc-php{flex:1;width:auto}
+  .fc-x{position:fixed;top:calc(12px + env(safe-area-inset-top));right:12px;z-index:3;width:44px;height:44px;border-radius:50%;background:var(--solid)}
+  .fc-pb{overflow:visible;gap:22px;padding:16px 16px 28px}
+  .fc-pst{gap:10px} .fc-ps{padding:12px 14px} .fc-pbig{font-size:28px}
+  .fc-ph3 small{margin-left:0;flex-basis:100%}
+  .fc-tcg{grid-template-columns:minmax(0,1fr)}
+  .fc-cats{gap:10px} .fc-cat{gap:8px;padding:12px} .fc-cath{gap:8px} .fc-cath b{font-size:15px} .fc-cati{width:30px;height:30px}
+  .fc-cn{padding:5px 8px} .fc-cn b{font-size:17px} .fc-catf .fc-own{display:none}
+  .fc-emb{min-height:48px}
+  .fc-ph4 small{margin-left:0;flex-basis:100%}
+  .fc-il{min-height:44px}
+  .fc-pill,.fc-lk,.fc-dtb{min-height:44px;min-width:44px}
+  .fc-pill{padding:0 14px}
+  .fc-lk,.fc-dtb{padding:0 12px;justify-content:center}
+  .fc-mi{flex:1 1 calc(50% - 6px);min-height:44px;font-size:14px}
+  .fc-pan,#fc-list{-webkit-user-select:none;user-select:none}
+  .fc-at,.fc-an,.fc-ems,.fc-emx,.fc-notes p,.fc-kv dd{-webkit-user-select:text;user-select:text}
+}
+
+html[data-motion="calm"] .fc-bar i,html[data-motion="calm"] .fc-pan,html[data-motion="calm"] .fc-scrim,html[data-motion="calm"] .fc-cc,html[data-motion="calm"] .fc-cat,html[data-motion="calm"] .fc-catc,html[data-motion="calm"] .fc-emb{transition:none}
+html[data-motion="calm"] .fc-menu,html[data-motion="calm"] .fc-emx{animation:none}
+@media (prefers-reduced-motion:reduce){ .fc-bar i,.fc-pan,.fc-scrim,.fc-cc,.fc-cat,.fc-catc,.fc-emb{transition:none!important} .fc-menu,.fc-emx{animation:none!important} .fc-cat:hover,.fc-cat:active{transform:none} }
