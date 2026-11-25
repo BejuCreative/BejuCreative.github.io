@@ -49,13 +49,13 @@ function queue(raw) {
     out.push({ key: "a:" + a.id, link: String(a.id), type: d ? "draft" : "decision", kind: a.kind, approvalId: a.id, draftId: d ? d.id : null, draft: d || null,
       title: a.title, why: a.why || (d && d.reason) || "", rec: a.recommendation || "", body: d ? d.body : (a.body || ""), lead: a.lead_email || (d && d.lead_email) || "",
       client: a.client_name || "", inbox: a.inbox || (d && d.inbox) || "", requester: who(a.requested_by), urgency: a.urgency || "routine", needsBoth: !!a.needs_both,
-      decidedBy: a.decided_by || [], decidedUids: a.decided_uids || [], status: d ? (d.status === "held" ? "held" : "pending") : a.status, at: a.created_at, links: Array.isArray(a.links) ? a.links : [], note: a.note || "",
+      decidedBy: a.decided_by || [], decidedUids: a.decided_uids || [], status: d ? (d.status === "held" ? "held" : "pending") : a.status, at: a.created_at, links: Array.isArray(a.links) ? a.links : [], note: a.note || "", outdated: a.outdated_at ? (a.outdated_reason || "Things moved since this was asked. Read the thread first.") : "",
       ops: d ? DRAFT_OPS[d.status] || [] : null, row: a });
   });
   dr.filter(d => !used.has(String(d.id)) && !ap.some(a => a.draft_id != null && String(a.draft_id) === String(d.id))).forEach(d => {
     out.push({ key: "d:" + d.id, link: "d" + d.id, type: "draft", kind: "email", approvalId: null, draftId: d.id, draft: d, title: `Reply to ${nameOf(raw, d.lead_email)}: ${DR_CAT[d.category]}`,
       why: d.reason || "", rec: "", body: d.body || "", lead: d.lead_email, client: "", inbox: d.inbox || "", requester: who(d.created_by), urgency: DR_URG[d.category] || "routine", needsBoth: false,
-      decidedBy: [], decidedUids: [], status: d.status === "held" ? "held" : "pending", at: d.created_at, links: [], note: d.founder_note || "", ops: DRAFT_OPS[d.status] || [], row: null });
+      decidedBy: [], decidedUids: [], status: d.status === "held" ? "held" : "pending", at: d.created_at, links: [], note: d.founder_note || "", outdated: "", ops: DRAFT_OPS[d.status] || [], row: null });
   });
   out.sort((a, b) => (a.status === "held") - (b.status === "held") || URG[a.urgency][2] - URG[b.urgency][2] || ms(a.at) - ms(b.at));
   const live = out.filter(x => x.status !== "held");
@@ -92,14 +92,19 @@ function badge() {
   const b = document.getElementById("sn-approvals-n"), a = document.querySelector('#snav a[data-nav="approvals"]'); if (!b) return;
   const r = X() && X().raw, q = queue(D && document.getElementById("ap") ? raw() : r || {}), n = q.count;
   b.hidden = !n; b.textContent = n || ""; b.classList.add("ap-bad");
+  // 11-25 (BENAS): "can the tab disappear if it's empty" -> the menu item hides while nothing waits (not while you are on the page), and comes back with its count
+  const li = a && a.closest("li"), known = !!((D && D.open) || (r && r.approvals)); if (li) li.hidden = known && !q.items.length && !document.getElementById("ap");
   const tip = n ? `Approvals · ${n} waiting${q.money ? ` (${q.money} money)` : ""}` : "Approvals"; if (a) { a.dataset.tip = tip; a.title = tip; }
 }
 addEventListener("beju-crm:data", badge);
+addEventListener("popstate", () => setTimeout(badge, 0));   // leaving the Approvals page with nothing waiting hides the menu item at once
+document.addEventListener("click", ev => { if (ev.target.closest && ev.target.closest('#snav a, [data-act="page"]')) setTimeout(badge, 300); });
 
 /* ---------------- the page ---------------- */
 const chip = (t, c = "") => `<span class="ap-chip${c ? " " + c : ""}">${esc(t)}</span>`;
 const mine = it => !!(ME_ID && it.decidedUids.includes(ME_ID));
 function stateLine(it) {
+  if (it.outdated) return "Outdated: " + it.outdated;   // 11-25 (BENAS): approvals_reconcile() flags an item when the lead wrote again or was emailed after it was asked
   if (it.type === "draft" && it.draft) { const d = it.draft;
     return ({ held: "On hold. Approve it, change it or reject it.", failed: `Not sent${d.error ? `: ${d.error}` : ""}. Approve to try again.`, stale: "Not sent: the lead wrote again after this was drafted. Read the thread, then approve, change or reject.", unknown: "This may have gone out. Check the thread in Instantly first; it can't be approved again." })[d.status] || ""; }
   if (it.needsBoth) return it.decidedBy.length ? `1 of 2 · ${it.decidedBy.join(", ")} approved${mine(it) ? ". Waiting for the other founder." : ". Your OK is the second one."}` : "Needs BOTH founders: 0 of 2 so far.";
@@ -123,7 +128,7 @@ function cardHTML(it, sheet) {
   const who2 = [it.client, it.lead && !d ? it.lead : (d ? nameOf(raw(), d.lead_email) : ""), it.inbox && !d ? it.inbox : ""].filter(Boolean);
   const st = stateLine(it);
   return `<article class="tile ap-card u-${it.urgency}${it.status === "held" ? " held" : ""}${it.key === HL ? " ap-hl" : ""}"${sheet ? "" : ` id="ap-${esc(it.link)}"`} data-key="${k}" data-ap-card>
-    <header class="ap-hd"><span class="ap-chip u-${it.urgency}">${esc(U[0])}</span>${chip(it.requester, "who")}${chip(it.kind === "email" ? "Email" : "Decision")}${it.status === "held" ? chip("Held", "o") : ""}${it.needsBoth ? chip(`Both founders · ${it.decidedBy.length} of 2`, "b") : ""}<time class="ap-age" datetime="${esc(it.at)}">${esc(ago(it.at))}</time></header>
+    <header class="ap-hd">${it.outdated ? chip("Outdated", "o") : ""}<span class="ap-chip u-${it.urgency}">${esc(U[0])}</span>${chip(it.requester, "who")}${chip(it.kind === "email" ? "Email" : "Decision")}${it.status === "held" ? chip("Held", "o") : ""}${it.needsBoth ? chip(`Both founders · ${it.decidedBy.length} of 2`, "b") : ""}<time class="ap-age" datetime="${esc(it.at)}">${esc(ago(it.at))}</time></header>
     <h3 class="ap-h">${esc(it.title)}</h3>
     ${who2.length ? `<p class="ap-meta">${who2.map(esc).join(" · ")}</p>` : ""}
     ${it.why ? `<p class="ap-why"><b>Why</b>${esc(it.why)}</p>` : ""}${it.rec ? `<p class="ap-rec"><b>Claude recommends</b>${esc(it.rec)}</p>` : ""}

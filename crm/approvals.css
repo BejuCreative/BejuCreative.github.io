@@ -55,6 +55,7 @@ html.sn-m .sn-badge.ap-bad{background:var(--red)}
 .ap-state{margin:0;font-size:14px;font-weight:600;color:var(--ink-2);line-height:1.45}
 .ap-err{margin:0;padding:9px 12px;border-radius:10px;background:var(--red-soft);color:var(--red);font-size:14px;font-weight:600;line-height:1.4;overflow-wrap:anywhere}
 .ap-err[hidden]{display:none}
+#snav li[hidden]{display:none}   /* 11-25: the Approvals menu item hides while nothing waits */
 .ap-acts{display:flex;flex-wrap:wrap;gap:8px;min-width:0}
 .ap-acts .act{height:44px;padding:0 18px;border-radius:12px;font-size:14.5px;justify-content:center}
 .ap-acts .act[disabled]{opacity:.55;cursor:default;transform:none}
