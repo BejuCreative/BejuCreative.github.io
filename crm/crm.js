@@ -1173,9 +1173,9 @@ const byId = id => CARDS.find(c => c.id === id);
    number shows once on the page: a card whose number is already in the hero, the summary row or another card is cut ("cut": built but never
    shown; its lists still open from the summary number or the drill sheets). Money / Leads / Outreach left the side menu and the phone bar.
    "clients" cards (On hold, In production) still sit on top of the Clients page (crm.css). */
-const SECS = { work: ["approvals", "forms", "bigdeals", "next", "activity"], money: ["buyers", "topc", "paidc", "close"], leads: ["hot", "contacts", "turn", "followups"], outreach: ["outreach", "funnel", "camps", "inboxes"] };
+const SECS = { work: ["approvals", "forms", "bigdeals", "next", "activity"], money: ["buyers", "topc", "paidc", "close"], leads: ["hot", "turn", "followups"], outreach: ["outreach", "funnel", "camps", "inboxes"] };
 const TABS = { home: Object.values(SECS).flat(), clients: ["holds", "prod", "portal", "psamples", "pvideos", "pnotes", "pclients"],
-  cut: ["pipeline", "retainers", "alltime", "rate", "speed", "deliv", "total", "today", "videos", "attention", "moods", "samples", "away", "heat", "clock", "sync", "price", "moneypage"], none: ["brand"] };
+  cut: ["pipeline", "contacts", "retainers", "alltime", "rate", "speed", "deliv", "total", "today", "videos", "attention", "moods", "samples", "away", "heat", "clock", "sync", "price", "moneypage"], none: ["brand"] };
 const TABOF = {}; Object.entries(TABS).forEach(([t, ids]) => ids.forEach(id => { TABOF[id] = t; }));
 
 /* ---------------- chart painters (hover, tap and arrow keys share them) ---------------- */
