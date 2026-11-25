@@ -817,8 +817,9 @@ function clientDetail(c, t) {
     <section class="cl-sec cl-open"${open ? "" : " hidden"}><h3 class="cl-h">Open</h3><ul>${open}<li class="k-r" data-clhold="${esc((c.emails || []).map(lc).join(","))}" hidden></li></ul></section>
     ${nOrd ? `<section class="cl-sec"><h3 class="cl-h">Orders <span class="n">${nOrd}</span></h3>${ordLines(c)}</section>` : ""}
     <section class="cl-sec"><h3 class="cl-h">Videos <span class="n">${int(c.vids.length)}</span></h3><div id="cl-vids">${clVids(c, t)}</div></section>
-    <div class="cl-sec cl-mw"><button type="button" class="act cl-morebtn" data-clmore aria-expanded="${CL_MORE}" aria-controls="cl-more">${ic("chev")}More</button>
-    <div class="cl-more" id="cl-more"${CL_MORE ? "" : " hidden"}>${c.prob ? `<p class="cl-prob">${esc(c.prob)}</p>` : ""}<div class="cl-calls" data-emails="${esc((c.emails || []).join(","))}">${empty("No calls with this client yet.")}</div></div></div>`;
+    <section class="cl-sec"><h3 class="cl-h">Calls</h3><div class="cl-calls" data-emails="${esc((c.emails || []).join(","))}">${empty("No calls with this client yet.")}</div></section>
+    ${c.prob ? `<div class="cl-sec cl-mw"><button type="button" class="act cl-morebtn" data-clmore aria-expanded="${CL_MORE}" aria-controls="cl-more">${ic("chev")}More</button>
+    <div class="cl-more" id="cl-more"${CL_MORE ? "" : " hidden"}><p class="cl-prob">${esc(c.prob)}</p></div></div>` : ""}`;
 }
 /* the open hold for this client comes from the Dashboard's data (desk_items, read by crm.js); painted again when that data lands */
 function paintHold() {
@@ -832,7 +833,7 @@ addEventListener("beju-crm:data", () => { if (ON && PAGE === "clients") paintHol
 /* 11-21 (SIMAS): call notes at the bottom of the client (summary, key takeaways, next tasks). crm.js renders and ticks them. */
 function fillCalls() {
   const el = $("#cl-detail .cl-calls"); if (!el || !window.BEJU_CRM_CALLS) return;
-  window.BEJU_CRM_CALLS(el.dataset.emails.split(",").filter(Boolean)).then(html => { if (el.isConnected && html) el.innerHTML = `<h3 class="cl-h">Calls</h3>${html}`; }, () => {});
+  window.BEJU_CRM_CALLS(el.dataset.emails.split(",").filter(Boolean)).then(html => { if (el.isConnected && html) el.innerHTML = html; }, () => {});
 }
 let CLF = "", CALLS_ALL = false, CL_PAST = false, CL_VALL = false, CL_MORE = false, CL_SEL = null;   // 11-23: one filter (status or "today"), past clients folded, all videos, the More fold, the chosen client
 /* 11-21 (SIMAS: "in the clients tab, we need a new section about the calls that would be clear"): Upcoming (cal.com bookings still to
@@ -966,7 +967,7 @@ function filterClients() {
 }
 function showClient(c) {   // paint the chosen client (rings, bars, the hold line, the calls under More when it is open)
   const el = $("#cl-detail"); if (!el) return;
-  el.innerHTML = clientDetail(c, CACHE.clients.t); applyVars(el); $$(".ring[data-v]", el).forEach(r => r.style.setProperty("--p", r.dataset.v.split(":")[1])); paintHold(); if (CL_MORE) fillCalls();
+  el.innerHTML = clientDetail(c, CACHE.clients.t); applyVars(el); $$(".ring[data-v]", el).forEach(r => r.style.setProperty("--p", r.dataset.v.split(":")[1])); paintHold(); fillCalls();
 }
 function wireClients() {
   $("#cl-q")?.addEventListener("input", filterClients);
@@ -978,7 +979,7 @@ function wireClients() {
   $("#cl-detail")?.addEventListener("click", ev => {
     const va = ev.target.closest("[data-clvall]"), mo = ev.target.closest("[data-clmore]"), c = CACHE.clients.list.find(x => x.id === CL_SEL);
     if (va && c) { CL_VALL = !CL_VALL; const box = $("#cl-vids"); box.innerHTML = clVids(c, CACHE.clients.t); $("[data-clvall]", box)?.focus(); return; }
-    if (mo) { CL_MORE = !CL_MORE; mo.setAttribute("aria-expanded", CL_MORE); $("#cl-more").hidden = !CL_MORE; if (CL_MORE) fillCalls(); return; }
+    if (mo) { CL_MORE = !CL_MORE; mo.setAttribute("aria-expanded", CL_MORE); $("#cl-more").hidden = !CL_MORE; return; }
     const fx = ev.target.closest("[data-ofix]"), cx = ev.target.closest("[data-ocancel]");
     if (cx) { const b = $(`#cl-detail [data-ofix="${cx.closest("form").dataset.oid}"]`); closeForms(); if (b) b.focus(); return; }
     if (!fx) return;
@@ -1013,7 +1014,7 @@ function wireClients() {
     if (o) callToggle(o.dataset.callopen, false); else if (a) callToggle(a.dataset.calladd, true);
     else if (more) { CALLS_ALL = !CALLS_ALL; $("#clc").innerHTML = callsInner(CACHE.clients.calls); $("#clc [data-callmore]")?.focus(); }
   });
-  filterClients(); paintHold(); if (CL_MORE) fillCalls();
+  filterClients(); paintHold(); fillCalls();
   $("#cl-list")?.addEventListener("click", ev => {
     const dot = ev.target.closest(".cl-ad");   // 11-23: on a phone (or any touch screen) the dot toggles its one-line note and does not open the client
     if (dot && (innerWidth <= 900 || matchMedia("(hover: none)").matches)) { ev.preventDefault(); const n = $(".cl-an", dot.closest(".cl-item")); if (n) n.hidden = !n.hidden; return; }
