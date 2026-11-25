@@ -99,7 +99,6 @@ addEventListener("beju-crm:data", badge);
 /* ---------------- the page ---------------- */
 const chip = (t, c = "") => `<span class="ap-chip${c ? " " + c : ""}">${esc(t)}</span>`;
 const mine = it => !!(ME_ID && it.decidedUids.includes(ME_ID));
-const other = it => it.decidedBy.filter((n, i) => it.decidedUids[i] !== ME_ID);
 function stateLine(it) {
   if (it.type === "draft" && it.draft) { const d = it.draft;
     return ({ held: "On hold. Approve it, change it or reject it.", failed: `Not sent${d.error ? `: ${d.error}` : ""}. Approve to try again.`, stale: "Not sent: the lead wrote again after this was drafted. Read the thread, then approve, change or reject.", unknown: "This may have gone out. Check the thread in Instantly first; it can't be approved again." })[d.status] || ""; }
@@ -113,7 +112,7 @@ function buttons(it) {
   if (it.type === "draft") { const o = it.ops || [];
     return (o.includes("approve") ? b("approve", "Approve &amp; send", "go") : "") + (o.includes("edit") ? b("edit", `${ic("edit")}Edit`) : "") + (o.includes("hold") ? b("hold", "Hold") : "") + (o.includes("no") ? b("no", it.draft && it.draft.status === "unknown" ? "Close it" : "No + note", "no") : ""); }
   const done = mine(it);
-  return b("approve", done ? "You approved" : it.needsBoth && it.decidedBy.length ? "Approve (2 of 2)" : "Approve", "go", done ? " disabled" : "") + (done ? "" : b("note", it.needsBoth ? "Approve + note" : "Approve + note"))
+  return b("approve", done ? "You approved" : it.needsBoth && it.decidedBy.length ? "Approve (2 of 2)" : "Approve", "go", done ? " disabled" : "") + (done ? "" : b("note", "Approve + note"))
     + (it.status === "held" ? "" : b("hold", "Hold")) + b("no", "No + note", "no");
 }
 function cardHTML(it, sheet) {
@@ -123,7 +122,7 @@ function cardHTML(it, sheet) {
   const to = d ? `<p class="ap-meta"><b>To</b> ${esc(d.to_email)}${(d.cc_list || []).length ? ` · cc ${esc(d.cc_list.join(", "))}` : ""} · from ${esc(d.inbox)}</p>` : "";
   const who2 = [it.client, it.lead && !d ? it.lead : (d ? nameOf(raw(), d.lead_email) : ""), it.inbox && !d ? it.inbox : ""].filter(Boolean);
   const st = stateLine(it);
-  return `<article class="tile ap-card u-${it.urgency}${it.status === "held" ? " held" : ""}${it.key === HL ? " ap-hl" : ""}" id="ap-${esc(it.link)}" data-key="${k}" data-ap-card>
+  return `<article class="tile ap-card u-${it.urgency}${it.status === "held" ? " held" : ""}${it.key === HL ? " ap-hl" : ""}"${sheet ? "" : ` id="ap-${esc(it.link)}"`} data-key="${k}" data-ap-card>
     <header class="ap-hd"><span class="ap-chip u-${it.urgency}">${esc(U[0])}</span>${chip(it.requester, "who")}${chip(it.kind === "email" ? "Email" : "Decision")}${it.status === "held" ? chip("Held", "o") : ""}${it.needsBoth ? chip(`Both founders · ${it.decidedBy.length} of 2`, "b") : ""}<time class="ap-age" datetime="${esc(it.at)}">${esc(ago(it.at))}</time></header>
     <h3 class="ap-h">${esc(it.title)}</h3>
     ${who2.length ? `<p class="ap-meta">${who2.map(esc).join(" · ")}</p>` : ""}
@@ -141,12 +140,12 @@ function doneHTML() {
 }
 function routineMine() { return Q().items.filter(x => x.type === "decision" && x.urgency === "routine" && x.status === "pending" && !mine(x)); }
 function listHTML() {
-  const q = Q(), notes = [];
+  const q = Q();
   if (D.missing && !q.items.length) return `<p class="ap-empty">Approvals are not switched on yet.<br><small>The database side is not live yet. Reply drafts that wait for a founder will still show here.</small></p>` + doneHTML();
   const r = routineMine(), sub = q.count ? `${q.count} waiting${q.money ? ` · ${q.money} about money` : ""}` : "";
   if (!q.items.length) return `<p class="ap-empty">Nothing waits for a founder.<br><small>When Benas's or Simas's Claude needs an OK, it shows up here and on both phones.</small></p>` + doneHTML();
   return `<div class="ap-top"><b class="ap-sum">${esc(sub || "Only held items are left")}</b>${r.length >= 2 ? `<button type="button" class="act" data-ap-act="batch">${ic("check")}Approve all routine (${r.length})</button>` : ""}</div>
-    ${notes.join("")}<div class="ap-list" id="ap-list">${q.items.map(it => cardHTML(it, false)).join("")}</div>${doneHTML()}`;
+    <div class="ap-list" id="ap-list">${q.items.map(it => cardHTML(it, false)).join("")}</div>${doneHTML()}`;
 }
 const view = () => `<section class="ap" id="ap" aria-label="Approvals"><div id="ap-root">${D ? listHTML() : ""}</div></section>`;
 function paint() {
@@ -283,7 +282,7 @@ function openLink() {
   root.insertAdjacentHTML("afterbegin", `<p class="ap-note" role="status" id="ap-gone">${done ? `That one is already decided: ${esc(done.title)}${(done.decided_by || []).length ? ` (${esc(done.decided_by.join(" + "))}, ${esc(stamp(done.decided_at))})` : ""}.` : "That approval is not waiting any more: it was decided, cancelled or sent."}</p>`);
   if (done) { const dn = document.getElementById("ap-dn"); if (dn) dn.open = true; }
 }
-function wire(api) { A = api; subscribe(); openLink(); badge(); }
+function wire(api) { A = api; subscribe(); openLink(); badge(); if (D && Date.now() - (D.at || 0) > 4000) reread(); }   // back on the page from side.js's cache: read again, the channels were off while away
 window.BEJU_APPROVALS = { queue };
 setTimeout(() => { const x = X(); if (x && x.raw && x.approvals) x.approvals().catch(() => {}); }, 0);   // crm.js drew its cards before this file ran (a fast sign-in): draw the Approvals card again
 (window.BEJU_SIDE_PAGES = window.BEJU_SIDE_PAGES || {}).approvals = {

@@ -2052,7 +2052,7 @@ async function liveRead(tb) {   // the targeted read after realtime events
     else if (tb === "drafts") { const rows = await all("drafts_waiting", "*"); if (RAW) RAW.drafts = rows; }
     else if (tb === "approvals") { const rows = await all("approvals", "*", q => q.in("status", ["pending", "held"])); if (RAW) RAW.approvals = rows; }   // 11-25: a decision by the other founder shows here without a refresh
     else { const [b, f] = await Promise.all([all("briefs", BRIEF_COLS), FORMS_READ().catch(() => null)]); if (RAW) { RAW.briefs = b; if (f) RAW.forms = f; } }
-    if (RAW) liveDone();
+    if (RAW) tb === "approvals" ? renderAll(true) : liveDone();   // 11-25: approvals do not move the Samples board's "as of" (LIVE_AT)
   } catch {} finally { L.busy = false; }
 }
 function onLive(tb) {
@@ -2081,9 +2081,11 @@ async function livePoll() {
     const sig = x => JSON.stringify((x || []).map(d => [d.id, d.status, d.body_sha256, d.founder_note, d.auto_send_at]));
     if (dr && RAW && sig(dr) !== sig(RAW.drafts)) { RAW.drafts = dr; dch = true; } }
   /* 11-25: the open approvals are a handful of rows: re-read whole, repaint only when something changed */
+  let ach = false;
   if (go("approvals") && RAW.approvals) { const ar = await all("approvals", "*", q => q.in("status", ["pending", "held"])).catch(() => { LIVE.approvals.err = Date.now() + 6e5; return null; });
     const sg = x => JSON.stringify((x || []).map(d => [d.id, d.status, (d.decided_by || []).length]));
-    if (ar && RAW && sg(ar) !== sg(RAW.approvals)) { RAW.approvals = ar; dch = true; } }
+    if (ar && RAW && sg(ar) !== sg(RAW.approvals)) { RAW.approvals = ar; ach = true; } }
+  if (RAW && ach && !pr.length && !br.length && !dch) { renderAll(true); return; }   // only approvals moved: repaint, but the Samples board's "as of" stays
   if (!RAW || (!pr.length && !br.length && !dch)) return;
   if (pr.length) { const by = new Map(RAW.pipeline.map(r => [lc(r.email), r])); pr.forEach(r => { const o = by.get(lc(r.email)); if (o) Object.assign(o, r); else RAW.pipeline.push(r); }); }
   if (br.length) { const seen = new Set(RAW.briefs.map(b => lc(b.email) + "|" + b.submitted_at)); br.forEach(b => { if (!seen.has(lc(b.email) + "|" + b.submitted_at)) RAW.briefs.push(b); });
