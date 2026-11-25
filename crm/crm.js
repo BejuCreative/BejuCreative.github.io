@@ -222,6 +222,11 @@ function derive() {
   d.series = []; for (let i = 59; i >= 0; i--) { const dd = addDays(t, -i); d.series.push({ day: dd, ...(byDay[dd] || { sent: 0, nw: 0, rep: 0, auto: 0, opp: 0 }) }); }
   const tgt = (R.sync.find(s => s.name === "new_lead_target") || {}).detail; d.target = parseInt(tgt, 10) > 0 ? parseInt(tgt, 10) : 150;
   d.todayNew = d.series[59].nw; d.todaySent = d.series[59].sent; d.yNew = d.series[58].nw; d.ySent = d.series[58].sent;
+  /* 11-25 (SIMAS: "one number that shows how many leads we will be sending out today and are pushed to Instantly ready for sending"): per live
+     campaign (status 1), its daily new-lead cap, or what it can still reach today when that is smaller (queued + already emailed today).
+     Same sum as new_lead_target.py's "possible", read live from campaign_live so it moves with every Instantly sync. */
+  const nwT = {}; R.daily.forEach(r => { if (r.day === t) nwT[r.campaign_id] = (nwT[r.campaign_id] || 0) + (+r.new_leads || 0); });
+  d.goOut = sum(R.camps.filter(c => +c.status === 1), c => Math.min(+c.daily_max_leads || 0, (+c.uncontacted || 0) + (nwT[c.campaign_id] || 0)));
   d.streak = d.todayNew >= 150 ? 1 : 0; for (let i = 58; i >= 0 && d.series[i].nw >= 150; i--) d.streak++;
   d.queued = sum(R.camps, c => c.uncontacted); d.sentAll = sum(R.camps, c => c.emails_sent); d.contacted = sum(R.camps, c => c.new_contacted); d.loaded = sum(R.camps, c => c.leads_total);
   d.repAll = sum(R.camps, c => c.replies); d.autoAll = sum(R.camps, c => c.replies_auto); d.oppAll = sum(R.camps, c => c.opportunities); d.bounced = sum(R.camps, c => c.bounced);
@@ -1004,12 +1009,13 @@ const CARDS = [
 /* 11-21 (SIMAS: "a square that says action"; BENAS: lower on the main page, under Do next) */
 { id: "activity", title: "Activity", focus: ["feed", ""], render: d => { const all0 = d.feed.filter(e => !e.quiet), html = `${head("Activity", "", true)}<div class="feed lite">${all0.slice(0, 5).map(e => feedRow(e, feedSeen.size > 0 && !feedSeen.has(e.t + e.title), true)).join("") || empty("Nothing has happened yet.")}</div>${all0.length > 5 ? dB("feed", "", "Show all", "more") : ""}`;
     d.feed.forEach(e => feedSeen.add(e.t + e.title)); return html; } },
-{ id: "today", title: "Today", render: d => { const T = d.td, I = { call: ["phone", "c-blue"], payment_failed: ["alert", "c-red"], action: ["check", "c-green"], partner: ["flag", "c-orange"], sample_due: ["film", "c-purple"], followup: ["clock", "c-grey"] }, items = d.todayItems, list = STATE.todayAll ? items : items.slice(0, 4), pct = d.target ? Math.round(d.todayNew / d.target * 100) : 0;
+{ id: "today", title: "Today", render: d => { const T = d.td, I = { call: ["phone", "c-blue"], payment_failed: ["alert", "c-red"], action: ["check", "c-green"], partner: ["flag", "c-orange"], sample_due: ["film", "c-purple"], followup: ["clock", "c-grey"] }, items = d.todayItems, list = STATE.todayAll ? items : items.slice(0, 4), pct = d.target ? Math.round(d.goOut / d.target * 100) : 0;
     /* 11-19 (Simas: "looks ugly w this structure"): one clean 3x2 grid, label on top, one value; 11-21: a ▲/▼ chip on the valuable ones instead of sub-lines */
     const cell = (label, val, k, a, chg = "") => dB(k, a, `<span class="tl">${label}</span><b>${val}</b>${chg}`, "tc", `${label}: open the list`), part = { part: true, tip: "Today so far against yesterday's full day" };
     return `${head(`Today <em class="sf">${esc(dLabel(d.t))}</em>`, T.stuck ? `<span class="tchips">${dB("todaylist", "", `${T.stuck} money stuck`, "chip r", "Payments that failed today")}</span>` : "", true)}
-    ${big("day", d.t, `${N(d.todayNew)}<small>/ ${nf0.format(d.target)} new leads today</small>${dl(pctChg(d.todayNew, d.yNew), "vs yesterday", part)}`, "Open today's split per campaign")}
+    ${big("day", d.t, `${N(d.goOut)}<small>/ ${nf0.format(d.target)} new leads going out today</small>`, "Pushed to Instantly and ready for today: each live campaign's daily cap, or its queue when that is smaller. Open today's split per campaign")}
     ${dB("day", d.t, bar(pct, pct >= 100 ? "c-green" : ""), "barb", `${pct}% of today's target of ${nf0.format(d.target)} new leads`)}
+    ${kv("New leads emailed so far", `${N(d.todayNew)}${dl(pctChg(d.todayNew, d.yNew), "vs yesterday", part)}`, "day", d.t)}
     ${kv("Sending today", `up to ${N(d.inb.capOn)}`, "sending", "", "sp")}${dB("sending", "", bar(d.inb.capOn ? d.todaySent / d.inb.capOn * 100 : 0), "barb", `${nf0.format(d.todaySent)} of up to ${nf0.format(d.inb.capOn)} sent today`)}
     <div class="tgrid">${cell("Sent", N(d.todaySent), "day", d.t, dl(pctChg(d.todaySent, d.yd.sent), "vs yesterday", part))}${cell("Replies", N(T.rep), "replies", "", dl(pctChg(T.rep, d.yd.rep), "vs yesterday", part))}${cell("Money", N(T.money, "usd"), "pays", d.t, dl(pctChg(T.money, d.yd.money), "vs yesterday", { tip: "Today so far against yesterday up to the same time" }))}${cell("Videos", N(T.vids), "vids", d.t)}${cell("Samples", N(T.samples), "samples", "week")}${cell("Calls", N(T.calls), "todaylist", "")}</div>
     <div class="stack sp">${list.map(x => { const [icon, c] = I[x.kind] || ["clock", "c-grey"]; const inner = `<span class="it ${c}"><svg><use href="#i-${icon}"/></svg></span><span class="row-main"><b>${esc(cut(x.title, 60))}</b></span>${x.kind === "call" && x.at ? `<span class="row-end">${timeOf(x.at)}</span>` : ""}`;

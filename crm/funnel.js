@@ -11,11 +11,14 @@
      DOING NOW: a card per item in progress (area, title, note, due, who, link, the status one tap away);
      UP NEXT: the items not started yet that are due within 7 days (or overdue), as cards;
      WAITING ON THE CLIENT: the items that wait on them, as cards;
-     THE WHOLE SCOPE, BY AREA: one square per area (Setup & calls, Websites, Lead magnets & emails, Posting, Shorts, SEO & GEO, Reports
-       & calls, Other) with its progress and every item; tap an item for its note, link and the status choices. The Shorts square also
-       shows the client's Shorts from the delivery board (public.client_items);
+     FOUR CATEGORIES (SIMAS 11-25, replace the 8 area squares): Website (websites + seo) · Content (shorts + posting) · Funnel & sales
+       (lead_magnets + setup + reports + other) · What <first name> asked (area asks + the client's inbound emails from public.threads).
+       Each tile counts done / doing / waiting / overdue and who owns the open ones; click it for every task in it as a full card (whole
+       note, due, status, owner chip coloured per owner: Simas, Benas, Both, Claude). Content also shows the Shorts from the delivery
+       board (public.client_items); the asks category lists the client's emails, newest first, tap one to read it;
      CLIENT INFO: plan, email, links and the client notes (folded when long).
-   ?fcl=<client id> in the address opens that client's panel. Esc, the X or the dimmed page closes it.
+   ?fcl=<client id> in the address opens that client's panel. Esc, the X, the dimmed page or any sidebar item closes it. On a computer the
+   panel leaves the sidebar open and clickable (funnel.css); on a phone it is full screen.
    Data: public.scope_items + clients.funnel (supabase/crm_scope_items1.sql), clients (links + notes), client_items, retainers; read once per
    page load, then a targeted re-read after realtime events on this page's OWN channels. A database without the table or the column shows
    a calm empty state. Writes: scope_items.status only, as the signed-in founder (row-level security, is_admin()); optimistic: on an error
@@ -34,8 +37,14 @@ const H48 = 48 * 36e5, D7 = 7 * 864e5;
 
 /* the areas, in the order the client panel shows them: [id, name, icon] */
 const AREAS = [["setup", "Setup & calls", "check"], ["websites", "Websites", "link"], ["lead_magnets", "Lead magnets & emails", "mail"], ["posting", "Posting", "send"],
-  ["shorts", "Shorts", "film"], ["seo", "SEO & GEO", "search"], ["reports", "Reports & calls", "chart"], ["other", "Other", "star"]];
+  ["shorts", "Shorts", "film"], ["seo", "SEO & GEO", "search"], ["reports", "Reports & calls", "chart"], ["other", "Other", "star"], ["asks", "Asked", "mail"]];
 const AREA_L = Object.fromEntries(AREAS.map(a => [a[0], a[1]])), AREA_I = Object.fromEntries(AREAS.map(a => [a[0], a[2]]));
+/* SIMAS 11-25: the four categories on the client board: [id, name ("{n}" = the client's first name), icon, areas] */
+const CATS = [["web", "Website", "link", ["websites", "seo"]], ["content", "Content", "film", ["shorts", "posting"]],
+  ["funnel", "Funnel & sales", "chart", ["lead_magnets", "setup", "reports", "other"]], ["asks", "What {n} asked", "mail", ["asks"]]];
+const CAT_OF = Object.fromEntries(CATS.flatMap(c => c[3].map(a => [a, c[0]])));
+const OWN = { simas: "o-simas", benas: "o-benas", both: "o-both", claude: "o-claude" };
+const TZ = "Europe/Vilnius", HM = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
 const ST = [["not_started", "Not started"], ["in_progress", "In progress"], ["waiting_client", "Waiting on client"], ["live", "Live"], ["dropped", "Dropped"]];
 const ST_L = Object.fromEntries(ST);
 const SRANK = { in_progress: 0, waiting_client: 1, not_started: 2, live: 3, dropped: 4 };
@@ -49,7 +58,10 @@ let ITEMS = null;           // scope_items rows; null = not readable (not create
 let CI = null;              // client_items rows (id, client_id, status); null = not readable
 let PAN = null;             // the open client panel: { id, pan, scrim, head, body }
 let MENU = null;            // the open status menu on a card: "<where>:<item id>" (d doing now, u up next, w waiting)
-const ROW = new Set();      // area items unfolded (item ids)
+let TH = null;              // the funnel clients' inbound emails (public.threads); null = not readable
+let CAT = null;             // the open category on the client board (CATS id) or null = the overview
+const MAIL = new Set();     // emails unfolded (msg ids)
+let MAIL_ALL = false;       // every email listed, not just the newest 8
 const DET = new Set();      // card notes unfolded (card keys)
 let NOTES_OPEN = false;     // the client notes are unfolded
 const CH = {}, CHT = {}, AT = {};   // realtime: channel, pending re-read timer, last read time (per table)
@@ -74,6 +86,9 @@ async function load(api) {
       emails: c.emails || [], website: c.website || "", instagram: c.instagram || "", youtube: c.youtube || "", drive: c.drive_folder || "", notes: c.notes || "" };
   });
   D = { clients, missing: !cl || !ITEMS };
+  /* SIMAS 11-25 ("track what she writes in the email and put it in the funnel"): their inbound emails, read once per page load */
+  const em = [...new Set(clients.flatMap(c => c.emails.map(lc)).filter(Boolean))];
+  TH = em.length ? await api.all("threads", "msg_id,lead_email,at,subject,snippet,body", q => q.in("lead_email", em).eq("direction", "in")).catch(() => null) : [];
   if (ITEMS) live("scope_items", readItems, v => { ITEMS = v; });
   if (CI) live("client_items", readCI, v => { CI = v; });
   return D;
@@ -122,6 +137,10 @@ function due(i) {
   if (t < now) return i.status === "waiting_client" ? [`Was due ${lab}`, ""] : [`Overdue · ${lab}`, "late"];
   return [`Due ${lab}`, t <= now + H48 ? "soon" : ""];
 }
+const isLate = i => i.status !== "live" && i.status !== "dropped" && i.status !== "waiting_client" && ms(i.due_at) && ms(i.due_at) < Date.now();
+const firstName = n => String(n || "").split(/\s+/).find(w => w && !/\.$/.test(w)) || "the client";   // "Dr. Ann Lee" → "Ann"
+const catName = (cat, c) => cat[1].replace("{n}", firstName(c.name));
+const ownChip = (o, k) => `<span class="fc-own ${OWN[lc(o)] || ""}">${esc(o)}${k != null ? ` <b>${k}</b>` : ""}</span>`;
 const badge = m => `<span class="fc-badge s-${m.state}">${esc(BADGE[m.state])}${m.n ? ` · ${m.n}` : ""}</span>`;
 const barOf = (live, total, cls = "") => { const pct = total ? Math.round(100 * live / total) : 0; return `<span class="fc-bar${cls}" role="img" aria-label="${live} of ${total} live"><i data-fw="${total ? Math.max(live ? 3 : 0, pct) : 0}"></i></span>`; };
 const bar = m => barOf(m.live, m.total);
@@ -159,44 +178,61 @@ const pillHTML = (i, key) => `<button type="button" class="fc-pill s-${esc(i.sta
 const choices = (i, key) => ST.map(([id, l]) => `<button type="button" role="menuitemradio" class="fc-mi s-${id}" data-fcset="${id}" data-f="set:${esc(key)}:${id}" aria-checked="${id === i.status}">${esc(l)}</button>`).join("");
 const menuHTML = (i, key) => `<div class="fc-menu" role="menu" aria-label="Set the status"${MENU === key ? "" : " hidden"}>${choices(i, key)}</div>`;
 /* a task card (doing now, up next, waiting on the client) */
-function taskCard(i, where) {
-  const [t, k] = due(i), u = webUrl(i.link), dt = String(i.detail || "").trim(), key = where + ":" + i.id, open = DET.has(key), long = dt.length > 150;
+function taskCard(i, where, full) {
+  const [t, k] = due(i), u = webUrl(i.link), dt = String(i.detail || "").trim(), key = where + ":" + i.id, open = DET.has(key), long = !full && dt.length > 150;
   return `<article class="fc-tc" data-id="${esc(i.id)}" data-key="${esc(key)}" data-st="${esc(i.status)}">
     <span class="fc-tc1"><span class="fc-ar">${ic(AREA_I[i.area] || "star")}<span>${esc(AREA_L[i.area] || "Other")}</span></span>${pillHTML(i, key)}</span>
     ${menuHTML(i, key)}
     <b class="fc-at">${esc(i.title)}${i.recurring ? ` <span class="fc-rec">${esc(i.recurring)}</span>` : ""}</b>
     ${dt ? `<p class="fc-an${long && !open ? " short" : ""}">${esc(dt)}</p>` : ""}
-    <span class="fc-af">${t ? `<span class="fc-due ${k}">${esc(t)}</span>` : ""}${i.owner ? `<span class="fc-own">${esc(i.owner)}</span>` : ""}
+    <span class="fc-af">${t ? `<span class="fc-due ${k}">${esc(t)}</span>` : ""}${i.owner ? ownChip(i.owner) : ""}
       <span class="fc-afr">${long ? `<button type="button" class="fc-dtb" data-fcdt="${esc(key)}" data-f="dt:${esc(key)}" aria-expanded="${open}">${open ? "Less" : "More"}</button>` : ""}${u ? lk(u, `Open the link for ${i.title}`) : ""}</span></span></article>`;
-}
-/* one promise inside an area square: tap it for the note, the link and the status choices */
-function rowHTML(i) {
-  const [t, k] = due(i), key = "a:" + i.id, open = ROW.has(String(i.id)), u = webUrl(i.link), dt = String(i.detail || "").trim(), done = i.status === "live" || i.status === "dropped";
-  return `<li class="fc-sr${open ? " open" : ""}" data-id="${esc(i.id)}" data-key="${esc(key)}" data-st="${esc(i.status)}">
-    <button type="button" class="fc-srb" data-fcrow="${esc(i.id)}" data-f="row:${esc(i.id)}" aria-expanded="${open}">
-      <i class="fc-sd s-${esc(i.status)}" aria-hidden="true">${i.status === "live" ? ic("check") : ""}</i>
-      <span class="fc-srt">${esc(i.title)}${i.recurring ? ` <span class="fc-rec">${esc(i.recurring)}</span>` : ""}</span>
-      <span class="fc-srm">${t && !done ? `<span class="fc-due ${k}">${esc(k === "late" ? "Overdue" : dShort(ms(i.due_at)))}</span>` : ""}<span class="fc-vh">${esc(ST_L[i.status] || i.status)}</span></span></button>
-    ${open ? `<div class="fc-srd">
-      ${dt ? `<p class="fc-dt">${esc(dt)}</p>` : ""}
-      <span class="fc-af">${t ? `<span class="fc-due ${k}">${esc(t)}</span>` : ""}${i.owner ? `<span class="fc-own">${esc(i.owner)}</span>` : ""}${ago(i.updated_at) ? `<small>Updated ${esc(ago(i.updated_at))}</small>` : ""}${u ? `<span class="fc-afr">${lk(u, `Open the link for ${i.title}`)}</span>` : ""}</span>
-      <div class="fc-menu fc-menu-in" role="menu" aria-label="Set the status">${choices(i, key)}</div></div>` : ""}</li>`;
 }
 function shortsHTML(s) {
   return `<div class="fc-sc" aria-label="Shorts on the delivery board">${[["sent", "delivered"], ["ready", "ready"], ["building", "building"], ...(s.changes ? [["changes", "changes asked"]] : [])]
     .map(([k, l]) => `<span class="fc-scn" data-sc="${k}"><b>${s[k]}</b>${l}</span>`).join("")}<small>delivery board</small></div>`;
 }
-function areasHTML(m, s) {
-  const sort = (a, b) => SRANK[a.status] - SRANK[b.status] || byDue(a, b) || (a.sort || 0) - (b.sort || 0);
-  return AREAS.map(([a, name, icn]) => {
-    const its = m.its.filter(i => i.area === a).sort(sort), sh = a === "shorts" && s && s.total ? s : null;
-    if (!its.length && !sh) return "";
-    const act = its.filter(i => i.status !== "dropped"), lv = act.filter(i => i.status === "live").length;
-    return `<section class="tile fc-sq" data-area="${a}" aria-labelledby="fc-a-${a}">
-      <header class="fc-sqh"><span class="fc-sqi">${ic(icn)}</span><h4 id="fc-a-${a}">${esc(name)}</h4>${act.length ? `<small>${lv} / ${act.length} live</small>` : ""}</header>
-      ${act.length ? barOf(lv, act.length, " fc-bar-s") : ""}${sh ? shortsHTML(sh) : ""}
-      ${its.length ? `<ul class="fc-sql">${its.map(rowHTML).join("")}</ul>` : ""}</section>`;
-  }).join("");
+/* a category tile: done / doing / waiting / overdue, progress, who owns what is open; click it for every task in it */
+function catTile(m, cat, s) {
+  const [id, , icn] = cat, act = m.its.filter(i => CAT_OF[i.area] === id && i.status !== "dropped"), n = st => act.filter(i => i.status === st).length;
+  const lv = n("live"), late = act.filter(isLate).length, on = CAT === id, own = {};
+  act.filter(i => i.status !== "live").forEach(i => { const o = i.owner || "Not set"; own[o] = (own[o] || 0) + 1; });
+  const extra = id === "asks" ? (k => k ? `${k} email${k === 1 ? "" : "s"}` : "")(mailsOf(m.c).length) : id === "content" && s && s.total ? `${s.sent} Shorts delivered` : "";
+  return `<button type="button" class="tile fc-cat${on ? " on" : ""}" data-fccat="${id}" data-f="cat:${id}" aria-pressed="${on}" aria-controls="fc-catd">
+    <span class="fc-cath"><span class="fc-cati">${ic(icn)}</span><b>${esc(catName(cat, m.c))}</b><span class="fc-catc">${ic("chev")}</span></span>
+    <span class="fc-catn"><span class="fc-cn is-done"><b>${lv}</b><small>Done</small></span><span class="fc-cn is-doing"><b>${n("in_progress")}</b><small>Doing</small></span>
+      <span class="fc-cn is-wait"><b>${n("waiting_client")}</b><small>Waiting</small></span><span class="fc-cn${late ? " bad" : ""}"><b>${late}</b><small>Overdue</small></span></span>
+    ${barOf(lv, act.length, " fc-bar-s")}
+    <span class="fc-catf">${Object.entries(own).map(([o, k]) => ownChip(o, k)).join("")}${extra ? `<small>${esc(extra)}</small>` : ""}${!act.length && !extra ? "<small>Nothing here yet</small>" : ""}</span></button>`;
+}
+/* the open category: every task in it as a full card (overdue, doing, waiting, not started; then what is done) */
+function catHTML(m, s) {
+  const cat = CATS.find(x => x[0] === CAT); if (!cat) return "";
+  const id = cat[0], its = m.its.filter(i => CAT_OF[i.area] === id), rk = i => isLate(i) ? -1 : SRANK[i.status] ?? 3;
+  const open = its.filter(i => i.status !== "live" && i.status !== "dropped").sort((a, b) => rk(a) - rk(b) || byDue(a, b) || (a.sort || 0) - (b.sort || 0));
+  const done = its.filter(i => i.status === "live" || i.status === "dropped").sort((a, b) => ms(b.done_at || b.updated_at) - ms(a.done_at || a.updated_at));
+  return `<section class="fc-psec fc-catd" id="fc-catd" aria-labelledby="fc-h-cat">
+    <div class="fc-cdh"><h3 class="fc-ph3" id="fc-h-cat">${esc(catName(cat, m.c))}<span class="n">${open.length}</span><small>open · ${done.length} done</small></h3>
+      <button type="button" class="fc-dtb" data-fccat="${id}" data-f="cat:${id}">Back to the overview</button></div>
+    ${id === "content" && s && s.total ? shortsHTML(s) : ""}
+    ${open.length ? cards(open, "c", true) : `<p class="fc-quiet">Nothing open here right now.</p>`}
+    ${done.length ? `<h4 class="fc-ph4">Done<span class="n">${done.length}</span></h4>${cards(done, "c", true)}` : ""}
+    ${id === "asks" ? mailHTML(m.c) : ""}</section>`;
+}
+/* the client's inbound emails, newest first; tap one to read it (the quoted older thread is cut off) */
+const mailsOf = c => { const e = new Set(c.emails.map(lc)); return (TH || []).filter(t => e.has(lc(t.lead_email))).sort((a, b) => ms(b.at) - ms(a.at)); };
+const mailWhen = t => { const v = ms(t); return v ? `${dShort(v)} · ${HM.format(v)}` : ""; };
+const mailBody = t => String(t.body || t.snippet || "").split(/\n[ \t>]*On [^\n]{4,240}(?:\n[^\n]{0,120})?wrote:/)[0].trim();
+function mailHTML(c) {
+  if (!TH) return `<p class="fc-quiet">The emails could not be read.</p>`;
+  const all = mailsOf(c); if (!all.length) return "";
+  const list = MAIL_ALL ? all : all.slice(0, 8);
+  return `<h4 class="fc-ph4">${esc(firstName(c.name))}'s emails<span class="n">${all.length}</span><small>newest first · tap one to read it</small></h4>
+    <ul class="fc-eml">${list.map(t => { const k = String(t.msg_id), o = MAIL.has(k);
+      return `<li class="fc-emi${o ? " open" : ""}"><button type="button" class="fc-emb" data-fcmail="${esc(k)}" data-f="mail:${esc(k)}" aria-expanded="${o}">
+        <span class="fc-emd">${esc(mailWhen(t.at))}</span><b class="fc-ems">${esc(t.subject || "(no subject)")}</b>${o ? "" : `<span class="fc-emp">${esc(String(t.snippet || "").slice(0, 180))}</span>`}</button>
+        ${o ? `<div class="fc-emx">${esc(mailBody(t))}</div>` : ""}</li>`; }).join("")}</ul>
+    ${all.length > 8 ? `<button type="button" class="fc-dtb fc-emall" data-fcmall data-f="mall" aria-expanded="${MAIL_ALL}">${MAIL_ALL ? "Show the newest 8" : `Show all ${all.length} emails`}</button>` : ""}`;
 }
 function infoHTML(c) {
   const link = (label, v, icn) => { const u = webUrl(v); return u ? `<a class="fc-il" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${ic(icn)}<span>${esc(label)}</span></a>` : ""; };
@@ -210,11 +246,11 @@ function infoHTML(c) {
     ${notes ? `<div class="fc-notes${long && !NOTES_OPEN ? " short" : ""}"><p>${esc(notes)}</p>${long ? `<button type="button" class="fc-dtb" data-fcnotes data-f="notes" aria-expanded="${NOTES_OPEN}">${NOTES_OPEN ? "Show less" : "Show all notes"}</button>` : ""}</div>` : ""}</div>`;
 }
 const sec = (id, title, n, body, sub) => `<section class="fc-psec" aria-labelledby="fc-h-${id}"><h3 class="fc-ph3" id="fc-h-${id}">${esc(title)}${n != null ? `<span class="n">${n}</span>` : ""}${sub ? `<small>${esc(sub)}</small>` : ""}</h3>${body}</section>`;
-const cards = (list, where) => `<div class="fc-tcg">${list.map(i => taskCard(i, where)).join("")}</div>`;
+const cards = (list, where, full) => `<div class="fc-tcg">${list.map(i => taskCard(i, where, full)).join("")}</div>`;
 const headHTML = (c, m) => `<div class="fc-phh"><h2 id="fc-pt">${esc(c.name)}</h2><p class="mut">${esc([c.plan, c.emails[0]].filter(Boolean).join(" · ") || "Funnel client")}</p></div>
   <span class="fc-phb">${badge(m)}<span class="fc-rp fc-php">${bar(m)}<span class="fc-pn">${m.live} / ${m.total} live</span></span></span>`;
 function bodyHTML(c, m) {
-  const s = shortsOf(c.id), late = m.its.filter(i => i.status !== "live" && i.status !== "dropped" && i.status !== "waiting_client" && ms(i.due_at) && ms(i.due_at) < Date.now()).length;
+  const s = shortsOf(c.id), late = m.its.filter(isLate).length;
   const who = {}; m.doing.forEach(i => { const o = i.owner || "Not set"; who[o] = (who[o] || 0) + 1; });
   const [nt, nk] = m.next ? due(m.next) : ["", ""];
   const stats = `<div class="fc-pst">
@@ -224,11 +260,12 @@ function bodyHTML(c, m) {
     ${late ? `<div class="tile fc-ps bad"><span class="ec-l">Overdue on us</span><b class="fc-pbig">${late}</b><small>Past due and not live yet</small></div>`
       : `<div class="tile fc-ps"><span class="ec-l">Next due</span>${m.next ? `<b class="fc-tn">${esc(m.next.title)}</b><span class="fc-due ${nk}">${esc(nt)}</span>` : `<b class="fc-tn mut">${m.total ? "Nothing else due" : "No items yet"}</b>`}</div>`}</div>`;
   const quiet = t => `<p class="fc-quiet">${esc(t)}</p>`;
-  return `${stats}
+  const tiles = `<div class="fc-cats" role="group" aria-label="Categories: click one for every task in it">${CATS.map(x => catTile(m, x, s)).join("")}</div>`;
+  if (CAT) return `${stats}${tiles}${catHTML(m, s)}${sec("info", "Client info", null, infoHTML(c))}`;
+  return `${stats}${tiles}
     ${sec("doing", "Doing now", m.doing.length, m.doing.length ? cards(m.doing, "d") : quiet("Nothing in progress right now."))}
-    ${m.up.length ? sec("up", "Up next", m.up.length, cards(m.up.slice(0, 8), "u"), m.up.length > 8 ? `${m.up.length - 8} more in the areas below` : "not started, due within 7 days") : ""}
+    ${m.up.length ? sec("up", "Up next", m.up.length, cards(m.up.slice(0, 8), "u"), m.up.length > 8 ? `${m.up.length - 8} more in the categories above` : "not started, due within 7 days") : ""}
     ${m.waiting.length ? sec("wait", "Waiting on the client", m.waiting.length, cards(m.waiting, "w")) : ""}
-    ${m.its.length || (s && s.total) ? sec("scope", "Everything we promised, by area", null, `<div class="fc-sqg">${areasHTML(m, s)}</div>`, "tap an item to see it or change its status") : ""}
     ${sec("info", "Client info", null, infoHTML(c))}`;
 }
 
@@ -244,7 +281,7 @@ function paint() {
   if (!keep) return;
   const q = k => document.querySelector(`[data-f="${CSS.escape(k)}"]`);
   let el = q(keep);
-  if (!el && keep.startsWith("set:")) { const k = keep.split(":").slice(1, 3).join(":"); el = q("st:" + k) || (k.startsWith("a:") ? q("row:" + k.slice(2)) : null); }
+  if (!el && keep.startsWith("set:")) el = q("st:" + keep.split(":").slice(1, 3).join(":"));
   el?.focus({ preventScroll: true });
 }
 const setUrl = id => { try { const u = new URL(location.href); id ? u.searchParams.set("fcl", id) : u.searchParams.delete("fcl"); history.replaceState(history.state, "", u); } catch {} };
@@ -252,7 +289,7 @@ const otherLayer = () => !!document.querySelector("#drawer:not([hidden]), #veil:
 function openPanel(id, opener) {
   const c = clientOf(id); if (!c || !A) return;
   if (PAN) closePanel(true);
-  MENU = null; ROW.clear(); DET.clear(); NOTES_OPEN = false; setUrl(c.id);
+  MENU = null; CAT = null; MAIL.clear(); MAIL_ALL = false; DET.clear(); NOTES_OPEN = false; setUrl(c.id);
   const m = model(c);
   const scrim = document.createElement("div"); scrim.className = "fc-scrim"; scrim.id = "fc-scrim";
   const pan = document.createElement("aside"); pan.className = "fc-pan"; pan.id = "fc-pan"; pan.setAttribute("role", "dialog"); pan.setAttribute("aria-modal", "true"); pan.setAttribute("aria-labelledby", "fc-pt");
@@ -295,10 +332,15 @@ document.addEventListener("click", ev => {
   if (t.closest("[data-fcx]")) { closePanel(); return; }
   const pill = t.closest("[data-fcst]"); if (pill) { MENU = MENU === pill.dataset.fcst ? null : pill.dataset.fcst; paint(); if (MENU) PAN.pan.querySelector(`[data-key="${CSS.escape(MENU)}"] [aria-checked="true"]`)?.focus({ preventScroll: true }); return; }
   const mi = t.closest("[data-fcset]"); if (mi) { setStatus(mi.closest("[data-key]").dataset.id, mi.dataset.fcset); return; }
-  const row = t.closest("[data-fcrow]"); if (row) { const k = row.dataset.fcrow; ROW.has(k) ? ROW.delete(k) : ROW.add(k); MENU = null; paint(); return; }
+  const cat = t.closest("[data-fccat]"); if (cat) { CAT = CAT === cat.dataset.fccat ? null : cat.dataset.fccat; MENU = null; DET.clear(); paint();
+    if (CAT) PAN.body.querySelector("#fc-catd")?.scrollIntoView({ block: "start", behavior: motion() ? "smooth" : "auto" }); return; }
+  const mail = t.closest("[data-fcmail]"); if (mail) { const k = mail.dataset.fcmail; MAIL.has(k) ? MAIL.delete(k) : MAIL.add(k); paint(); return; }
+  if (t.closest("[data-fcmall]")) { MAIL_ALL = !MAIL_ALL; paint(); return; }
   if (t.closest("[data-fcnotes]")) { NOTES_OPEN = !NOTES_OPEN; paint(); return; }
   const db = t.closest("[data-fcdt]"); if (db) { const k = db.dataset.fcdt; DET.has(k) ? DET.delete(k) : DET.add(k); paint(); return; }
 });
+/* SIMAS 11-25: the sidebar stays open next to the panel; any sidebar item closes the panel (capture: before the router moves the page) */
+document.addEventListener("click", ev => { if (PAN && ev.target.closest && ev.target.closest("#snav a[data-nav]")) closePanel(true); }, true);
 document.addEventListener("keydown", ev => {
   if (!PAN || otherLayer()) return;
   if (ev.key === "Escape") {   // Escape closes an open status menu first, then the panel
