@@ -1,8 +1,8 @@
 /* BEJÚ founder CRM: iPhone notifications (Web Push). BENAS 11-25. The "Notifications" block in the account sheet
    (top-left name / brand button > account) and the service worker's door into the page.
    What it does: registers sw.js (scope /crm/); shows this device's status; "Enable notifications" (a tap = the permission
-   prompt, then pushManager.subscribe with the public VAPID key, then public.push_sub_save); four per-device toggles
-   (money, replies, sample yes, client changes: push_subs.events); "Send test" (edge function push-send, {test:true});
+   prompt, then pushManager.subscribe with the public VAPID key, then public.push_sub_save); five per-device toggles
+   (money, replies, sample yes, client changes, needs your OK: push_subs.events); "Send test" (edge function push-send, {test:true});
    "Turn off on this device". iOS shows push only for a home-screen web app (16.4+): in Safari it says "Add to Home Screen first".
    Needs supabase/crm_push1.sql + the push-send function in beju-v2; before they are live the block says "not switched on yet".
    crm.js calls window.BEJU_PUSH.section() inside the account sheet; clicks are handled here (data-push attributes, no data-act).
@@ -12,7 +12,8 @@
 "use strict";
 const KEY = (window.BEJU_CRM || {}).vapidPublicKey || "";
 const EVENTS = [["money", "Money in", "A new payment"], ["reply", "Replies waiting", "A new reply needs an answer"],
-  ["sample_yes", "Sample yes", "A lead said yes to the free Short"], ["client_changes", "Changes asked", "A client asked for changes"]];
+  ["sample_yes", "Sample yes", "A lead said yes to the free Short"], ["client_changes", "Changes asked", "A client asked for changes"],
+  ["approval", "Needs your OK", "A Claude needs a founder's OK (decisions and reply drafts)"]];
 const UA = navigator.userAgent || "";
 const IOS = /iPad|iPhone|iPod/.test(UA) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const STANDALONE = navigator.standalone === true || (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
@@ -32,7 +33,7 @@ if ("serviceWorker" in navigator) {
     const d = ev.data; if (!d || d.type !== "beju-open" || typeof d.url !== "string") return;
     try {   // a tap on a notification: open the same page / client card as the link
       const u = new URL(d.url, location.href); if (u.origin !== location.origin) return;
-      const p = u.searchParams.get("p") || "dashboard", extra = {}, c = u.searchParams.get("c"); if (c) extra.c = c;
+      const p = u.searchParams.get("p") || "dashboard", extra = {}, c = u.searchParams.get("c"), id = u.searchParams.get("id"); if (c) extra.c = c; if (id && /^d?\d+$/.test(id)) extra.id = id;   // 11-25: ?p=approvals&id=<n> opens that approval
       if (window.BEJU_CRM_PAGE) window.BEJU_CRM_PAGE(p, extra);
     } catch {}
   });
@@ -82,7 +83,7 @@ function body() {
   const note = S.msg ? `<p class="dr-txt" role="status" aria-live="polite">${esc(S.msg)}</p>` : "";
   if (perm === "denied") return head + tile("Blocked on this device", IOS ? "Open iPhone Settings, Notifications, BEJÚ and allow them, then come back." : "Allow notifications for this site in the browser settings, then come back.", chip) + note;
   if (!on) {
-    return head + tile("Lock-screen alerts", "Money in, replies waiting, sample yes and changes asked. Nothing sensitive: a name or an amount.", chip)
+    return head + tile("Lock-screen alerts", "Money in, replies waiting, sample yes, changes asked and Needs your OK. Nothing sensitive: a name, an amount or a short question.", chip)
       + `<div class="acts sp"><button type="button" class="act go" data-push="enable"${S.busy ? " disabled" : ""}>${ic("bell")}${S.busy === "enable" ? "Turning on…" : "Enable notifications"}</button></div>` + note;
   }
   const ev = (S.row && S.row.events) || [];

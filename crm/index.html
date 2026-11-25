@@ -29,6 +29,7 @@
 <link rel="stylesheet" href="samples.css?v=20261125pf1">
 <link rel="stylesheet" href="clientboard.css?v=20261124tl1">
 <link rel="stylesheet" href="funnel.css?v=20261124fi1">
+<link rel="stylesheet" href="approvals.css?v=20261125ap1">
 <link rel="stylesheet" href="../report/report.css?v=20261123r2">
 <link rel="stylesheet" href="perf.css?v=20261123pf4">
 <link rel="stylesheet" href="anim.css?v=20261122mn1">
@@ -185,6 +186,8 @@
   </div>
   <span class="sn-cap"><span class="sn-lbl">Menu</span></span>
   <ul class="sn-list">
+    <!-- BENAS 11-25: Approvals first. One queue for both founders and both Claudes (approvals.js); the red count = what waits for a founder -->
+    <li><a href="?p=approvals" data-nav="approvals" data-tip="Approvals"><svg aria-hidden="true"><use href="#i-check"/></svg><span class="sn-lbl">Approvals</span><i class="sn-badge ap-bad" id="sn-approvals-n" hidden></i></a></li>
     <li><a href="./" data-nav="dashboard" data-act="tab" data-t="home" data-tip="Dashboard"><svg aria-hidden="true"><use href="#i-home"/></svg><span class="sn-lbl">Dashboard</span></a></li>
     <!-- Replies hidden from the menu (BENAS 11-22 "hide it for now"); ?p=replies still works. To bring it back, restore: <li><a href="?p=replies" data-nav="replies" data-tip="Replies"><svg aria-hidden="true"><use href="#i-reply"/></svg><span class="sn-lbl">Replies</span><i class="sn-badge" id="sn-rep-n" hidden></i></a></li> -->
     <li><a href="?p=expenses" data-nav="expenses" data-tip="Expenses"><svg aria-hidden="true"><use href="#i-cash"/></svg><span class="sn-lbl">Expenses</span></a></li>
@@ -228,15 +231,16 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="config.js?v=20261125pu2"></script>
-<script src="crm.js?v=20261125pu2"></script>
-<script src="push.js?v=20261125pu2"></script>
+<script src="crm.js?v=20261125ap1"></script>
+<script src="push.js?v=20261125ap1"></script>
 <script src="contacts.js?v=20261121zd"></script>
 <script src="replies.js?v=20261123ww1"></script>
 <script src="samples.js?v=20261125pf1"></script>
 <script src="clientboard.js?v=20261124sp1"></script>
 <script src="funnel.js?v=20261124tl1"></script>
+<script src="approvals.js?v=20261125ap1"></script>
 <script src="../report/render.js?v=20261123r2"></script>
 <script src="perf.js?v=20261123pf4"></script>
-<script src="side.js?v=20261124tl1"></script>
+<script src="side.js?v=20261125ap1"></script>
 </body>
 </html>

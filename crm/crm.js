@@ -3,6 +3,7 @@
    video_versions, video_notes.done_at, purchases), the same writes scripts/portal_ops.py makes. Nothing else is written.
    11-21 (BENAS, PR #9): plus the founder's decision on a lane-3 draft (public.drafts: status, body, founder_note, approved_sha256) in draftOp();
    the drafts_guard trigger enforces every rule (2-step founder session, approve only the exact text shown, nothing while sending).
+   11-25 (BENAS): reads public.approvals (the one Approvals queue, crm_approvals1.sql; approvals.js decides + draws the page). The Dashboard's "Needs your OK" card replaces the old Waiting for approval card; no write here.
    Data is protected by row-level security (is_admin() on every CRM table); the sign-in gate here is only UX.
    CSP forbids inline styles, so every dynamic size goes through data-v="name:value" -> style.setProperty. */
 (() => {
@@ -106,7 +107,7 @@ const DLV_READ = () => all("deliveries", "id,client_id,title,order_name,delivere
 const BRIEF_COLS = "email,busyness,captions,cta,brand,dream_short,part_ts,submitted_at", FORMS_READ = () => all("form_leads_v2", "*");
 async function fetchAll() {
   const t = today(), since60 = new Date(Date.now() - 60 * 864e5).toISOString(), since14 = new Date(Date.now() - 14 * 864e5).toISOString();
-  const [pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk, stages, nextSteps, forecast, fx, deals, drafts, dismiss, flags, forms, inb14, scopes, briefs, checks] = await Promise.all([
+  const [pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk, stages, nextSteps, forecast, fx, deals, drafts, dismiss, flags, forms, inb14, scopes, briefs, checks, approvals] = await Promise.all([
     PIPE_READ(),
     all("payments", "id,client_id,email,payer_name,amount,currency,package,refunded,paid_at", q => q.order("paid_at", { ascending: false })),
     all("campaign_daily", "campaign_id,day,sent,new_leads,replies,replies_auto,opportunities", q => q.gte("day", addDays(t, -75)).order("day").order("campaign_id")),
@@ -143,6 +144,7 @@ async function fetchAll() {
     all("scopes", "email,offer,amount,currency,monthly,sent_at,paid_at,status,url", q => q.order("sent_at", { ascending: false })).catch(() => null),   // 11-22 (SIMAS "we should see the scope that u have sent them"): the Forms person sheet
     all("briefs", BRIEF_COLS).catch(() => null),   // 11-22 (BENAS, Samples page): the sample brief per lead (graphics level + answers); one small soft read, null = no brief marks
     all("tasks", "id,title,owner,status,lead_email,due_at,created_at,big,source,source_ref", q => q.in("source", ["founder_tasks", "board", "deferred", "manual"]).eq("status", "todo")).catch(() => []),   // 11-24 (BENAS "where is the ben kump task"): all founder to-dos; Check: cards + big to-dos + booked calls reach the card (wofOf, wofTodo; 17:2x "only big things")   // 11-23 (BENAS, Waiting on a founder): "Check:" cards in To do on the To-dos board (its own sources) = Claude's work to approve
+    all("approvals", "*", q => q.in("status", ["pending", "held"])).catch(() => null),   // 11-25 (BENAS): the one approvals queue (crm_approvals1.sql). Not live yet = null = no card, no badge
   ]);
   /* 11-21 (tracking check, from v7): Instantly's daily "unique opportunities" counts a lead again on each day it is active, so sums over days
      ran up to 1.9x too high. Positives per day come from interested_leads: one row per lead, on the day it was marked interested. */
@@ -150,7 +152,7 @@ async function fetchAll() {
     interested.forEach(x => { const dd = dayOf(x.interest_changed_at || x.last_reply_at || x.created_at); if (!dd || !x.campaign_id) return; const k = x.campaign_id + "|" + dd; m[k] = (m[k] || 0) + 1; });
     if (interested.length) { daily.forEach(r => { const k = r.campaign_id + "|" + r.day; seen.add(k); r.opportunities = m[k] || 0; });
       Object.entries(m).forEach(([k, n]) => { const [campaign_id, day] = k.split("|"); if (!seen.has(k) && day >= lo) daily.push({ campaign_id, day, sent: 0, new_leads: 0, replies: 0, replies_auto: 0, opportunities: n }); }); } }
-  return { pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk, stages, nextSteps, forecast, fx, deals, drafts, dismiss, flags, forms, inb14, scopes, briefs, checks };
+  return { pipeline, payments, daily, camps, replies, attention, fu, inboxes, todayItems, sync, deliveries, clients, promises, profiles, sampleReq, videos, purchases, vnotes, leadAdds, tlite, interested, cnotes, ftasks, retainers, calls, panels, desk, stages, nextSteps, forecast, fx, deals, drafts, dismiss, flags, forms, inb14, scopes, briefs, checks, approvals };
 }
 
 /* ---------------- derive ---------------- */
@@ -785,7 +787,7 @@ const liI = (name, val = "", vc = "") => `<span class="li-n">${name}</span>${val
 const liLead = (email, name, val = "", vc = "") => leadBtn(email, liI(name, val, vc), "li");
 const liDr = (k, a, name, val = "", vc = "", label = "") => dB(k, a, liI(name, val, vc), "li", label);
 const quiet = (k, a, txt, label = "") => dB(k, a, txt, "qt", label);
-const PAGE_L = { clients: "Clients", todos: "To-dos", email: "Email campaigns" };
+const PAGE_L = { clients: "Clients", todos: "To-dos", email: "Email campaigns", approvals: "Approvals" };
 const nextLi = x => { const t = esc(cut(x.title, 70));
   if (x.task) return `<div class="li"><span class="li-n">${t}</span><button type="button" class="act go" data-act="ftdone" data-id="${esc(x.task)}" aria-label="Mark “${esc(cut(x.title, 60))}” done">Done</button></div>`;
   return x.email ? liLead(x.email, x.why ? `<span class="li-nm"><span>${t}</span>${whyChip(x.why.t, x.why.u)}</span>` : t, x.end ? esc(x.end) : "", "mu") : liDr(x.k, x.a, t, x.end ? esc(x.end) : "", "mu"); };
@@ -988,11 +990,13 @@ const CARDS = [
     return `${head(`Big <em class="sf">deals</em>`, "", true)}${B.length ? big("deals", "", `${N(sum(B, x => +x.value_usd || 0), "usd")}<small>quoted</small>`, "Open every big deal: the quote, their words, their last reply, holds") + quiet("deals", "", `${B.length} open${st ? ` · <span class="dn">${st} gone quiet</span>` : ""}`) : ""}
     <div class="lst">${L.slice(0, 4).map(x => liLead(x.email, esc(x.name || x.email), dealVal(x))).join("") || empty(B.length ? "Every open deal waits on a founder: they are at the top of the page." : "No real quote of $600+ a month is open. Deals show here from a sent scope, a deal in the CRM, or the lead's own words.")}</div>
     ${B.length > Math.min(4, L.length) ? dB("deals", "", "Show all", "more") : ""}`; } },
-{ id: "approvals", title: "Waiting for approval", focus: ["approvals", ""], render: d => { const A = d.drafts;   // nothing waiting (or no view) = "" = no card at all
-    if (!A || !A.length) return "";
-    return `${head(`Waiting for <em class="sf">approval</em>`, "", true)}${big("approvals", "", `${N(A.length)}<small>waiting</small>`, "Open every draft that waits for a founder")}
-    <div class="lst">${A.slice(0, 4).map(x => liDr("draft", x.id, esc(nameOf(x.lead_email)), esc(rel(+new Date(x.created_at))), "mu", `Open the draft to ${nameOf(x.lead_email)}`)).join("")}</div>
-    ${A.length > 4 ? dB("approvals", "", "Show all", "more") : ""}`; } },
+/* 11-25 (BENAS): "both Claudes send the approvals to one tab". The card sits at the top of the Dashboard only while something waits for a founder
+   (no card otherwise): decisions from public.approvals + the reply drafts waiting for a founder, urgent first (approvals.js builds the one queue). */
+{ id: "approvals", cls: "w2 ap-card", title: "Needs your OK", page: "approvals", render: d => { const A = window.BEJU_APPROVALS, Q = A && A.queue(RAW);
+    if (!Q || !Q.count) return "";
+    return `${head(`Needs your <em class="sf">OK</em>`, "", true)}<button type="button" class="big tapn" data-act="page" data-p="approvals" aria-label="Open the Approvals page" title="Open the Approvals page">${N(Q.count)}<small>waiting${Q.money ? ` · ${Q.money} money` : ""}</small></button>
+    <div class="lst">${Q.items.slice(0, 4).map(x => `<button type="button" class="li" data-act="page" data-p="approvals" data-id="${esc(x.link)}" aria-label="${esc(`${x.title}. ${x.requester}. Open it`)}"><span class="li-n">${x.urgency === "money" ? "💰 " : ""}${esc(cut(x.title, 70))}</span><span class="li-v mu">${esc(rel(+new Date(x.at)))}</span></button>`).join("")}</div>
+    ${Q.count > 4 ? `<button type="button" class="more" data-act="page" data-p="approvals">Show all ${Q.count}</button>` : ""}`; } },
 { id: "next", title: "Do next", page: "todos", focus: ["next", ""], render: d => `${head(`Do <em class="sf">next</em>`, "", true)}${big("next", "", `${N(d.todoN)}<small>to do</small>`, "Open the whole list, most urgent first")}
     <div class="lst">${d.todo.slice(0, 5).map(nextLi).join("")}</div>
     ${(h => h.length ? quiet("holds", "", `On hold: ${esc(h.map(x => cut(String(x.client || "").replace(/\s*\(.*?\)/g, ""), 24)).join(", "))}`, "Open the holds: who, the rule, who lifts it") : "")(d.holds.filter(x => wofFresh("hold", x.created_at ? +new Date(x.created_at) : 0)))}
@@ -1163,9 +1167,9 @@ const byId = id => CARDS.find(c => c.id === id);
    number shows once on the page: a card whose number is already in the hero, the summary row or another card is cut ("cut": built but never
    shown; its lists still open from the summary number or the drill sheets). Money / Leads / Outreach left the side menu and the phone bar.
    "clients" cards (On hold, In production) still sit on top of the Clients page (crm.css). */
-const SECS = { work: ["forms", "bigdeals", "next", "activity"], money: ["buyers", "topc", "paidc", "close"], leads: ["hot", "contacts", "pipeline", "turn", "followups"], outreach: ["outreach", "funnel", "camps", "inboxes"] };
+const SECS = { work: ["approvals", "forms", "bigdeals", "next", "activity"], money: ["buyers", "topc", "paidc", "close"], leads: ["hot", "contacts", "pipeline", "turn", "followups"], outreach: ["outreach", "funnel", "camps", "inboxes"] };
 const TABS = { home: Object.values(SECS).flat(), clients: ["holds", "prod", "portal", "psamples", "pvideos", "pnotes", "pclients"],
-  cut: ["approvals", "retainers", "alltime", "rate", "speed", "deliv", "total", "today", "videos", "attention", "moods", "samples", "away", "heat", "clock", "sync", "price", "moneypage"], none: ["brand"] };
+  cut: ["retainers", "alltime", "rate", "speed", "deliv", "total", "today", "videos", "attention", "moods", "samples", "away", "heat", "clock", "sync", "price", "moneypage"], none: ["brand"] };
 const TABOF = {}; Object.entries(TABS).forEach(([t, ids]) => ids.forEach(id => { TABOF[id] = t; }));
 
 /* ---------------- chart painters (hover, tap and arrow keys share them) ---------------- */
@@ -1567,7 +1571,7 @@ function closeLead() {
 window.BEJU_CRM_REPLIES = { get raw() { return RAW; }, get d() { return D; }, get at() { return LAST_OK; }, get owner() { return STATE.owner; }, nameOf, ownerOfInbox, auto: s => autoText(ownWords(s)), pass: s => HARD_PASS.test(ownWords(s)), why: (e, at) => D.why(e, at), skip: (e, at, w) => D.skip(e, at, w), chip: whyChip };
 /* 11-22 (BENAS): read-only handle for the Samples page (samples.js): the same rows, the drawer's conversation helpers and the payment confetti. No extra query. */
 window.BEJU_CRM_SAMPLES = { get raw() { return RAW; }, get at() { return LAST_OK; }, get liveAt() { return LIVE_AT; }, ownerOfInbox, loadConv, convBlock, confetti: () => confetti(),
-  upd: (...a) => upd(...a), ask: o => ask(o), toast: (...a) => toast(...a), sha256hex: t => sha256hex(t), refresh: () => refresh(), drafts: async () => { LIVE.drafts.busy = false; await liveRead("drafts"); } };   // wrappers: upd / sha256hex are consts defined further down   // 11-23 (SIMAS): the Samples panel sends / edits / sends back a sample delivery draft (public.drafts, category sample)
+  upd: (...a) => upd(...a), ask: o => ask(o), toast: (...a) => toast(...a), sha256hex: t => sha256hex(t), refresh: () => refresh(), drafts: async () => { LIVE.drafts.busy = false; await liveRead("drafts"); }, approvals: async () => { LIVE.approvals.busy = false; await liveRead("approvals"); } };   // wrappers: upd / sha256hex are consts defined further down   // 11-23 (SIMAS): the Samples panel sends / edits / sends back a sample delivery draft (public.drafts, category sample)
 
 /* ---------------- toasts + confetti ---------------- */
 function toast(title, icon = "check", c = "c-green", sub = "", key = "", go = null) {
@@ -2034,7 +2038,7 @@ function onChange(tb, p) {
    the newest loaded (pipeline updated_at, briefs submitted_at); skipped for a table that had a realtime event in the last 5 min,
    and right after a full refresh. deliveries has no change time (delivered_at is a day), so it has no poll: realtime or the
    5-minute full refresh. Targeted reads never move LAST_OK, so the 5-minute safety loop runs exactly as before. */
-const POLL_MS = +CFG.livePollMs || 60000, LIVE_TB = ["pipeline", "deliveries", "briefs", "drafts"];   // 11-23: drafts = the Samples tab's delivery emails (send / timer / sent back)
+const POLL_MS = +CFG.livePollMs || 60000, LIVE_TB = ["pipeline", "deliveries", "briefs", "drafts", "approvals"];   // 11-23: drafts = the Samples tab's delivery emails (send / timer / sent back)
 const PIPE_COLS = "email,name,show,owner,inbox,status,fu_stage,yes_at,delivered_at,public_at,last_reply_at,stage_changed_at,updated_at,next_action,next_action_at,paid,drive_link,campaign,builder";   // what the Samples board + the dashboard's sample counts use
 const LIVE = Object.fromEntries(LIVE_TB.map(t => [t, { ch: null, ev: 0, read: 0, t: null, busy: false, retry: null, err: 0 }]));
 let LIVE_AT = 0, LIVE_POLL = null, LIVE_LAST = 0;   // LIVE_AT = when a poll or a realtime event last brought rows (the Samples board's "as of")
@@ -2046,6 +2050,7 @@ async function liveRead(tb) {   // the targeted read after realtime events
     if (tb === "pipeline") { const rows = await PIPE_READ(); if (RAW) RAW.pipeline = rows; }
     else if (tb === "deliveries") { const rows = await DLV_READ(); if (RAW) RAW.deliveries = rows; }
     else if (tb === "drafts") { const rows = await all("drafts_waiting", "*"); if (RAW) RAW.drafts = rows; }
+    else if (tb === "approvals") { const rows = await all("approvals", "*", q => q.in("status", ["pending", "held"])); if (RAW) RAW.approvals = rows; }   // 11-25: a decision by the other founder shows here without a refresh
     else { const [b, f] = await Promise.all([all("briefs", BRIEF_COLS), FORMS_READ().catch(() => null)]); if (RAW) { RAW.briefs = b; if (f) RAW.forms = f; } }
     if (RAW) liveDone();
   } catch {} finally { L.busy = false; }
@@ -2075,6 +2080,10 @@ async function livePoll() {
   let dch = false; if (go("drafts") && RAW.drafts) { const dr = await all("drafts_waiting", "*").catch(() => { LIVE.drafts.err = Date.now() + 6e5; return null; });
     const sig = x => JSON.stringify((x || []).map(d => [d.id, d.status, d.body_sha256, d.founder_note, d.auto_send_at]));
     if (dr && RAW && sig(dr) !== sig(RAW.drafts)) { RAW.drafts = dr; dch = true; } }
+  /* 11-25: the open approvals are a handful of rows: re-read whole, repaint only when something changed */
+  if (go("approvals") && RAW.approvals) { const ar = await all("approvals", "*", q => q.in("status", ["pending", "held"])).catch(() => { LIVE.approvals.err = Date.now() + 6e5; return null; });
+    const sg = x => JSON.stringify((x || []).map(d => [d.id, d.status, (d.decided_by || []).length]));
+    if (ar && RAW && sg(ar) !== sg(RAW.approvals)) { RAW.approvals = ar; dch = true; } }
   if (!RAW || (!pr.length && !br.length && !dch)) return;
   if (pr.length) { const by = new Map(RAW.pipeline.map(r => [lc(r.email), r])); pr.forEach(r => { const o = by.get(lc(r.email)); if (o) Object.assign(o, r); else RAW.pipeline.push(r); }); }
   if (br.length) { const seen = new Set(RAW.briefs.map(b => lc(b.email) + "|" + b.submitted_at)); br.forEach(b => { if (!seen.has(lc(b.email) + "|" + b.submitted_at)) RAW.briefs.push(b); });
@@ -2190,7 +2199,7 @@ document.addEventListener("click", ev => {
   const a = b.dataset.act;
   if (a === "lead") openLead(b.dataset.email, b);
   else if (a === "drill") openDrill(b.dataset.k, b.dataset.a, b);
-  else if (a === "page") goPage(b.dataset.p);   // 11-22 (SIMAS): a bento card's title moves to its page
+  else if (a === "page") goPage(b.dataset.p, b.dataset.id ? { id: b.dataset.id } : undefined);   // 11-22 (SIMAS): a bento card's title moves to its page (11-25: an Approvals row opens that item)
   else if (a === "feedf") { const s = STATE.drill, top = STACK[STACK.length - 1]; if (s && s.k === "feed") { s.a = b.dataset.f; if (top && top.k === "feed") top.a = s.a; showDrill(DR.feed(s.a), SEQ); const nb = $(`[data-act="feedf"][data-f="${s.a}"]`); if (nb) nb.focus(); } }   // Activity filter chips: swap the list in place, no new back step
   else if (a === "back") { if (STACK.length > 1) { STACK.pop(); const s = STACK[STACK.length - 1]; openDrill(s.k, s.a, null, true); } }
   else if (a === "mclose") closeDrill();

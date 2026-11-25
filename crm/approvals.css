@@ -1,0 +1,115 @@
+/* BEJÚ founder CRM: Approvals page (approvals.js) + its Dashboard card and menu badge. One queue for both founders and both Claudes.
+   Type: 13 (chips, meta, notes) · 14-15 (why / recommendation / full text) · 17-18 (headline). Colour = meaning: red = money, amber =
+   client, grey = routine; green = approve. Buttons are 44 px on a phone. Motion: transform + opacity only; off under reduced motion and
+   the "Calm" look. No inline styles. Phone (<= 600 px, BENAS 11-25): the list is compact rows; a tap opens ONE card as a full-screen
+   sheet with the buttons fixed at the bottom (the client board's Ready sheet look). */
+
+/* ---------- the menu badge: red, because something waits for a founder ---------- */
+#snav .sn-badge.ap-bad{background:var(--red);color:#fff}
+a[aria-current="page"] .sn-badge.ap-bad{background:var(--red);color:#fff}
+html.sn-m .sn-badge.ap-bad{background:var(--red)}
+
+/* ---------- the page ---------- */
+.ap{display:grid;gap:14px;min-width:0;max-width:880px}
+#ap-root{display:grid;gap:14px;min-width:0}
+.ap-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 14px}
+.ap-sum{font-size:15px;font-weight:600;letter-spacing:-.01em;color:var(--ink)}
+.ap-top .act{height:40px;padding:0 16px;font-size:14px}
+.ap-list{display:grid;gap:12px;min-width:0}
+.ap-empty{margin:18px 2px;font-size:16px;font-weight:600;color:var(--ink-2);line-height:1.5}
+.ap-empty small{display:block;margin-top:4px;font-size:14px;font-weight:400;color:var(--mute)}
+.ap-note{margin:0;padding:12px 14px;border-radius:14px;background:var(--blue-soft);color:var(--blue);font-size:14px;font-weight:600;line-height:1.45}
+.ap-chip{display:inline-flex;align-items:center;max-width:100%;padding:3px 10px;border-radius:999px;font-size:13px;font-weight:600;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:var(--panel);color:var(--ink-2)}
+.ap-chip.r,.ap-chip.u-money{background:var(--red-soft);color:var(--red)}
+.ap-chip.o,.ap-chip.u-client{background:var(--orange-soft);color:#8f4a05}
+:root[data-mode="dark"] .ap-chip.o,:root[data-mode="dark"] .ap-chip.u-client{color:var(--orange)}
+.ap-chip.g{background:var(--green-soft);color:var(--green)}
+.ap-chip.b{background:var(--blue-soft);color:var(--blue)}
+.ap-chip.who{background:var(--tile);box-shadow:inset 0 0 0 1px var(--line-2)}
+
+/* ---------- a card ---------- */
+.ap-card{position:relative;display:grid;gap:9px;padding:16px 18px 16px 20px;overflow:hidden}
+.ap-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--line-2)}
+.ap-card.u-money::before{background:var(--red)} .ap-card.u-client::before{background:var(--orange)}
+.ap-card.held{opacity:.82}
+.ap-hl{box-shadow:0 0 0 2px var(--blue),var(--shadow)}
+.ap-hd{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;min-width:0}
+.ap-age{margin-left:auto;font-size:13px;color:var(--mute);white-space:nowrap}
+.ap-h{margin:0;font-size:18px;font-weight:600;letter-spacing:-.02em;line-height:1.3;overflow-wrap:anywhere}
+.ap-meta{margin:0;font-size:13px;line-height:1.45;color:var(--mute);overflow-wrap:anywhere}
+.ap-meta b{color:var(--ink-2);margin-right:6px;font-weight:600}
+.ap-why,.ap-rec{margin:0;font-size:14.5px;line-height:1.5;color:var(--ink);overflow-wrap:anywhere}
+.ap-why b,.ap-rec b{display:block;margin-bottom:1px;font-size:13px;font-weight:600;letter-spacing:.01em;color:var(--mute)}
+.ap-rec{padding:10px 12px;border-radius:12px;background:var(--green-soft)} .ap-rec b{color:var(--green)}
+.ap-body{border-radius:12px;background:var(--panel)}
+.ap-body summary{min-height:44px;display:flex;align-items:center;padding:0 12px;font-size:14px;font-weight:600;color:var(--ink-2);cursor:pointer;list-style:none}
+.ap-body summary::-webkit-details-marker{display:none}
+.ap-body summary::after{content:"";margin-left:auto;width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);transition:transform .2s var(--out)}
+.ap-body[open] summary::after{transform:rotate(-135deg)}
+.ap-body summary:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:12px}
+.ap-text{padding:2px 14px 14px;font-size:14.5px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;-webkit-user-select:text;user-select:text}
+.ap-ta{width:100%;min-height:200px;padding:12px 14px;border-radius:12px;border:1px solid var(--line-2);background:var(--solid);color:var(--ink);font:inherit;font-size:16px;line-height:1.5;resize:vertical}
+.ap-ta:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.ap-wr,.ap-links{display:flex;flex-wrap:wrap;gap:6px}
+.ap-links .act{height:36px;max-width:100%;min-width:0}
+.ap-state{margin:0;font-size:14px;font-weight:600;color:var(--ink-2);line-height:1.45}
+.ap-err{margin:0;padding:9px 12px;border-radius:10px;background:var(--red-soft);color:var(--red);font-size:14px;font-weight:600;line-height:1.4;overflow-wrap:anywhere}
+.ap-err[hidden]{display:none}
+.ap-acts{display:flex;flex-wrap:wrap;gap:8px;min-width:0}
+.ap-acts .act{height:44px;padding:0 18px;border-radius:12px;font-size:14.5px;justify-content:center}
+.ap-acts .act[disabled]{opacity:.55;cursor:default;transform:none}
+.ap-acts .act.go{min-width:132px}
+
+/* ---------- recently decided ---------- */
+.ap-dn{min-width:0}
+.ap-dn>summary{min-height:44px;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--ink-2);cursor:pointer;list-style:none}
+.ap-dn>summary::-webkit-details-marker{display:none}
+.ap-dn>summary::before{content:"";width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);transition:transform .2s var(--out)}
+.ap-dn[open]>summary::before{transform:rotate(45deg)}
+.ap-n{display:inline-grid;place-items:center;min-width:24px;height:22px;padding:0 7px;border-radius:999px;background:var(--panel);font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums}
+.ap-dl{display:grid;gap:8px;margin-top:4px}
+.ap-dr{display:flex;align-items:flex-start;gap:10px;padding:11px 14px}
+.ap-dt{display:grid;gap:2px;min-width:0}
+.ap-dt b{font-size:14.5px;font-weight:600;line-height:1.35;overflow-wrap:anywhere}
+.ap-dt small{font-size:13px;line-height:1.4;color:var(--mute);overflow-wrap:anywhere}
+.ap-dt .ap-nt{color:var(--ink-2)}
+
+/* ---------- the Dashboard card ---------- */
+#c-approvals .big{display:flex;align-items:baseline;gap:8px}
+#c-approvals .li{width:100%;text-align:left;min-height:44px}
+#c-approvals .more{min-height:44px}
+
+/* ---------- the phone sheet ---------- */
+html.ap-sheet-on{overflow:hidden}
+.ap-scrim{position:fixed;inset:0;z-index:54;background:rgba(8,10,22,.44);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);opacity:0;transition:opacity .3s var(--out)}
+.ap-scrim.on{opacity:1}
+.ap-sheet{position:fixed;z-index:55;left:0;right:0;top:var(--vvt,0px);height:var(--vvh,100dvh);display:flex;flex-direction:column;overflow:hidden;background:var(--solid);color:var(--ink);transform:translateY(calc(100% + 20px));transition:transform .42s var(--out);will-change:transform}
+.ap-sheet.on{transform:translateY(0)}
+.ap-sheet.out{transform:translateY(calc(100% + 20px));transition-duration:.3s;transition-timing-function:cubic-bezier(.4,0,1,1)}
+.ap-shh{flex:none;display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 12px 8px 18px;border-bottom:1px solid var(--line)}
+.ap-shh h2{flex:1;margin:0;font-size:17px;font-weight:600;letter-spacing:-.02em}
+.ap-grab{display:none}
+.ap-shb{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:14px 16px 20px}
+.ap-shb .ap-card{border:0;box-shadow:none;background:none;padding:0 0 0 14px}
+.ap-shb .ap-h{font-size:20px}
+.ap-bar{flex:none;display:grid;gap:8px;padding:10px 16px calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--solid);box-shadow:0 -10px 30px -18px rgba(0,0,0,.25)}
+.ap-bar .ap-acts{gap:8px}
+.ap-bar .ap-acts .act{flex:1 1 0;min-width:0;height:48px;padding:0 6px;border-radius:14px;font-size:15px}
+.ap-bar .ap-acts .act.go{flex:1 1 100%;height:52px}   /* Approve on its own full-width row, the others under it */
+
+@media (max-width:600px){
+  .ap{max-width:none}
+  .ap-top .act{height:44px}
+  /* the list is compact rows: headline, chips, age; a tap opens the sheet */
+  .ap-list .ap-card{padding:13px 14px 13px 18px;gap:6px;cursor:pointer;min-height:64px}
+  .ap-list .ap-h{font-size:16px}
+  .ap-list .ap-card .ap-why,.ap-list .ap-card .ap-rec,.ap-list .ap-card .ap-body,.ap-list .ap-card .ap-meta,.ap-list .ap-card .ap-wr,.ap-list .ap-card .ap-links,.ap-list .ap-card .ap-acts,.ap-list .ap-card .ap-err{display:none}
+  .ap-list .ap-card .ap-state{font-size:13px}
+  .ap-list .ap-card .ap-hd .ap-chip:nth-child(n+4){display:none}
+  .ap-acts .act{flex:1 1 40%}
+  .ap-dr{padding:11px 12px}
+}
+@media (min-width:601px){ .ap-sheet,.ap-scrim{display:none} }
+
+html[data-motion="calm"] .ap-sheet,html[data-motion="calm"] .ap-scrim,html[data-motion="calm"] .ap-body summary::after,html[data-motion="calm"] .ap-dn>summary::before{transition:none}
+@media (prefers-reduced-motion:reduce){ .ap-sheet,.ap-scrim,.ap-body summary::after,.ap-dn>summary::before{transition:none!important} }
