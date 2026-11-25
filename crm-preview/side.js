@@ -965,7 +965,7 @@ function filterClients() {
   const sl = $("#cl-f"); if (sl && sl.value !== f) sl.value = f;
   $$("[data-clattn]", PAGE_EL).forEach(b => { b.classList.toggle("on", f === "attn"); b.setAttribute("aria-pressed", f === "attn"); });
 }
-function showClient(c) {   // paint the chosen client (rings, bars, the hold line, the Calls section)
+function showClient(c) {   // paint the chosen client (rings, bars, the hold line, the calls under More when it is open)
   const el = $("#cl-detail"); if (!el) return;
   el.innerHTML = clientDetail(c, CACHE.clients.t); applyVars(el); $$(".ring[data-v]", el).forEach(r => r.style.setProperty("--p", r.dataset.v.split(":")[1])); paintHold(); fillCalls();
 }
@@ -1419,67 +1419,7 @@ async function loadTaskList() {
     all("tasks", TCOLS, r => r.in("source", FSRC).eq("status", "done").gte("done_at", since))]);
   return open.concat(done).map(tCard);
 }
-async function loadTodos() { EDIT = null; await me(); const [list, pn, pj] = await Promise.all([loadTaskList(), promNames(), loadProj()]); PNAME = pn; PROJ = pj; return list; }
-/* 11-25 Projects lane (SIMAS): one card per big build: a status line, the next step, the owner. Its own table, public.projects
-   (crm.project_set() in scripts/crm.py writes it too). It sits in its own strip above the columns, so the drag code, the menu
-   badge and the Check-card approval flow never see it, and a project card can't be dragged into a to-do column. Done / Archive
-   take it off the board. A failed read (no table yet) hides the lane. */
-const POWN = ["Simas", "Benas", "Both", "Simas's Claude", "Benas's Claude"];
-const PCOLS = "id,title,status_line,next_step,owner,state,pos,updated_at,updated_by";
-let PROJ = null;
-const loadProj = () => all("projects", PCOLS, q => q.eq("state", "active").order("pos").order("id")).catch(() => null);
-const pClean = (s, n) => String(s || "").replace(/\s+/g, " ").trim().slice(0, n) || null;
-const projOwn = o => `<span class="chip sd-pj-own">${avatar(o)}${esc(o)}</span>`;
-function projCardHtml(p) {
-  const sel = EDIT && EDIT.proj === p.id;
-  return `<div class="tile sd-card sd-pj${sel ? " sel" : ""}" data-proj="${p.id}" tabindex="0" role="button" aria-label="Project: ${esc(p.title)}. Owner ${esc(p.owner)}. Enter opens it.">
-    <div class="tt">${esc(p.title)}</div>${p.status_line ? `<div class="sd-pj-st">${esc(p.status_line)}</div>` : ""}${p.next_step ? `<div class="sd-pj-nx"><b>Next:</b> ${esc(p.next_step)}</div>` : ""}
-    <div class="ft">${projOwn(p.owner)}<span class="sp"></span><span class="sd-pj-up" title="${esc(p.updated_by ? `Updated by ${p.updated_by}` : "Updated")}">${esc(ago(p.updated_at))}</span></div></div>`;
-}
-function projHtml() {
-  if (!PROJ) return "";
-  return `<div class="sd-col-h sd-pj-h"><span>${ic("flag")}Projects</span><span class="chip">${PROJ.length}</span><span class="sp"></span><button type="button" class="sd-add sd-pj-add" data-padd>${ic("plus")}Add a project</button></div>
-    <div class="sd-pj-row">${PROJ.map(projCardHtml).join("") || `<p class="empty">No open projects. Add one for each big build.</p>`}</div>`;
-}
-function projPanelHtml() {
-  const isNew = EDIT.proj === "new", p = isNew ? null : (PROJ || []).find(x => x.id === EDIT.proj);
-  if (!isNew && !p) return "";
-  const own = p ? p.owner : ME && ME.who !== "Both" ? ME.who : "Both", meta = p ? `Project · updated ${ago(p.updated_at)}${p.updated_by ? ` by ${p.updated_by}` : ""}` : "New project";
-  return `<div class="sd-scrim" data-close></div><aside class="sd-panel" role="dialog" aria-modal="true" aria-label="${isNew ? "New project" : "Project"}">
-    <form class="sd-pform sd-pjf" data-pform="${isNew ? "new" : p.id}">
-      <div class="sd-pt"><span class="mut">${esc(meta)}</span><button type="button" class="mini" data-close aria-label="Close" title="Close (Esc)"><svg aria-hidden="true"><use href="#i-x"/></svg></button></div>
-      <label class="fld"><span>Project</span><textarea name="title" rows="2" maxlength="160" required placeholder="The build, in a few words">${esc(p ? p.title : "")}</textarea></label>
-      <label class="fld"><span>Status</span><textarea name="status" rows="2" maxlength="300" placeholder="Where it stands now, one line">${esc(p && p.status_line ? p.status_line : "")}</textarea></label>
-      <label class="fld"><span>Next step</span><textarea name="next" rows="2" maxlength="300" placeholder="The one next step">${esc(p && p.next_step ? p.next_step : "")}</textarea></label>
-      <label class="fld sd-move"><span>Owner</span><select name="owner">${POWN.map(o => `<option value="${esc(o)}"${o === own ? " selected" : ""}>${esc(o)}</option>`).join("")}</select></label>
-      <div class="sd-pa">${p ? `<button type="button" class="act no del" data-pstate="archived">Archive</button>` : ""}
-        <button type="submit" class="act${p ? "" : " go"}">${isNew ? "Add" : "Save"}</button>
-        ${p ? `<button type="button" class="act go" data-pstate="done">${ic("check")}Done</button>` : ""}</div>
-    </form></aside>`;
-}
-const PDUP = "A project with that name exists already (maybe done or archived). Pick another name.";
-async function writeProj(id, patch, msg) {   // optimistic, like saveCard: draw first, write, put it back on an error
-  const i = (PROJ || []).findIndex(x => x.id === id); if (i < 0) return; const before = PROJ[i], gone = !!patch.state && patch.state !== "active";
-  if (gone) PROJ.splice(i, 1); else PROJ[i] = { ...before, ...patch, updated_at: new Date().toISOString() };
-  EDIT = null; renderTodos(true); SAVING++;
-  try { const ok = await must(sb().from("projects").update(patch).eq("id", id).select(PCOLS)); if (!ok || !ok.length) throw new Error("not allowed");
-    if (!gone) { const j = PROJ.findIndex(x => x.id === id); if (j >= 0) PROJ[j] = ok[0]; } renderTodos(); if (msg) toast(msg); }
-  catch (e) { if (gone) PROJ.splice(Math.min(i, PROJ.length), 0, before); else { const j = PROJ.findIndex(x => x.id === id); if (j >= 0) PROJ[j] = before; }
-    renderTodos(); toast(e && e.code === "23505" ? PDUP : "Couldn't save that project. Check your connection."); }
-  finally { SAVING--; if (!SAVING && RT_LATER) { RT_LATER = false; rtHit(); } }
-}
-async function saveProj(f) {
-  const title = pClean(f.title.value, 160), status_line = pClean(f.status.value, 300), next_step = pClean(f.next.value, 300), owner = POWN.includes(f.owner.value) ? f.owner.value : "Both";
-  if (!title) { f.title.focus(); return; }
-  const isNew = f.dataset.pform === "new", id = isNew ? null : +f.dataset.pform;
-  if ((PROJ || []).some(x => x.id !== id && x.title.toLowerCase() === title.toLowerCase())) { toast(PDUP); f.title.focus(); return; }
-  await me(); const updated_by = (ME && ME.name) || null;
-  if (!isNew) return writeProj(id, { title, status_line, next_step, owner, updated_by });
-  const row = { title, status_line, next_step, owner, updated_by, pos: (PROJ || []).reduce((m, x) => Math.max(m, +x.pos || 0), 0) + 1024 };
-  EDIT = null; renderTodos(true);
-  try { const ins = await must(sb().from("projects").insert(row).select(PCOLS).single()); if (PROJ && !PROJ.some(x => x.id === ins.id)) PROJ.push(ins); renderTodos(); toast("Project added"); }
-  catch (e) { renderTodos(); toast(e && e.code === "23505" ? PDUP : "Couldn't add that project. Check your connection."); }
-}
+async function loadTodos() { EDIT = null; await me(); const [list, pn] = await Promise.all([loadTaskList(), promNames()]); PNAME = pn; return list; }
 const overdue = d => d && d < dayOf(Date.now());
 const cardsIn = (list, col) => list.filter(c => c.col === col).sort(col === "done" ? (a, b) => String(b.done || "").localeCompare(String(a.done || "")) : (a, b) => a.pos - b.pos || a.id - b.id);
 async function todoBadge() {   // the menu badge: open founder to-dos (not Waiting), per founder in the tooltip
@@ -1507,7 +1447,6 @@ function boardHtml(list) {
 function toolsHtml() { return ""; }
 function panelHtml() {
   if (!EDIT) return "";
-  if (EDIT.proj != null) return projPanelHtml();
   const isNew = EDIT.id === "new", c = isNew ? null : CACHE.todos.find(x => x.id === EDIT.id);
   if (!isNew && !c) return "";
   const own = c ? c.owner : EDIT.col === "general" ? "Both" : EDIT.col, meta = c ? [SRCL[c.source] || c.source, c.at ? `added ${dLabel(dayOf(c.at))}${c.by ? ` by ${c.by}` : ""}` : "", c.col === "done" && c.done ? `done ${dLabel(dayOf(c.done))}` : ""].filter(Boolean).join(" · ") : "New to-do";
@@ -1532,7 +1471,7 @@ function panelHtml() {
         ${c && c.col !== "done" ? `<button type="button" class="act go" data-tick>${ic("check")}Done</button>` : ""}</div>
     </form></aside>`;
 }
-function viewTodos(list) { return `<div class="sd-tools" id="sd-tools">${toolsHtml()}</div><section class="sd-proj" id="sd-proj" aria-label="Projects">${projHtml()}</section><div class="sd-board" id="sd-board">${boardHtml(list || [])}</div><div id="sd-pan">${panelHtml()}</div>`; }
+function viewTodos(list) { return `<div class="sd-tools" id="sd-tools">${toolsHtml()}</div><div class="sd-board" id="sd-board">${boardHtml(list || [])}</div><div id="sd-pan">${panelHtml()}</div>`; }
 /* 11-22 (SIMAS "the to do cards are glitchy, when i drag them they disappear"): the board never redraws under a lifted card (the drop
    redraws it anyway), and every card that changed place slides there (FLIP: transform only, none under reduced motion) */
 let SAVING = 0, RT_LATER = false, GHOST_FROM = null;
@@ -1551,7 +1490,6 @@ function flipCards(root, before, from) {   // from = { id, rect } of the ghost f
 function renderTodos(panel = false) {
   const bd = $("#sd-board"); if (PAGE !== "todos" || !CACHE.todos || !bd || (DRAG && DRAG.on)) return;
   const before = cardRects(bd), from = GHOST_FROM; GHOST_FROM = null;
-  const pj = $("#sd-proj"); if (pj) { const px = $(".sd-pj-row", pj)?.scrollLeft || 0; pj.innerHTML = projHtml(); const r = $(".sd-pj-row", pj); if (r) r.scrollLeft = px; }
   const sx = bd.scrollLeft; bd.innerHTML = boardHtml(CACHE.todos); bd.scrollLeft = sx; flipCards(bd, before, from);
   if (panel) { const p = $("#sd-pan"); p.innerHTML = panelHtml(); const ta = $("textarea[name=fix]", p) || $("textarea[name=title]", p); if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); } }
   todoBadge();
@@ -1559,7 +1497,7 @@ function renderTodos(panel = false) {
 const openPanel = e => { EDIT = e; renderTodos(true); };
 const FIXDRAFT = {};   // card id -> a typed, not yet sent "What needs fixing" note (survives a re-render)
 const pendingFix = () => { const ta = $("#sd-pan textarea[name=fix]"); return ta && ta.value.trim() ? ta : null; };
-const closePanel = () => { const pf = pendingFix(); if (pf) { pf.form.requestSubmit(); return; } const id = EDIT && EDIT.id, pid = EDIT && EDIT.proj; EDIT = null; renderTodos(true); if (id && id !== "new") $(`[data-card="${id}"]`)?.focus(); if (pid && pid !== "new") $(`[data-proj="${pid}"]`)?.focus(); };
+const closePanel = () => { const pf = pendingFix(); if (pf) { pf.form.requestSubmit(); return; } const id = EDIT && EDIT.id; EDIT = null; renderTodos(true); if (id && id !== "new") $(`[data-card="${id}"]`)?.focus(); };
 function posBetween(list, col, idx, skipId) { const cs = cardsIn(list, col).filter(c => c.id !== skipId), a = cs[idx - 1], b = cs[idx]; return a && b ? (a.pos + b.pos) / 2 : a ? a.pos + 1024 : b ? b.pos - 1024 : 1024; }
 async function mirror(c, patch, t) {   // the same change on the old list's row (best effort; the tasks row is the one that counts)
   const has = k => k in patch, nowI = new Date().toISOString(), flip = has("st") && (patch.st === "done") !== (c.st === "done");
@@ -1599,11 +1537,6 @@ function dropCard(id, col, prevId, nextId) {   // position from the neighbours i
 let JUSTDRAG = 0;
 function wireBoard() {
   const board = $("#sd-board"), pan = $("#sd-pan"); if (!board) return;
-  const pj = $("#sd-proj");   // the Projects lane: click / Enter opens the panel; no drag here on purpose
-  if (pj) {
-    pj.addEventListener("click", ev => { if (ev.target.closest("[data-padd]")) { openPanel({ proj: "new" }); return; } const c = ev.target.closest("[data-proj]"); if (c) openPanel({ proj: +c.dataset.proj }); });
-    pj.addEventListener("keydown", ev => { const c = ev.target.closest("[data-proj]"); if (c && ev.target === c && (ev.key === "Enter" || ev.key === " ")) { ev.preventDefault(); openPanel({ proj: +c.dataset.proj }); } });
-  }
   board.addEventListener("click", ev => {
     if (Date.now() - JUSTDRAG < 350) return;
     const add = ev.target.closest("[data-add]"); if (add) { openPanel({ id: "new", col: add.dataset.add }); return; }
@@ -1628,9 +1561,6 @@ function wireBoard() {
     const t = ev.target.closest("button,[data-close]"); if (!t) return;
     if (t.hasAttribute("data-close")) { if (Date.now() - JUSTDRAG > 350) closePanel(); return; }   // the click that ends a drop onto Needs fixing must not close its panel
     if (t.dataset.own) { $$("[data-own]", t.parentElement).forEach(b => { b.classList.toggle("on", b === t); b.setAttribute("aria-pressed", b === t); }); return; }
-    if (t.dataset.pstate) { const pf = t.closest("[data-pform]"), pid = pf && +pf.dataset.pform, p = pid && (PROJ || []).find(x => x.id === pid); if (!p) return;
-      if (!confirm(`${t.dataset.pstate === "done" ? "Mark done" : "Archive"} "${p.title}"? It leaves the board.`)) return;
-      await me(); await writeProj(pid, { state: t.dataset.pstate, updated_by: (ME && ME.name) || null }, t.dataset.pstate === "done" ? "Project done" : "Project archived"); return; }
     const f = t.closest("[data-form]"), id = f && f.dataset.form !== "new" ? +f.dataset.form : null, c = id ? CACHE.todos.find(x => x.id === id) : null;
     if (!c) return;
     if (t.hasAttribute("data-tick")) { EDIT = null; renderTodos(true); await saveCard(id, { st: "done" }); toast("Done"); return; }
@@ -1647,7 +1577,6 @@ function wireBoard() {
   });
   pan.addEventListener("submit", async ev => {
     ev.preventDefault();
-    if (ev.target.dataset.pform) return saveProj(ev.target);
     const f = ev.target, title = f.title.value.trim(), note = f.fix ? f.fix.value.trim() : "", owner = $("[data-own].on", f)?.dataset.own || "Both", due = f.due.value || null;
     if (!title) { f.title.focus(); return; }
     let detail = f.detail.value.trim();
@@ -1803,11 +1732,11 @@ function rtHit() { clearTimeout(RT_T); RT_T = setTimeout(async () => {   // 11-2
     todoBadge();
     if (PAGE !== "todos") return;
     if (DRAG || EDIT || SAVING) { RT_LATER = RT_LATER || !!SAVING; return; }   // a write of ours in flight: reload once it lands (a half-written row made cards jump)
-    try { const [L, P] = await Promise.all([loadTaskList(), loadProj()]); if (DRAG || EDIT || SAVING || PAGE !== "todos") { RT_LATER = RT_LATER || !!SAVING; return; } CACHE.todos = L; PROJ = P || PROJ; renderTodos(); } catch {}
+    try { const L = await loadTaskList(); if (DRAG || EDIT || SAVING || PAGE !== "todos") { RT_LATER = RT_LATER || !!SAVING; return; } CACHE.todos = L; renderTodos(); } catch {}
   }, 400); }
 function startRealtime() {
   if (CH || !sb()) return;
-  CH = sb().channel("side-todos").on("postgres_changes", { event: "*", schema: "public", table: "todo_cards" }, rtHit).on("postgres_changes", { event: "*", schema: "public", table: "tasks" }, rtHit).on("postgres_changes", { event: "*", schema: "public", table: "projects" }, rtHit).subscribe();
+  CH = sb().channel("side-todos").on("postgres_changes", { event: "*", schema: "public", table: "todo_cards" }, rtHit).on("postgres_changes", { event: "*", schema: "public", table: "tasks" }, rtHit).subscribe();
 }
 function stopRealtime() { if (CH) { try { sb().removeChannel(CH); } catch {} CH = null; } }
 
