@@ -683,7 +683,7 @@ function wireEmail() {
 
 /* 3. clients + their videos (SIMAS 11-19 15:3x: grouped by category, retainer plans, videos by date, today's highlighted) */
 async function loadClients() {
-  const [clients, deliveries, payments, retainers, st, notes, m, proms, scs, pipe, ordRows, probs, calls, cNotes, cTasks] = await Promise.all([
+  const [clients, deliveries, payments, retainers, st, notes, m, proms, scs, pipe, ordRows, probs, calls, cNotes, cTasks, fx] = await Promise.all([
     all("clients", "id,name,emails,show,drive_folder,source"),
     all("deliveries", "id,client_id,title,order_name,kind,duration_s,link,delivered_at", q => q.order("delivered_at", { ascending: false }).order("id")),
     all("payments", "client_id,email,amount,refunded,paid_at,package"),
@@ -699,6 +699,7 @@ async function loadClients() {
     all("calls", "uid,name,email,title,start_at,end_at,status,organizer,meet_url", q => q.order("start_at", { ascending: false })).catch(() => []),
     all("touches", "id,call_uid,summary,takeaways,recording_url", q => q.not("call_uid", "is", null)).catch(() => []),
     all("call_tasks", "id,touch_id,text,owner,due_at,done_at", q => q.order("id")).catch(() => []),
+    window.BEJU_CRM_FX ? all("fathom_calls", window.BEJU_CRM_FX.cols, q => q.order("start_at", { ascending: false })).catch(() => []) : [],   // 11-25 Fathom summaries (crm.js fxMerge)
   ]);
   const t = dayOf(Date.now()), plans = (m && m.data && m.data.retainer_plans) || {};
   const vids = {}, paid = {}, nPay = {}, lastPay = {}, lastAmt = {}, lastAt = {};
@@ -776,7 +777,7 @@ async function loadClients() {
     bought: owedO.reduce((s, x) => s + x[0], 0), done: owedO.reduce((s, x) => s + x[1], 0), attn: list.filter(c => c.mark === "attn").length, wait: list.filter(c => c.mark === "wait").length, vids: list.reduce((s, c) => s + c.vids.length, 0) };
   hero.owed = hero.bought - hero.done;
   if (window.BEJU_CLIENT_BOARD) await window.BEJU_CLIENT_BOARD.load(API);   // the delivery board's rows (client_items) and hold_sends; a missing table = a calm empty board
-  return { list, groups, t, hero, calls: callModel(calls, cNotes, cTasks), counts: { retainer: by("retainer").length, progress: nSt("progress"), finished: nSt("finished"), notstarted: nSt("notstarted"), waiting: nSt("waiting"), paused: nSt("paused"), unknown: nSt("unknown") }, synced: ds ? ds.ran_at : null, dsOk: ds ? ds.ok !== false : true, todayN: list.reduce((s, c) => s + c.today, 0), todayC: list.filter(c => c.today).length };
+  return { list, groups, t, hero, calls: callModel(calls, cNotes, cTasks, fx, clients), counts: { retainer: by("retainer").length, progress: nSt("progress"), finished: nSt("finished"), notstarted: nSt("notstarted"), waiting: nSt("waiting"), paused: nSt("paused"), unknown: nSt("unknown") }, synced: ds ? ds.ran_at : null, dsOk: ds ? ds.ok !== false : true, todayN: list.reduce((s, c) => s + c.today, 0), todayC: list.filter(c => c.today).length };
 }
 const fdur = s => s ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : "";
 /* 11-23 (BENAS, clean-up: "removing unnecessary text"): the chosen client opens on three tiles (delivered vs owed, money, last contact),
@@ -837,11 +838,12 @@ let CLF = "", CALLS_ALL = false, CL_PAST = false, CL_VALL = false, CL_MORE = fal
 /* 11-21 (SIMAS: "in the clients tab, we need a new section about the calls that would be clear"): Upcoming (cal.com bookings still to
    come: when in Vilnius, who, what about, the Meet link) and Past calls (newest first, one row each: when, who, the summary's first
    line, takeaways, open next tasks). No notes = a red "Notes missing" + Add call notes. A tap opens crm.js's full call card. */
-function callModel(calls, notes, tasks) {
+function callModel(calls, notes, tasks, fx, clients) {
   const now = Date.now(), live = calls.filter(c => !/cancel/i.test(c.status || "")), note = {}, tk = {};
   notes.forEach(n => { note[n.call_uid] = n; }); tasks.forEach(x => (tk[x.touch_id] = tk[x.touch_id] || []).push(x));
   const row = c => { const n = note[c.uid] || null; return { c, n, tasks: n ? tk[n.id] || [] : [] }; }, at = c => +new Date(c.start_at);
-  return { up: live.filter(c => at(c) > now).sort((a, b) => at(a) - at(b)).map(row), past: live.filter(c => at(c) <= now).sort((a, b) => at(b) - at(a)).map(row) };
+  const past = live.filter(c => at(c) <= now).sort((a, b) => at(b) - at(a)).map(row), F = window.BEJU_CRM_FX;   // 11-25: + Fathom calls (summary in the card; a call with no booking gets its own row)
+  return { up: live.filter(c => at(c) > now).sort((a, b) => at(a) - at(b)).map(row), past: F && (fx || []).length ? F.merge(past, fx).map(r => r.c.status === "fathom" ? { ...r, c: { ...r.c, name: ((clients || []).find(x => x.id === r.f.client_id) || {}).name || null } } : r) : past };
 }
 const wkd = t => new Date(t).toLocaleDateString("en-GB", { timeZone: TZ, weekday: "short" });
 const callWhen = t => `${wkd(t)}, ${dLabel(dayOf(t))} · ${hm(t)}`;
@@ -850,13 +852,13 @@ function callUp({ c }) {
   const meet = webUrl(c.meet_url || "");
   return `<div class="clc-row clc-up"><span class="clc-m"><b class="clc-d">${esc(callWhen(c.start_at))}</b><span class="clc-w">${esc(c.name || c.email || "Lead")}</span><span class="clc-s">${esc(callAbout(c))}</span></span>${meet ? `<a class="act go clc-meet" href="${esc(meet)}" target="_blank" rel="noopener noreferrer">${ic("link")}Join Meet</a>` : ""}</div>`;
 }
-function callPast({ c, n, tasks }) {
-  const ended = +new Date(c.end_at || c.start_at), missing = !n && ended < Date.now() - 2 * 36e5, open = tasks.filter(x => !x.done_at);
-  const line = n ? String(n.summary || "").split("\n")[0] : "";
+function callPast({ c, n, tasks, f }) {
+  const ended = +new Date(c.end_at || c.start_at), missing = !n && !f && ended < Date.now() - 2 * 36e5, open = tasks.filter(x => !x.done_at);
+  const line = n ? String(n.summary || "").split("\n")[0] : f && window.BEJU_CRM_FX ? `Fathom: ${window.BEJU_CRM_FX.line(f)}` : "";
   const extra = open.length ? `Next: ${open[0].owner}, ${open[0].text}${open.length > 1 ? ` (+${open.length - 1} more)` : ""}` : "";   // 11-23: takeaways + done tasks are in the call card a click opens
   return `<div class="clc-row" data-uid="${esc(c.uid)}"><button type="button" class="clc-m" data-callopen="${esc(c.uid)}" aria-expanded="false"><b class="clc-d">${esc(callWhen(c.start_at))}</b><span class="clc-w">${esc(c.name || c.email || "Lead")}</span>
-    ${n ? `<span class="clc-s">${esc(line)}</span>` : `<span class="clc-s ${missing ? "clc-miss" : "mut"}">${missing ? "Notes missing" : "No notes yet"}</span>`}${extra ? `<span class="clc-x">${esc(extra)}</span>` : ""}</button>
-    ${n ? "" : `<button type="button" class="act clc-add" data-calladd="${esc(c.uid)}">${ic("edit")}Add call notes</button>`}</div><div class="clc-card" data-card-uid="${esc(c.uid)}" hidden></div>`;
+    ${line ? `<span class="clc-s">${esc(line)}</span>` : `<span class="clc-s ${missing ? "clc-miss" : "mut"}">${missing ? "Notes missing" : "No notes yet"}</span>`}${extra ? `<span class="clc-x">${esc(extra)}</span>` : ""}</button>
+    ${n || f ? "" : `<button type="button" class="act clc-add" data-calladd="${esc(c.uid)}">${ic("edit")}Add call notes</button>`}</div><div class="clc-card" data-card-uid="${esc(c.uid)}" hidden></div>`;
 }
 const callsSec = m => m ? `<section class="card sp-card clc" id="clc">${callsInner(m)}</section>` : "";
 function callsInner(m) {

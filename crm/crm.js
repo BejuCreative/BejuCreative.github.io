@@ -1654,21 +1654,52 @@ const tzAt = (day, h) => { const g = Date.parse(`${day}T${String(h).padStart(2, 
    public.call_tasks (owner Simas / Benas / Both, due, done tick). Notes come in through scripts/crm.py touch(call_uid=...)
    (crm-api touch gets the same fields later). The only write here: ticking a task (call_tasks.done_at / done_by). */
 const CALL_TITLE = /^free brand content analysis between beju creative and\s*/i;
+/* 11-25 (SIMAS: "when we click on clients, we also see the calls and the Fathom summaries"): public.fathom_calls, filled every 15 min by
+   scripts/fathom_sync.py (launchd com.beju.fathomsync) = Fathom's summary, action items and recording link per call, matched by attendee
+   email (emails = the external attendees). A Fathom call of a cal.com booking (cal_uid) sits inside that booking's card; a call with no
+   booking gets its own card (uid "fx-<recording_id>", no "Add call notes": touches.call_uid must be a cal.com booking). Read-only here. */
+const FX_COLS = "recording_id,title,start_at,end_at,duration_s,emails,client_id,cal_uid,summary_md,action_items,share_url,url";
+const fxMerge = (rows, fx) => {
+  const by = {}, used = new Set(); (fx || []).forEach(f => { if (f.cal_uid) by[f.cal_uid] = f; });
+  const out = rows.map(r => { const f = by[r.c.uid]; if (f) used.add(f.recording_id); return f ? { ...r, f } : r; });
+  (fx || []).filter(f => !used.has(f.recording_id) && (f.emails || []).length).forEach(f => out.push({ c: { uid: "fx-" + f.recording_id, name: null, email: f.emails[0], title: f.title, start_at: f.start_at, end_at: f.end_at, status: "fathom" }, n: null, tasks: [], f }));
+  return out.sort((a, b) => (+new Date(b.c.start_at) || 0) - (+new Date(a.c.start_at) || 0));
+};
 async function loadCalls(ems) {
   ems = [...new Set(ems.map(lc).filter(Boolean))]; if (!ems.length) return [];
-  const calls = (await must(sb.from("calls").select("uid,name,email,title,start_at,end_at,status,organizer").in("email", ems).order("start_at", { ascending: false }))).filter(c => !/cancel/i.test(c.status || ""));
-  if (!calls.length) return [];
-  const notes = await must(sb.from("touches").select("id,call_uid,summary,takeaways,recording_url").in("call_uid", calls.map(c => c.uid)));
+  const [all, fx] = await Promise.all([must(sb.from("calls").select("uid,name,email,title,start_at,end_at,status,organizer").in("email", ems).order("start_at", { ascending: false })),
+    must(sb.from("fathom_calls").select(FX_COLS).overlaps("emails", ems)).catch(() => [])]);
+  const calls = all.filter(c => !/cancel/i.test(c.status || ""));
+  if (!calls.length && !fx.length) return [];
+  const notes = calls.length ? await must(sb.from("touches").select("id,call_uid,summary,takeaways,recording_url").in("call_uid", calls.map(c => c.uid))) : [];
   const tasks = notes.length ? await must(sb.from("call_tasks").select("id,touch_id,text,owner,due_at,done_at").in("touch_id", notes.map(n => n.id)).order("id")) : [];
-  return calls.map(c => { const n = notes.find(x => x.call_uid === c.uid) || null; return { c, n, tasks: n ? tasks.filter(t => t.touch_id === n.id) : [] }; });
+  return fxMerge(calls.map(c => { const n = notes.find(x => x.call_uid === c.uid) || null; return { c, n, tasks: n ? tasks.filter(t => t.touch_id === n.id) : [] }; }), fx);
 }
+const fxDur = s => { const m = Math.max(1, Math.round((+s || 0) / 60)); return !s ? "" : m < 60 ? `${m} min` : `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ""}`; };
+/* Fathom's summary markdown -> safe HTML: headings, bullets (3 levels), bold. Everything is escaped first; links keep their text only
+   (each sentence links to a moment of the recording, too noisy on a phone; "Open recording" is under the card). */
+const fxMd = md => { const out = []; let ul = false, base = null;
+  const inl = t => esc(t.replace(/`([^`]*)`/g, "$1")).replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
+  String(md || "").split("\n").forEach(raw => {
+    const l = raw.replace(/\[((?:[^\[\]]|\[[^\]]*\])*)\]\((?:[^()\s]|\([^()\s]*\))+\)/g, "$1").replace(/\\([\\`*_{}\[\]()#+\-.!~>|])/g, "$1"), t = l.trim(); let m;
+    if (!t) return;
+    if ((m = t.match(/^(?:[-*+]|\d+[.)])\s+(.*)$/))) { const ind = l.length - l.trimStart().length; if (base == null || ind < base) base = ind;
+      if (!ul) { out.push("<ul>"); ul = true; } const lv = Math.min(2, Math.round((ind - base) / 4)); out.push(`<li${lv ? ` class="l${lv}"` : ""}>${inl(m[1])}</li>`); return; }
+    if (ul) { out.push("</ul>"); ul = false; base = null; }
+    out.push((m = t.match(/^#{1,6}\s+(.*)$/)) ? `<p class="fx-h">${inl(m[1])}</p>` : `<p>${inl(t)}</p>`);
+  });
+  if (ul) out.push("</ul>");
+  return out.join(""); };
+const fxBlock = f => { const sum = fxMd(f.summary_md), acts = (f.action_items || []).filter(a => a && a.text), rec = safeUrl(f.share_url || f.url || ""), more = (f.summary_md || "").length > 320 || acts.length > 4;
+  const lbl = `Show the full summary${acts.length > 4 ? ` and all ${acts.length} action items` : ""}`;
+  return `<div class="fth"><p class="cc-l">Fathom summary</p>${sum ? `<div class="fx-sum">${sum}</div>` : `<p class="mut">Fathom is still writing the summary. It shows here within 15 minutes.</p>`}${more ? `<button type="button" class="lk fx-more" data-act="fxmore" data-l="${esc(lbl)}" aria-expanded="false">${esc(lbl)}</button>` : ""}${acts.length ? `<p class="cc-l">Action items</p><ul class="cc-ul fx-acts">${acts.map((a, i) => `<li class="${[i >= 4 ? "fx-x" : "", a.done ? "done" : ""].filter(Boolean).join(" ")}">${esc(a.text)}${a.who ? ` <small class="mut">(${esc(a.who)})</small>` : ""}</li>`).join("")}</ul>` : ""}${rec ? `<a class="lk cc-rec" href="${esc(rec)}" target="_blank" rel="noopener noreferrer">${ic("play")}Open recording</a>` : ""}</div>`; };
 const ctMeta = t => `${esc(t.owner)} · ${t.done_at ? `done ${dLabel(dayOf(t.done_at))}` : t.due_at ? `<span class="${new Date(t.due_at) < Date.now() ? "dn" : ""}">due ${dLabel(dayOf(t.due_at))}</span>` : "no date"}`;
 const callTask = t => `<li class="ctask${t.done_at ? " done" : ""}" data-owner="${esc(t.owner)}" data-due="${esc(t.due_at || "")}"><button type="button" class="ctick" data-act="ctdone" data-id="${t.id}" aria-pressed="${!!t.done_at}" aria-label="Done: ${esc(t.text)}">${ic("check")}</button><span class="ct-t">${esc(t.text)}</span><small class="ct-m">${ctMeta(t)}</small></li>`;
-const callCard = ({ c, n, tasks }) => {
+const callCard = ({ c, n, tasks, f }) => {
   const who = cut(String(c.title || "").replace(CALL_TITLE, "").trim() || c.name || c.email || "Call", 60), rec = n && n.recording_url ? safeUrl(n.recording_url) : "";
-  const missing = !n && +new Date(c.end_at || c.start_at) < Date.now() - 2 * 36e5;   // ended over 2 h ago, nothing written
-  const add = !n && +new Date(c.start_at) <= Date.now() ? `<button type="button" class="act cc-add" data-act="cnadd" data-uid="${esc(c.uid)}" data-email="${esc(lc(c.email))}">${ic("edit")}Add call notes</button>` : "";
-  return `<div class="tile ccall" data-uid="${esc(c.uid)}"><div class="cc-h"><b>${dLong(dayOf(c.start_at))} · ${timeOf(c.start_at)}</b><small>${esc([who, c.organizer ? `organizer ${c.organizer}` : ""].filter(Boolean).join(" · "))}</small></div>${n ? `<p class="dr-txt">${esc(n.summary)}</p>${(n.takeaways || []).length ? `<p class="cc-l">Key takeaways</p><ul class="cc-ul">${n.takeaways.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}${tasks.length ? `<p class="cc-l">Next tasks</p><ul class="cc-tasks">${tasks.map(callTask).join("")}</ul>` : ""}${rec ? `<a class="lk cc-rec" href="${esc(rec)}" target="_blank" rel="noopener noreferrer">${ic("play")}Recording</a>` : ""}` : `${missing ? `<p class="cc-miss">Notes missing</p>` : ""}${add}`}</div>`;
+  const missing = !n && !f && +new Date(c.end_at || c.start_at) < Date.now() - 2 * 36e5;   // ended over 2 h ago, nothing written (a Fathom summary counts)
+  const add = !n && c.status !== "fathom" && +new Date(c.start_at) <= Date.now() ? `<button type="button" class="act cc-add" data-act="cnadd" data-uid="${esc(c.uid)}" data-email="${esc(lc(c.email))}">${ic("edit")}Add call notes</button>` : "";
+  return `<div class="tile ccall" data-uid="${esc(c.uid)}"><div class="cc-h"><b>${dLong(dayOf(c.start_at))} · ${timeOf(c.start_at)}</b><small>${esc([f ? fxDur(f.duration_s) : "", who, c.organizer ? `organizer ${c.organizer}` : ""].filter(Boolean).join(" · "))}</small></div>${n ? `<p class="dr-txt">${esc(n.summary)}</p>${(n.takeaways || []).length ? `<p class="cc-l">Key takeaways</p><ul class="cc-ul">${n.takeaways.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}${tasks.length ? `<p class="cc-l">Next tasks</p><ul class="cc-tasks">${tasks.map(callTask).join("")}</ul>` : ""}${rec ? `<a class="lk cc-rec" href="${esc(rec)}" target="_blank" rel="noopener noreferrer">${ic("play")}Recording</a>` : ""}` : `${missing ? `<p class="cc-miss">Notes missing</p>` : ""}`}${f ? fxBlock(f) : ""}${n ? "" : add}</div>`;
 };
 const callsList = rows => rows.length ? `<div class="stack">${rows.map(callCard).join("")}</div>` : "";
 async function ctDone(id, btn) {   // tick / untick one call task
@@ -1711,6 +1742,7 @@ async function saveCallNotes(f) {
 }
 window.BEJU_CRM_CALLS = async ems => callsList(await loadCalls(ems || []));   // side.js: the same section on the Clients page
 window.BEJU_CRM_CALLCARD = callCard;   // side.js: the full card under a row of the Clients page's Calls section (11-21)
+window.BEJU_CRM_FX = { cols: FX_COLS, merge: fxMerge, line: f => { const m = String(f.summary_md || "").replace(/\[((?:[^\[\]]|\[[^\]]*\])*)\]\([^)\s]+\)/g, "$1").replace(/[`*\\]/g, "").split("\n").map(x => x.trim()).find(x => x && !/^#/.test(x)); return m ? m.replace(/^[-*+]\s+/, "") : "Fathom summary on the way"; } };   // side.js: Fathom calls in the Clients page's Calls section (11-25)
 
 /* ---------------- 11-21: notification centre (public.crm_inbox = crm_events + MY crm_event_state) ----------------
    Founders: "add greater notifications in the crm, make them interactive also". The bell shows only once crm_inbox answers.
@@ -2238,6 +2270,7 @@ document.addEventListener("click", ev => {
   else if (a === "wofthem") { WOF.them = !WOF.them; renderWof(D); const nb = $('[data-act="wofthem"]'); if (nb) nb.focus(); }
   else if (a === "wofall") { WOF.all = !WOF.all; renderWof(D); const nb = $('[data-act="wofall"]'); if (nb) nb.focus(); }
   else if (a === "ctdone") ctDone(b.dataset.id, b);
+  else if (a === "fxmore") { const x = b.closest(".fth"), on = !!x && !x.classList.contains("open"); if (x) { x.classList.toggle("open", on); b.setAttribute("aria-expanded", on); b.textContent = on ? "Show less" : b.dataset.l; } }   // 11-25 Fathom summary: 4 lines until tapped
   else if (a === "cnadd") { b.hidden = true; b.insertAdjacentHTML("afterend", callNotesForm(b.dataset.uid, b.dataset.email)); const t = b.nextElementSibling && $("textarea", b.nextElementSibling); if (t) t.focus(); }
   else if (a === "cncancel") { const f = b.closest("form"), add = f && f.previousElementSibling; if (f) f.remove(); if (add && add.dataset.act === "cnadd") { add.hidden = false; add.focus(); } }
   else if (a === "look") setTheme(b.dataset.t, true);

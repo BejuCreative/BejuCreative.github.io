@@ -1062,6 +1062,22 @@ html[data-motion="calm"] .ticker-t{animation:none;white-space:normal;flex-wrap:w
 .cc-rec{display:inline-flex;align-items:center;gap:5px;margin-top:9px;font-size:12.5px}
 .cc-rec .ic{width:15px;height:15px}
 @media (max-width:600px){.ctick{width:24px;height:24px} .ct-m{white-space:normal}}
+/* 11-25 Fathom summary inside a call card (crm.js fxBlock): 4 lines until "Show the full summary" is tapped; action items 5+ fold with it */
+.fth{margin-top:10px;padding-top:9px;border-top:1px solid var(--line)}
+.cc-h+.fth{margin-top:0;padding-top:0;border-top:0}
+.fth>.cc-l:first-child{margin-top:0}
+.fx-sum{color:var(--ink-2);line-height:1.45;overflow-wrap:anywhere}
+.fx-sum p{margin:0 0 5px}
+.fx-sum .fx-h{font-weight:600;color:var(--ink);margin:9px 0 3px}
+.fx-sum .fx-h:first-child{margin-top:0}
+.fx-sum ul{margin:0 0 6px;padding-left:18px;display:grid;gap:3px}
+.fx-sum li.l1{margin-left:14px}
+.fx-sum li.l2{margin-left:28px}
+.fth:not(.open) .fx-sum{max-height:5.8em;overflow:hidden;-webkit-mask-image:linear-gradient(#000 55%,transparent);mask-image:linear-gradient(#000 55%,transparent)}
+.fth:not(.open) .fx-x{display:none}
+.fx-more{display:block;margin-top:4px;padding:4px 0;font-size:12.5px;text-align:left}
+.fx-acts li.done{text-decoration:line-through;color:var(--mute)}
+@media (max-width:600px){.fx-sum,.fx-acts{font-size:15px} .fx-more{font-size:14px;min-height:44px}}
 /* 11-21 lead drawer top (Benas), class dr-sum: stage, next step with its owner, the deal; then the conversation */
 .dr-sum .dt{display:grid;grid-template-columns:76px minmax(0,1fr);gap:10px;padding:7px 0;border-bottom:1px solid var(--line)}
 .dr-sum .dt:first-child{padding-top:0}
