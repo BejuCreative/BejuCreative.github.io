@@ -63,6 +63,7 @@ Everything is read-only except the client-portal actions, which make the same wr
 | Client board review (11-24): ✓ Approve a Short / Approve & send | `client_items.founder_ok_at`, `founder_ok_by` (one row, or every Short not marked in one write), then the existing delivery-draft send (`drafts` approved + `approved_sha256`; phone: after a 5-second Undo, desktop: after the confirm) |
 | Client board review (11-24): ✎ Needs changes on a Short | `client_items` status `changes` + `changes_note` (`[m:ss] ` first when a moment is typed), then the draft held with `founder_note` listing every marked Short; "Send the N approved now" only holds the draft with `SEND APPROVED NOW: …; HOLD: …` |
 | Waiting on a founder ✓ Done (11-24, after a 5-second Undo) | a reply draft: `drafts` status `rejected` + `founder_note` "closed from Waiting on a founder: handled outside"; a "Check:" card or founder to-do: `tasks` done (the To-dos board's own write, `BEJU_CRM_TODOS`) |
+| To-dos board, Projects lane (11-25): edit / Add a project / Done / Archive | `projects` (title, `status_line`, `next_step`, `owner`, `state`, `updated_by`; one row per big build, upsert by title from `crm.project_set()`); realtime on `projects` redraws the lane. SQL: `supabase/crm_projects1.sql` |
 
 Every client-portal action shows a confirm sheet that says what the client will see. Links must be http or https. Nothing else is ever inserted, updated or deleted. SQL that these rely on: `supabase/crm_bento1.sql`.
 

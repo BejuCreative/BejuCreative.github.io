@@ -965,7 +965,7 @@ function filterClients() {
   const sl = $("#cl-f"); if (sl && sl.value !== f) sl.value = f;
   $$("[data-clattn]", PAGE_EL).forEach(b => { b.classList.toggle("on", f === "attn"); b.setAttribute("aria-pressed", f === "attn"); });
 }
-function showClient(c) {   // paint the chosen client (rings, bars, the hold line, the calls under More when it is open)
+function showClient(c) {   // paint the chosen client (rings, bars, the hold line, the Calls section)
   const el = $("#cl-detail"); if (!el) return;
   el.innerHTML = clientDetail(c, CACHE.clients.t); applyVars(el); $$(".ring[data-v]", el).forEach(r => r.style.setProperty("--p", r.dataset.v.split(":")[1])); paintHold(); fillCalls();
 }
@@ -1629,7 +1629,7 @@ function wireBoard() {
     if (t.hasAttribute("data-close")) { if (Date.now() - JUSTDRAG > 350) closePanel(); return; }   // the click that ends a drop onto Needs fixing must not close its panel
     if (t.dataset.own) { $$("[data-own]", t.parentElement).forEach(b => { b.classList.toggle("on", b === t); b.setAttribute("aria-pressed", b === t); }); return; }
     if (t.dataset.pstate) { const pf = t.closest("[data-pform]"), pid = pf && +pf.dataset.pform, p = pid && (PROJ || []).find(x => x.id === pid); if (!p) return;
-      if (t.dataset.pstate === "archived" && !confirm(`Archive "${p.title}"? It leaves the board.`)) return;
+      if (!confirm(`${t.dataset.pstate === "done" ? "Mark done" : "Archive"} "${p.title}"? It leaves the board.`)) return;
       await me(); await writeProj(pid, { state: t.dataset.pstate, updated_by: (ME && ME.name) || null }, t.dataset.pstate === "done" ? "Project done" : "Project archived"); return; }
     const f = t.closest("[data-form]"), id = f && f.dataset.form !== "new" ? +f.dataset.form : null, c = id ? CACHE.todos.find(x => x.id === id) : null;
     if (!c) return;
