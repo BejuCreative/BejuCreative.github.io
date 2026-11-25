@@ -10,5 +10,6 @@ Disallow: /work/README.txt
 Disallow: /scope/
 Disallow: /plans/
 Disallow: /report/
+Disallow: /draft-site-
 
 Sitemap: https://bejucreative.digital/sitemap.xml
