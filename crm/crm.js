@@ -1240,7 +1240,8 @@ function updateTiles(d) {
     + cell("Reply rate, all time", "sent", "rate", N(d.replyRate, "pct1"), "Reply rate per campaign. Open it.")
     + cell("Speed to reply", "speed", "", d.speed.all == null ? "—" : esc(fmtMin(d.speed.all)), "Typical (median) wait before we answer. Open every answered reply.")
     + cell("Bounce rate", "deliv", "", N(d.deliv.rate, "pct1"), "Bounces per campaign")
-    + cell("Leads queued", "queued", "", N(d.queued), "Leads loaded but not emailed yet");
+    /* 11-25 (SIMAS: "one number that shows how many leads we will be sending out today and are pushed to Instantly"): the Today card is cut, so it lives here */
+    + cell("Going out today", "queued", "", `${N(d.goOut)}<small>/ ${nf0.format(d.target)}</small>`, `New leads going out today: each live campaign's daily cap, or its queue when that is smaller. Target ${nf0.format(d.target)} = half the inbox limit. ${nf0.format(d.queued)} loaded leads are still queued. Open the queue per campaign.`);
   if (TILES !== html) { TILES = html; el.innerHTML = html; countUp({ id: "mtiles", el }); }
   const asof = LAST_OK ? `as of ${timeOf(LAST_OK)}` : ""; $$("[data-asof]").forEach(x => { x.textContent = asof; });   // Benas: every section says how fresh it is
 }
