@@ -9,6 +9,7 @@
       Report     = the v3 weekly report (../report/render.js, Edit / Hold / Send / Past reports): same rpc report_send + drafts approve flow.
    Data (founders read): v_perf_clients, v_perf_plan (docs/perf_1123/v4_views.sql), v_perf_our_videos, v_perf_share, v_perf_channel,
    perf_health, client_accounts, client_post_stats, client_posts, link_suggestions (count only), report_clients, client_reports,
+   v_perf_reads (11-25: per client + platform, posts tracked, last read, source; docs/perf_1125/sources_1125.sql),
    v_perf_post_deltas + v_perf_client_deltas (the small ▲ +N change numbers; a NULL or a missing view shows nothing, never a 0).
    Rules: a stale platform (sync failed or > 26 h old) is never added into a total; every number has an "as of" tooltip; never
    "our Shorts brought N subscribers". CSP: no inline styles (CSSOM only), inline SVG charts, no libraries. */
@@ -42,21 +43,36 @@ const ytOk = id => /^[\w-]{6,20}$/.test(id || "");
 const safeUrl = u => { try { const x = new URL(String(u || "")); return /^https?:$/.test(x.protocol) ? x.href : ""; } catch (e) { return ""; } };
 const shortNo = l => { const m = /short\s*(\d+)/i.exec(l || ""); return m ? +m[1] : 1e9; };
 const planName = s => { const m = /^short_(\d+)$/i.exec(s || ""); return m ? `${m[1]} Shorts pack` : /^pack$/i.test(s || "") ? "Pack" : s || ""; };
+/* 11-25 (SIMAS: track Instagram + TikTok too, every number exact): each number says where it was read (source) and when (read_at).
+   A number we can't read is "—" with the reason, never a 0. Counts are exact; only followers that the platform itself rounds keep its
+   rounding (YouTube from 1,000, Instagram's public page from 10,000), shown the platform's way ("21.5K") and gains on them get "≈". */
+const SRC = { api: { youtube: "YouTube API", instagram: "Instagram API" }, public: { tiktok: "TikTok public page", instagram: "Instagram public page", youtube: "YouTube public page" } };
+const srcN = (p, s) => (SRC[s] || {})[p] || (s === "manual" ? "Imported file" : "Source unknown");
+const ago = t => t ? `${dur(hrs(t))} ago` : "never";
+const na = why => `<span class="pf-na" role="img" title="${A.esc(why)}" aria-label="${A.esc("No number: " + why)}">—</span>`;
+const why = (p, k) => k === "views" ? (p.platform === "instagram" ? "Instagram gives views for Reels only" : "Not read yet")
+  : k === "likes" ? (p.platform === "youtube" ? "The channel hides likes on this video" : `${plN(p.platform)} didn't give likes for this post`)
+  : "Comments are turned off on this post";
+const num = (p, k) => p[k] == null ? na(why(p, k)) : A.esc(int(p[k]));
+const rounded = a => !!a && a.followers != null && (a.followers_rounded != null ? !!a.followers_rounded : a.platform === "youtube" && +a.followers >= 1000);
+const sig3 = v => { const a = Math.abs(+v), [d, s] = a >= 1e6 ? [1e6, "M"] : [1e3, "K"], x = a / d; return (x >= 100 ? Math.round(x) : x >= 10 ? +x.toFixed(1) : +x.toFixed(2)) + s; };
+const folTxt = (a, v) => (v = v === undefined ? a && a.followers : v) == null ? "—" : rounded(a) ? sig3(v) : int(v);
+const folTip = a => !a ? "" : `${srcN(a.platform, a.source)}, read ${at(a.updated_at)}.${rounded(a) ? ` ${plN(a.platform)} shows this number rounded; the exact count is not public.` : " Exact count."}`;
 const empty = (icon, title, sub) => `<div class="pf-empty"><span class="pf-empty-i">${A.ic(icon)}</span><b>${A.esc(title)}</b>${sub ? `<span>${A.esc(sub)}</span>` : ""}</div>`;
 
 /* ---------------- load ---------------- */
 async function load(api) {
   A = api;
   const q = (t, mod, cols) => api.all(t, cols || "*", mod).catch(() => null);   // null = can't be read → that block shows a calm empty state
-  const [cl, plan, vids, hl, acc, share, sug, rc, cr, pd, cd] = await Promise.all([q("v_perf_clients"), q("v_perf_plan"), q("v_perf_our_videos"), q("perf_health"),
-    q("client_accounts", null, "email,platform,handle,url,followers,posts_count,updated_at"), q("v_perf_share"),
+  const [cl, plan, vids, hl, acc, share, sug, rc, cr, pd, cd, reads] = await Promise.all([q("v_perf_clients"), q("v_perf_plan"), q("v_perf_our_videos"), q("perf_health"),
+    q("client_accounts", null, "email,platform,handle,url,followers,posts_count,updated_at,source,followers_rounded"), q("v_perf_share"),
     q("link_suggestions", x => x.eq("status", "open"), "id,client_email,delivery_id"), q("report_clients", x => x.eq("active", true)),
-    q("client_reports", x => x.neq("status", "internal").order("week", { ascending: false })), q("v_perf_post_deltas"), q("v_perf_client_deltas")]);
+    q("client_reports", x => x.neq("status", "internal").order("week", { ascending: false })), q("v_perf_post_deltas"), q("v_perf_client_deltas"), q("v_perf_reads")]);
   if (!cl) throw new Error("The performance data can't be read. Sign in again, then retry.");
   const get = (t, cols, k, ids, mod) => ids.length ? (mod || (x => x))(api.sb().from(t).select(cols).in(k, ids)).then(r => r.data || [], () => []) : [];
   const ours = [...new Set((vids || []).map(v => v.post_id).filter(Boolean))], d14 = new Date(Date.now() - 14 * 864e5).toISOString().slice(0, 10);
   const stats = await get("client_post_stats", "platform,post_id,day,views", "post_id", ours, x => x.gte("day", d14).order("day").limit(5000));
-  return model({ cl, plan, vids: vids || [], health: hl || [], acc: acc || [], share: share || [], sug: sug || [], rc, cr, stats, pd, cd });
+  return model({ cl, plan, vids: vids || [], health: hl || [], acc: acc || [], share: share || [], sug: sug || [], rc, cr, stats, pd, cd, reads: reads || [] });
 }
 
 const weekEnd = r => (r.data && r.data.week_end) || r.week;
@@ -96,12 +112,12 @@ function model(x) {
       kind: c.kind || "", mrr: +c.mrr_usd || 0, plan: planName(c.plan_label), started: c.started_at || null, flag: c.flag || null, oldest: +c.oldest_unposted_days || 0, proof: c.proof_line || "",
       made, posted, hasPlan, planMade: hasPlan ? +P.plan_made || 0 : made, planTotal: hasPlan ? +P.plan_total : null, basis: P ? P.plan_basis : null,
       posts, waiting, viewsBy, views: fresh.reduce((a, v) => a + (+v.views || 0), 0), spark: series(fresh), cdOf, dViews: x.cd ? sumD(CD.filter(r => !stale(r.platform) && +r.our_views > 0), "our_views") : undefined, asOf: posts.map(p => p.as_of).filter(Boolean).sort().pop() || null,
-      acc: PORD.map(p => x.acc.find(a => lc(a.email) === key && a.platform === p)).filter(Boolean), share: x.share.filter(s => lc(s.client_email) === key),
+      acc: PORD.map(p => x.acc.find(a => lc(a.email) === key && a.platform === p)).filter(Boolean), reads: (x.reads || []).filter(r => lc(r.client_email) === key), share: x.share.filter(s => lc(s.client_email) === key),
       checking: new Set(x.sug.filter(s => lc(s.client_email) === key).map(s => s.delivery_id)).size, isRep: !!rc, reason: rc ? rc.reason : "", inbox: rc ? rc.inbox : "", all, cur, st };
   }).sort((a, b) => b.mrr - a.mrr || b.posted - a.posted || b.made - a.made || String(a.name).localeCompare(String(b.name)));
   const withPlan = clients.filter(c => c.hasPlan), allPosts = clients.flatMap(c => c.posts.map(p => ({ ...p, client: c }))), fresh = allPosts.filter(p => !stale(p.platform));
   const ok = x.health.filter(h => h.ok && h.last_ok_at).map(h => h.last_ok_at).sort().pop() || null;
-  const nx = ok ? new Date(+new Date(ok) + SYNC_EVERY_H * 36e5) : null;
+  const nx = ok ? new Date(Math.ceil(Date.now() / (SYNC_EVERY_H * 36e5)) * SYNC_EVERY_H * 36e5) : null;   // pg_cron runs at 00/06/12/18 UTC (11-25: was "last + 6 h", wrong after a manual run)
   const over = { planMade: withPlan.reduce((a, c) => a + c.planMade, 0), planTotal: withPlan.reduce((a, c) => a + c.planTotal, 0), made: clients.reduce((a, c) => a + c.made, 0), posted: clients.reduce((a, c) => a + c.posted, 0),
     posting: clients.filter(c => c.posted).length, dViews: x.cd ? sumD(x.cd.filter(r => !stale(r.platform) && +r.our_views > 0), "our_views") : undefined, views: fresh.reduce((a, p) => a + (+p.views || 0), 0), spark: series(fresh),
     viewsBy: PORD.map(p => ({ p, n: allPosts.filter(v => v.platform === p).length, views: allPosts.filter(v => v.platform === p).reduce((a, v) => a + (+v.views || 0), 0), stale: stale(p) })).filter(r => r.n),
@@ -121,10 +137,10 @@ function spark(vals, cls = "") {
   return `<span class="pf-sp ${cls}" title="${A.esc(`Views, ${A.dLabel(D.days[0])} – ${A.dLabel(D.days[D.days.length - 1])}: ${gain >= 0 ? "+" : ""}${int(gain)}`)}"><svg viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true"><path class="a" d="${line} L100,28 L0,28 Z"/><path class="l" pathLength="1" d="${line}"/></svg></span>`;
 }
 /* "▲ +1,240 this week": absolute, never a %. d = [n, "this week" | "today"] | null (nothing shown) | undefined (the view isn't there yet) */
-function dx(d, long) {
+function dx(d, long, approx) {   // approx = the change of a rounded count (YouTube / Instagram followers): shown with "≈"
   if (!d || !isFinite(d[0])) return "";
-  const n = d[0], cls = n > 0 ? "up" : n < 0 ? "dn" : "";
-  return `<span class="pf-dx ${cls}" title="${A.esc(`${n > 0 ? "+" : n < 0 ? "−" : ""}${int(Math.abs(n))} ${d[1]}`)}">${n > 0 ? "▲ +" : n < 0 ? "▼ −" : "± "}${A.esc(long ? int(Math.abs(n)) : kf(Math.abs(n)))}${long ? `<small>${d[1]}</small>` : ""}</span>`;
+  const n = d[0], cls = n > 0 ? "up" : n < 0 ? "dn" : "", ap = approx ? "≈ " : "";
+  return `<span class="pf-dx ${cls}" title="${A.esc(`${ap}${n > 0 ? "+" : n < 0 ? "−" : ""}${int(Math.abs(n))} ${d[1]}${approx ? " (from rounded counts)" : ""}`)}">${ap}${n > 0 ? "▲ +" : n < 0 ? "▼ −" : "± "}${A.esc(int(Math.abs(n)))}${long ? `<small>${d[1]}</small>` : ""}</span>`;
 }
 const gainOf = vals => vals && vals.length > 1 ? vals[vals.length - 1] - vals[0] : null;
 function thumb(platform, postId, cls = "") {
@@ -132,12 +148,36 @@ function thumb(platform, postId, cls = "") {
     : `<span class="pf-th pf-th0 pf-th-${A.esc(platform || "x")} ${cls}">${A.ic(PIC[platform] || "play")}</span>`;
 }
 
+/* where a platform's numbers come from, and its state (hero chips + the client's Tracking row) */
+const IG_PAUSED = "Meta blocked our Instagram API app, so Instagram post numbers are paused. Followers still come from the public page. Needs Simas: appeal the block or set up a new Meta app.";
+function srcTip(p) {
+  const h = health(p); if (!h) return `${plN(p)}: not read yet.`;
+  if (p === "instagram" && !h.ok) return `Instagram: ${IG_PAUSED}${h.last_day ? ` Post numbers last read ${A.dLabel(h.last_day)}.` : ""}`;
+  if (stale(p)) return staleTip(p);
+  return `${plN(p)}: ${p === "youtube" ? "YouTube API (official), every 6 h" : p === "tiktok" ? "TikTok public page, read by the Mac scan (best effort, no official access)" : srcN(p, "api")}. Last good read ${at(h.last_ok_at)}.`;
+}
+const readLine = (p, bad) => { const t = p.read_at, old = bad || hrs(t) > STALE_H, s = srcN(p.platform, p.source);
+  return `<small class="pf-rd${old ? " old" : ""}" title="${A.esc(`${s}. Read ${at(t)}.${bad ? " " + staleTip(p.platform) : old ? " Old data." : ""}`)}">${A.esc(s)} · ${A.esc(t ? ago(t) : "not read yet")}</small>`; };
+/* the client's Tracking row: one chip per platform, so "no number" is never mistaken for "0" */
+function trackHTML(c) {
+  const { esc } = A;
+  return `<div class="pf-trk" role="list" aria-label="Tracking">${PORD.map(p => {
+    const a = c.acc.find(x => x.platform === p), r = c.reads.find(x => x.platform === p), h = health(p);
+    let cls = "", txt, tip;
+    if (!a && !r) { txt = "Not tracked"; tip = `${plN(p)}: not tracked. No ${plN(p)} account on file for this client.`; }
+    else if (p === "instagram" && h && !h.ok) { cls = "r"; txt = "Paused · needs Simas"; tip = `Instagram: ${IG_PAUSED}${r && r.last_read_at ? ` Post numbers last read ${at(r.last_read_at)}.` : ""}${a ? ` Followers read ${ago(a.updated_at)}.` : ""}`; }
+    else { const t = [a && a.updated_at, r && r.last_read_at].filter(Boolean).sort().pop(), old = stale(p) || hrs(t) > STALE_H;
+      cls = old ? "r" : "g"; txt = old ? `Old data · ${ago(t)}` : `Live · ${ago(t)}`;
+      tip = `${plN(p)}: ${srcN(p, (r && r.source) || (a && a.source))}. Last read ${at(t)}.${r ? ` ${int(r.posts)} posts tracked.` : " Followers only, no posts read yet."}${p === "tiktok" ? " Best effort: TikTok's public page, no official access yet." : ""}`; }
+    return `<span class="pf-trc ${cls}" role="listitem" tabindex="0" title="${esc(tip)}" aria-label="${esc(tip)}">${pIcon(p)}<b>${esc(plN(p))}</b><small>${esc(txt)}</small></span>`; }).join("")}</div>`;
+}
+
 /* ---------------- 1. overview ---------------- */
 function heroHTML() {
   const { esc, ic } = A, O = D.over, B = O.best, pct = O.planTotal ? Math.round(100 * O.planMade / O.planTotal) : null;
   const sinceH = hrs(O.last), toH = O.next ? (O.next - Date.now()) / 36e5 : null, cyc = isFinite(sinceH) ? Math.min(1, sinceH / SYNC_EVERY_H) : 0;
-  const dots = PORD.map(p => { const h = health(p); if (!h) return ""; const bad = stale(p);
-    return `<i class="pf-pd ${bad ? "r" : "g"}" role="img" tabindex="0" aria-label="${esc(`${plN(p)}: ${bad ? "old data" : "fresh"}`)}" title="${esc(`${plN(p)}: ${bad ? `old data${h.last_day ? ", last read " + A.dLabel(h.last_day) : ""}` : "fresh, " + at(h.last_ok_at)}`)}"></i>`; }).join("");
+  const dots = PORD.map(p => { const h = health(p); if (!h) return ""; const bad = stale(p), tip = srcTip(p);
+    return `<span class="pf-hs ${bad ? "r" : "g"}" tabindex="0" title="${esc(tip)}" aria-label="${esc(tip)}">${pIcon(p)}<small>${esc(bad ? (p === "instagram" && !h.ok ? "paused" : "old") : dur(hrs(h.last_ok_at)))}</small></span>`; }).join("");
   const sync = `<span class="pf-sync" title="${esc(`Numbers update every ${SYNC_EVERY_H} hours. Last update: ${at(O.last)}.${O.checking ? ` ${O.checking} ${O.checking === 1 ? "link" : "links"} being checked.` : ""}`)}">${ring(cyc, "pf-cyc")}<span>${O.last ? `Updated ${esc(dur(sinceH))} ago` : "Not updated yet"}${toH == null ? "" : toH > 0 ? ` · next sync in ${esc(dur(toH))}` : " · next sync due"}</span><span class="pf-pds">${dots}</span></span>`;
   const asof = `As of ${at(O.last)}`;
   const tMade = `<div class="pf-t" title="${esc(`${asof}. Finished Shorts we delivered on current plans and orders. ${int(O.made)} delivered in total, all time.`)}">
@@ -149,7 +189,7 @@ function heroHTML() {
   const g = gainOf(O.spark);
   const tViews = `<div class="pf-t pf-t-v" title="${esc(`${asof}. Views on the Shorts we made, per platform. A platform with old data is not added in.`)}">
       <span class="pf-tl">${ic("eye")}<span class="pf-lg">Views on our Shorts</span><span class="pf-sm">Our views</span></span><b class="pf-big">${cnt(O.views)}</b>${spark(O.spark, "pf-sp-h")}
-      <span class="pf-pcs">${O.viewsBy.map(v => `<span class="pf-pc${v.stale ? " st" : ""}"${v.stale ? ` title="${esc(staleTip(v.p))}"` : ""}>${pIcon(v.p)}${esc(kf(v.views))}${v.stale ? `<i class="pf-pd r"></i>` : ""}</span>`).join("")}${O.dViews !== undefined ? dx(O.dViews, true) : g ? `<span class="pf-dx up">▲ +${esc(int(g))}<small>in ${D.days.length} d</small></span>` : ""}</span></div>`;
+      <span class="pf-pcs">${O.viewsBy.map(v => `<span class="pf-pc${v.stale ? " st" : ""}"${v.stale ? ` title="${esc(staleTip(v.p))}"` : ""}>${pIcon(v.p)}${esc(int(v.views))}${v.stale ? `<i class="pf-pd r"></i>` : ""}</span>`).join("")}${O.dViews !== undefined ? dx(O.dViews, true) : g ? `<span class="pf-dx up">▲ +${esc(int(g))}<small>in ${D.days.length} d</small></span>` : ""}</span></div>`;
   const tBest = B ? `<a class="pf-t pf-t-b" href="?p=perf&amp;k=${encodeURIComponent(B.client.key)}" data-pf-c="${esc(B.client.key)}" title="${esc(`${asof}. Open ${B.client.name}.`)}">
       <span class="pf-tl">${ic("star")}Best Short</span><span class="pf-bb">${thumb(B.platform, B.post_id)}<span class="pf-bt"><b class="pf-big">${cnt(B.views)}</b>${dx(pickD(B.dx, "views"), true)}<small class="pf-ts">${esc(B.short_label || "Short")} · ${esc(B.client.name)}</small></span></span></a>`
     : `<div class="pf-t pf-t-b"><span class="pf-tl">${ic("star")}Best Short</span>${empty("star", "No posted Short yet")}</div>`;
@@ -179,12 +219,12 @@ function detail(c) {
   const sPost = `<div class="pf-t" title="${esc(`${asof}. Delivered Shorts we found on their channels.`)}"><span class="pf-tl">${ic("send")}Posted</span><b class="pf-big">${cnt(c.posted)}<i>/ ${int(c.made)}</i></b>${bar(c.made ? c.posted / c.made : 0)}
       <small class="pf-ts">${c.waiting.length ? `${int(c.waiting.length)} not posted yet` : c.made ? "all posted" : "nothing delivered"}</small></div>`;
   const sViews = `<div class="pf-t pf-t-v" title="${esc(`${asof}. Views on the Shorts we made. A platform with old data is not added in.`)}"><span class="pf-tl">${ic("eye")}<span class="pf-lg">Views on our Shorts</span><span class="pf-sm">Our views</span></span><b class="pf-big">${c.posts.length ? cnt(c.views) : "–"}</b>${c.posts.length ? spark(c.spark, "pf-sp-h") : ""}
-      <span class="pf-pcs">${c.viewsBy.map(v => `<span class="pf-pc${v.stale ? " st" : ""}"${v.stale ? ` title="${esc(staleTip(v.p))}"` : ""}>${pIcon(v.p)}${esc(kf(v.views))}${v.stale ? `<i class="pf-pd r"></i>` : ""}</span>`).join("")}${c.dViews !== undefined ? dx(c.dViews, true) : g ? `<span class="pf-dx up">▲ +${esc(int(g))}<small>in ${D.days.length} d</small></span>` : ""}${c.posts.length ? "" : `<small class="pf-ts">no posted Short yet</small>`}</span></div>`;
-  const sFol = `<div class="pf-t" title="${esc(c.acc.length ? `As of ${at(c.acc.map(a => a.updated_at).sort().pop())}. YouTube rounds this number.` : "No channel linked")}"><span class="pf-tl">${ic("users")}Followers</span>
-      ${c.acc.length ? `<div class="pf-fol">${c.acc.map(a => { const u = safeUrl(a.url), bad = stale(a.platform), inner = `${pIcon(a.platform)}<b>${esc(kf(a.followers))}</b><small>${esc(plN(a.platform))}</small>${bad ? "" : dx(pickD(c.cdOf(a.platform), "followers"))}${bad ? `<i class="pf-pd r" title="${esc(staleTip(a.platform))}"></i>` : ""}`;
-        return u ? `<a class="pf-fc" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${inner}</a>` : `<span class="pf-fc">${inner}</span>`; }).join("")}</div>` : `<b class="pf-big">–</b><small class="pf-ts">no channel linked</small>`}</div>`;
+      <span class="pf-pcs">${c.viewsBy.map(v => `<span class="pf-pc${v.stale ? " st" : ""}"${v.stale ? ` title="${esc(staleTip(v.p))}"` : ""}>${pIcon(v.p)}${esc(int(v.views))}${v.stale ? `<i class="pf-pd r"></i>` : ""}</span>`).join("")}${c.dViews !== undefined ? dx(c.dViews, true) : g ? `<span class="pf-dx up">▲ +${esc(int(g))}<small>in ${D.days.length} d</small></span>` : ""}${c.posts.length ? "" : `<small class="pf-ts">no posted Short yet</small>`}</span></div>`;
+  const sFol = `<div class="pf-t"${c.acc.length ? "" : ` title="No channel linked"`}><span class="pf-tl">${ic("users")}Followers</span>
+      ${c.acc.length ? `<div class="pf-fol">${c.acc.map(a => { const u = safeUrl(a.url), old = hrs(a.updated_at) > STALE_H, inner = `${pIcon(a.platform)}<b>${a.followers == null ? na("Not read yet") : esc(folTxt(a))}</b><small>${esc(plN(a.platform))}</small>${old || stale(a.platform) ? "" : dx(pickD(c.cdOf(a.platform), "followers"), false, rounded(a))}${old ? `<i class="pf-pd r"></i>` : ""}`;
+        return u ? `<a class="pf-fc" href="${esc(u)}" target="_blank" rel="noopener noreferrer" title="${esc(folTip(a) + (old ? " Old data." : ""))}">${inner}</a>` : `<span class="pf-fc" title="${esc(folTip(a) + (old ? " Old data." : ""))}">${inner}</span>`; }).join("")}</div>` : `<b class="pf-big">–</b><small class="pf-ts">no channel linked</small>`}</div>`;
   const tabs = `<div class="pf-tabs" role="tablist" aria-label="Client views">${TABS.map(t => `<button type="button" role="tab" class="pf-tab" id="pf-tab-${t[0]}" data-pf-tab="${t[0]}" aria-selected="${TAB === t[0]}" aria-controls="pf-pane" tabindex="${TAB === t[0] ? 0 : -1}">${ic(t[2])}<span>${t[1]}</span>${t[0] === "videos" && c.posts.length ? `<b>${c.posts.length}</b>` : ""}${t[0] === "report" && c.st === "draft" ? `<i class="pf-pd b" title="Draft ready"></i>` : ""}</button>`).join("")}</div>`;
-  return `${head}<div class="pf-stats">${sMade}${sPost}${sViews}${sFol}</div>${tabs}<div class="pf-pane" id="pf-pane" role="tabpanel" aria-labelledby="pf-tab-${TAB}"${TAB === "report" && (EDIT || MAIL || ADJ) ? " data-keep" : ""}>${pane(c)}</div>`;
+  return `${head}<div class="pf-stats">${sMade}${sPost}${sViews}${sFol}</div>${trackHTML(c)}${tabs}<div class="pf-pane" id="pf-pane" role="tabpanel" aria-labelledby="pf-tab-${TAB}"${TAB === "report" && (EDIT || MAIL || ADJ) ? " data-keep" : ""}>${pane(c)}</div>`;
 }
 const pane = c => TAB === "channel" ? channelPane(c) : TAB === "report" ? reportPane(c) : videosPane(c);
 
@@ -194,8 +234,9 @@ function vCard(p, i) {
   return `<article class="pf-v${p.removed ? " gone" : ""}" title="${esc(tip)}"><a class="pf-vt" ${u ? `href="${esc(u)}" target="_blank" rel="noopener noreferrer"` : ""} aria-label="${esc(`Open ${p.short_label || "Short"} on ${plN(p.platform)}`)}">${thumb(p.platform, p.post_id)}
       <span class="pf-vp">${pIcon(p.platform)}${bad ? `<i class="pf-pd r"></i>` : ""}</span>${i === 0 && +p.views > 0 ? `<span class="pf-vk">${ic("star")}Top</span>` : ""}<span class="pf-vo">${ic("link")}</span></a>
     <div class="pf-vb"><div class="pf-vl"><b>${esc(p.short_label || "Short")}</b><small>${p.removed ? "taken down" : p.posted_at ? esc(A.dLabel(A.dayOf(p.posted_at))) : ""}</small></div>
-      <div class="pf-vn"><b>${cnt(p.views)}</b><span>views</span>${spark(p.spark)}</div>${bad ? "" : dx(pickD(p.dx, "views"), true)}
-      <div class="pf-vm"><span title="Likes">${ic("heart")}${esc(kf(p.likes))}${bad ? "" : dx(pickD(p.dx, "likes"))}</span><span title="Comments">${ic("msg")}${esc(kf(p.comments))}${bad ? "" : dx(pickD(p.dx, "comments"))}</span></div></div></article>`;
+      <div class="pf-vn"><b>${p.views == null ? na(why(p, "views")) : cnt(p.views)}</b><span>views</span>${spark(p.spark)}</div>${bad ? "" : dx(pickD(p.dx, "views"), true)}
+      <div class="pf-vm"><span title="Likes">${ic("heart")}${num(p, "likes")}${bad ? "" : dx(pickD(p.dx, "likes"))}</span><span title="Comments">${ic("msg")}${num(p, "comments")}${bad ? "" : dx(pickD(p.dx, "comments"))}</span>${p.shares != null ? `<span title="Shares">${ic("send")}${esc(int(p.shares))}</span>` : ""}</div>
+      ${readLine(p, bad)}</div></article>`;
 }
 function videosPane(c) {
   const { esc, ic } = A, n = c.waiting.length;
@@ -210,22 +251,23 @@ async function loadChannel(c) {
   try {
     const sb = A.sb(), since = new Date(Date.now() - 30 * 864e5).toISOString();
     const [s, t] = await Promise.all([sb.from("v_perf_channel").select("platform,day,followers,total_views,video_count").eq("client_email", c.email).order("day").limit(2000),
-      sb.from("client_posts").select("platform,post_id,title,url,posted_at,views,is_short").ilike("email", c.email.replace(/[\\%_]/g, "\\$&")).gte("posted_at", since).order("views", { ascending: false }).limit(60)]);
+      sb.from("client_posts").select("platform,post_id,title,url,posted_at,views,is_short,source,updated_at").ilike("email", c.email.replace(/[\\%_]/g, "\\$&")).gte("posted_at", since).order("views", { ascending: false }).limit(60)]);
     if (s.error) throw s.error;
     CH[c.key] = { series: s.data || [], top: t.data || [] };
   } catch (e) { CH[c.key] = "err"; }
   if (SEL === c.key && TAB === "channel") paintPane();
 }
 /* one line, one axis; the y range hugs the data (levels barely move day to day), so the axis shows its min and max */
-function lineChart(title, rows, key, started) {
+function lineChart(title, rows, key, started, acc) {   // acc = the account when the line is a rounded follower count
   const { esc } = A, pts = rows.filter(r => r[key] != null).map(r => ({ d: r.day, v: +r[key] })), n = pts.length, last = pts[n - 1], gain = last.v - pts[0].v;
   let mn = Math.min(...pts.map(p => p.v)), mx = Math.max(...pts.map(p => p.v)); const pad = (mx - mn) * 0.12 || Math.max(1, mx * 0.01); mn -= pad; mx += pad;
   const t0 = Date.parse(pts[0].d), t1 = Date.parse(last.d), X = d => t1 > t0 ? 100 * (Date.parse(d) - t0) / (t1 - t0) : 50, Y = v => 100 - 100 * (v - mn) / (mx - mn);
-  const yl = v => mx - mn < 2000 ? int(v) : mx - mn < 2e5 ? (v / 1e3).toFixed(1) + "k" : kf(v);   // axis labels keep enough digits to differ
+  const rd = rounded(acc), fmt = v => rd ? folTxt(acc, v) : int(v), ap = rd ? "≈ " : "";
+  const yl = v => rd ? folTxt(acc, v) : mx - mn < 2000 ? int(v) : mx - mn < 2e5 ? (v / 1e3).toFixed(1) + "k" : kf(v);   // axis labels keep enough digits to differ
   const line = pts.map((p, i) => (i ? "L" : "M") + X(p.d).toFixed(2) + "," + Y(p.v).toFixed(2)).join(" ");
   const sx = started ? X(started) : null, mk = sx == null ? "" : sx >= 0 && sx <= 100 ? `<span class="pf-mk" data-v="x:${sx.toFixed(1)}%"><b>BEJÚ started</b></span>` : "";
-  return `<figure class="pf-chart" data-pts="${esc(JSON.stringify(pts.map(p => [X(p.d).toFixed(2), Y(p.v).toFixed(2), A.dLabel(p.d), int(p.v)])))}" title="">
-    <figcaption><span>${esc(title)}</span><b>${int(last.v)}</b><small class="${gain > 0 ? "up" : gain < 0 ? "dn" : ""}">${gain > 0 ? "+" : ""}${int(gain)} · ${n} d</small>${sx != null && sx < 0 ? `<small class="pf-mk0">BEJÚ started ${esc(A.dLabel(started))}</small>` : ""}</figcaption>
+  return `<figure class="pf-chart" data-pts="${esc(JSON.stringify(pts.map(p => [X(p.d).toFixed(2), Y(p.v).toFixed(2), A.dLabel(p.d), fmt(p.v)])))}" title="">
+    <figcaption><span>${esc(title)}</span><b${rd ? ` title="${esc(folTip(acc))}"` : ""}>${esc(fmt(last.v))}</b><small class="${gain > 0 ? "up" : gain < 0 ? "dn" : ""}"${rd ? ` title="From counts ${esc(plN(acc.platform))} rounds"` : ""}>${ap}${gain > 0 ? "+" : ""}${int(gain)} · ${n} d</small>${sx != null && sx < 0 ? `<small class="pf-mk0">BEJÚ started ${esc(A.dLabel(started))}</small>` : ""}</figcaption>
     <div class="pf-plot"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path class="g" d="M0,0.5 H100 M0,50 H100 M0,99.5 H100"/><path class="a" d="${line} L100,100 L0,100 Z"/><path class="l" pathLength="1" d="${line}"/></svg>
       ${mk}<i class="pf-end" data-v="x:${X(last.d).toFixed(2)}%;y:${Y(last.v).toFixed(2)}%"></i><i class="pf-cross" hidden></i><span class="pf-tip" hidden></span>
       <span class="pf-yl t">${esc(yl(mx))}</span><span class="pf-yl b">${esc(yl(mn))}</span></div>
@@ -245,14 +287,14 @@ function channelPane(c) {
   const pls = c.acc.map(a => a.platform), p = pls.includes(CHP) ? CHP : pls[0], bad = stale(p), acc = c.acc.find(a => a.platform === p);
   const seg = pls.length > 1 ? `<div class="pf-seg" role="group" aria-label="Platform">${pls.map(x => `<button type="button" data-pf-pl="${x}" aria-pressed="${x === p}"${stale(x) ? ` title="${esc(staleTip(x))}"` : ""}>${pIcon(x)}${esc(plN(x))}${stale(x) ? `<i class="pf-pd r"></i>` : ""}</button>`).join("")}</div>` : "";
   const rows = st.series.filter(r => r.platform === p), n = rows.length, last = rows[n - 1] || {};
-  const cdp = bad ? null : c.cdOf(p), lv = (label, v, d) => `<div class="pf-lv"><span>${label}</span><b>${v == null ? "–" : esc(int(v))}</b>${dx(d, true)}</div>`;
-  const hist = n >= MIN_DAYS ? `<div class="pf-charts">${rows.some(r => r.followers != null) ? lineChart("Followers", rows, "followers", c.started) : ""}${rows.some(r => r.total_views != null) ? lineChart("Total channel views", rows, "total_views", c.started) : ""}</div>`
+  const cdp = bad ? null : c.cdOf(p), lv = (label, v, d, fa) => `<div class="pf-lv"${fa ? ` title="${esc(folTip(fa))}"` : ""}><span>${label}</span><b>${v == null ? na("Not read yet") : esc(fa ? folTxt(fa, v) : int(v))}</b>${dx(d, true, rounded(fa))}</div>`;
+  const hist = n >= MIN_DAYS ? `<div class="pf-charts">${rows.some(r => r.followers != null) ? lineChart("Followers", rows, "followers", c.started, acc) : ""}${rows.some(r => r.total_views != null) ? lineChart("Total channel views", rows, "total_views", c.started) : ""}</div>`
     : `<div class="pf-build" title="${esc("We save the channel's numbers once a day. The lines show from day " + MIN_DAYS + ".")}"><div class="pf-bh"><span class="pf-empty-i">${ic("chart")}</span><b>Building history</b><span>day ${Math.max(n, 0)} of ${GOAL_DAYS}</span><span class="pf-days" aria-hidden="true">${Array.from({ length: GOAL_DAYS }, (_, i) => `<i${i < n ? ' class="on"' : ""}></i>`).join("")}</span></div>
-        <div class="pf-lvs">${lv("Followers", last.followers != null ? last.followers : acc && acc.followers, pickD(cdp, "followers"))}${lv("Total views", last.total_views, pickD(cdp, "channel_views"))}${lv("Videos", last.video_count != null ? last.video_count : acc && acc.posts_count)}</div></div>`;
+        <div class="pf-lvs">${lv("Followers", last.followers != null ? last.followers : acc && acc.followers, pickD(cdp, "followers"), acc)}${lv("Total views", last.total_views, pickD(cdp, "channel_views"))}${lv("Videos", last.video_count != null ? last.video_count : acc && acc.posts_count)}</div></div>`;
   const sh = c.share.find(s => s.platform === p), share = sh && +sh.channel_views > 0 ? donut(sh, bad) : `<div class="pf-do">${empty("chart", "No views in the last 30 days")}</div>`;
   const ourIds = new Set(c.posts.filter(v => v.platform === p).map(v => v.post_id)), top = st.top.filter(t => t.platform === p).slice(0, 5);
   const tops = top.length ? `<div class="pf-tops">${top.map((t, i) => { const u = safeUrl(t.url), mine = ourIds.has(t.post_id);
-      return `<a class="pf-tp${mine ? " ours" : ""}" ${u ? `href="${esc(u)}" target="_blank" rel="noopener noreferrer"` : ""}><span class="pf-tk">${i + 1}</span>${thumb(t.platform, t.post_id)}<span class="pf-tb"><b>${esc(t.title || "Post")}</b><small>${esc(kf(t.views))} views${t.posted_at ? ` · ${esc(A.dLabel(A.dayOf(t.posted_at)))}` : ""}</small></span>${mine ? `<span class="chip b">Ours</span>` : ""}</a>`; }).join("")}</div>` : empty("video", "No posts in the last 30 days");
+      return `<a class="pf-tp${mine ? " ours" : ""}" title="${esc(`${srcN(t.platform, t.source)}, read ${at(t.updated_at)}`)}" ${u ? `href="${esc(u)}" target="_blank" rel="noopener noreferrer"` : ""}><span class="pf-tk">${i + 1}</span>${thumb(t.platform, t.post_id)}<span class="pf-tb"><b>${esc(t.title || "Post")}</b><small>${t.views == null ? na(why(t, "views")) : esc(int(t.views))} views${t.posted_at ? ` · ${esc(A.dLabel(A.dayOf(t.posted_at)))}` : ""}</small></span>${mine ? `<span class="chip b">Ours</span>` : ""}</a>`; }).join("")}</div>` : empty("video", "No posts in the last 30 days");
   return `${seg}${bad ? `<p class="pf-stale"><i class="pf-pd r"></i>${esc(plN(p))}: old data${health(p) && health(p).last_day ? ` from ${esc(A.dLabel(health(p).last_day))}` : ""}</p>` : ""}${hist}
     <div class="pf-two"><section><h3>Share</h3>${share}</section><section><h3>Their top posts · 30 d</h3>${tops}</section></div>`;
 }
