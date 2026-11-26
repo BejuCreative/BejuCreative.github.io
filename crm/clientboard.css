@@ -74,6 +74,25 @@
 .cb-lk:hover,.cb-qb:hover{background:var(--blue-soft)}
 .cb-lk:focus-visible,.cb-qb:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
 .cb-lk .ic,.cb-qb .ic{width:15px;height:15px}
+/* W3 (11-26): a Short's earlier versions, the Check numbering chip, the Finished block */
+.cb-hb{display:inline-flex;align-items:center;gap:5px;min-height:32px;padding:0 8px;border:0;border-radius:10px;background:none;font:inherit;font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer}
+.cb-hb:hover{background:var(--panel)} .cb-hb:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.cb-hb .ic{width:14px;height:14px;transition:transform .15s} .cb-hb[aria-expanded="true"] .ic{transform:rotate(90deg)}
+.cb-hist{flex-basis:100%;list-style:none;margin:2px 0 0;padding:4px 0 0 12px;border-left:2px solid var(--line-2);display:grid;gap:2px}
+.cb-hist[hidden]{display:none}
+.cb-hi{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;min-width:0;padding:4px 0;font-size:13px;color:var(--ink-2)}
+.cb-hi .cb-tt{min-width:0;overflow-wrap:anywhere}
+.cb-hi:hover .cb-q,.cb-hi:focus-within .cb-q{display:block}
+.cb-numck{font-size:11px}
+.cb-slh2{margin-top:8px;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
+.cb-done{margin-top:16px;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+.cb-done>summary,.cb-dord>summary{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;min-height:44px;padding:10px 14px;cursor:pointer;list-style:none}
+.cb-done>summary::-webkit-details-marker,.cb-dord>summary::-webkit-details-marker{display:none}
+.cb-done>summary .ic{width:16px;height:16px;color:var(--green)}
+.cb-done>summary:focus-visible,.cb-dord>summary:focus-visible{outline:2px solid var(--focus);outline-offset:-2px;border-radius:12px}
+.cb-dsum{font-size:13px;color:var(--mute)}
+.cb-dlist{display:grid;gap:6px;padding:0 10px 10px}
+.cb-dord{border-top:1px solid var(--line)} .cb-dord>.cb-ul{padding:0 14px 8px}
 .cb-note{flex-basis:100%;font-size:13px;line-height:1.4;color:var(--ink-2)}
 /* the client's written OK: shown on hover, on keyboard focus, or after a tap on "Quote" */
 .cb-q{display:none;flex-basis:100%;margin:2px 0 0;padding:8px 11px;border-radius:10px;font-size:13px;line-height:1.45;font-style:italic;background:var(--green-soft);color:var(--ink);quotes:"“" "”"}
@@ -226,7 +245,8 @@ html.cb-sheet-on{overflow:hidden}
   .cb-stack.rv .cb-sh{padding-right:40px;position:relative}
   .cb-stack.rv .cb-sh::after{content:"";position:absolute;right:16px;top:50%;width:9px;height:9px;margin-top:-6px;border:solid var(--mute);border-width:2px 2px 0 0;transform:rotate(45deg)}   /* opens a sheet */
   .cb-sh{min-height:56px;padding:12px}
-  .cb-lk,.cb-qb{min-height:44px;padding:0 12px}
+  .cb-lk,.cb-qb,.cb-hb{min-height:44px;padding:0 12px}
+  .cb-done>summary,.cb-dord>summary{min-height:48px}
   .cb-pan{inset:0;width:100%;border-radius:0;display:block;overflow-y:auto;overscroll-behavior:contain;transform:translateY(100%);padding-bottom:env(safe-area-inset-bottom)}
   .cb-pan.on{transform:none}
   .cb-ph{flex-wrap:wrap;gap:10px;padding:calc(16px + env(safe-area-inset-top)) 16px 10px;padding-right:72px}

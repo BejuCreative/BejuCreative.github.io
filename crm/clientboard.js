@@ -90,12 +90,48 @@ const drafts = () => ((X() && X().raw && X().raw.drafts) || []).filter(d => d.ca
 /* ---------------- model: items → stacks → columns ---------------- */
 const keyOf = i => `${i.client_id || "n:" + lc(i.client_name)}|${i.batch_key || "item-" + i.id}`;
 const pretty = k => { const s = String(k || "").replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim(); return s ? s[0].toUpperCase() + s.slice(1) : "Batch"; };
+/* W3 (BENAS 11-26): ONE card per Short. Same client + same batch + "Short N" in the title = the same Short; the newest version is the card
+   and older versions fold inside it as history (nothing deleted, statuses as recorded). Titles without a Short number stay one card each. */
+const SNUM = /\bShort\s+(\d+)\b/i;
+const shortKey = i => { const m = i.batch_key ? SNUM.exec(i.title || "") : null; return m ? `${i.client_id || "n:" + lc(i.client_name)}|${i.batch_key}|${+m[1]}` : null; };
+const verOf = i => { const t = String(i.title || ""), m = t.match(/\bv(\d+)(?:\.(\d+))?\b/i); return m ? +m[1] + (m[2] ? +m[2] / 10 : 0) : /\bnew look\b/i.test(t) ? 1.5 : 1; };
+const restOf = t => lc(String(t || "").replace(/^.*?\bShort\s+\d+\b/i, "").replace(/\bv\d+(\.\d+)?\b|\([^)]*\)/gi, "").replace(/[^a-z0-9]+/gi, " "));
+function collapse(items) {
+  const g = new Map(), out = [];
+  items.forEach(i => { const k = shortKey(i); if (!k) out.push(i); else (g.get(k) || g.set(k, []).get(k)).push(i); });
+  g.forEach(vs => {
+    if (vs.length === 1) { out.push(vs[0]); return; }
+    vs.sort((a, b) => verOf(b) - verOf(a) || b.id - a.id);
+    const [top, ...hist] = vs, numCheck = new Set(vs.map(v => restOf(v.title)).filter(Boolean)).size > 1;   // a bare "Short 8" never conflicts
+    /* titles differ beyond the version tag: maybe two different Shorts under one number. Settled history folds in (flagged, so the slip stays
+       visible); while any of them is still open (building / ready / changes) they stay separate cards: nothing hides under another. */
+    if (numCheck && vs.some(v => OPEN_ST.has(v.status))) { out.push(...vs); return; }
+    out.push({ ...top, hist, numCheck });
+  });
+  return out;
+}
+/* a finished order (every Short sent or approved, and the order reached its size: "10 Shorts · Order 1" = 10 Shorts) leaves the columns and
+   folds into one closed "Finished" block. No size in its name: finished once the client has a newer order. A 60-plan at 26 stays open. */
+const SETTLED = new Set(["sent", "approved"]);
+const sizeOf = b => { const m = String(b || "").match(/\b(\d+)\s*-?\s*Shorts?\b/i); return m ? +m[1] : 0; };
+function splitDone(items) {
+  const reps = collapse(items), orders = new Map(), live = [], done = [];
+  reps.forEach(i => { if (!i.batch_key) { live.push(i); return; } const k = `${i.client_id || "n:" + lc(i.client_name)}|${i.batch_key}`; (orders.get(k) || orders.set(k, []).get(k)).push(i); });
+  const newest = its => Math.max(...its.map(i => ms(i.status_at) || ms(i.updated_at)));
+  orders.forEach((its, k) => {
+    const cl = k.slice(0, k.indexOf("|")), size = sizeOf(its[0].batch_key), all = its.every(i => SETTLED.has(i.status));
+    const later = [...orders].some(([k2, o]) => k2 !== k && k2.slice(0, k2.indexOf("|")) === cl && newest(o) > newest(its));
+    if (all && (size ? its.length >= size : later)) done.push({ key: k, name: pretty(its[0].batch_key), cname: its[0].client_name || (clientOf(its[0].client_id) || {}).name || "Client", items: its });
+    else live.push(...its);
+  });
+  return { live, done: done.sort((a, b) => newest(b.items) - newest(a.items)) };
+}
 function colOf(items) {
   if (items.some(i => i.status === "changes")) return "changes";
   return COLS.map(c => c[0]).filter(c => c !== "changes").reduce((a, c) => items.some(i => sOf(i.status) === c) && (a == null || ORDER[c] < ORDER[a]) ? c : a, null) || "building";
 }
 function stacksOf(items) {
-  const m = new Map();
+  const m = new Map(); items = collapse(items);
   /* 11-24 (SIMAS 23:40: "I added a revision for one video and it moved all their videos to Needs fixing… the videos should be separated
      and not grouped"): a batch only stacks the Shorts that sit in the SAME column; each Short moves on its own. */
   items.forEach(i => { const k = keyOf(i) + "|" + colOf([i]); (m.get(k) || m.set(k, []).get(k)).push(i); });
@@ -129,7 +165,7 @@ function statsOf(c, its) {
   else if (c) { const o = (c.packs || []).filter(x => x.status === "open" && x.bought != null); if (o.length) { owed = o.reduce((a, x) => a + Math.max(0, x.bought - Math.min(x.done || 0, x.bought)), 0); of = `of ${o.reduce((a, x) => a + x.bought, 0)} in open packs`; } }
   if (owed == null) { owed = open.length; of = "still to deliver"; }
   const vids = c ? (c.vids || []).filter(v => String(v.delivered_at || "").slice(0, 7) === mo).length : 0;
-  const sent = its.filter(i => { const t = ms(i.sent_at) || ms(i.approved_at); return t && dayOf(t).slice(0, 7) === mo; }).length;
+  const sent = collapse(its).filter(i => { const t = ms(i.sent_at) || ms(i.approved_at); return t && dayOf(t).slice(0, 7) === mo; }).length;   // W3: Shorts, not files (a v2 resend is not a 2nd delivery)
   const dues = open.map(i => ms(i.due_at)).filter(Boolean), up = dues.filter(t => t >= now).sort((a, b) => a - b)[0] || 0, over = dues.filter(t => t < now).length;
   return { owed, of, done: Math.max(vids, sent), next: up, over };
 }
@@ -141,11 +177,30 @@ function dueTxt(t) {
 /* ---------------- html ---------------- */
 function itemHTML(i) {
   const u = webUrl(i.drive_link), q = i.status === "approved" && String(i.approved_quote || "").trim(), note = i.status === "changes" && String(i.changes_note || "").trim();
-  return `<li class="cb-it" data-id="${esc(i.id)}" data-st="${i.status}"><span class="cb-chip s-${i.status}">${esc(ST[i.status] || i.status)}</span><span class="cb-tt">${esc(i.title)}</span>
+  return `<li class="cb-it" data-id="${esc(i.id)}" data-st="${i.status}"><span class="cb-chip s-${i.status}">${esc(ST[i.status] || H_ST[i.status] || i.status)}</span><span class="cb-tt">${esc(i.title)}</span>
     ${u ? `<a class="cb-lk" href="${esc(u)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${esc(i.title)} in Drive">${ic("link")}<span>Open</span></a>` : ""}
     ${q ? `<button type="button" class="cb-qb" data-cbq aria-expanded="false" aria-label="Show the approval">${ic("msg")}<span>Quote</span></button>` : ""}
     ${note ? `<span class="cb-note">${esc(note)}</span>` : ""}
-    ${q ? `<q class="cb-q">${esc(q)}</q>` : ""}</li>`;
+    ${q ? `<q class="cb-q">${esc(q)}</q>` : ""}${histHTML(i)}</li>`;
+}
+/* W3: the older versions of a Short, folded under its card; the "Check numbering" chip when their titles differ */
+const H_ST = { building: "Building", ready: "Ready", sent: "Sent", changes: "Changes asked", approved: "Approved" };
+function histHTML(i) {
+  if (!i.hist || !i.hist.length) return "";
+  const n = i.hist.length;
+  return `${i.numCheck ? `<span class="cb-chip s-hold cb-numck" title="Versions of this Short have different titles. Check the numbering.">Check numbering</span>` : ""}
+    <button type="button" class="cb-hb" data-cbh aria-expanded="false">${ic("chev")}<span>${n} earlier version${n === 1 ? "" : "s"}</span></button>
+    <ul class="cb-hist" hidden>${i.hist.map(h => { const u = webUrl(h.drive_link), q = String(h.approved_quote || "").trim();
+      return `<li class="cb-hi" data-id="${esc(h.id)}"><span class="cb-chip s-${esc(h.status)}">${esc(H_ST[h.status] || h.status)}</span><span class="cb-tt">${esc(h.title)}</span>${u ? `<a class="cb-lk" href="${esc(u)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${esc(h.title)} in Drive">${ic("link")}<span>Open</span></a>` : ""}${q ? `<q class="cb-q cb-hq">${esc(q)}</q>` : ""}</li>`; }).join("")}</ul>`;
+}
+/* W3: finished orders, one closed block under the board (all-clients board: one row per client order) */
+const DOPEN = new Set();
+function doneHTML(done, chips) {
+  if (!done.length) return "";
+  const rows = done.map(o => { const n = o.items.length, ok = o.items.filter(i => i.status === "approved").length;
+    return `<details class="cb-dord" data-dk="${esc(o.key)}"${DOPEN.has(o.key) ? " open" : ""}><summary><b>${esc(o.name)}</b>${chips ? `<span class="cb-cl">${esc(o.cname)}</span>` : ""}<span class="cb-dsum">${n} delivered${ok ? ` · ${ok} approved by the client` : ""}</span></summary>
+      <ul class="cb-ul">${o.items.map(itemHTML).join("")}</ul></details>`; }).join("");
+  return `<details class="cb-done" data-dk="__all"${DOPEN.has("__all") ? " open" : ""}><summary>${ic("check")}<b>Finished</b><span class="cb-dsum">${done.length} order${done.length === 1 ? "" : "s"}, every Short delivered</span></summary><div class="cb-dlist">${rows}</div></details>`;
 }
 const EM_ST = { pending: "", held: "Sent back with changes. Claude is on it; it comes back here when fixed.", approved: "Approved. It goes out within a minute.", sending: "Sending now.",
   failed: "Not sent: Instantly refused it. Read the reason, then send again or close it.", stale: "Not sent: the thread moved after this was drafted. Claude is writing a fresh one; it comes back here.", unknown: "Unclear if it went out. Check Instantly before anything else." };
@@ -181,7 +236,7 @@ function slideInfo(i, k, n) {
   const chip = st === "changes" ? `<span class="cb-chip s-changes">Needs changes</span>` : ok ? `<span class="cb-chip s-approved">Approved${i.founder_ok_by ? ` by ${esc(i.founder_ok_by)}` : ""}</span>` : st !== "ready" ? `<span class="cb-chip s-${sOf(st)}">${esc(ST[sOf(st)] || st)}</span>` : "";
   return `<div class="cb-slh"><b class="cb-slt">${esc(i.title)}</b><span class="cb-sln">${k + 1} of ${n}</span></div>
     ${chip || u ? `<p class="cb-slm">${chip}${u ? `<a class="cb-lk" href="${esc(u)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${esc(i.title)} in Drive">${ic("link")}<span>Open in Drive</span></a>` : ""}</p>` : ""}
-    ${note ? `<p class="cb-note cb-slnote">${esc(note)}</p>` : ""}
+    ${note ? `<p class="cb-note cb-slnote">${esc(note)}</p>` : ""}${i.hist ? `<div class="cb-slh2">${histHTML(i)}</div>` : ""}
     ${st === "ready" ? `<div class="cb-slacts"><button type="button" class="act cb-okb" data-cbok="${id}" aria-pressed="${ok}">${ic("check")}${ok ? "Approved" : "Approve"}</button><button type="button" class="act cb-ncb" data-cbnc="${id}" aria-expanded="false">${ic("edit")}Needs changes</button></div>
     <div class="cb-nc" hidden><label class="sm-eml" for="cbn-${id}">What should change in this Short?</label><textarea id="cbn-${id}" class="sm-emta cb-ncta" rows="3" maxlength="600" placeholder="e.g. start on the second sentence; bigger captions"></textarea>
       <label class="cb-ncat"><span>At <small>(optional)</small></span><input class="cb-ncts" type="text" inputmode="numeric" placeholder="m:ss" maxlength="6" autocomplete="off" aria-label="At which moment, m:ss (optional)"></label>
@@ -235,12 +290,12 @@ function tabOf(bkey, ids, st) {
   const has = c => st.some(s => s.col === c); return has("changes") ? "changes" : has("ready") ? "ready" : "building";
 }
 function boardHTML(items, chips, bkey) {
-  const st = stacksOf(items), cols = COLS.filter(([id]) => id !== "changes" || st.some(s => s.col === "changes")), tab = CUR[bkey] = tabOf(bkey, cols.map(c => c[0]), st);
+  const sp = splitDone(items), st = stacksOf(sp.live), cols = COLS.filter(([id]) => id !== "changes" || st.some(s => s.col === "changes")), tab = CUR[bkey] = tabOf(bkey, cols.map(c => c[0]), st);
   const tabs = `<div class="cb-tabs" role="tablist" aria-label="Board columns" data-b="${esc(bkey)}">${cols.map(([id]) => { const n = st.filter(s => s.col === id).length;
     return `<button type="button" class="cb-tab" role="tab" data-cbtab="${id}" aria-selected="${id === tab}">${TAB_NM[id]}${id === "ready" || id === "changes" ? `<b class="cb-tn" aria-label="${n} card${n === 1 ? "" : "s"}">${n}</b>` : ""}</button>`; }).join("")}</div>`;
   return `${tabs}<div class="cb-board" data-b="${esc(bkey)}" data-tab="${tab}">${cols.map(([id, name, none], ci) => { const ss = st.filter(s => s.col === id);
     return `<section class="sm-col cb-col${id === tab ? " on" : ""}" data-col="${id}" aria-labelledby="cbh-${id}"><header class="sm-ch"><span class="sm-step" aria-hidden="true">${String(ci + 1).padStart(2, "0")}</span><h2 id="cbh-${id}">${name}</h2><b class="sm-cnt cb-cn" data-cnt="${id}" aria-label="${ss.length} card${ss.length === 1 ? "" : "s"}">${ss.length}</b></header>
-      <div class="sm-list cb-list">${ss.length ? ss.map(s => stackHTML(s, chips)).join("") : `<p class="sm-empty">${esc(none)}</p>`}</div></section>`; }).join("")}</div>`;
+      <div class="sm-list cb-list">${ss.length ? ss.map(s => stackHTML(s, chips)).join("") : `<p class="sm-empty">${esc(none)}</p>`}</div></section>`; }).join("")}</div>${doneHTML(sp.done, chips)}`;
 }
 const none = () => `<div class="card sp-card cb-none"><span class="cb-none-i">${ic("board")}</span><b>${EMPTY}</b><p>When we start work for a client, every batch shows up here and moves across as it is built and sent.</p></div>`;
 function allHTML() { return !ITEMS || !ITEMS.length ? none() : boardHTML(ITEMS, true, "all"); }
@@ -284,6 +339,7 @@ function repaint() {
   if (DRW && body) { const c = clientOf(DRW.id); if (c) { paintInto(body, clientBoardHTML(c)); const hs = DRW.pan.querySelector(".cb-hs"); if (hs) hs.innerHTML = holdHTML(c); } }
 }
 addEventListener("beju-crm:data", repaint);
+document.addEventListener("toggle", ev => { const d = ev.target; if (d && d.matches && d.matches("details[data-dk]")) d.open ? DOPEN.add(d.dataset.dk) : DOPEN.delete(d.dataset.dk); }, true);   // W3: Finished blocks stay open across live repaints
 
 /* ---------------- the client's board (a panel, like the Samples one) ---------------- */
 const otherLayer = () => !!document.querySelector("#drawer:not([hidden]), #veil:not([hidden]), #pal:not([hidden]), #dlg:not([hidden])");
@@ -556,6 +612,7 @@ document.addEventListener("click", ev => {
   const ncs = t.closest("[data-cbncs]"); if (ncs) { saveChanges(ncs.dataset.cbncs, ncs); return; }
   const pt = t.closest("[data-cbpart]"); if (pt) { sendPart(pt); return; }
   if (sh) { const st = sh.closest(".cb-stack"), on = sh.getAttribute("aria-expanded") !== "true"; sh.setAttribute("aria-expanded", on); st.classList.toggle("open", on); st.querySelector(".cb-items").hidden = !on; on ? OPEN.add(st.dataset.key) : OPEN.delete(st.dataset.key); return; }
+  const hbt = t.closest("[data-cbh]"); if (hbt) { const on = hbt.getAttribute("aria-expanded") !== "true"; hbt.setAttribute("aria-expanded", on); hbt.nextElementSibling.hidden = !on; return; }   // W3: a Short's earlier versions
   const qb = t.closest("[data-cbq]"); if (qb) { const li = qb.closest(".cb-it"), on = !li.classList.contains("q-open"); li.classList.toggle("q-open", on); qb.setAttribute("aria-expanded", on); return; }
   const eb = t.closest("[data-cbe]"); if (eb) { if (eb.dataset.cbe === "send" && PHONE.matches && eb.closest(".cb-sheet")) undoStart(eb); else emailOp(eb.dataset.cbe, eb); return; }
   const hb = t.closest("[data-cbhold]"); if (hb) { setHold(hb.dataset.cbhold, hb); return; }
