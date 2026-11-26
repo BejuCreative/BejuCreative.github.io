@@ -82,7 +82,7 @@
 .cb-hist[hidden]{display:none}
 .cb-hi{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;min-width:0;padding:4px 0;font-size:13px;color:var(--ink-2)}
 .cb-hi .cb-tt{min-width:0;overflow-wrap:anywhere}
-.cb-hi:hover .cb-q,.cb-hi:focus-within .cb-q{display:block}
+.cb-hi:hover>.cb-q,.cb-hi:focus-within>.cb-q,.cb-hi.q-open>.cb-q{display:block}
 .cb-numck{font-size:11px}
 .cb-slh2{margin-top:8px;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
 .cb-done{margin-top:16px;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
@@ -97,7 +97,7 @@
 /* the client's written OK: shown on hover, on keyboard focus, or after a tap on "Quote" */
 .cb-q{display:none;flex-basis:100%;margin:2px 0 0;padding:8px 11px;border-radius:10px;font-size:13px;line-height:1.45;font-style:italic;background:var(--green-soft);color:var(--ink);quotes:"“" "”"}
 .cb-q::before{content:open-quote} .cb-q::after{content:close-quote}
-.cb-it:hover .cb-q,.cb-it:focus-within .cb-q,.cb-it.q-open .cb-q{display:block}
+.cb-it:hover>.cb-q,.cb-it:focus-within>.cb-q,.cb-it.q-open>.cb-q{display:block}   /* W3 review: direct child only, so one tap never opens every history quote */
 .cb-em{display:grid;gap:10px;min-width:0;padding-top:12px;border-top:1px solid var(--line)}
 .cb-em h4{margin:0;font-size:15px;font-weight:600;letter-spacing:-.01em}
 .cb-emb{max-height:260px}
