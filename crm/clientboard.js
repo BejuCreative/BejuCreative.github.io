@@ -213,9 +213,11 @@ function stackHTML(s, chips) {
   /* 11-24 (BENAS: "I clicked approved on every card and it still said waiting for a founder"): the chip tells the truth about the approvals.
      No delivery email (clients whose Shorts we post ourselves) → "Approved · ready to post" once every Ready Short is approved, else "To review".
      With an email: on a held client, "Approved · send it" once all are approved, else "Waits for a founder"; otherwise the countdown / Email ready. */
-  const rdy = s.items.filter(i => i.status === "ready"), allOk = rdy.length > 0 && rdy.every(i => i.founder_ok_at);
-  const mail = s.col !== "ready" ? "" : !d ? (allOk ? `<span class="cb-chip s-approved">Approved · ready to post</span>` : `<span class="cb-chip s-hold">To review</span>`)
-    : hold ? (allOk ? `<span class="cb-chip s-approved">Approved · send it</span>` : `<span class="cb-chip s-hold">Waits for a founder</span>`)
+  const rdy = s.items.filter(i => i.status === "ready"), okN = rdy.filter(i => i.founder_ok_at).length, allOk = rdy.length > 0 && okN === rdy.length;
+  /* SIMAS 11-26: "I click approve but nothing moved": a partly approved batch says so ("1 of 7 approved · Simas") instead of "To review" */
+  const part = okN && !allOk ? `<span class="cb-chip s-approved">${okN} of ${rdy.length} approved${(w => w.length ? " · " + esc(w.join(", ")) : "")([...new Set(rdy.filter(i => i.founder_ok_at && i.founder_ok_by).map(i => i.founder_ok_by))])}</span>` : "";
+  const mail = s.col !== "ready" ? "" : !d ? (allOk ? `<span class="cb-chip s-approved">Approved · ready to post</span>` : part || `<span class="cb-chip s-hold">To review</span>`)
+    : hold ? (allOk ? `<span class="cb-chip s-approved">Approved · send it</span>` : part || `<span class="cb-chip s-hold">Waits for a founder</span>`)
     : cd ? `<span class="cb-chip s-go">${cd}</span>` : `<span class="cb-chip s-ready">Email ready</span>`;
   return `<article class="cb-stack${n > 1 ? " multi" : ""}${open ? " open" : ""}${rv ? " rv" : ""}" data-key="${esc(s.key)}" data-col="${s.col}" data-n="${n}">
     <button type="button" class="cb-sh" ${rv ? `aria-haspopup="dialog"` :`aria-expanded="${open}" aria-controls="${cid}"`}>
