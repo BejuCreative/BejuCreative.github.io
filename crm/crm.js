@@ -257,7 +257,7 @@ function derive() {
   /* 11-27 (SIMAS: "which ones are warm-upping, in batches ... a timer in counting days and how much time we can start using them"):
      every inbox purchase is one batch. Warm-up = 14 days from the day the inboxes go live (DFY Instantly orders take ~2 days to set up).
      A NEW PURCHASE = add one line here (domains + date bought). Inboxes on a domain in no batch show as "not in a batch yet". */
-  const WARM_DAYS = 14, today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Vilnius" }),
+  const WARM_DAYS = 14, todayYmd = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Vilnius" }),
     dPlus = (a, n) => new Date(Date.parse(a + "T12:00:00Z") + n * 864e5).toISOString().slice(0, 10), dDiff = (a, b) => Math.round((Date.parse(b + "T12:00:00Z") - Date.parse(a + "T12:00:00Z")) / 864e5);
   const BATCHES = [
     { name: "Batch 1", bought: "2026-09-17", from: "Instantly", n: 10, domains: ["bejucreative.com", "bejucreative.org"] },
@@ -269,7 +269,7 @@ function derive() {
   d.batches = BATCHES.map(b => {
     const ib = R.inboxes.filter(i => b.domains.includes(ibDom(i))), sending = ib.filter(i => (i.campaigns || []).length).length;
     if (!b.bought) return { ...b, live: 0, sending: 0, state: "planned" };
-    const start = dPlus(b.bought, b.setup || 0), ready = dPlus(start, WARM_DAYS), day = dDiff(start, today), left = dDiff(today, ready);
+    const start = dPlus(b.bought, b.setup || 0), ready = dPlus(start, WARM_DAYS), day = dDiff(start, todayYmd), left = dDiff(todayYmd, ready);
     const state = sending ? "sending" : !ib.length ? "setting up" : left > 0 ? "warming" : "ready";
     return { ...b, live: ib.length, sending, start, ready, day: Math.max(0, Math.min(day, WARM_DAYS)), left, state };
   });
