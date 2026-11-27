@@ -264,7 +264,7 @@ function derive() {
     { name: "Batch 2", bought: "2026-10-18", from: "InboxKit", n: 10, domains: ["getbejucreative.com", "trybejucreative.com", "bejucreatives.com"] },
     { name: "Batch 3", bought: "2026-11-21", from: "InboxKit", n: 10, domains: ["gobeju.com", "trybeju.com", "bejusystems.com"] },
     { name: "Batch 4", bought: "2026-11-27", from: "Instantly DFY", setup: 2, n: 10, domains: ["bejugroup.com", "hellobeju.com", "teambeju.com"] },
-    { name: "Batch 5", bought: null, from: "Benas buys next", n: 10, domains: [] }];
+    { name: "Batch 5", bought: "2026-11-27", from: "Instantly DFY (Benas)", setup: 2, n: 10, domains: ["bejuglobal.com", "bejumedia.com", "usebeju.com"] }];
   const ibDom = i => String(i.email || "").split("@")[1] || "";
   d.batches = BATCHES.map(b => {
     const ib = R.inboxes.filter(i => b.domains.includes(ibDom(i))), sending = ib.filter(i => (i.campaigns || []).length).length;
