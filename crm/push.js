@@ -33,6 +33,7 @@ if ("serviceWorker" in navigator) {
     const d = ev.data; if (!d || d.type !== "beju-open" || typeof d.url !== "string") return;
     try {   // a tap on a notification: open the same page / client card as the link
       const u = new URL(d.url, location.href); if (u.origin !== location.origin) return;
+      const lead = u.searchParams.get("lead"); if (lead) { if (window.BEJU_CRM_LEAD) window.BEJU_CRM_LEAD(lead); return; }   // 11-27 SIMAS: a reply opens the lead's conversation
       const p = u.searchParams.get("p") || "dashboard", extra = {}, c = u.searchParams.get("c"), id = u.searchParams.get("id"); if (c) extra.c = c; if (id && /^d?\d+$/.test(id)) extra.id = id;   // 11-25: ?p=approvals&id=<n> opens that approval
       if (window.BEJU_CRM_PAGE) window.BEJU_CRM_PAGE(p, extra);
     } catch {}

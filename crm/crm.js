@@ -2063,10 +2063,14 @@ function celebrateNew(prev) {
 async function refresh(manual) {
   const btns = $$('[data-act="refresh"]'); if (manual) btns.forEach(b => b.classList.add("spinning"));
   const first = !RAW, prevPay = RAW ? new Set(RAW.payments.map(x => x.id)) : null;
-  try { RAW = await fetchAll(); LAST_OK = Date.now(); offline(false); renderAll(!first); celebrateNew(prevPay); loadInbox().catch(() => {}); }
+  try { RAW = await fetchAll(); LAST_OK = Date.now(); offline(false); renderAll(!first); celebrateNew(prevPay); loadInbox().catch(() => {}); if (first) leadFromUrl(); }
   catch (e) { if (!RAW) throw e; offline(true); }
   finally { setTimeout(() => btns.forEach(b => b.classList.remove("spinning")), 500); }
 }
+/* 11-27 (SIMAS): a lead-reply push links to ?lead=<email> and opens that lead's card with the conversation, not the to-do list.
+   Cold start: read once after the first load, then drop it from the address bar. App already open: push.js calls BEJU_CRM_LEAD. */
+function leadFromUrl() { let em = ""; try { const u = new URL(location.href); em = u.searchParams.get("lead") || ""; if (em) { u.searchParams.delete("lead"); history.replaceState(history.state, "", u); } } catch {} if (em) openLead(em); }
+window.BEJU_CRM_LEAD = em => { if (RAW && em) { closeDrill(); openLead(em); } };
 function startLoop() { stopLoop(); TIMER = setInterval(() => { if (!document.hidden && Date.now() - LAST_OK >= 295000) refresh().catch(() => {}); }, 300000); }   // 11-22 bug hunt: every 5 min (was 60 s); one full read = ~45 requests incl. 1-2 s views on the free-plan database   // 11-22 (prod DB overload): skip a tick when a realtime refresh just ran
 function stopLoop() { if (TIMER) clearInterval(TIMER); TIMER = null; }
 document.addEventListener("visibilitychange", () => { if (!document.hidden && RAW && Date.now() - LAST_OK > 300000) refresh().catch(() => {}); });
