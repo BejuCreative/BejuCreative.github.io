@@ -62,7 +62,7 @@ svg{display:block}
 :focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:8px}
 .mono,.n{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .mut{color:var(--mute)}
-.up{color:var(--green)} .dn{color:var(--red)}
+.up{color:var(--green)} .dn{color:var(--red)} .wn{color:var(--orange)}
 
 /* ---------- boot / gate ---------- */
 .boot{position:fixed;inset:0;display:flex;gap:10px;align-items:center;justify-content:center;color:var(--mute)}
