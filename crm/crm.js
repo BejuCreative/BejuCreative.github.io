@@ -254,6 +254,31 @@ function derive() {
   /* 11-27 (SIMAS: "how much we got and how much are new and warming up"): an inbox in no campaign is new and only warming up (Instantly
      warm-up runs on every inbox); one in a campaign sends. The 10 added 11-21 (gobeju/trybeju/bejusystems) are the warming ones today. */
   d.inb.warming = R.inboxes.filter(i => !(i.campaigns || []).length).length; d.inb.sending = d.inb.total - d.inb.warming;
+  /* 11-27 (SIMAS: "which ones are warm-upping, in batches ... a timer in counting days and how much time we can start using them"):
+     every inbox purchase is one batch. Warm-up = 14 days from the day the inboxes go live (DFY Instantly orders take ~2 days to set up).
+     A NEW PURCHASE = add one line here (domains + date bought). Inboxes on a domain in no batch show as "not in a batch yet". */
+  const WARM_DAYS = 14, today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Vilnius" }),
+    dPlus = (a, n) => new Date(Date.parse(a + "T12:00:00Z") + n * 864e5).toISOString().slice(0, 10), dDiff = (a, b) => Math.round((Date.parse(b + "T12:00:00Z") - Date.parse(a + "T12:00:00Z")) / 864e5);
+  const BATCHES = [
+    { name: "Batch 1", bought: "2026-09-17", from: "Instantly", n: 10, domains: ["bejucreative.com", "bejucreative.org"] },
+    { name: "Batch 2", bought: "2026-10-18", from: "InboxKit", n: 10, domains: ["getbejucreative.com", "trybejucreative.com", "bejucreatives.com"] },
+    { name: "Batch 3", bought: "2026-11-21", from: "InboxKit", n: 10, domains: ["gobeju.com", "trybeju.com", "bejusystems.com"] },
+    { name: "Batch 4", bought: "2026-11-27", from: "Instantly DFY", setup: 2, n: 10, domains: ["bejugroup.com", "hellobeju.com", "teambeju.com"] },
+    { name: "Batch 5", bought: null, from: "Benas buys next", n: 10, domains: [] }];
+  const ibDom = i => String(i.email || "").split("@")[1] || "";
+  d.batches = BATCHES.map(b => {
+    const ib = R.inboxes.filter(i => b.domains.includes(ibDom(i))), sending = ib.filter(i => (i.campaigns || []).length).length;
+    if (!b.bought) return { ...b, live: 0, sending: 0, state: "planned" };
+    const start = dPlus(b.bought, b.setup || 0), ready = dPlus(start, WARM_DAYS), day = dDiff(start, today), left = dDiff(today, ready);
+    const state = sending ? "sending" : !ib.length ? "setting up" : left > 0 ? "warming" : "ready";
+    return { ...b, live: ib.length, sending, start, ready, day: Math.max(0, Math.min(day, WARM_DAYS)), left, state };
+  });
+  d.inb.unbatched = R.inboxes.filter(i => !BATCHES.some(b => b.domains.includes(ibDom(i)))).length;
+  d.batchLine = b => { const dt = x => new Date(x + "T12:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+    return b.state === "planned" ? `${b.name} · ${b.n} inboxes · ${esc(b.from)}, not bought yet`
+      : b.state === "sending" ? `${b.name} · ${b.sending} of ${b.live} sending · bought ${dt(b.bought)}`
+      : b.state === "ready" ? `${b.name} · ${b.live} inboxes · <span class="up">warmed up ${WARM_DAYS} days: ready to use since ${dt(b.ready)}</span>`
+      : `${b.name} · ${b.state === "setting up" ? `${b.n} inboxes being set up (bought ${dt(b.bought)})` : `${b.live} inboxes`} · <span class="wn">${b.state === "setting up" ? "warm-up starts when live" : `warm-up day ${b.day} of ${WARM_DAYS}`} · ready ${b.state === "setting up" ? "about " : ""}${dt(b.ready)} (${b.left} day${b.left === 1 ? "" : "s"} left)</span>`; };
   /* pipeline */
   const pipe = R.pipeline.filter(own); d.pipe = pipe;
   const counts = {}; pipe.forEach(p => { const m = mood(p); counts[m] = (counts[m] || 0) + 1; });
@@ -1133,6 +1158,7 @@ const CARDS = [
     <div class="stack sp">${d.away.slice(0, 3).map(r => leadBtn(r.lead_email, `<span class="it c-grey"><svg><use href="#i-moon"/></svg></span><span class="row-main"><b>${esc(cut(r.lead_email, 30))}</b></span>`)).join("") || empty("No auto-replies this week.")}</div>` },
 { id: "inboxes", title: "Inboxes", page: "email", render: d => `${head("Inboxes", "", true)}${big("inboxes", "", `${N(d.inb.sent)}<small>/ ${nf0.format(d.inb.cap)} sent today</small>`, "Open every inbox")}
     ${quiet("inboxes", "", `<b>${d.inb.total}</b> inboxes · ${d.inb.sending} sending · ${d.inb.warming ? `<span class="wn">${d.inb.warming} new, warming up</span>` : "none warming up"}`, "Open every inbox: which send, which are new and warming up")}
+    ${d.batches.filter(b => b.state !== "sending").map(b => quiet("inboxes", "", d.batchLine(b), "Open the inbox batches and their warm-up timers")).join("")}
     <div class="wk mini ib">${d.inbList.map((i, k) => `<button type="button" class="${i.status === 1 ? "" : "off"}" data-act="drill" data-k="inbox" data-a="${esc(i.email)}" data-v="h:${(i.daily_limit ? clamp((i.sent_today || 0) / i.daily_limit * 100, 0, 100) : 0).toFixed(1)}%;k:${k / 2}" title="${esc(i.email)}: ${i.sent_today || 0} of ${i.daily_limit || 0} sent today" aria-label="${esc(i.email)}: ${i.sent_today || 0} of ${i.daily_limit || 0} sent today. Open this inbox."></button>`).join("")}</div>` },
 { id: "videos", title: "Videos delivered", render: d => { const max = Math.max(1, ...d.vid.weeks.map(w => w.n));
     return `${head("Shorts delivered")}${big("vids", "all", `${N(d.vid.total)}<small>unique Shorts</small>`, "Unique Shorts sent to clients (a v2 of the same Short counts once). Open them.")}
@@ -1362,7 +1388,7 @@ const DR = {
   funnel(i) { i = +i; if (i === 0) return DR.sent(""); if (i === 1) return DR.replies("real"); if (i === 3) { const list = RAW.pipeline.filter(p => p.delivered_at).sort((x, y) => +new Date(y.delivered_at) - +new Date(x.delivered_at)); return { title: "Samples delivered, everyone", sub: `${list.length} leads`, html: leadList(list, p => "delivered " + fDT(p.delivered_at)) }; }
     if (i === 4) { const list = RAW.pipeline.filter(isBuyer); return { title: "Buyers", sub: `${list.length} leads from the samples pipeline bought`, html: leadList(list, p => cut(p.paid || p.show || "", 90)) }; }
     const list = [...RAW.camps].filter(c => c.opportunities).sort((x, y) => y.opportunities - x.opportunities); return { title: "Positive replies per campaign", sub: `${nf0.format(D.oppAll)} positive replies · ${D.posRate == null ? "—" : D.posRate.toFixed(1) + "%"} of the leads contacted`, html: tbl(["Campaign", "Positive", "Real replies", "Contacted", "Positive %"], list.map(c => `<tr><td>${dB("camp", c.campaign_id, esc(campName(c.name)), "lk")}</td><td>${nf0.format(c.opportunities)}</td><td>${nf0.format(c.replies || 0)}</td><td>${nf0.format(c.new_contacted || 0)}</td><td>${c.new_contacted ? (c.opportunities / c.new_contacted * 100).toFixed(1) + "%" : "—"}</td></tr>`)) }; },
-  inboxes() { const list = [...RAW.inboxes].sort((x, y) => (y.sent_today || 0) - (x.sent_today || 0)); return { title: "Inboxes", sub: `${D.inb.total} inboxes · ${D.inb.sending} sending · ${D.inb.warming} new, warming up (in no campaign yet) · ${nf0.format(D.inb.sent)} of ${nf0.format(D.inb.cap)} sent today · click one for its last 14 days`, html: tbl(["Inbox", "Sent today", "Daily limit", "Warm-up", "Status"], list.map(i => `<tr><td>${dB("inbox", i.email, esc(i.email), "lk")}</td><td>${nf0.format(i.sent_today || 0)}</td><td>${nf0.format(i.daily_limit || 0)}</td><td>${i.warmup_score ?? "—"}</td><td>${i.status !== 1 ? "paused" : (i.campaigns || []).length ? "sending" : "new, warming up"}</td></tr>`)) }; },
+  inboxes() { const list = [...RAW.inboxes].sort((x, y) => (y.sent_today || 0) - (x.sent_today || 0)); return { title: "Inboxes", sub: `${D.inb.total} inboxes · ${D.inb.sending} sending · ${D.inb.warming} new, warming up (in no campaign yet) · ${nf0.format(D.inb.sent)} of ${nf0.format(D.inb.cap)} sent today · click one for its last 14 days`, html: `<h3>Batches (warm-up ${14} days, then they can send)</h3><ul>${D.batches.map(b => `<li>${D.batchLine(b)} · ${b.domains.map(esc).join(", ") || "domains not picked yet"}</li>`).join("")}${D.inb.unbatched ? `<li class="wn">${D.inb.unbatched} inboxes not in a batch yet</li>` : ""}</ul>` + tbl(["Inbox", "Sent today", "Daily limit", "Warm-up", "Status"], list.map(i => `<tr><td>${dB("inbox", i.email, esc(i.email), "lk")}</td><td>${nf0.format(i.sent_today || 0)}</td><td>${nf0.format(i.daily_limit || 0)}</td><td>${i.warmup_score ?? "—"}</td><td>${i.status !== 1 ? "paused" : (i.campaigns || []).length ? "sending" : "new, warming up"}</td></tr>`)) }; },
   async inbox(email) { const rows = await must(sb.from("inbox_daily").select("day,sent,new_leads,replies,bounced").eq("email", email).gte("day", addDays(D.t, -14)).order("day", { ascending: false })), ib = RAW.inboxes.find(i => i.email === email) || {};
     return { title: email, sub: "One sending inbox, last 14 days", html: `${facts([["Sent today", `${ib.sent_today || 0} / ${ib.daily_limit || 0}`], ["Warm-up", ib.warmup_score ?? "—"], ["Status", ib.status === 1 ? "active" : "paused"]])}${rows.length ? tbl(["Day", "Sent", "New leads", "Replies", "Bounced"], rows.map(r => `<tr><td>${dB("day", r.day, dLong(r.day), "lk")}</td><td>${nf0.format(r.sent || 0)}</td><td>${nf0.format(r.new_leads || 0)}</td><td>${nf0.format(r.replies || 0)}</td><td>${nf0.format(r.bounced || 0)}</td></tr>`)) : empty("No sends recorded for this inbox in the last 14 days.")}<div class="acts sp">${dB("inboxes", "", "← All inboxes", "act")}</div>` }; },
   clients(a) { const list = a === "repeat" ? D.buyersL.filter(g => g.n > 1) : D.buyersL, paidKeys = new Set(D.buyersL.map(g => g.key)), rest = a === "repeat" ? [] : RAW.clients.filter(c => !paidKeys.has("c:" + c.id));
