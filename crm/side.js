@@ -96,7 +96,7 @@ const param = k => new URLSearchParams(location.search).get(k);
 function go(p, extra = {}, replace = false) {
   const u = new URL(location.href);
   p === "dashboard" ? u.searchParams.delete("p") : u.searchParams.set("p", p);
-  if (p !== "clients") u.searchParams.delete("c"); if (p !== "expenses") u.searchParams.delete("m"); if (p !== "perf") u.searchParams.delete("k"); if (p !== "slack") u.searchParams.delete("ts"); if (p !== "approvals") u.searchParams.delete("id");
+  if (p !== "clients") u.searchParams.delete("c"); if (p !== "expenses") u.searchParams.delete("m"); if (p !== "perf") u.searchParams.delete("k"); if (p !== "slack") u.searchParams.delete("ts"); if (p !== "approvals") u.searchParams.delete("id"); if (p !== "todos") u.searchParams.delete("t");
   Object.entries(extra).forEach(([k, v]) => v == null ? u.searchParams.delete(k) : u.searchParams.set(k, v));
   if (u.href !== location.href) history[replace ? "replaceState" : "pushState"]({ p }, "", u);
   show(p);
@@ -1420,7 +1420,8 @@ async function loadTaskList() {
     all("tasks", TCOLS, r => r.in("source", FSRC).eq("status", "done").gte("done_at", since))]);
   return open.concat(done).map(tCard);
 }
-async function loadTodos() { EDIT = null; await me(); const [list, pn] = await Promise.all([loadTaskList(), promNames()]); PNAME = pn; return list; }
+async function loadTodos() { const t = new URL(location.href).searchParams.get("t"); EDIT = t ? { id: +t } : null;   /* 11-28 deep link: ?p=todos&t=<task id> opens that card */
+  await me(); const [list, pn] = await Promise.all([loadTaskList(), promNames()]); PNAME = pn; return list; }
 const overdue = d => d && d < dayOf(Date.now());
 const cardsIn = (list, col) => list.filter(c => c.col === col).sort(col === "done" ? (a, b) => String(b.done || "").localeCompare(String(a.done || "")) : (a, b) => a.pos - b.pos || a.id - b.id);
 async function todoBadge() {   // the menu badge: open founder to-dos (not Waiting), per founder in the tooltip

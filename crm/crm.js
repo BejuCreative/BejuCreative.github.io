@@ -1848,6 +1848,9 @@ async function ntAllRead() {
 function ntOpen(x) {
   if (x.kind === "form" && x.lead_email && (D.forms || []).some(f => lc(f.email) === lc(x.lead_email))) { closeLead(); return openDrill("form", lc(x.lead_email)); }   // 11-22: a new brief form opens its answers
   if (x.kind === "slack") { const m = /\/p(\d{10})(\d{6})/.exec(String(x.link || "")); closeLead(); closeDrill(); return goPage("slack", m ? { ts: `${m[1]}.${m[2]}` } : {}); }
+  const tk = /^(?:fix:)?task:(\d+)/.exec(String(x.ref || ""));   // 11-28 deep link: a board card opens that card
+  if (tk && !x.lead_email) { closeLead(); closeDrill(); return goPage("todos", { t: tk[1] }); }
+  if (x.kind === "hold" && !x.lead_email) { closeLead(); return openDrill("holds", ""); }
   if (x.lead_email) return openLead(x.lead_email, $(`#m-body [data-nt="${CSS.escape(String(x.id))}"] .row`) || $("#nt-btn"));
   const u = webUrl(x.link); if (u) window.open(u, "_blank", "noopener");
 }
